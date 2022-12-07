@@ -1,0 +1,40 @@
+version: "3"
+volumes:
+  pg_data:
+  # web_root:
+services:
+  ui:
+    build:
+      context: ui
+      args:
+        GIT_VERSION: "${GIT_VERSION}"
+        GIT_BRANCH: "${GIT_BRANCH}"
+        GIT_LASTCOMMITDATE: "${GIT_LASTCOMMITDATE}"
+    volumes:
+      - ./ui/app:/app
+      # - "web_root:/app/dist:z"
+    hostname: ui
+    restart: "no"
+    env_file: .env
+  api:
+    build:
+      context: api
+    hostname: api
+    restart: unless-stopped
+    entrypoint: sh -c '/app/entrypoint.sh'
+    volumes:
+      - ./api/app:/app
+      - ./api/backups:/vol/backups
+      - ./api/static:/vol/web/static:z
+      - ./api/media:/vol/web/media:z
+      - ./data:/data
+    env_file: .env
+    depends_on:
+      - db
+  db:
+    image: postgres:15-bullseye
+    hostname: db
+    restart: unless-stopped
+    env_file: .env
+    volumes:
+      - pg_data:/var/lib/postgresql/data

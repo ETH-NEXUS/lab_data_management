@@ -1,0 +1,6 @@
+- model: core.PlateDimension
+  pk: 1
+  fields:
+    name: simple_3x2
+    cols: 3
+    rows: 2
