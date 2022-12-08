@@ -46,11 +46,11 @@ class CompoundLibrarySerializer(serializers.ModelSerializer):
 class PlateSerializer(serializers.ModelSerializer):
     dimension = PlateDimensionSerializer()
     library = CompoundLibrarySerializer()
-    wells = serializers.SerializerMethodField()
+    wells = WellSerializer(many=True)
 
-    def get_wells(self, instance):
-        wells = instance.wells.all().order_by('position')
-        return WellSerializer(wells, many=True).data
+    # def get_wells(self, instance):
+    #     wells = instance.wells.all().order_by('position')
+    #     return WellSerializer(wells, many=True).data
 
     class Meta:
         model = Plate

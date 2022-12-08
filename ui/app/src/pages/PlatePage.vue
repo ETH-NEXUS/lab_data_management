@@ -5,10 +5,14 @@ import {api} from '../boot/axios'
 import {useRoute} from 'vue-router'
 import DynamicPlate from '../components/DynamicPlate.vue'
 import {handleError} from '../helpers/errorHandling'
+import {Well} from '../components/models'
+import WellInfo from '../components/WellInfo.vue'
 
 const route = useRoute()
 
 const plate = ref<Plate | null>(null)
+const splitter = ref<number>(50)
+const selectedWell = ref<Well>()
 
 onMounted(async () => {
     try {
@@ -27,11 +31,27 @@ onMounted(async () => {
 </script>
 
 <template>
-    <q-page class="row items-center justify-evenly" :key="`${route.params.barcode}`">
-        <div v-if="plate">
-            <h2>{{ plate.barcode }}</h2>
-            <dynamic-plate :plate="plate" />
-        </div>
-        <q-spinner-grid v-else color="primary" size="5em" />
+    <q-page class="row items-top q-px-md" :key="`${route.params.barcode}`">
+        <q-splitter v-model="splitter" class="full-width">
+            <template v-slot:before>
+                <div v-if="plate">
+                    <h2>{{ plate.barcode }}</h2>
+                    <dynamic-plate :plate="plate" @well-selected="well => (selectedWell = well)" />
+                </div>
+                <q-spinner-grid v-else color="primary" size="5em" class="absolute-center" />
+            </template>
+
+            <template v-slot:after>
+                <div v-if="selectedWell" class="q-px-md">
+                    <h2>{{ selectedWell.hr_position }}</h2>
+                    <well-info :well="selectedWell" />
+                </div>
+            </template>
+        </q-splitter>
     </q-page>
 </template>
+
+<style scoped lang="sass">
+h2
+  font-family: 'Courier New', Courier, monospace
+</style>

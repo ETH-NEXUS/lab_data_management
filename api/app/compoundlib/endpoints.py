@@ -4,7 +4,7 @@ from drf_auto_endpoint.router import register
 
 from .models import (CompoundLibrary, Compound)
 from .serializers import CompoundLibrarySerializer
-# from .views import CompoundLibraryViewSet
+from .views import CompoundLibraryViewSet
 from core.endpoints import DefaultEndpoint
 
 
@@ -12,6 +12,7 @@ from core.endpoints import DefaultEndpoint
 class CompoundLibraryEndpoint(DefaultEndpoint):
     model = CompoundLibrary
     base_serializer = CompoundLibrarySerializer
+    base_viewset = CompoundLibraryViewSet
     filter_fields = ('name',)
 
 

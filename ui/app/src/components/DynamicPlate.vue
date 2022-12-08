@@ -1,7 +1,6 @@
 <script setup lang="ts">
-import {computed, defineProps, PropType} from 'vue'
+import {computed, defineProps, defineEmits, PropType} from 'vue'
 import {Plate, Well} from './models'
-import DynamicImage from './DynamicImage.vue'
 
 const props = defineProps({
     plate: {
@@ -9,6 +8,8 @@ const props = defineProps({
         required: true,
     },
 })
+
+const emit = defineEmits(['well-selected'])
 
 const alpha = Array.from(Array(26))
     .map((e, i) => i + 65)
@@ -47,39 +48,42 @@ const percentageToHsl = (percentage: number, hue0: number, hue1: number) => {
 </script>
 
 <template>
-    <table v-if="props.plate">
-        <tr>
-            <th />
-            <th :key="`cols${col}`" v-for="(_, col) of props.plate.dimension.cols">
-                {{ col + 1 }}
-            </th>
-        </tr>
-        <tr :key="`row${row}`" v-for="(_, row) of props.plate.dimension.rows">
-            <th>
-                {{ alpha[row] }}
-            </th>
-            <td
-                :key="`cols${col}`"
-                v-for="(_, col) of props.plate.dimension.cols"
-                :style="
-                    'background-color: ' +
-                    percentageToHsl(wells[row][col]?.measurements[0].value || -1, 120, 0)
-                ">
-                <a v-if="wells[row][col]">
-                    {{ wells[row][col]!.hr_position }}
-                </a>
-                <q-tooltip v-if="wells[row][col]" anchor="top middle" self="bottom middle" :offset="[5, 5]">
-                    {{ wells[row][col]?.compound.identifier }}
-                    <br />
-                    {{ wells[row][col]?.compound.smile }}
-                    <br />
-                    {{ wells[row][col]?.measurements }}
-                    <br />
-                    <dynamic-image :url="`/api/wells/${wells[row][col]!.id}/structure/`" width="150px" />
-                </q-tooltip>
-            </td>
-        </tr>
-    </table>
+    <div>
+        <table v-if="props.plate">
+            <tr>
+                <th />
+                <th :key="`cols${col}`" v-for="(_, col) of props.plate.dimension.cols">
+                    {{ col + 1 }}
+                </th>
+            </tr>
+            <tr :key="`row${row}`" v-for="(_, row) of props.plate.dimension.rows">
+                <th>
+                    {{ alpha[row] }}
+                </th>
+                <td
+                    :key="`cols${col}`"
+                    v-for="(_, col) of props.plate.dimension.cols"
+                    :style="
+                        'background-color: ' +
+                        percentageToHsl(wells[row][col]?.measurements[0].value || -1, 120, 0)
+                    "
+                    @click="emit('well-selected', wells[row][col])">
+                    <a v-if="wells[row][col]">
+                        {{ wells[row][col]!.hr_position }}
+                    </a>
+                    <q-tooltip
+                        v-if="wells[row][col]"
+                        anchor="top middle"
+                        self="bottom middle"
+                        :offset="[5, 5]">
+                        {{ wells[row][col]?.compound.identifier }}
+                        <br />
+                        {{ wells[row][col]?.compound.smile }}
+                    </q-tooltip>
+                </td>
+            </tr>
+        </table>
+    </div>
 </template>
 
 <style scoped lang="sass">
@@ -88,11 +92,16 @@ table
   border: 1px solid #bbb
   border-radius: 12px
   padding: 4px 8px 8px 4px
+  overflow: hidden
 td
   border: 1px solid #4c4c4c
   border-radius: 12px
   width: 24px
   height: 24px
+  min-width: 24px
+  min-height: 24px
+  max-width: 24px
+  max-height: 24px
   text-align: center
   vertical-align: middle
   font-size: 8px

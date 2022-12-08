@@ -12,7 +12,7 @@ function toggleLeftDrawer() {
 </script>
 
 <template>
-    <q-layout view="lHh Lpr lFf">
+    <q-layout view="hHh Lpr lFf">
         <q-header elevated>
             <q-toolbar>
                 <q-btn flat dense round icon="menu" aria-label="Menu" @click="toggleLeftDrawer" />
@@ -21,7 +21,7 @@ function toggleLeftDrawer() {
             </q-toolbar>
         </q-header>
 
-        <q-drawer v-model="leftDrawerOpen" show-if-above bordered elevated behavior="desktop" :width="400">
+        <q-drawer v-model="leftDrawerOpen" show-if-above bordered behavior="desktop" :width="400">
             <navigation-tree />
         </q-drawer>
 

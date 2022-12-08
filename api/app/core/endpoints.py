@@ -5,7 +5,7 @@ from drf_auto_endpoint.router import register
 
 from .models import (Plate, PlateDimension, Well, WellRelation)
 from .serializers import (WellSerializer, PlateSerializer)
-from .views import WellViewSet
+from .views import (PlateViewSet, WellViewSet)
 
 
 class DefaultEndpoint(Endpoint):
@@ -24,7 +24,9 @@ class DefaultEndpoint(Endpoint):
 class PlateEndpoint(DefaultEndpoint):
     model = Plate
     base_serializer = PlateSerializer
+    base_viewset = PlateViewSet
     filter_fields = ('barcode',)
+    ordering_fields = ('barcode', )
 
 
 @register

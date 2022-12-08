@@ -8,5 +8,17 @@ export default {
         compound_libraries: 'Compound Libraries',
         projects: 'Projects',
         filter: 'Filter',
+        name: 'Name',
+        abbrev: 'Abbrev',
+        value: 'Value',
+        unit: 'Unit',
+        identifier: 'Identifier',
+        smile: 'Smile',
+        amount: 'Amount',
+    },
+    title: {
+        compound: 'Compound',
+        well: 'Well',
+        measurements: 'Measurements',
     },
 }
