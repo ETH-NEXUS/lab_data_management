@@ -19,11 +19,15 @@ services:
   api:
     build:
       context: api
+      args:
+        ENABLE_JUPYTER: ${ENABLE_JUPYTER}
     hostname: api
     restart: unless-stopped
     entrypoint: sh -c '/app/entrypoint.sh'
     volumes:
       - ./api/app:/app
+      - ./api/notebooks:/notebooks
+      - ./api/app/notebook/startup:/root/.ipython/profile_default/startup
       - ./api/backups:/vol/backups
       - ./api/static:/vol/web/static:z
       - ./api/media:/vol/web/media:z

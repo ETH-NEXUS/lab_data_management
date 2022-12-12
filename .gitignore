@@ -298,3 +298,5 @@ dist
 static/
 media/
 backups/
+
+*.ipynb

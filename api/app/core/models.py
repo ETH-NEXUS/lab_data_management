@@ -73,6 +73,9 @@ class Plate(TimeTrackedModel):
     project = models.ForeignKey(Project, null=True, blank=True, on_delete=models.RESTRICT, related_name=related_name)
     library = models.ForeignKey(CompoundLibrary, null=True, blank=True, on_delete=models.RESTRICT, related_name=related_name)
 
+    class Meta:
+        ordering = ('-id',)
+
     def __str__(self):
         return f"{self.barcode}"
 

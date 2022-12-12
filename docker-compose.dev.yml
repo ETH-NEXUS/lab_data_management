@@ -17,6 +17,7 @@ services:
       - DEV=True
     ports:
       - "5090:5000"
+      - "8890:8888"
   db:
     ports:
       - "54390:5432"
