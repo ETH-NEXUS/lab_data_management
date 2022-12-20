@@ -13,9 +13,9 @@ class PlateViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         measurements = Prefetch('measurements', queryset=Measurement.objects.select_related('well').all())
-        wells = Prefetch('wells', queryset=Well.objects.select_related('sample', 'compound').order_by(
-            'position').prefetch_related('from_well').prefetch_related(measurements))
-        return Plate.objects.select_related('dimension', 'project', 'library').prefetch_related(wells)
+        wells = Prefetch('wells', queryset=Well.objects.select_related('sample').order_by(
+            'position').prefetch_related('compounds').prefetch_related('source_wells').prefetch_related(measurements))
+        return Plate.objects.select_related('dimension', 'experiment', 'library').prefetch_related(wells)
 
     def filter_queryset(self, queryset):
         return super().filter_queryset(queryset)
@@ -28,5 +28,6 @@ class WellViewSet(viewsets.ModelViewSet):
     @action(detail=True, methods=['get'])
     def structure(self, request, pk=None):
         return Response({
-            'src': Well.objects.get(pk=pk).compound.structure_image
+            # FIXME: What if we have multiple components?
+            'src': Well.objects.get(pk=pk).compounds.first().structure_image
         })

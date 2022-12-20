@@ -16,7 +16,7 @@ function toggleLeftDrawer() {
         <q-header elevated>
             <q-toolbar>
                 <q-btn flat dense round icon="menu" aria-label="Menu" @click="toggleLeftDrawer" />
-                <q-toolbar-title>Lab Management</q-toolbar-title>
+                <q-toolbar-title>Lab Automation</q-toolbar-title>
                 <div>DRAFT</div>
             </q-toolbar>
         </q-header>

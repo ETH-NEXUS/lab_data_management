@@ -24,9 +24,9 @@ export interface CompoundLibrary {
 }
 
 export interface Compound {
+    name: string
     identifier: string
     structure: string
-    smile: string
     library: CompoundLibrary
     data: object | null
 }
@@ -37,7 +37,7 @@ export interface Well {
     position: number
     hr_position: string
     sample: Sample
-    compound: Compound
+    compounds: Array<Compound>
     amount: number
     measurements: Array<Measurement>
 }

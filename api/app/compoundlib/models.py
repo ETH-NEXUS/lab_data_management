@@ -19,13 +19,13 @@ class CompoundLibrary(models.Model):
 
 class Compound(models.Model):
     identifier = models.CharField(max_length=50, unique=True)
+    name = models.TextField()
     structure = models.TextField()
-    smile = models.TextField()
     library = models.ForeignKey(CompoundLibrary, null=True, on_delete=models.RESTRICT)
     data = models.JSONField(null=True)
 
     def __str__(self):
-        return f"{self.identifier}"
+        return f"{self.name}"
 
     @property
     def structure_image(self):

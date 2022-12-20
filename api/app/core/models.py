@@ -1,7 +1,8 @@
 from django.db import models
-from django.db.models import F
+from django.db.models import F, Sum
 from django.core.validators import MinValueValidator
 from django.utils import timezone
+from django.conf import settings
 from .mapping import PositionMapper
 from .mapping import MappingList
 from compoundlib.models import CompoundLibrary, Compound
@@ -27,6 +28,15 @@ class TimeTrackedModel(models.Model):
 
 class Project(TimeTrackedModel):
     name = models.CharField(max_length=50)
+
+    def __str__(self):
+        return self.name
+
+
+class Experiment(TimeTrackedModel):
+    related_name = 'experiments'
+    name = models.CharField(max_length=50)
+    project = models.ForeignKey(Project, on_delete=models.RESTRICT, related_name=related_name)
 
     def __str__(self):
         return self.name
@@ -70,7 +80,7 @@ class Plate(TimeTrackedModel):
     barcode = models.CharField(max_length=50, unique=True, db_index=True)
     dimension = models.ForeignKey(
         PlateDimension, on_delete=models.RESTRICT)
-    project = models.ForeignKey(Project, null=True, blank=True, on_delete=models.RESTRICT, related_name=related_name)
+    experiment = models.ForeignKey(Experiment, null=True, blank=True, on_delete=models.RESTRICT, related_name=related_name)
     library = models.ForeignKey(CompoundLibrary, null=True, blank=True, on_delete=models.RESTRICT, related_name=related_name)
 
     class Meta:
@@ -79,26 +89,38 @@ class Plate(TimeTrackedModel):
     def __str__(self):
         return f"{self.barcode}"
 
-    def copy(self, target: 'Plate', amount: float = 0.0):
+    def copy(self, target: 'Plate', amount: float = 0):
         """Copy a plate. Same as map but 1-to-1"""
-        self.map(MappingList.one_to_one(self.dimension.num_wells), target, amount)
+        self.map(MappingList.one_to_one(self.dimension.num_wells, amount), target)
 
-    def map(self, mappingList: MappingList, target: 'Plate', amount: float = 0.0):
-        '''
+    def map(self, mappingList: MappingList, target: 'Plate'):
+        """
         Maps this plate to another plate using a mapping list.
         The mapping list is just a idx (old position) -> value (new position) mapping
-        '''
+        """
         wells = self.wells.all().order_by('position')
         for mapping in mappingList:
             from_well = wells[mapping.from_pos]
             well = Well.objects.create(
                 position=mapping.to_pos,
                 plate=target,
-                compound=from_well.compound,
-                amount=amount
             )
-            well.from_well.add(from_well),
+            well.source_wells.add(from_well),
             well.save()
+            for compound in from_well.compounds.all():
+                # The amount is a suggestion derived from the distribution
+                # rate in the source and the total amount of the withdrawal
+                from_well_compound = WellCompound.objects.get(well=from_well, compound=compound)
+                WellCompound.objects.create(
+                    well=well,
+                    compound=compound,
+                    amount=round(mapping.amount * from_well_compound.amount / from_well.amount, settings.FLOAT_PRECISION) if from_well.amount > 0 else 0
+                )
+                # We add a withdrawal to the source well
+                WellWithdrawal.objects.create(
+                    well=from_well,
+                    amount=mapping.amount
+                )
 
     # def suggestDimension(self):
     #     num_wells = self.wells.count()
@@ -134,25 +156,51 @@ class Well(TimeTrackedModel):
     position = models.PositiveIntegerField()
     sample = models.ForeignKey(
         Sample, null=True, blank=True, on_delete=models.RESTRICT, related_name=related_name)
-    compound = models.ForeignKey(
-        Compound, null=True, blank=True, on_delete=models.RESTRICT, related_name=related_name)
-    amount = models.FloatField(default=0, validators=[MinValueValidator(0)])
-    from_well = models.ManyToManyField(
+    # A well can contain multiple compounds
+    compounds = models.ManyToManyField(
+        Compound, through='WellCompound')
+    # From multiple source wells
+    source_wells = models.ManyToManyField(
         'self', through='WellRelation', symmetrical=False)
 
     def __str__(self):
         return f"{self.plate.barcode}: {self.hr_position}"
 
     @property
-    def hr_position(self):
+    def hr_position(self) -> str:
         return self.plate.dimension.hr_position(self.position)
 
     @property
-    def col(self):
-        return
+    def amount(self) -> float:
+        """
+        Summarizes the compound amounts, subtracts the withdrawals and 
+        returns the total amount of compound in this well.
+        """
+        amount = self.well_compounds.all().aggregate(Sum('amount'))['amount__sum'] or 0
+        withdrawal = self.well_withdrawals.all().aggregate(Sum('amount'))['amount__sum'] or 0
+        return round(amount - withdrawal, settings.FLOAT_PRECISION)
 
     class Meta:
         unique_together = ('plate', 'position')
+
+
+class WellCompound(models.Model):
+    """
+    This is the representation of a compound in a well.
+    """
+    related_name = 'well_compounds'
+    well = models.ForeignKey(Well, on_delete=models.RESTRICT, related_name=related_name)
+    compound = models.ForeignKey(Compound, on_delete=models.RESTRICT, related_name=related_name)
+    amount = models.FloatField(default=0, validators=[MinValueValidator(0)])
+
+
+class WellWithdrawal(TimeTrackedModel):
+    """
+    This is the representation of a withdrawal from a well compound.
+    """
+    related_name = 'well_withdrawals'
+    well = models.ForeignKey(Well, on_delete=models.RESTRICT, related_name=related_name)
+    amount = models.FloatField()
 
 
 class Measurement(TimeTrackedModel):

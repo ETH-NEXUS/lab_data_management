@@ -76,9 +76,9 @@ const percentageToHsl = (percentage: number, hue0: number, hue1: number) => {
                         anchor="top middle"
                         self="bottom middle"
                         :offset="[5, 5]">
-                        {{ wells[row][col]?.compound.identifier }}
+                        {{ wells[row][col]?.compounds[0].identifier }}
                         <br />
-                        {{ wells[row][col]?.compound.smile }}
+                        {{ wells[row][col]?.compounds[0].structure }}
                     </q-tooltip>
                 </td>
             </tr>

@@ -268,3 +268,5 @@ else:
             'level': LOG_LEVEL,
         },
     }
+
+FLOAT_PRECISION = 6

@@ -13,12 +13,16 @@ export default {
         value: 'Value',
         unit: 'Unit',
         identifier: 'Identifier',
-        smile: 'Smile',
+        structure: 'Structure',
         amount: 'Amount',
     },
     title: {
         compound: 'Compound',
         well: 'Well',
         measurements: 'Measurements',
+    },
+    action: {
+        new_project: 'New project',
+        project_properties: 'Project properties',
     },
 }

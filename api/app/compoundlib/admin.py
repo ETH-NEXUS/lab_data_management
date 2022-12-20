@@ -16,8 +16,8 @@ class CompoundLibraryAdmin(admin.ModelAdmin):
 
 @admin.register(Compound)
 class CompoundAdmin(admin.ModelAdmin):
-    list_display = ('get_structure', 'identifier', 'smile', 'library', 'get_data')
-    search_fields = ('identifier', 'smile', 'library__name')
+    list_display = ('get_structure', 'identifier', 'structure', 'library', 'get_data')
+    search_fields = ('identifier', 'structure', 'library__name')
     list_filter = ('library__name',)
 
     def get_structure(self, compound: Compound):

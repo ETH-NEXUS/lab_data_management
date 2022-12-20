@@ -1,7 +1,7 @@
 from django.test import TestCase
 
 from compoundlib.models import Compound
-from .models import Plate, PlateDimension, Well
+from .models import Plate, PlateDimension, Well, WellWithdrawal, WellCompound
 from .mapping import Mapping, MappingList
 from .helper import charToAlphaPos
 
@@ -53,13 +53,16 @@ class PlateTest(TestCase):
         for i in range(self.dimension.num_wells):
             comp = Compound.objects.create(
                 identifier=f"comp{i}",
-                structure='c=c',
-                smile='c=c'
+                structure='c=c'
             )
-            Well.objects.create(
+            well = Well.objects.create(
                 plate=self.sourcePlate,
-                position=i,
-                compound=comp
+                position=i
+            )
+            WellCompound.objects.create(
+                well=well,
+                compound=comp,
+                amount=1
             )
         self.targetPlate = Plate.objects.create(
             barcode='000002',
@@ -75,21 +78,117 @@ class PlateTest(TestCase):
         mappingList.add(Mapping(3, 2))
         mappingList.add(Mapping(4, 1))
         mappingList.add(Mapping(5, 0))
-        self.sourcePlate.map(mappingList, self.targetPlate, 1.0)
+        self.sourcePlate.map(mappingList, self.targetPlate)
 
         targetWells = self.targetPlate.wells.all().order_by('position')
-        self.assertEqual('comp5', targetWells[0].compound.identifier)
-        self.assertEqual('comp3', targetWells[2].compound.identifier)
-        self.assertEqual(1, len(targetWells[3].from_well.all()))
-        self.assertEqual(2, targetWells[3].from_well.first().position)
-        self.assertEqual('comp2', targetWells[3].from_well.first().compound.identifier)
+        self.assertEqual('comp5', targetWells[0].compounds.first().identifier)
+        self.assertEqual('comp3', targetWells[2].compounds.first().identifier)
+        self.assertEqual(1, len(targetWells[3].source_wells.all()))
+        self.assertEqual(2, targetWells[3].source_wells.first().position)
+        self.assertEqual('comp2', targetWells[3].source_wells.first().compounds.first().identifier)
+
+    def test_plate_mapping_with_amounts(self):
+        """Mapping a plate to another"""
+        mappingList = MappingList()
+        mappingList.add(Mapping(0, 5, 0.1))
+        mappingList.add(Mapping(1, 4, 0.1))
+        mappingList.add(Mapping(2, 3, 0.1))
+        mappingList.add(Mapping(3, 2, 0.1))
+        mappingList.add(Mapping(4, 1, 0.1))
+        mappingList.add(Mapping(5, 0, 0.1))
+        self.sourcePlate.map(mappingList, self.targetPlate)
+
+        sourceWells = self.sourcePlate.wells.all().order_by('position')
+        for sourceWell in sourceWells:
+            self.assertEqual(0.9, sourceWell.amount)
+
+        targetWells = self.targetPlate.wells.all().order_by('position')
+        for targetWell in targetWells:
+            self.assertEqual(0.1, targetWell.amount)
 
     def test_plate_copy(self):
         """Copy a plate to another"""
 
         mappingList = MappingList.one_to_one(self.dimension.num_wells)
-        self.sourcePlate.map(mappingList, self.targetPlate, 1.0)
+        self.sourcePlate.map(mappingList, self.targetPlate)
 
         targetWells = self.targetPlate.wells.all().order_by('position')
         for p in range(len(targetWells)):
-            self.assertEqual(f"comp{p}", targetWells[p].compound.identifier)
+            self.assertEqual(f"comp{p}", targetWells[p].compounds.first().identifier)
+
+
+class WellTest(TestCase):
+    def setUp(self):
+        self.dimension = PlateDimension.objects.create(
+            name='dim_3x2',
+            cols=3,
+            rows=2
+        )
+        self.plate = Plate.objects.create(
+            barcode='123456789',
+            dimension=self.dimension,
+        )
+
+    def test_withdrawal(self):
+        compound = Compound.objects.create(identifier='ABC', structure='A-B-C')
+        well = Well.objects.create(position=0, plate=self.plate)
+        WellCompound.objects.create(well=well, compound=compound, amount=100)
+        WellWithdrawal.objects.create(well=well, amount=10)
+        WellWithdrawal.objects.create(well=well, amount=10)
+        self.assertEqual(80, well.amount)
+
+    def test_source_plate_discovery(self):
+        """ Test if we can find the correct source plate if we map twice """
+
+        def __fillPlateWithCompounds(plate):
+            for i in range(plate.dimension.num_wells):
+                comp = Compound.objects.create(
+                    identifier=f"{plate.barcode}_comp{i}",
+                    structure=f"comp{i}"
+                )
+                well = Well.objects.create(
+                    plate=plate,
+                    position=i
+                )
+                WellCompound.objects.create(
+                    well=well,
+                    compound=comp,
+                    amount=1
+                )
+
+        plate1 = Plate.objects.create(
+            barcode='0001',
+            dimension=self.dimension,
+        )
+
+        plate2 = Plate.objects.create(
+            barcode='0002',
+            dimension=self.dimension,
+        )
+
+        plate3 = Plate.objects.create(
+            barcode='0003',
+            dimension=self.dimension,
+        )
+
+        __fillPlateWithCompounds(plate1)
+
+        plate1.copy(plate2, 0.6)
+
+        for well in plate1.wells.all():
+            self.assertEqual(0.4, well.amount)
+
+        for well in plate2.wells.all():
+            self.assertEqual(0.6, well.amount)
+            self.assertEqual(plate1, well.source_wells.first().plate)
+
+        plate2.copy(plate3, 0.2)
+
+        for well in plate2.wells.all():
+            self.assertEqual(0.4, well.amount)
+            self.assertEqual(plate1, well.source_wells.first().plate)
+
+        for well in plate3.wells.all():
+            self.assertEqual(0.2, well.amount)
+            self.assertEqual(plate2, well.source_wells.first().plate)
+            self.assertEqual(plate1, well.source_wells.first().source_wells.first().plate)

@@ -40,11 +40,13 @@ const nodes = computed<Array<QTreeNode>>(() => {
     const _compoundLibraries: QTreeNode = {
         label: t('label.compound_libraries'),
         icon: 'science',
+        header: 'compounds',
         children: [],
     }
     const _projects: QTreeNode = {
         label: t('label.projects'),
         icon: 'biotech',
+        header: 'projects',
         children: [],
     }
     const nodes: Array<QTreeNode> = []
@@ -79,7 +81,23 @@ const nodes = computed<Array<QTreeNode>>(() => {
                 <q-icon v-if="filter !== ''" name="clear" class="cursor-pointer" @click="resetFilter" />
             </template>
         </q-input>
-        <q-tree :nodes="nodes" dense node-key="label" v-model:expanded="expanded" :filter="filter" />
+        <q-tree :nodes="nodes" dense node-key="label" v-model:expanded="expanded" :filter="filter">
+            <template v-slot:header-projects="prop">
+                <q-icon :name="prop.node.icon || 'star'" size="28px" class="q-mr-sm" />
+                <q-menu touch-position context-menu>
+                    <q-list dense style="min-width: 100px">
+                        <q-item clickable v-close-popup>
+                            <q-item-section>{{ t('action.new_project') }}</q-item-section>
+                        </q-item>
+                        <q-separator />
+                        <q-item clickable v-close-popup>
+                            <q-item-section>{{ t('action.project_properties') }}</q-item-section>
+                        </q-item>
+                    </q-list>
+                </q-menu>
+                {{ prop.node.label }}
+            </template>
+        </q-tree>
     </div>
 </template>
 

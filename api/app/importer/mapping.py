@@ -14,8 +14,8 @@ class SdfMapping():
     DEFAULT_MAPPING = {
         'compound': {
             'identifier': 'IDNUMBER',
-            'structure': 'Structure',
-            'smile': 'NAME',
+            'name': 'NAME',
+            'structure': 'STRUCTURE'
         },
         'plate': {
             'barcode': 'PLATE_NUMBER1',
@@ -48,16 +48,16 @@ class SdfMapping():
         self.mapping.update(mapping)
 
     @property
+    def name(self) -> str:
+        return self.mapping['compound']['name']
+
+    @property
     def identifier(self) -> str:
         return self.mapping['compound']['identifier']
 
     @property
-    def structure(self):
+    def structure(self) -> str:
         return self.mapping['compound']['structure']
-
-    @property
-    def smile(self) -> str:
-        return self.mapping['compound']['smile']
 
     @property
     def barcodes(self) -> tuple[str]:

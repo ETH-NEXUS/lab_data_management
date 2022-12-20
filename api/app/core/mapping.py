@@ -5,17 +5,22 @@ import re
 class Mapping():
     """Represents one mapping"""
 
-    def __init__(self, from_pos: int, to_pos: int):
+    def __init__(self, from_pos: int, to_pos: int, amount: float = 0):
         self.__from = from_pos
         self.__to = to_pos
+        self.__amount = amount
 
     @property
-    def from_pos(self):
+    def from_pos(self) -> int:
         return self.__from
 
     @property
-    def to_pos(self):
+    def to_pos(self) -> int:
         return self.__to
+
+    @property
+    def amount(self) -> float:
+        return self.__amount
 
 
 class MappingList():
@@ -44,11 +49,11 @@ class MappingList():
             raise StopIteration
 
     @classmethod
-    def one_to_one(cls, n_pos: int):
+    def one_to_one(cls, n_pos: int, amount: float = 0):
         """returns a one_to_one mapping for n_pos positions"""
         mappings = cls()
         for p in range(n_pos):
-            mappings.add(Mapping(p, p))
+            mappings.add(Mapping(p, p, amount))
         return mappings
 
 
@@ -59,6 +64,10 @@ class PositionMappingError():
 
 
 class PositionMapper():
+    """ 
+    Maps a string notation position to row, col and the other way round. 
+    i.e. A2 -> row: 0, col: 1
+    """
     @staticmethod
     def map(position: str) -> tuple[int, int]:
         match = re.match(

@@ -23,12 +23,16 @@ const props = defineProps({
             <div class="col-12">
                 <table>
                     <tr>
-                        <th>{{ t('label.identifier') }}</th>
-                        <td>{{ props.well.compound.identifier }}</td>
+                        <th>{{ t('label.name') }}</th>
+                        <td>{{ props.well.compounds[0].name }}</td>
                     </tr>
                     <tr>
-                        <th>{{ t('label.smile') }}</th>
-                        <td>{{ props.well.compound.smile }}</td>
+                        <th>{{ t('label.identifier') }}</th>
+                        <td>{{ props.well.compounds[0].identifier }}</td>
+                    </tr>
+                    <tr>
+                        <th>{{ t('label.structure') }}</th>
+                        <td>{{ props.well.compounds[0].structure }}</td>
                     </tr>
                     <tr>
                         <td colspan="2">

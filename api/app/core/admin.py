@@ -6,7 +6,7 @@ from .models import (Plate, PlateDimension, Measurement, Sample, Well, Location,
 
 @admin.register(Plate)
 class PlateAdmin(admin.ModelAdmin):
-    list_display = ('barcode', 'dimension', 'library', 'project')
+    list_display = ('barcode', 'dimension', 'library', 'experiment')
     search_fields = ('barcode',)
     readonly_fields = ('get_wells',)
 
@@ -16,10 +16,10 @@ class PlateAdmin(admin.ModelAdmin):
         for pos, well in enumerate(plate.wells.order_by('position').all()):
             if pos % cols == 0:
                 out += '</tr><tr>'
-            if well.compound:
-                out += f"<td><a href='#' title='{well.compound.identifier}'>{well.hr_position}<br/><img src='{well.compound.structure_image}' width='50' height='50'/></a></td>"
+            if well.compounds:
+                out += f"<td><a href='#' title='{', '.join([c.identifier for c in well.compounds])}'>{well.hr_position}</a></td>"
             else:
-                out += f"<td><a href='#' title='{well.compound.identifier}'>{well.hr_position}<br/></a></td>"
+                out += f"<td><a href='#' title='EMPTY'>{well.hr_position}<br/></a></td>"
         out += '</tr></table>'
         return mark_safe(out)
 
@@ -34,10 +34,10 @@ class PlateDimensionAdmin(admin.ModelAdmin):
 
 @admin.register(Well)
 class WellAdmin(admin.ModelAdmin):
-    list_display = ('__str__', 'plate', 'position', 'hr_position', 'compound', 'sample', 'amount', 'get_measurements')
-    search_fields = ('plate__barcode', 'compound__identifier')
+    list_display = ('__str__', 'plate', 'position', 'hr_position', 'sample', 'amount', 'get_measurements')
+    search_fields = ('plate__barcode', 'compounds__identifier')
     list_filter = ('plate__barcode', )
-    autocomplete_fields = ('plate', 'compound', 'sample')
+    autocomplete_fields = ('plate', 'compounds', 'sample')
 
     def get_measurements(self, well: Well):
         return ', '.join([str(m) for m in well.measurements.all()])

@@ -6,7 +6,7 @@ from compoundlib.models import CompoundLibrary, Compound
 class CompoundSerializer(serializers.ModelSerializer):
     class Meta:
         model = Compound
-        fields = ('identifier', 'smile')
+        fields = ('name', 'identifier', 'structure')
 
 
 class MeasurementSerializer(serializers.ModelSerializer):
@@ -18,7 +18,7 @@ class MeasurementSerializer(serializers.ModelSerializer):
 class WellSerializer(serializers.ModelSerializer):
     measurements = MeasurementSerializer(many=True)
     hr_position = serializers.ReadOnlyField()
-    compound = CompoundSerializer()
+    compounds = CompoundSerializer(many=True)
 
     class Meta:
         model = Well
