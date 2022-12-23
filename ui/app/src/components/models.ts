@@ -1,64 +1,102 @@
 import {CompoundExpressionNode} from '@vue/compiler-core'
 
 export interface Todo {
-    id: number
-    content: string
+  id: number
+  content: string
+}
+
+export interface Experiment {
+  id: number
+  name: string
+  plates: Array<Plate>
+  project: number
 }
 
 export interface Project {
-    name: string
+  id: number
+  name: string
+  experiments: Array<Experiment>
 }
 
 export interface Meta {
-    totalCount: number
+  totalCount: number
 }
 
 export interface Sample {
-    name: string
+  id: number
+  name: string
 }
 
 export interface CompoundLibrary {
-    name: string
-    file_name: string
-    plates: Array<Plate>
+  id: number
+  name: string
+  file_name: string
+  plates: Array<Plate>
 }
 
 export interface Compound {
-    name: string
-    identifier: string
-    structure: string
-    library: CompoundLibrary
-    data: object | null
+  id: number
+  name: string
+  identifier: string
+  structure: string
+  library: CompoundLibrary
+  data: object | null
+  amount: number
+  wells: Array<Well>
+  compound: number
 }
 
+export interface Withdrawal {
+  id: number
+  created_at: Date
+  well: Well
+  amount: number
+  target_well?: Well
+}
 export interface Well {
-    id: number
-    plate: Plate
-    position: number
-    hr_position: string
-    sample: Sample
-    compounds: Array<Compound>
-    amount: number
-    measurements: Array<Measurement>
+  id: number
+  plate: Plate
+  position: number
+  sample: Sample
+  amount: number
+  hr_position?: string
+  compounds?: Array<Compound>
+  measurements?: Array<Measurement>
+  withdrawals?: Array<Withdrawal>
+  donors?: Array<Withdrawal>
+  mixture?: boolean
 }
 
 export interface PlateDimension {
-    name: string
-    cols: number
-    rows: number
+  id: number
+  name: string
+  cols: number
+  rows: number
 }
 
 export interface Plate {
-    barcode: string
-    dimension: PlateDimension
-    project?: Project
-    library?: CompoundLibrary
-    wells?: Array<Well>
+  id: number
+  barcode: string
+  dimension: PlateDimension
+  project?: Project
+  library?: CompoundLibrary
+  wells?: Array<Well>
 }
 
+export interface MeasurementFeature {
+  id: number
+  name: string
+  abbrev: string
+  unit: string
+}
 export interface Measurement {
-    name: string
-    abbrev: string
-    unit: string
-    value: number
+  id: number
+  value: number
+  feature: MeasurementFeature
+  well?: Well
+}
+
+export interface WellInfo {
+  well: Well
+  position: number
 }

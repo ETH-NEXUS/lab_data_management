@@ -83,9 +83,9 @@ class PlateTest(TestCase):
         targetWells = self.targetPlate.wells.all().order_by('position')
         self.assertEqual('comp5', targetWells[0].compounds.first().identifier)
         self.assertEqual('comp3', targetWells[2].compounds.first().identifier)
-        self.assertEqual(1, len(targetWells[3].source_wells.all()))
-        self.assertEqual(2, targetWells[3].source_wells.first().position)
-        self.assertEqual('comp2', targetWells[3].source_wells.first().compounds.first().identifier)
+        self.assertEqual(1, len(targetWells[3].donors.all()))
+        self.assertEqual(2, targetWells[3].donors.first().well.position)
+        self.assertEqual('comp2', targetWells[3].donors.first().well.compounds.first().identifier)
 
     def test_plate_mapping_with_amounts(self):
         """Mapping a plate to another"""
@@ -180,15 +180,15 @@ class WellTest(TestCase):
 
         for well in plate2.wells.all():
             self.assertEqual(0.6, well.amount)
-            self.assertEqual(plate1, well.source_wells.first().plate)
+            self.assertEqual(plate1, well.donors.first().well.plate)
 
         plate2.copy(plate3, 0.2)
 
         for well in plate2.wells.all():
             self.assertEqual(0.4, well.amount)
-            self.assertEqual(plate1, well.source_wells.first().plate)
+            self.assertEqual(plate1, well.donors.first().well.plate)
 
         for well in plate3.wells.all():
             self.assertEqual(0.2, well.amount)
-            self.assertEqual(plate2, well.source_wells.first().plate)
-            self.assertEqual(plate1, well.source_wells.first().source_wells.first().plate)
+            self.assertEqual(plate2, well.donors.first().well.plate)
+            self.assertEqual(plate1, well.donors.first().well.donors.first().well.plate)

@@ -27,7 +27,7 @@ class TimeTrackedModel(models.Model):
 
 
 class Project(TimeTrackedModel):
-    name = models.CharField(max_length=50)
+    name = models.CharField(max_length=50, unique=True)
 
     def __str__(self):
         return self.name
@@ -40,6 +40,9 @@ class Experiment(TimeTrackedModel):
 
     def __str__(self):
         return self.name
+
+    class Meta:
+        unique_together = ('name', 'project')
 
 
 class Location(TimeTrackedModel):
@@ -79,7 +82,7 @@ class Plate(TimeTrackedModel):
     related_name = 'plates'
     barcode = models.CharField(max_length=50, unique=True, db_index=True)
     dimension = models.ForeignKey(
-        PlateDimension, on_delete=models.RESTRICT)
+        PlateDimension, on_delete=models.RESTRICT, default=None, null=True)
     experiment = models.ForeignKey(Experiment, null=True, blank=True, on_delete=models.RESTRICT, related_name=related_name)
     library = models.ForeignKey(CompoundLibrary, null=True, blank=True, on_delete=models.RESTRICT, related_name=related_name)
 
@@ -105,7 +108,6 @@ class Plate(TimeTrackedModel):
                 position=mapping.to_pos,
                 plate=target,
             )
-            well.source_wells.add(from_well),
             well.save()
             for compound in from_well.compounds.all():
                 # The amount is a suggestion derived from the distribution
@@ -119,6 +121,7 @@ class Plate(TimeTrackedModel):
                 # We add a withdrawal to the source well
                 WellWithdrawal.objects.create(
                     well=from_well,
+                    target_well=well,
                     amount=mapping.amount
                 )
 
@@ -159,9 +162,6 @@ class Well(TimeTrackedModel):
     # A well can contain multiple compounds
     compounds = models.ManyToManyField(
         Compound, through='WellCompound')
-    # From multiple source wells
-    source_wells = models.ManyToManyField(
-        'self', through='WellRelation', symmetrical=False)
 
     def __str__(self):
         return f"{self.plate.barcode}: {self.hr_position}"
@@ -177,7 +177,7 @@ class Well(TimeTrackedModel):
         returns the total amount of compound in this well.
         """
         amount = self.well_compounds.all().aggregate(Sum('amount'))['amount__sum'] or 0
-        withdrawal = self.well_withdrawals.all().aggregate(Sum('amount'))['amount__sum'] or 0
+        withdrawal = self.withdrawals.all().aggregate(Sum('amount'))['amount__sum'] or 0
         return round(amount - withdrawal, settings.FLOAT_PRECISION)
 
     class Meta:
@@ -193,34 +193,34 @@ class WellCompound(models.Model):
     compound = models.ForeignKey(Compound, on_delete=models.RESTRICT, related_name=related_name)
     amount = models.FloatField(default=0, validators=[MinValueValidator(0)])
 
+    class Meta:
+        unique_together = ('well', 'compound')
+
 
 class WellWithdrawal(TimeTrackedModel):
     """
     This is the representation of a withdrawal from a well compound.
     """
-    related_name = 'well_withdrawals'
+    related_name = 'withdrawals'
     well = models.ForeignKey(Well, on_delete=models.RESTRICT, related_name=related_name)
+    target_well = models.ForeignKey(Well, null=True, on_delete=models.RESTRICT, related_name='donors')
     amount = models.FloatField()
+
+
+class MeasurementFeature(models.Model):
+    name = models.CharField(max_length=50, null=True, blank=True, verbose_name='measurement')
+    abbrev = models.CharField(max_length=4, null=True, blank=True)
+    unit = models.CharField(max_length=10, null=True, blank=True)
 
 
 class Measurement(TimeTrackedModel):
     related_name = 'measurements'
-    name = models.CharField(max_length=50, null=True, blank=True, verbose_name='measurement')
-    abbrev = models.CharField(max_length=4, null=True, blank=True)
-    unit = models.CharField(max_length=10, null=True, blank=True)
-    value = models.FloatField()
     well = models.ForeignKey(Well, on_delete=models.RESTRICT, related_name=related_name)
+    feature = models.ForeignKey(MeasurementFeature, on_delete=models.RESTRICT, related_name=related_name)
+    value = models.FloatField()
 
     def __str__(self):
         return f"{self.abbrev}: {self.value}{self.unit}"
 
-
-class WellRelation(models.Model):
-    from_well = models.ForeignKey(
-        Well, on_delete=models.RESTRICT, related_name='to_wells')
-    to_well = models.ForeignKey(
-        Well, on_delete=models.RESTRICT, related_name='from_wells')
-    amount = models.FloatField(default=0, validators=[MinValueValidator(0)])
-
-    def __str__(self):
-        return f"{self.from_well} -> {self.to_well}"
+    class Meta:
+        unique_together = ('well', 'feature')

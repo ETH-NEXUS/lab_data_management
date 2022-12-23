@@ -3,8 +3,8 @@ from drf_auto_endpoint.endpoints import Endpoint
 from drf_auto_endpoint.router import register
 
 from .models import (CompoundLibrary, Compound)
-from .serializers import CompoundLibrarySerializer
-from .views import CompoundLibraryViewSet
+from .serializers import CompoundLibrarySerializer, CompoundSerializer
+from .views import CompoundLibraryViewSet, CompoundViewSet
 from core.endpoints import DefaultEndpoint
 
 
@@ -19,3 +19,7 @@ class CompoundLibraryEndpoint(DefaultEndpoint):
 @register
 class CompoundEndpoint(DefaultEndpoint):
     model = Compound
+    serializer = CompoundSerializer
+    base_viewset = CompoundViewSet
+    filter_fields = ('name',)
+    search_fields = ('name',)

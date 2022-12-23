@@ -1,7 +1,7 @@
 from django.contrib import admin
 from django.utils.html import mark_safe
 
-from .models import (Plate, PlateDimension, Measurement, Sample, Well, Location, Project)
+from .models import (Plate, PlateDimension, Measurement, MeasurementFeature, Sample, Well, Location, Project)
 
 
 @admin.register(Plate)
@@ -46,7 +46,12 @@ class WellAdmin(admin.ModelAdmin):
 
 @admin.register(Measurement)
 class MeasurementAdmin(admin.ModelAdmin):
-    list_display = ('name', 'abbrev', 'unit', 'value')
+    list_display = ('value', )
+
+
+@admin.register(MeasurementFeature)
+class MeasurementFeatureAdmin(admin.ModelAdmin):
+    list_display = ('name', 'abbrev', 'unit')
 
 
 @admin.register(Sample)
