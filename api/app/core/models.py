@@ -1,8 +1,10 @@
-from django.db import models
+from django.db import models, transaction
 from django.db.models import F, Sum
 from django.core.validators import MinValueValidator
 from django.utils import timezone
 from django.conf import settings
+from django.core.exceptions import ObjectDoesNotExist
+from django.utils.translation import gettext_lazy as _
 from .mapping import PositionMapper
 from .mapping import MappingList
 from compoundlib.models import CompoundLibrary, Compound
@@ -83,14 +85,18 @@ class Plate(TimeTrackedModel):
     barcode = models.CharField(max_length=50, unique=True, db_index=True)
     dimension = models.ForeignKey(
         PlateDimension, on_delete=models.RESTRICT, default=None, null=True)
-    experiment = models.ForeignKey(Experiment, null=True, blank=True, on_delete=models.RESTRICT, related_name=related_name)
-    library = models.ForeignKey(CompoundLibrary, null=True, blank=True, on_delete=models.RESTRICT, related_name=related_name)
+    experiment = models.ForeignKey(Experiment, null=True, blank=True, on_delete=models.CASCADE, related_name=related_name)
+    library = models.ForeignKey(CompoundLibrary, null=True, blank=True, on_delete=models.CASCADE, related_name=related_name)
 
     class Meta:
         ordering = ('-id',)
 
     def __str__(self):
         return f"{self.barcode}"
+
+    @property
+    def num_wells(self):
+        return self.dimension.num_wells
 
     def copy(self, target: 'Plate', amount: float = 0):
         """Copy a plate. Same as map but 1-to-1"""
@@ -99,50 +105,45 @@ class Plate(TimeTrackedModel):
     def map(self, mappingList: MappingList, target: 'Plate'):
         """
         Maps this plate to another plate using a mapping list.
-        The mapping list is just a idx (old position) -> value (new position) mapping
         """
-        wells = self.wells.all().order_by('position')
-        for mapping in mappingList:
-            from_well = wells[mapping.from_pos]
-            well = Well.objects.create(
-                position=mapping.to_pos,
-                plate=target,
-            )
-            well.save()
-            for compound in from_well.compounds.all():
-                # The amount is a suggestion derived from the distribution
-                # rate in the source and the total amount of the withdrawal
-                from_well_compound = WellCompound.objects.get(well=from_well, compound=compound)
-                WellCompound.objects.create(
-                    well=well,
-                    compound=compound,
-                    amount=round(mapping.amount * from_well_compound.amount / from_well.amount, settings.FLOAT_PRECISION) if from_well.amount > 0 else 0
-                )
-                # We add a withdrawal to the source well
-                WellWithdrawal.objects.create(
-                    well=from_well,
-                    target_well=well,
-                    amount=mapping.amount
-                )
+        with transaction.atomic():
+            for mapping in mappingList:
+                try:
+                    from_well = Well.objects.get(plate=self, position=mapping.from_pos)
+                except ObjectDoesNotExist:
+                    from_well = None
+                # We only need to map wells that are not empty
+                if from_well:
+                    if not target.dimension:
+                        raise MappingError(_("Target plate has no dimension assigned"))
+                    if mapping.to_pos >= target.num_wells:
+                        raise MappingError(_("Target plate too small"))
+                    well, created = Well.objects.get_or_create(
+                        position=mapping.to_pos,
+                        plate=target,
+                    )
+                    if created:
+                        well.save()
+                    for compound in from_well.compounds.all():
+                        # The amount is a suggestion derived from the distribution
+                        # rate in the source and the total amount of the withdrawal
+                        from_well_compound = WellCompound.objects.get(well=from_well, compound=compound)
+                        WellCompound.objects.update_or_create(
+                            well=well,
+                            compound=compound,
+                            defaults={
+                                'amount': round(mapping.amount * from_well_compound.amount / from_well.initial_amount, settings.FLOAT_PRECISION) if from_well.amount > 0 else 0
+                            }
 
-    # def suggestDimension(self):
-    #     num_wells = self.wells.count()
-    #     candidates = PlateDimension.objects.filter(num_wells=num_wells)
-    #     if candidates.count() > 0:
-    #         return candidates.first()
-    #     else:
-    #         cols = 0
-    #         rows = 0
-    #         if num_wells % 2 != 0:
-    #             if num_wells < 100:
-    #                 if num_wells % 8 == 0:
-    #                     cols = 8
-    #                     rows = num_wells / 8
-    #             elif num_wells < 400:
-    #                 if num_wells % 16 == 0:
-    #                     cols = 16
-    #                     rows = num_wells / 16
-    #         return PlateDimension.create(name=f"sug_{cols}x{rows}", cols=cols, rows=rows)
+                        )
+                        # We add a withdrawal to the source well
+                        WellWithdrawal.objects.update_or_create(
+                            well=from_well,
+                            target_well=well,
+                            defaults={
+                                'amount': mapping.amount
+                            }
+                        )
 
 
 class Sample(TimeTrackedModel):
@@ -155,8 +156,8 @@ class Sample(TimeTrackedModel):
 class Well(TimeTrackedModel):
     related_name = 'wells'
     plate = models.ForeignKey(
-        Plate, on_delete=models.RESTRICT, related_name=related_name)
-    position = models.PositiveIntegerField()
+        Plate, on_delete=models.CASCADE, related_name=related_name)
+    position = models.PositiveIntegerField(db_index=True)
     sample = models.ForeignKey(
         Sample, null=True, blank=True, on_delete=models.RESTRICT, related_name=related_name)
     # A well can contain multiple compounds
@@ -180,6 +181,15 @@ class Well(TimeTrackedModel):
         withdrawal = self.withdrawals.all().aggregate(Sum('amount'))['amount__sum'] or 0
         return round(amount - withdrawal, settings.FLOAT_PRECISION)
 
+    @property
+    def initial_amount(self) -> float:
+        """
+        Summarizes the compound amounts, subtracts the withdrawals and 
+        returns the total amount of compound in this well.
+        """
+        amount = self.well_compounds.all().aggregate(Sum('amount'))['amount__sum'] or 0
+        return amount
+
     class Meta:
         unique_together = ('plate', 'position')
 
@@ -189,9 +199,12 @@ class WellCompound(models.Model):
     This is the representation of a compound in a well.
     """
     related_name = 'well_compounds'
-    well = models.ForeignKey(Well, on_delete=models.RESTRICT, related_name=related_name)
+    well = models.ForeignKey(Well, on_delete=models.CASCADE, related_name=related_name)
     compound = models.ForeignKey(Compound, on_delete=models.RESTRICT, related_name=related_name)
     amount = models.FloatField(default=0, validators=[MinValueValidator(0)])
+
+    def __str__(self):
+        return f"{self.well.hr_position}: {self.compound.name}"
 
     class Meta:
         unique_together = ('well', 'compound')
@@ -202,9 +215,12 @@ class WellWithdrawal(TimeTrackedModel):
     This is the representation of a withdrawal from a well compound.
     """
     related_name = 'withdrawals'
-    well = models.ForeignKey(Well, on_delete=models.RESTRICT, related_name=related_name)
-    target_well = models.ForeignKey(Well, null=True, on_delete=models.RESTRICT, related_name='donors')
+    well = models.ForeignKey(Well, on_delete=models.CASCADE, related_name=related_name)
+    target_well = models.ForeignKey(Well, null=True, on_delete=models.SET_NULL, related_name='donors')
     amount = models.FloatField()
+
+    def __str__(self):
+        return f"{self.well.hr_position} ({self.amount})"
 
 
 class MeasurementFeature(models.Model):
@@ -215,12 +231,35 @@ class MeasurementFeature(models.Model):
 
 class Measurement(TimeTrackedModel):
     related_name = 'measurements'
-    well = models.ForeignKey(Well, on_delete=models.RESTRICT, related_name=related_name)
+    well = models.ForeignKey(Well, on_delete=models.CASCADE, related_name=related_name)
     feature = models.ForeignKey(MeasurementFeature, on_delete=models.RESTRICT, related_name=related_name)
     value = models.FloatField()
 
     def __str__(self):
-        return f"{self.abbrev}: {self.value}{self.unit}"
+        return f"{self.feature.abbrev}: {self.value}{self.feature.unit}"
 
     class Meta:
         unique_together = ('well', 'feature')
+
+
+class PlateMapping(TimeTrackedModel):
+    source_plate = models.ForeignKey(Plate, on_delete=models.CASCADE, related_name='mapped_to_plates')
+    target_plate = models.ForeignKey(Plate, on_delete=models.CASCADE, related_name='mapped_from_plates')
+    from_column = models.CharField(max_length=50, null=True)
+    to_column = models.CharField(max_length=50, null=True)
+    amount_column = models.CharField(max_length=50, null=True)
+    delimiter = models.CharField(max_length=1, default=',', null=True)
+    quotechar = models.CharField(max_length=1, default='"', null=True)
+    mapping_file = models.FileField(null=True)
+    amount = models.FloatField(default=None, validators=[MinValueValidator(0)], null=True)
+
+    def save(self, *args, **kwargs):
+        if not self.pk:
+            # Object is created: We apply the mapping to the source plate.
+            if self.mapping_file:
+                self.source_plate.map(
+                    MappingList.from_csv(self.mapping_file.name, self.from_column, self.to_column, self.amount_column, self.delimiter, self.quotechar), self.target_plate)
+            else:
+                self.source_plate.copy(self.target_plate, self.amount)
+        # TODO: What do we do on an update or delete??
+        super().save(*args, **kwargs)

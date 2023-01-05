@@ -100,3 +100,21 @@ export interface WellInfo {
   well: Well
   position: number
 }
+
+export interface LabelValue {
+  label: string
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  value: any
+}
+
+export interface PlateMapping {
+  source_plate: number | undefined
+  target_plate: number | undefined
+  from_column: string | undefined
+  to_column: string | undefined
+  amount_column: string | undefined
+  delimiter: string | undefined
+  quotechar: string | undefined
+  mapping_file: File | undefined
+  amount: number | undefined
+}

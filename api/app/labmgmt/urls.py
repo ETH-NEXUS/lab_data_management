@@ -16,8 +16,10 @@ Including another URLconf
 from django.contrib import admin
 from django.urls import path, include
 from drf_auto_endpoint.router import router
+from core.views import MappingPreviewView
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path('api/', include(router.urls))
+    path('api/', include(router.urls)),
+    path('api/mapping_preview/', MappingPreviewView.as_view())
 ]

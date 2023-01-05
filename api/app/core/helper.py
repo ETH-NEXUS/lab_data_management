@@ -26,4 +26,7 @@ def posToAlphaChar(pos: int):
     ...
     26 -> Z
     """
-    return ascii_lowercase[pos - 1].upper()
+    try:
+        return ascii_lowercase[pos - 1].upper()
+    except IndexError:
+        return '?'

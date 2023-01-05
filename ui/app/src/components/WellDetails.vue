@@ -27,8 +27,8 @@ const selectedAmount = ref<number>(0)
 
 const selectedMeasurementFeature = ref<MeasurementFeature>()
 const measurementFeatureOptions = ref<Array<MeasurementFeature>>([])
-const enteredMeasurement = ref<number>(0)
 const filteredMeasurementFeatureOptions = ref<Array<MeasurementFeature>>([])
+const enteredMeasurement = ref<number>(0)
 
 const {wellDetails} = storeToRefs(useSettingsStore())
 const blurCompound = ref<boolean>(false)
@@ -155,7 +155,11 @@ const filterMeasurementFeatures = (query: string, update: (f: () => void) => voi
     <div class="container full-width">
       <div class="row">
         <div class="col-12">
-          <h2>{{ props.wellInfo.well.hr_position }}</h2>
+          <h2>
+            {{ props.wellInfo.well.hr_position }}
+            <small>({{ props.wellInfo.well.position }})</small>
+            <small style="font-size: 10px">[{{ props.wellInfo.well.id }}]</small>
+          </h2>
         </div>
       </div>
       <div class="row">
@@ -172,7 +176,7 @@ const filterMeasurementFeatures = (query: string, update: (f: () => void) => voi
             <tr>
               <th>{{ t('label.name') }}</th>
               <th>{{ t('label.identifier') }}</th>
-              <th>{{ t('label.amount') }}</th>
+              <th>{{ t('label.initial_amount') }}</th>
               <th style="white-space: nowrap">
                 {{ t('label.structure') }}
                 <q-toggle
@@ -195,19 +199,22 @@ const filterMeasurementFeatures = (query: string, update: (f: () => void) => voi
           </table>
           <hr />
         </div>
-        <!-- <div class="col-12">
-          <h4>{{ t('title.well') }}</h4>
+        <div class="col-4">
+          <h4 class="q-ma-none vertical-top">
+            <q-icon name="o_water_drop" />
+            {{ t('title.amount') }}
+          </h4>
         </div>
-        <div class="col-12">
+        <div class="col-8">
           <table>
             <tr>
-              <th>{{ t('label.amount') }}</th>
-              <td>{{ props.wellInfo.well.amount }}{{ t('unit.amount') }}</td>
+              <th>{{ props.wellInfo.well.amount }}{{ t('unit.amount') }}</th>
             </tr>
           </table>
+        </div>
+        <div class="col-12">
           <hr />
-        </div> -->
-
+        </div>
         <div class="col-4">
           <h4 class="q-ma-none vertical-top">
             <q-icon name="remove" />

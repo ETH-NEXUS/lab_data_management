@@ -1,14 +1,15 @@
 <script setup lang="ts">
-import {Plate, PlateDimension, Well, WellInfo, Compound} from 'src/components/models'
+import {Plate, PlateDimension, Well, WellInfo} from 'src/components/models'
 import {ref, onMounted} from 'vue'
 import {api} from '../boot/axios'
 import {useRoute} from 'vue-router'
 import DynamicPlate from '../components/DynamicPlate.vue'
-import {handleError} from '../helpers/errorHandling'
+import {handleError, success} from '../helpers/errorHandling'
 import WellDetails from '../components/WellDetails.vue'
 import {useI18n} from 'vue-i18n'
 import {storeToRefs} from 'pinia'
 import {useSettingsStore} from '../stores/settings'
+import {LabelValue, PlateMapping} from '../components/models'
 
 const route = useRoute()
 const {t} = useI18n()
@@ -17,6 +18,31 @@ const loading = ref<boolean>(true)
 const plate = ref<Plate | null>(null)
 const {platePage} = storeToRefs(useSettingsStore())
 const plateDimensions = ref<Array<PlateDimension>>()
+
+const mapPlateDialog = ref<boolean>(false)
+const selectedTargetPlateId = ref<number>()
+const targetPlateBarcodeOptions = ref<Array<LabelValue>>([])
+const filteredTargetPlateBarcodeOptions = ref<Array<LabelValue>>([])
+
+const mappingFileDelimiter = ref<string>(',')
+const mappingFileDelimiterOptions = [
+  {label: ',', value: ','},
+  {label: ';', value: ';'},
+  {label: 'TAB', value: '\t'},
+]
+const mappingFileQuotechar = ref<string>('"')
+const mappingFileQuotecharOptions = ['"', "'"]
+const mappingFileName = ref<string>('')
+const mappingFile = ref<File>()
+const mappingRows = ref<Array<object> | null>(null)
+
+const mappingFileColumnOptions = ref<Array<string>>([])
+const selectedMappingFileFromColumn = ref<string | undefined>()
+const selectedMappingFileToColumn = ref<string | undefined>()
+const selectedMappingFileAmountColumn = ref<string | undefined>()
+
+const copyPlateDialog = ref<boolean>(false)
+const copyPlateAmount = ref<number>(0)
 
 onMounted(async () => {
   loading.value = true
@@ -36,6 +62,8 @@ onMounted(async () => {
         plateDimensions.value = resp_dimensions.data.results
       }
     }
+    const resp = await api.get('/api/plates/barcodes/?experiment=true')
+    targetPlateBarcodeOptions.value = resp.data.filter((p: LabelValue) => p.label !== plate.value?.barcode)
   } catch (err) {
     handleError(err)
   } finally {
@@ -91,6 +119,107 @@ const measurementAdded = async (well: Well) => {
     handleError(err, false)
   }
 }
+
+const filterTargetPlates = (query: string, update: (f: () => void) => void) => {
+  update(() => {
+    if (query.length > 1) {
+      filteredTargetPlateBarcodeOptions.value = targetPlateBarcodeOptions.value.filter(m =>
+        m.label.includes(query)
+      )
+    } else {
+      filteredTargetPlateBarcodeOptions.value = targetPlateBarcodeOptions.value
+    }
+  })
+}
+
+const mappingFileUploaded = ({files, xhr}: {files: readonly File[]; xhr: {response: string}}) => {
+  mappingFile.value = files[0]
+  mappingFileName.value = files[0].name
+  mappingRows.value = JSON.parse(xhr.response)
+  if (mappingRows.value && mappingRows.value.length > 0) {
+    mappingFileColumnOptions.value = Object.keys(mappingRows.value[0])
+    if (mappingFileColumnOptions.value.length >= 3) {
+      selectedMappingFileFromColumn.value = mappingFileColumnOptions.value[0]
+      selectedMappingFileToColumn.value = mappingFileColumnOptions.value[1]
+      selectedMappingFileAmountColumn.value = mappingFileColumnOptions.value[2]
+    }
+  }
+}
+
+const resetMapPlateDialog = () => {
+  mappingFileName.value = ''
+  mappingRows.value = null
+}
+
+const mapPlate = async () => {
+  try {
+    if (plate.value) {
+      const data: PlateMapping = {
+        source_plate: plate.value.id,
+        target_plate: selectedTargetPlateId.value,
+        from_column: selectedMappingFileFromColumn.value,
+        to_column: selectedMappingFileToColumn.value,
+        amount_column: selectedMappingFileAmountColumn.value,
+        delimiter: mappingFileDelimiter.value,
+        quotechar: mappingFileQuotechar.value,
+        mapping_file: mappingFile.value,
+        amount: undefined,
+      }
+      const formData = new FormData()
+      Object.keys(data).forEach((key: string) => {
+        if (key !== 'mapping_file') {
+          formData.append(key, data[key as keyof PlateMapping] as string)
+        } else {
+          formData.append(key, data[key as keyof PlateMapping] as Blob)
+        }
+      })
+
+      const resp = await api.post('/api/platemappings/', formData, {
+        headers: {'Content-Type': 'multipart/form-data'},
+      })
+      console.debug('Response from mapping:', resp)
+      success(
+        `${t('message.successfully_mapped_plate')} '${plate.value.barcode}' -> '${
+          targetPlateBarcodeOptions.value.find(lv => lv.value === selectedTargetPlateId.value)?.label
+        }'`
+      )
+    }
+  } catch (err) {
+    handleError(err)
+  } finally {
+    loading.value = false
+  }
+}
+
+const copyPlate = async () => {
+  try {
+    if (plate.value) {
+      const data: PlateMapping = {
+        source_plate: plate.value.id,
+        target_plate: selectedTargetPlateId.value,
+        from_column: undefined,
+        to_column: undefined,
+        amount_column: undefined,
+        delimiter: undefined,
+        quotechar: undefined,
+        mapping_file: undefined,
+        amount: copyPlateAmount.value,
+      }
+
+      const resp = await api.post('/api/platemappings/', data)
+      console.debug('Response from mapping:', resp)
+      success(
+        `${t('message.successfully_copied_plate')} '${plate.value.barcode}' -> '${
+          targetPlateBarcodeOptions.value.find(lv => lv.value === selectedTargetPlateId.value)?.label
+        }'`
+      )
+    }
+  } catch (err) {
+    handleError(err)
+  } finally {
+    loading.value = false
+  }
+}
 </script>
 
 <template>
@@ -104,6 +233,20 @@ const measurementAdded = async (well: Well) => {
             <dynamic-plate
               :plate="plate"
               @well-selected="(well_info: WellInfo) => (platePage.selectedWellInfo = well_info)" />
+            <div class="q-mt-md">
+              <q-btn
+                class="q-mr-xs"
+                :label="t('action.map_plate')"
+                icon="o_input"
+                color="secondary"
+                @click="() => (mapPlateDialog = true)" />
+              <q-btn
+                class="q-ml-xs"
+                :label="t('action.copy_plate')"
+                icon="o_copy"
+                color="secondary"
+                @click="() => (copyPlateDialog = true)" />
+            </div>
           </div>
         </template>
         <template v-slot:after>
@@ -140,10 +283,173 @@ const measurementAdded = async (well: Well) => {
         </div>
       </q-form>
     </div>
+    <q-dialog v-model="mapPlateDialog" persistent @hide="resetMapPlateDialog">
+      <q-card style="width: 700px; max-width: 80vw" class="q-px-sm">
+        <q-card-body class="q-gutter-y-sm">
+          <div v-if="!mappingRows" class="row">
+            <div class="col-6 q-pr-xs">
+              <q-select
+                filled
+                emit-value
+                map-options
+                v-model="mappingFileDelimiter"
+                :label="t('label.delimiter')"
+                :options="mappingFileDelimiterOptions" />
+            </div>
+            <div class="col-6 q-pl-xs">
+              <q-select
+                filled
+                v-model="mappingFileQuotechar"
+                :label="t('label.quotechar')"
+                :options="mappingFileQuotecharOptions" />
+            </div>
+          </div>
+          <q-uploader
+            v-if="!mappingRows"
+            :url="`/api/mapping_preview/?delimiter=${mappingFileDelimiter}&quotechar=${mappingFileQuotechar}`"
+            accept=".csv, text/csv, tsv, text/tsv"
+            style="width: 100%"
+            auto-upload
+            hide-upload-btn
+            @uploaded="mappingFileUploaded" />
+          <q-table
+            v-if="mappingRows"
+            :title="mappingFileName"
+            class="sticky-header"
+            dense
+            row-key="from"
+            :rows="mappingRows"
+            :no-data-label="t('message.no_content_in_uploaded_mapping_file')" />
+          <div v-if="mappingRows" class="row">
+            <div class="col-4 q-pr-xs">
+              <q-select
+                filled
+                v-model="selectedMappingFileFromColumn"
+                :label="t('label.from_column')"
+                :options="mappingFileColumnOptions" />
+            </div>
+            <div class="col-4 q-pl-xs">
+              <q-select
+                filled
+                v-model="selectedMappingFileToColumn"
+                :label="t('label.to_column')"
+                :options="mappingFileColumnOptions" />
+            </div>
+            <div class="col-4 q-pl-xs">
+              <q-select
+                filled
+                v-model="selectedMappingFileAmountColumn"
+                :label="t('label.amount_column')"
+                :options="mappingFileColumnOptions" />
+            </div>
+          </div>
+          <q-select
+            v-if="mappingRows"
+            filled
+            v-model="selectedTargetPlateId"
+            emit-value
+            map-options
+            use-input
+            input-debounce="0"
+            :label="t('label.target_plate')"
+            :options="filteredTargetPlateBarcodeOptions"
+            @filter="filterTargetPlates"
+            behavior="menu"
+            :hint="t('hint.target_plate')">
+            <template v-slot:no-option>
+              <q-item>
+                <q-item-section class="text-grey">
+                  {{ t('message.no_plates_found') }}
+                </q-item-section>
+              </q-item>
+            </template>
+          </q-select>
+        </q-card-body>
+        <q-card-actions align="right" class="bg-white text-teal">
+          <q-btn flat :label="t('label.cancel')" v-close-popup />
+          <q-btn
+            flat
+            :label="t('label.map')"
+            :disabled="
+              !selectedTargetPlateId ||
+              !selectedMappingFileFromColumn ||
+              !selectedMappingFileToColumn ||
+              !selectedMappingFileAmountColumn
+            "
+            v-close-popup
+            @click="mapPlate" />
+        </q-card-actions>
+      </q-card>
+    </q-dialog>
+    <q-dialog v-model="copyPlateDialog" persistent>
+      <q-card style="width: 700px; max-width: 80vw" class="q-px-sm">
+        <q-card-body class="q-gutter-y-sm">
+          <q-select
+            filled
+            v-model="selectedTargetPlateId"
+            emit-value
+            map-options
+            use-input
+            input-debounce="0"
+            :label="t('label.target_plate')"
+            :options="filteredTargetPlateBarcodeOptions"
+            @filter="filterTargetPlates"
+            behavior="menu"
+            :hint="t('hint.target_plate')">
+            <template v-slot:no-option>
+              <q-item>
+                <q-item-section class="text-grey">
+                  {{ t('message.no_plates_found') }}
+                </q-item-section>
+              </q-item>
+            </template>
+          </q-select>
+          <q-input
+            v-model="copyPlateAmount"
+            filled
+            :label="t('label.amount')"
+            mask="#.##"
+            fill-mask="0"
+            reverse-fill-mask
+            :hint="t('hint.amount_to_transfer')"
+            input-class="text-right" />
+        </q-card-body>
+        <q-card-actions align="right" class="bg-white text-teal">
+          <q-btn flat :label="t('label.cancel')" v-close-popup />
+          <q-btn
+            flat
+            :label="t('label.copy')"
+            :disabled="!selectedTargetPlateId || copyPlateAmount <= 0"
+            v-close-popup
+            @click="copyPlate" />
+        </q-card-actions>
+      </q-card>
+    </q-dialog>
   </template>
 </template>
 
 <style scoped lang="sass">
 h2
   font-family: 'Courier New', Courier, monospace
+
+.sticky-header
+  /* height or max-height is important */
+  height: 310px
+
+  .q-table__top,
+  .q-table__bottom,
+  thead tr:first-child th
+    /* bg color is important for th; just specify one */
+    background-color: #c1f4cd
+
+  thead tr th
+    position: sticky
+    z-index: 1
+  thead tr:first-child th
+    top: 0
+
+  /* this is when the loading indicator appears */
+  &.q-table--loading thead tr:last-child th
+    /* height of all previous header rows */
+    top: 48px
 </style>

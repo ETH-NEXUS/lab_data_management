@@ -5,6 +5,8 @@ from .models import Plate, PlateDimension, Well, WellWithdrawal, WellCompound
 from .mapping import Mapping, MappingList
 from .helper import charToAlphaPos
 
+import csv
+
 
 class MappingTest(TestCase):
     def test_charToAlphaPos(self):
@@ -115,6 +117,37 @@ class PlateTest(TestCase):
         targetWells = self.targetPlate.wells.all().order_by('position')
         for p in range(len(targetWells)):
             self.assertEqual(f"comp{p}", targetWells[p].compounds.first().identifier)
+
+    def test_plate_mapping_from_csv(self):
+        """CSV Mapping test"""
+        delimiter = ';'
+        csv_file = 'test.csv'
+        with open(csv_file, 'w', newline='') as cf:
+            writer = csv.DictWriter(cf, ('from', 'to', 'amount'), delimiter=delimiter)
+            writer.writeheader()
+            writer.writerow({'from': 0, 'to': 5, 'amount': 10})
+            writer.writerow({'from': 1, 'to': 4, 'amount': 20})
+
+        mappingList = MappingList.from_csv(csv_file, 'from', 'to', 'amount', delimiter=';')
+        self.assertEqual(0, mappingList[0].from_pos)
+        self.assertEqual(5, mappingList[0].to_pos)
+        self.assertEqual(1, mappingList[1].from_pos)
+        self.assertEqual(4, mappingList[1].to_pos)
+
+        self.sourcePlate.map(mappingList, self.targetPlate)
+        self.assertEqual(self.sourcePlate.wells.get(position=0).compounds.first(), self.targetPlate.wells.get(position=5).compounds.first())
+
+    def test_plate_mapping_from_csv_with_illegal_values(self):
+        """CSV Mapping test with illegal values"""
+        delimiter = ';'
+        csv_file = 'test.csv'
+        with open(csv_file, 'w', newline='') as cf:
+            writer = csv.DictWriter(cf, ('from', 'to', 'amount'), delimiter=delimiter)
+            writer.writeheader()
+            writer.writerow({'from': 'a', 'to': 'c', 'amount': 10})
+            writer.writerow({'from': 'b', 'to': 'd', 'amount': 20})
+
+        self.assertRaises(ValueError, MappingList.from_csv, csv_file, 'from', 'to', 'amount', delimiter=';')
 
 
 class WellTest(TestCase):

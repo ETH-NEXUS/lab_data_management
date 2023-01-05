@@ -3,9 +3,9 @@
 from drf_auto_endpoint.endpoints import Endpoint
 from drf_auto_endpoint.router import register
 
-from .models import (Plate, PlateDimension, Well, Project, Experiment, WellCompound, WellWithdrawal, Measurement, MeasurementFeature)
-from .serializers import (WellSerializer, PlateSerializer, ExperimentSerializer, ProjectSerializer)
-from .views import (PlateViewSet, WellViewSet)
+from .models import (Plate, PlateDimension, Well, Project, Experiment, WellCompound, WellWithdrawal, Measurement, MeasurementFeature, PlateMapping)
+from .serializers import (PlateSerializer, ExperimentSerializer, ProjectSerializer, PlateMappingSerializer)
+from .views import (PlateViewSet, WellViewSet, PlateMappingViewSet)
 
 
 class DefaultEndpoint(Endpoint):
@@ -25,7 +25,7 @@ class PlateEndpoint(DefaultEndpoint):
     model = Plate
     base_serializer = PlateSerializer
     base_viewset = PlateViewSet
-    filter_fields = ('barcode',)
+    filter_fields = ('barcode', 'library', 'experiment')
     ordering_fields = ('barcode', )
 
 
@@ -72,3 +72,10 @@ class MeasurementFeatureEndpoint(DefaultEndpoint):
 @register
 class MeasurementEndpoint(DefaultEndpoint):
     model = Measurement
+
+
+@register
+class PlateMappingEndpoint(DefaultEndpoint):
+    base_serializer = PlateMappingSerializer
+    base_viewset = PlateMappingViewSet
+    model = PlateMapping

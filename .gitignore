@@ -300,3 +300,4 @@ media/
 backups/
 
 *.ipynb
+*.csv

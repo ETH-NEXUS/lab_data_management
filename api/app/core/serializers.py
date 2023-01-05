@@ -1,6 +1,20 @@
 from rest_framework import serializers
-from .models import (Well, Plate, Measurement, MeasurementFeature, PlateDimension, Project, Experiment, WellCompound, WellWithdrawal)
+from .models import (Well, Plate, Measurement, MeasurementFeature, PlateDimension, Project, Experiment, WellCompound, WellWithdrawal, PlateMapping, MappingError)
 from compoundlib.models import CompoundLibrary, Compound
+
+
+class UndefinedAffineModelSerializer(serializers.ModelSerializer):
+    """
+    A serializer that takes care about undefined values in the request
+    data and converts them to None.
+    """
+
+    def to_internal_value(self, data):
+        for key, value in data.items():
+            print('value', value)
+            if value == 'undefined':
+                data[key] = None
+        return super().to_internal_value(data)
 
 
 class CompoundSerializer(serializers.ModelSerializer):
@@ -157,4 +171,16 @@ class ProjectSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Project
+        fields = '__all__'
+
+
+class PlateMappingSerializer(UndefinedAffineModelSerializer):
+    def save(self, **kwargs):
+        try:
+            return super().save(**kwargs)
+        except MappingError as ex:
+            raise serializers.ValidationError({'detail': ex})
+
+    class Meta:
+        model = PlateMapping
         fields = '__all__'
