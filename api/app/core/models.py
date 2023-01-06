@@ -128,22 +128,33 @@ class Plate(TimeTrackedModel):
                         # The amount is a suggestion derived from the distribution
                         # rate in the source and the total amount of the withdrawal
                         from_well_compound = WellCompound.objects.get(well=from_well, compound=compound)
-                        WellCompound.objects.update_or_create(
-                            well=well,
-                            compound=compound,
-                            defaults={
-                                'amount': round(mapping.amount * from_well_compound.amount / from_well.initial_amount, settings.FLOAT_PRECISION) if from_well.amount > 0 else 0
-                            }
-
-                        )
-                        # We add a withdrawal to the source well
-                        WellWithdrawal.objects.update_or_create(
-                            well=from_well,
-                            target_well=well,
-                            defaults={
-                                'amount': mapping.amount
-                            }
-                        )
+                        amount = round(mapping.amount * from_well_compound.amount / from_well.initial_amount, settings.FLOAT_PRECISION) if from_well.initial_amount > 0 else 0
+                        if WellCompound.objects.filter(well=well, compound=compound).exists():
+                            WellCompound.objects.update(
+                                well=well,
+                                compound=compound,
+                                amount=F('amount') + amount
+                            )
+                        else:
+                            WellCompound.objects.create(
+                                well=well,
+                                compound=compound,
+                                amount=amount
+                            )
+                        if WellWithdrawal.objects.filter(well=from_well, target_well=well).exists():
+                            # We add a withdrawal to the source well
+                            WellWithdrawal.objects.update(
+                                well=from_well,
+                                target_well=well,
+                                amount=F('amount') + mapping.amount
+                            )
+                        else:
+                            WellWithdrawal.objects.create(
+                                well=from_well,
+                                target_well=well,
+                                amount=mapping.amount
+                            )
+    # TODO: implement unmap!!!
 
 
 class Sample(TimeTrackedModel):

@@ -8,6 +8,7 @@ interface PlatePage {
 
 interface NavigationTree {
   expandedNodes: Array<string>
+  needsUpdate: boolean
 }
 
 interface WellDetails {
@@ -29,6 +30,7 @@ export const useSettingsStore = defineStore('settings', {
       },
       navigationTree: {
         expandedNodes: [],
+        needsUpdate: false,
       },
       wellDetails: {
         showStructure: true,

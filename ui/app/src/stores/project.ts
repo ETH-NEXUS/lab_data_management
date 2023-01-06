@@ -1,0 +1,44 @@
+import {defineStore} from 'pinia'
+import {Project, Experiment, Plate} from 'src/components/models'
+import {api} from 'src/boot/axios'
+import {ref} from 'vue'
+
+export const useProjectStore = defineStore('project', () => {
+  const projects = ref<Array<Project>>([])
+
+  const initialize = async () => {
+    const resp_p = await api.get('/api/projects/')
+    projects.value = resp_p.data.results
+  }
+
+  const add = async (projectName: string) => {
+    const resp = await api.post('/api/projects/', {
+      name: projectName,
+    })
+    const project = resp.data
+    projects.value.push(project)
+    return project
+  }
+
+  const addExperiment = async (project: Project, experimentName: string) => {
+    const resp = await api.post('/api/experiments/', {
+      name: experimentName,
+      project: project.id,
+    })
+    const experiment = resp.data
+    project.experiments.push(experiment)
+    return experiment
+  }
+
+  const addPlate = async (experiment: Experiment, barcode: string) => {
+    const resp = await api.post('/api/plates/', {
+      barcode: barcode,
+      experiment: experiment.id,
+    })
+    const plate = resp.data
+    experiment.plates.push(plate)
+    return plate
+  }
+
+  return {projects, initialize, add, addExperiment, addPlate}
+})

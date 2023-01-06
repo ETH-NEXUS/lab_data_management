@@ -1,6 +1,5 @@
 <script setup lang="ts">
-import {ref, onMounted, computed} from 'vue'
-import {api} from '../boot/axios'
+import {ref, onMounted, computed, watchEffect} from 'vue'
 import {handleError} from '../helpers/errorHandling'
 import {CompoundLibrary, Project, Experiment, Plate} from './models'
 import {QTreeNode} from 'quasar'
@@ -9,29 +8,41 @@ import {useRouter} from 'vue-router'
 import {useQuasar} from 'quasar'
 import {useSettingsStore} from '../stores/settings'
 import {storeToRefs} from 'pinia'
+import {useCompoundLibraryStore} from '../stores/compoundLibrary'
+import {useProjectStore} from '../stores/project'
 
 const router = useRouter()
 const {t} = useI18n()
 const $q = useQuasar()
 
-const compoundLibraries = ref<Array<CompoundLibrary> | undefined>()
-const projects = ref<Array<Project> | undefined>()
+const compoundLibraryStore = useCompoundLibraryStore()
+const projectStore = useProjectStore()
 
-onMounted(async () => {
+const initialize = async () => {
   try {
-    const resp_cl = await api.get('/api/compoundlibraries/')
-    compoundLibraries.value = resp_cl.data.results
+    await compoundLibraryStore.initialize()
     updateCompoundLibraryNodes()
 
-    const resp_p = await api.get('/api/projects/')
-    projects.value = resp_p.data.results
+    await projectStore.initialize()
     updateProjectNodes()
   } catch (err) {
     handleError(err)
   }
+}
+
+onMounted(async () => {
+  initialize()
 })
 
 const {navigationTree} = storeToRefs(useSettingsStore())
+
+watchEffect(() => {
+  if (navigationTree.value.needsUpdate) {
+    initialize()
+    navigationTree.value.needsUpdate = false
+  }
+})
+
 const filter = ref('')
 const filterRef = ref<HTMLInputElement>()
 
@@ -83,8 +94,8 @@ const addCompoundLibraryNode = (library: CompoundLibrary) => {
 
 const updateCompoundLibraryNodes = () => {
   compoundLibraryNodes.value.children = []
-  if (compoundLibraries.value) {
-    for (const library of compoundLibraries.value) {
+  if (compoundLibraryStore.libraries) {
+    for (const library of compoundLibraryStore.libraries) {
       addCompoundLibraryNode(library)
     }
   }
@@ -104,6 +115,7 @@ const addProjectNode = (project: Project) => {
     for (const plate of experiment.plates) {
       addPlateNode(experiment, plate)
     }
+    sortPlateNodes(experiment)
   }
 }
 
@@ -129,7 +141,7 @@ const addPlateNode = (experiment: Experiment, plate: Plate) => {
     const experimentNode = projectNode.children?.find(c => c.experiment.id === experiment.id)
     if (experimentNode) {
       experimentNode.children?.push({
-        label: `${plate.barcode}`,
+        label: `${plate.barcode} (${plate.dimension?.name || t('message.no_dimension')})`,
         icon: 'o_view_module',
         header: 'plate',
         handler: nodeHandler,
@@ -143,10 +155,22 @@ const addPlateNode = (experiment: Experiment, plate: Plate) => {
   }
 }
 
+const sortPlateNodes = (experiment: Experiment) => {
+  const projectNode = projectNodes.value.children?.find(c => c.project.id === experiment.project)
+  if (projectNode) {
+    const experimentNode = projectNode.children?.find(c => c.experiment.id === experiment.id)
+    if (experimentNode) {
+      experimentNode.children = experimentNode.children?.sort((n1, n2) =>
+        n1.plate.barcode.localeCompare(n2.plate.barcode)
+      )
+    }
+  }
+}
+
 const updateProjectNodes = () => {
   projectNodes.value.children = []
-  if (projects.value) {
-    for (const project of projects.value) {
+  if (projectStore.projects) {
+    for (const project of projectStore.projects) {
       addProjectNode(project)
     }
   }
@@ -169,27 +193,16 @@ const newProject = async () => {
     },
     cancel: true,
     persistent: true,
-  })
-    .onOk(async projectName => {
-      if (projectNodes.value.children) {
-        try {
-          const resp = await api.post('/api/projects/', {
-            name: projectName,
-          })
-          const project = resp.data
-          projects.value?.push(project)
-          addProjectNode(project)
-        } catch (err) {
-          handleError(err)
-        }
+  }).onOk(async projectName => {
+    if (projectNodes.value.children) {
+      try {
+        const project = await projectStore.add(projectName)
+        addProjectNode(project)
+      } catch (err) {
+        handleError(err)
       }
-    })
-    .onCancel(() => {
-      // console.log('>>>> Cancel')
-    })
-    .onDismiss(() => {
-      // console.log('I am triggered on both OK and Cancel')
-    })
+    }
+  })
 }
 
 const newExperiment = async (project: Project) => {
@@ -202,28 +215,16 @@ const newExperiment = async (project: Project) => {
     },
     cancel: true,
     persistent: true,
-  })
-    .onOk(async experimentName => {
-      if (projectNodes.value.children) {
-        try {
-          const resp = await api.post('/api/experiments/', {
-            name: experimentName,
-            project: project.id,
-          })
-          const experiment = resp.data
-          project.experiments.push(experiment)
-          addExperimentNode(project, experiment)
-        } catch (err) {
-          handleError(err, false)
-        }
+  }).onOk(async experimentName => {
+    if (projectNodes.value.children) {
+      try {
+        const experiment = await projectStore.addExperiment(project, experimentName)
+        addExperimentNode(project, experiment)
+      } catch (err) {
+        handleError(err, false)
       }
-    })
-    .onCancel(() => {
-      // console.log('>>>> Cancel')
-    })
-    .onDismiss(() => {
-      // console.log('I am triggered on both OK and Cancel')
-    })
+    }
+  })
 }
 
 const newPlate = async (experiment: Experiment) => {
@@ -236,28 +237,17 @@ const newPlate = async (experiment: Experiment) => {
     },
     cancel: true,
     persistent: true,
-  })
-    .onOk(async barcode => {
-      if (projectNodes.value.children) {
-        try {
-          const resp = await api.post('/api/plates/', {
-            barcode: barcode,
-            experiment: experiment.id,
-          })
-          const plate = resp.data
-          experiment.plates.push(plate)
-          addPlateNode(experiment, plate)
-        } catch (err) {
-          handleError(err, false)
-        }
+  }).onOk(async barcode => {
+    if (projectNodes.value.children) {
+      try {
+        const plate = await projectStore.addPlate(experiment, barcode)
+        addPlateNode(experiment, plate)
+        sortPlateNodes(experiment)
+      } catch (err) {
+        handleError(err, false)
       }
-    })
-    .onCancel(() => {
-      // console.log('>>>> Cancel')
-    })
-    .onDismiss(() => {
-      // console.log('I am triggered on both OK and Cancel')
-    })
+    }
+  })
 }
 </script>
 

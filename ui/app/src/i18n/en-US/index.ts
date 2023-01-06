@@ -69,6 +69,7 @@ export default {
     no_wells_found: 'No wells found',
     successfully_mapped_plate: 'Successfully mapped plate',
     successfully_copied_plate: 'Successfully copied plate',
+    no_dimension: 'No dimension',
   },
   action: {
     new_project: 'New project',

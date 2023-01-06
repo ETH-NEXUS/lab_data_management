@@ -2,7 +2,7 @@
 import {Plate, PlateDimension, Well, WellInfo} from 'src/components/models'
 import {ref, onMounted} from 'vue'
 import {api} from '../boot/axios'
-import {useRoute} from 'vue-router'
+import {useRoute, useRouter} from 'vue-router'
 import DynamicPlate from '../components/DynamicPlate.vue'
 import {handleError, success} from '../helpers/errorHandling'
 import WellDetails from '../components/WellDetails.vue'
@@ -12,11 +12,12 @@ import {useSettingsStore} from '../stores/settings'
 import {LabelValue, PlateMapping} from '../components/models'
 
 const route = useRoute()
+const router = useRouter()
 const {t} = useI18n()
 
 const loading = ref<boolean>(true)
 const plate = ref<Plate | null>(null)
-const {platePage} = storeToRefs(useSettingsStore())
+const {platePage, navigationTree} = storeToRefs(useSettingsStore())
 const plateDimensions = ref<Array<PlateDimension>>()
 
 const mapPlateDialog = ref<boolean>(false)
@@ -80,6 +81,7 @@ const setPlateDimension = async () => {
         dimension: selectedPlateDimension.value,
       })
       plate.value = resp.data
+      navigationTree.value.needsUpdate = true
     } catch (err) {
       handleError(err)
     }
@@ -129,6 +131,9 @@ const filterTargetPlates = (query: string, update: (f: () => void) => void) => {
     } else {
       filteredTargetPlateBarcodeOptions.value = targetPlateBarcodeOptions.value
     }
+    filteredTargetPlateBarcodeOptions.value = filteredTargetPlateBarcodeOptions.value.sort((a, b) =>
+      a.label.localeCompare(b.label)
+    )
   })
 }
 
@@ -174,15 +179,16 @@ const mapPlate = async () => {
         }
       })
 
-      const resp = await api.post('/api/platemappings/', formData, {
+      await api.post('/api/platemappings/', formData, {
         headers: {'Content-Type': 'multipart/form-data'},
       })
-      console.debug('Response from mapping:', resp)
+      const target_plate_barcode = targetPlateBarcodeOptions.value.find(
+        lv => lv.value === selectedTargetPlateId.value
+      )?.label
       success(
-        `${t('message.successfully_mapped_plate')} '${plate.value.barcode}' -> '${
-          targetPlateBarcodeOptions.value.find(lv => lv.value === selectedTargetPlateId.value)?.label
-        }'`
+        `${t('message.successfully_mapped_plate')} '${plate.value.barcode}' -> '${target_plate_barcode}'`
       )
+      router.push(`/plate/${target_plate_barcode}`)
     }
   } catch (err) {
     handleError(err)
@@ -206,13 +212,14 @@ const copyPlate = async () => {
         amount: copyPlateAmount.value,
       }
 
-      const resp = await api.post('/api/platemappings/', data)
-      console.debug('Response from mapping:', resp)
+      await api.post('/api/platemappings/', data)
+      const target_plate_barcode = targetPlateBarcodeOptions.value.find(
+        lv => lv.value === selectedTargetPlateId.value
+      )?.label
       success(
-        `${t('message.successfully_copied_plate')} '${plate.value.barcode}' -> '${
-          targetPlateBarcodeOptions.value.find(lv => lv.value === selectedTargetPlateId.value)?.label
-        }'`
+        `${t('message.successfully_copied_plate')} '${plate.value.barcode}' -> '${target_plate_barcode}'`
       )
+      router.push(`/plate/${target_plate_barcode}`)
     }
   } catch (err) {
     handleError(err)

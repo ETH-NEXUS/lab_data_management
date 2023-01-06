@@ -2,6 +2,9 @@ import {Notify} from 'quasar'
 import {AxiosError} from 'axios'
 
 export const formatKV = (obj: object) => {
+  if (!obj) {
+    return 'No details available'
+  }
   let ret = ''
   for (const [key, value] of Object.entries(obj)) {
     if (ret !== '') {
