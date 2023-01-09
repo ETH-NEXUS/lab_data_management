@@ -57,6 +57,7 @@ export default {
     withdrawals: 'Withdrawals',
     donors: 'Donors',
     amount: 'Amount',
+    chain: 'Chain',
   },
   message: {
     project_name: 'Please enter the project name:',

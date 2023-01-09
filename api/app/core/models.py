@@ -129,26 +129,22 @@ class Plate(TimeTrackedModel):
                         # rate in the source and the total amount of the withdrawal
                         from_well_compound = WellCompound.objects.get(well=from_well, compound=compound)
                         amount = round(mapping.amount * from_well_compound.amount / from_well.initial_amount, settings.FLOAT_PRECISION) if from_well.initial_amount > 0 else 0
-                        if WellCompound.objects.filter(well=well, compound=compound).exists():
-                            WellCompound.objects.update(
-                                well=well,
-                                compound=compound,
-                                amount=F('amount') + amount
-                            )
-                        else:
+                        try:
+                            well_compound = WellCompound.objects.get(well=well, compound=compound)
+                            well_compound.amount = F('amount') + amount
+                            well_compound.save()
+                        except ObjectDoesNotExist:
                             WellCompound.objects.create(
                                 well=well,
                                 compound=compound,
                                 amount=amount
                             )
-                        if WellWithdrawal.objects.filter(well=from_well, target_well=well).exists():
+                        try:
+                            well_withdrawal = WellWithdrawal.objects.get(well=from_well, target_well=well)
                             # We add a withdrawal to the source well
-                            WellWithdrawal.objects.update(
-                                well=from_well,
-                                target_well=well,
-                                amount=F('amount') + mapping.amount
-                            )
-                        else:
+                            well_withdrawal.amount = F('amount') + mapping.amount
+                            well_withdrawal.save()
+                        except ObjectDoesNotExist:
                             WellWithdrawal.objects.create(
                                 well=from_well,
                                 target_well=well,

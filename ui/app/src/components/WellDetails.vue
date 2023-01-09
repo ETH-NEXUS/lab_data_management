@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import {defineProps, defineEmits, PropType, onMounted} from 'vue'
+import {defineProps, defineEmits, PropType, onMounted, computed} from 'vue'
 import {Plate, WellInfo, Well, MeasurementFeature} from './models'
 import DynamicImage from './DynamicImage.vue'
 import {useI18n} from 'vue-i18n'
@@ -11,6 +11,7 @@ import {Compound} from './models'
 import {date} from 'quasar'
 import {storeToRefs} from 'pinia'
 import {useSettingsStore} from '../stores/settings'
+import WellChain from './WellChain.vue'
 
 const {t} = useI18n()
 
@@ -163,6 +164,22 @@ const filterMeasurementFeatures = (query: string, update: (f: () => void) => voi
         </div>
       </div>
       <div class="row">
+        <div class="col-4">
+          <h4 class="q-ma-none vertical-top">
+            <q-icon name="o_water_drop" />
+            {{ t('title.amount') }}
+          </h4>
+        </div>
+        <div class="col-8">
+          <table>
+            <tr>
+              <th>{{ props.wellInfo.well.amount }}{{ t('unit.amount') }}</th>
+            </tr>
+          </table>
+        </div>
+        <div class="col-12">
+          <hr />
+        </div>
         <div class="col-12">
           <h4 class="q-my-none">{{ t('title.compounds') }}</h4>
           <q-btn
@@ -200,16 +217,31 @@ const filterMeasurementFeatures = (query: string, update: (f: () => void) => voi
           <hr />
         </div>
         <div class="col-4">
-          <h4 class="q-ma-none vertical-top">
-            <q-icon name="o_water_drop" />
-            {{ t('title.amount') }}
-          </h4>
+          <h4 class="q-ma-none vertical-top">{{ t('title.measurements') }}</h4>
+          <q-btn
+            :label="t('action.add_measurement')"
+            icon="o_straighten"
+            color="secondary"
+            @click="addMeasurementDialog = true" />
         </div>
         <div class="col-8">
           <table>
-            <tr>
-              <th>{{ props.wellInfo.well.amount }}{{ t('unit.amount') }}</th>
-            </tr>
+            <thead>
+              <tr>
+                <th>{{ t('label.name') }}</th>
+                <th>{{ t('label.abbrev') }}</th>
+                <th>{{ t('label.value') }}</th>
+                <th>{{ t('label.unit') }}</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr v-for="measurement in props.wellInfo.well.measurements" :key="measurement.feature.name">
+                <td>{{ measurement.feature.name }}</td>
+                <td>{{ measurement.feature.abbrev }}</td>
+                <td>{{ measurement.value }}</td>
+                <td>{{ measurement.feature.unit }}</td>
+              </tr>
+            </tbody>
           </table>
         </div>
         <div class="col-12">
@@ -273,33 +305,14 @@ const filterMeasurementFeatures = (query: string, update: (f: () => void) => voi
         <div class="col-12">
           <hr />
         </div>
-        <div class="col-4">
-          <h4 class="q-ma-none vertical-top">{{ t('title.measurements') }}</h4>
-          <q-btn
-            :label="t('action.add_measurement')"
-            icon="o_straighten"
-            color="secondary"
-            @click="addMeasurementDialog = true" />
+        <div class="col-12">
+          <h4 class="q-ma-none vertical-top">
+            <q-icon name="o_route" />
+            {{ t('title.chain') }}
+          </h4>
         </div>
-        <div class="col-8">
-          <table>
-            <thead>
-              <tr>
-                <th>{{ t('label.name') }}</th>
-                <th>{{ t('label.abbrev') }}</th>
-                <th>{{ t('label.value') }}</th>
-                <th>{{ t('label.unit') }}</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr v-for="measurement in props.wellInfo.well.measurements" :key="measurement.feature.name">
-                <td>{{ measurement.feature.name }}</td>
-                <td>{{ measurement.feature.abbrev }}</td>
-                <td>{{ measurement.value }}</td>
-                <td>{{ measurement.feature.unit }}</td>
-              </tr>
-            </tbody>
-          </table>
+        <div class="col-12">
+          <well-chain :well="props.wellInfo.well" />
         </div>
         <div class="col-12">
           <hr />
