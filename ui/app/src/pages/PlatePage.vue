@@ -9,7 +9,7 @@ import WellDetails from '../components/WellDetails.vue'
 import {useI18n} from 'vue-i18n'
 import {storeToRefs} from 'pinia'
 import {useSettingsStore} from '../stores/settings'
-import {LabelValue, PlateMapping} from '../components/models'
+import {PlateLabelValue, PlateMapping} from '../components/models'
 
 const route = useRoute()
 const router = useRouter()
@@ -22,8 +22,8 @@ const plateDimensions = ref<Array<PlateDimension>>()
 
 const mapPlateDialog = ref<boolean>(false)
 const selectedTargetPlateId = ref<number>()
-const targetPlateBarcodeOptions = ref<Array<LabelValue>>([])
-const filteredTargetPlateBarcodeOptions = ref<Array<LabelValue>>([])
+const targetPlateBarcodeOptions = ref<Array<PlateLabelValue>>([])
+const filteredTargetPlateBarcodeOptions = ref<Array<PlateLabelValue>>([])
 
 const mappingFileDelimiter = ref<string>(',')
 const mappingFileDelimiterOptions = [
@@ -63,8 +63,10 @@ onMounted(async () => {
         plateDimensions.value = resp_dimensions.data.results
       }
     }
-    const resp = await api.get('/api/plates/barcodes/?experiment=true')
-    targetPlateBarcodeOptions.value = resp.data.filter((p: LabelValue) => p.label !== plate.value?.barcode)
+    const resp = await api.get('/api/plates/barcodes/')
+    targetPlateBarcodeOptions.value = resp.data.filter(
+      (p: PlateLabelValue) => p.label !== plate.value?.barcode
+    )
   } catch (err) {
     handleError(err)
   } finally {
@@ -124,12 +126,15 @@ const measurementAdded = async (well: Well) => {
 
 const filterTargetPlates = (query: string, update: (f: () => void) => void) => {
   update(() => {
+    if (plate.value?.experiment) {
+      filteredTargetPlateBarcodeOptions.value = targetPlateBarcodeOptions.value.filter(m => m.experiment)
+    } else {
+      filteredTargetPlateBarcodeOptions.value = targetPlateBarcodeOptions.value
+    }
     if (query.length > 1) {
       filteredTargetPlateBarcodeOptions.value = targetPlateBarcodeOptions.value.filter(m =>
         m.label.includes(query)
       )
-    } else {
-      filteredTargetPlateBarcodeOptions.value = targetPlateBarcodeOptions.value
     }
     filteredTargetPlateBarcodeOptions.value = filteredTargetPlateBarcodeOptions.value.sort((a, b) =>
       a.label.localeCompare(b.label)

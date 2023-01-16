@@ -365,7 +365,7 @@ const newCompoundLibPlate = async (library: CompoundLibrary) => {
             </q-item>
             <q-separator />
             <q-item clickable v-close-popup>
-              <q-item-section @click="newCompoundLibPlate(prop.node.compoundlib)">
+              <q-item-section @click="newCompoundLibPlate(prop.node.library)">
                 {{ t('action.new_plate') }}
               </q-item-section>
             </q-item>

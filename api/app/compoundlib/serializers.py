@@ -11,6 +11,12 @@ class CompoundLibrarySerializer(serializers.ModelSerializer):
         fields = '__all__'
 
 
+class SimpleCompoundLibrarySerializer(serializers.ModelSerializer):
+    class Meta:
+        model = CompoundLibrary
+        fields = ('id', 'name')
+
+
 class CompoundSerializer(serializers.ModelSerializer):
     wells = serializers.SerializerMethodField()
 

@@ -1,3 +1,4 @@
+import {number} from '@intlify/core-base'
 import {CompoundExpressionNode} from '@vue/compiler-core'
 
 export interface Todo {
@@ -78,7 +79,7 @@ export interface Plate {
   id: number
   barcode: string
   dimension: PlateDimension
-  project?: Project
+  experiment?: Project
   library?: CompoundLibrary
   wells?: Array<Well>
 }
@@ -105,6 +106,18 @@ export interface LabelValue {
   label: string
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   value: any
+}
+
+export interface IdName {
+  id: number
+  name: string
+}
+
+export interface PlateLabelValue {
+  label: string
+  value: number
+  library: IdName | null
+  experiment: IdName | null
 }
 
 export interface PlateMapping {

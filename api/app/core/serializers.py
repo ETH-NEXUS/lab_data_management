@@ -131,7 +131,7 @@ class PlateListSerializer(serializers.ModelSerializer):
 
 class PlateSerializer(serializers.ModelSerializer):
     dimension = PlateDimensionSerializer(required=False, allow_null=True)
-    library = CompoundLibrarySerializer(required=False, allow_null=True)
+    # library = CompoundLibrarySerializer(required=False, allow_null=True)
     wells = WellSerializer(many=True, required=False, allow_null=True)
 
     # def get_wells(self, instance):
@@ -164,6 +164,12 @@ class ExperimentSerializer(serializers.ModelSerializer):
     class Meta:
         model = Experiment
         fields = '__all__'
+
+
+class SimpleExperimentSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Experiment
+        fields = ('id', 'name')
 
 
 class ProjectSerializer(serializers.ModelSerializer):

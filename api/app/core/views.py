@@ -4,7 +4,8 @@ from rest_framework.response import Response
 from rest_framework.parsers import FileUploadParser
 from django.db.models import Prefetch, Q
 from .models import (Well, Plate, Measurement, WellWithdrawal, WellCompound, PlateMapping)
-from .serializers import (PlateSerializer, WellSerializer, PlateMappingSerializer)
+from .serializers import (PlateSerializer, WellSerializer, PlateMappingSerializer, SimpleExperimentSerializer)
+from compoundlib.serializers import (SimpleCompoundLibrarySerializer)
 import csv
 from uuid import uuid4
 
@@ -43,7 +44,12 @@ class PlateViewSet(viewsets.ModelViewSet):
             predicate |= Q(library__isnull=(library.lower() != 'true'))
         if experiment:
             predicate |= Q(experiment__isnull=(experiment.lower() != 'true'))
-        return Response([{'label': plate.barcode, 'value': plate.id} for plate in Plate.objects.filter(predicate)])
+        return Response([{
+            'label': plate.barcode,
+            'value': plate.id,
+            'library': SimpleCompoundLibrarySerializer(plate.library).data if plate.library else None,
+            'experiment': SimpleExperimentSerializer(plate.experiment).data if plate.experiment else None
+        } for plate in Plate.objects.filter(predicate)])
 
     def filter_queryset(self, queryset):
         return super().filter_queryset(queryset)
