@@ -12,6 +12,7 @@ class Command(BaseCommand):
 
     def init(self):
         call_command('loaddata', 'plate_dimensions')
+        call_command('loaddata', 'well_types')
 
     def clean(self):
         call_command('flush')

@@ -1,31 +1,19 @@
 from django.db import models, transaction
-from django.db.models import F, Sum
+from django.db.models import F, Sum, CheckConstraint, Q
 from django.core.validators import MinValueValidator
-from django.utils import timezone
 from django.conf import settings
 from django.core.exceptions import ObjectDoesNotExist
 from django.utils.translation import gettext_lazy as _
+from .basemodels import TimeTrackedModel
 from .mapping import PositionMapper
 from .mapping import MappingList
 from compoundlib.models import CompoundLibrary, Compound
+from platetemplate.models import PlateTemplateCategory, PlateTemplate
 import math
 
 
 class MappingError(Exception):
     pass
-
-
-class AutoDateTimeField(models.DateTimeField):
-    def pre_save(self, model_instance, add):
-        return timezone.now()
-
-
-class TimeTrackedModel(models.Model):
-    created_at = models.DateTimeField(default=timezone.now, editable=False)
-    modified_at = AutoDateTimeField(editable=False)
-
-    class Meta:
-        abstract = True
 
 
 class Project(TimeTrackedModel):
@@ -87,9 +75,18 @@ class Plate(TimeTrackedModel):
         PlateDimension, on_delete=models.RESTRICT, default=None, null=True)
     experiment = models.ForeignKey(Experiment, null=True, blank=True, on_delete=models.CASCADE, related_name=related_name)
     library = models.ForeignKey(CompoundLibrary, null=True, blank=True, on_delete=models.CASCADE, related_name=related_name)
+    template = models.ForeignKey(PlateTemplate, null=True, blank=True, on_delete=models.CASCADE, related_name=related_name)
 
     class Meta:
         ordering = ('-id',)
+        constraints = [
+            CheckConstraint(
+                check=Q(experiment__isnull=True) & Q(library__isnull=True) |
+                Q(experiment__isnull=True) & Q(library__isnull=False) |
+                Q(experiment__isnull=False) & Q(library__isnull=True),
+                name='check_only_library_or_experiment',
+            ),
+        ]
 
     def __str__(self):
         return f"{self.barcode}"
@@ -160,6 +157,11 @@ class Sample(TimeTrackedModel):
         return self.name
 
 
+class WellType(models.Model):
+    name = models.CharField(max_length=50, db_index=True)
+    description = models.TextField()
+
+
 class Well(TimeTrackedModel):
     related_name = 'wells'
     plate = models.ForeignKey(
@@ -170,6 +172,7 @@ class Well(TimeTrackedModel):
     # A well can contain multiple compounds
     compounds = models.ManyToManyField(
         Compound, through='WellCompound')
+    type = models.ForeignKey(WellType, on_delete=models.RESTRICT, default=1, db_index=True)
 
     def __str__(self):
         return f"{self.plate.barcode}: {self.hr_position}"

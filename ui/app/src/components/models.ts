@@ -60,6 +60,7 @@ export interface Well {
   position: number
   sample: Sample
   amount: number
+  type: string
   hr_position?: string
   compounds?: Array<Compound>
   measurements?: Array<Measurement>

@@ -1,13 +1,12 @@
 <script setup lang="ts">
-import {defineProps, defineEmits, PropType, onMounted, computed} from 'vue'
-import {Plate, WellInfo, Well, MeasurementFeature} from './models'
+import {defineProps, defineEmits, PropType, onMounted} from 'vue'
+import {Plate, WellInfo, Well, MeasurementFeature, Compound} from './models'
 import DynamicImage from './DynamicImage.vue'
 import {useI18n} from 'vue-i18n'
 import {api} from '../boot/axios'
 import {handleError} from '../helpers/errorHandling'
 import {hrPositionFromPosition} from '../helpers/plate'
 import {ref} from 'vue'
-import {Compound} from './models'
 import {date} from 'quasar'
 import {storeToRefs} from 'pinia'
 import {useSettingsStore} from '../stores/settings'
@@ -157,8 +156,8 @@ const filterMeasurementFeatures = (query: string, update: (f: () => void) => voi
       <div class="row">
         <div class="col-12">
           <h2>
-            {{ props.wellInfo.well.hr_position }}
-            <small>({{ props.wellInfo.well.position }})</small>
+            {{ props.wellInfo.well.hr_position }} ({{ props.wellInfo.well.type }})
+            <small style="font-size: 16px">({{ props.wellInfo.well.position }})</small>
             <small style="font-size: 10px">[{{ props.wellInfo.well.id }}]</small>
           </h2>
         </div>

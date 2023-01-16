@@ -25,7 +25,7 @@ class PlateViewSet(viewsets.ModelViewSet):
         wells = Prefetch(
             'wells',
             queryset=Well.objects
-            .select_related('sample')
+            .select_related('sample', 'type')
             .order_by('position')
             .prefetch_related(well_compounds)
             .prefetch_related(withdrawals)

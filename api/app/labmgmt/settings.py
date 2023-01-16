@@ -47,7 +47,8 @@ INSTALLED_APPS = [
     'drf_auto_endpoint',
     'core',
     'importer',
-    'compoundlib'
+    'compoundlib',
+    'platetemplate'
 ]
 
 MIDDLEWARE = [

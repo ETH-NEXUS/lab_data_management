@@ -19,7 +19,7 @@ class Migration(migrations.Migration):
             fields=[
                 ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
                 ('created_at', models.DateTimeField(default=django.utils.timezone.now)),
-                ('modified_at', core.models.AutoDateTimeField()),
+                ('modified_at', core.basemodels.AutoDateTimeField()),
                 ('name', models.CharField(max_length=50)),
             ],
             options={
@@ -31,7 +31,7 @@ class Migration(migrations.Migration):
             fields=[
                 ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
                 ('created_at', models.DateTimeField(default=django.utils.timezone.now)),
-                ('modified_at', core.models.AutoDateTimeField()),
+                ('modified_at', core.basemodels.AutoDateTimeField()),
                 ('barcode', models.CharField(max_length=50)),
             ],
             options={
@@ -52,7 +52,7 @@ class Migration(migrations.Migration):
             fields=[
                 ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
                 ('created_at', models.DateTimeField(default=django.utils.timezone.now)),
-                ('modified_at', core.models.AutoDateTimeField()),
+                ('modified_at', core.basemodels.AutoDateTimeField()),
                 ('name', models.CharField(max_length=50)),
             ],
             options={
@@ -64,7 +64,7 @@ class Migration(migrations.Migration):
             fields=[
                 ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
                 ('created_at', models.DateTimeField(default=django.utils.timezone.now)),
-                ('modified_at', core.models.AutoDateTimeField()),
+                ('modified_at', core.basemodels.AutoDateTimeField()),
                 ('name', models.CharField(max_length=50)),
             ],
             options={
@@ -76,7 +76,7 @@ class Migration(migrations.Migration):
             fields=[
                 ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
                 ('created_at', models.DateTimeField(default=django.utils.timezone.now)),
-                ('modified_at', core.models.AutoDateTimeField()),
+                ('modified_at', core.basemodels.AutoDateTimeField()),
                 ('position', models.PositiveIntegerField()),
                 ('drug', models.ForeignKey(null=True, on_delete=django.db.models.deletion.SET_NULL, to='core.drug')),
             ],

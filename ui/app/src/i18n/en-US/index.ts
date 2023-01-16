@@ -58,6 +58,7 @@ export default {
     donors: 'Donors',
     amount: 'Amount',
     chain: 'Chain',
+    well_type: 'Type',
   },
   message: {
     project_name: 'Please enter the project name:',

@@ -1,5 +1,8 @@
 from rest_framework import serializers
-from .models import (Well, Plate, Measurement, MeasurementFeature, PlateDimension, Project, Experiment, WellCompound, WellWithdrawal, PlateMapping, MappingError)
+from .models import (
+    Well, Plate, Measurement, MeasurementFeature, PlateDimension, Project, Experiment, WellCompound,
+    WellWithdrawal, PlateMapping, MappingError, WellType
+)
 from compoundlib.models import CompoundLibrary, Compound
 
 
@@ -80,6 +83,12 @@ class WellWithdrawalSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
 
+class WellTypeSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = WellType
+        fields = '__all__'
+
+
 class WellSerializer(serializers.ModelSerializer):
     measurements = MeasurementSerializer(many=True, required=False, allow_null=True)
     hr_position = serializers.ReadOnlyField()
@@ -87,6 +96,7 @@ class WellSerializer(serializers.ModelSerializer):
     compounds = WellCompoundSerializer(many=True, required=False, allow_null=True, source='well_compounds')
     withdrawals = WellWithdrawalSerializer(many=True, required=False, allow_null=True)
     donors = WellWithdrawalSerializer(many=True, required=False, allow_null=True)
+    type = serializers.SlugRelatedField(slug_field='name', read_only=True)
 
     class Meta:
         model = Well

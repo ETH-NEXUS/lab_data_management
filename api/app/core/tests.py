@@ -1,7 +1,8 @@
 from django.test import TestCase
+from django.db import IntegrityError
 
-from compoundlib.models import Compound
-from .models import Plate, PlateDimension, Well, WellWithdrawal, WellCompound
+from compoundlib.models import Compound, CompoundLibrary
+from .models import Plate, PlateDimension, Well, WellWithdrawal, WellCompound, Experiment, Project
 from .mapping import Mapping, MappingList
 from .helper import charToAlphaPos
 
@@ -148,6 +149,40 @@ class PlateTest(TestCase):
             writer.writerow({'from': 'b', 'to': 'd', 'amount': 20})
 
         self.assertRaises(ValueError, MappingList.from_csv, csv_file, 'from', 'to', 'amount', delimiter=';')
+
+    def test_only_library_or_experiment_constraint(self):
+        """ Check the constraint that only library or experiment can have a value on a plate"""
+        library = CompoundLibrary.objects.create(name='CL')
+        project = Project.objects.create(name='Proj')
+        experiment = Experiment.objects.create(name='Exp', project=project)
+        with self.assertRaises(IntegrityError):
+            Plate.objects.create(
+                barcode='123456',
+                dimension=self.dimension,
+                library=library,
+                experiment=experiment
+            )
+
+    def test_create_library_plate(self):
+        """ Check the creation of a library plate"""
+        library = CompoundLibrary.objects.create(name='CL')
+        plate = Plate.objects.create(
+            barcode='123456',
+            dimension=self.dimension,
+            library=library
+        )
+        self.assertIsNotNone(plate)
+
+    def test_create_experiment_plate(self):
+        """ Check the creation of an experiment plate"""
+        project = Project.objects.create(name='Proj')
+        experiment = Experiment.objects.create(name='Exp', project=project)
+        plate = Plate.objects.create(
+            barcode='123456',
+            dimension=self.dimension,
+            experiment=experiment
+        )
+        self.assertIsNotNone(plate)
 
 
 class WellTest(TestCase):

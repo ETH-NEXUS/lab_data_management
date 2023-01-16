@@ -1,0 +1,15 @@
+- model: core.WellType
+  pk: 1
+  fields:
+    name: C
+    description: Compound
+- model: core.WellType
+  pk: 2
+  fields:
+    name: P
+    description: Positive Control
+- model: core.WellType
+  pk: 3
+  fields:
+    name: N
+    description: Negative Control

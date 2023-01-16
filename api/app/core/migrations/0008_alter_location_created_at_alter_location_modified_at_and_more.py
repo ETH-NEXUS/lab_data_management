@@ -20,7 +20,7 @@ class Migration(migrations.Migration):
         migrations.AlterField(
             model_name='location',
             name='modified_at',
-            field=core.models.AutoDateTimeField(editable=False),
+            field=core.basemodels.AutoDateTimeField(editable=False),
         ),
         migrations.AlterField(
             model_name='plate',
@@ -30,7 +30,7 @@ class Migration(migrations.Migration):
         migrations.AlterField(
             model_name='plate',
             name='modified_at',
-            field=core.models.AutoDateTimeField(editable=False),
+            field=core.basemodels.AutoDateTimeField(editable=False),
         ),
         migrations.AlterField(
             model_name='project',
@@ -40,7 +40,7 @@ class Migration(migrations.Migration):
         migrations.AlterField(
             model_name='project',
             name='modified_at',
-            field=core.models.AutoDateTimeField(editable=False),
+            field=core.basemodels.AutoDateTimeField(editable=False),
         ),
         migrations.AlterField(
             model_name='sample',
@@ -50,7 +50,7 @@ class Migration(migrations.Migration):
         migrations.AlterField(
             model_name='sample',
             name='modified_at',
-            field=core.models.AutoDateTimeField(editable=False),
+            field=core.basemodels.AutoDateTimeField(editable=False),
         ),
         migrations.AlterField(
             model_name='well',
@@ -60,6 +60,6 @@ class Migration(migrations.Migration):
         migrations.AlterField(
             model_name='well',
             name='modified_at',
-            field=core.models.AutoDateTimeField(editable=False),
+            field=core.basemodels.AutoDateTimeField(editable=False),
         ),
     ]

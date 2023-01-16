@@ -18,7 +18,7 @@ class Migration(migrations.Migration):
             fields=[
                 ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
                 ('created_at', models.DateTimeField(default=django.utils.timezone.now, editable=False)),
-                ('modified_at', core.models.AutoDateTimeField(editable=False)),
+                ('modified_at', core.basemodels.AutoDateTimeField(editable=False)),
                 ('name', models.CharField(max_length=50, null=True)),
                 ('abbrev', models.CharField(max_length=4, null=True)),
                 ('unit', models.CharField(max_length=10, null=True)),
