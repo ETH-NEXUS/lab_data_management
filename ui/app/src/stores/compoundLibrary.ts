@@ -11,5 +11,15 @@ export const useCompoundLibraryStore = defineStore('compoundLibrary', () => {
     libraries.value = resp_p.data.results
   }
 
-  return {libraries, initialize}
+  const addPlate = async (library: CompoundLibrary, barcode: string) => {
+    const resp = await api.post('/api/plates/', {
+      barcode: barcode,
+      library: library.id,
+    })
+    const plate = resp.data
+    library.plates.push(plate)
+    return plate
+  }
+
+  return {libraries, initialize, addPlate}
 })

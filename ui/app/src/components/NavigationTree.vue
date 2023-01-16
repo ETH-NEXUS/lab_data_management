@@ -101,6 +101,30 @@ const updateCompoundLibraryNodes = () => {
   }
 }
 
+const addCompoundLibraryPlateNode = (library: CompoundLibrary, plate: Plate) => {
+  const compoundLibraryNode = compoundLibraryNodes.value.children?.find(n => n.library.id === library.id)
+  if (compoundLibraryNode) {
+    compoundLibraryNode.children?.push({
+      label: `${plate.barcode} (${plate.dimension})`,
+      icon: 'o_view_module',
+      header: 'plate',
+      handler: nodeHandler,
+      plate: plate,
+    })
+  } else {
+    handleError(`TSNH: Library ${library.name} not found in tree.`)
+  }
+}
+
+const sortCompoundLibraryPlateNodes = (library: CompoundLibrary) => {
+  const compoundLibraryNode = compoundLibraryNodes.value.children?.find(n => n.library.id === library.id)
+  if (compoundLibraryNode) {
+    compoundLibraryNode.children = compoundLibraryNode.children?.sort((n1, n2) =>
+      n1.plate.barcode.localeCompare(n2.plate.barcode)
+    )
+  }
+}
+
 const addProjectNode = (project: Project) => {
   const node: QTreeNode = {
     label: project.name,
@@ -249,6 +273,29 @@ const newPlate = async (experiment: Experiment) => {
     }
   })
 }
+
+const newCompoundLibPlate = async (library: CompoundLibrary) => {
+  $q.dialog({
+    title: t('title.plate_barcode'),
+    message: t('message.plate_barcode'),
+    prompt: {
+      model: '',
+      type: 'text',
+    },
+    cancel: true,
+    persistent: true,
+  }).onOk(async barcode => {
+    if (projectNodes.value.children) {
+      try {
+        const plate = await compoundLibraryStore.addPlate(library, barcode)
+        addCompoundLibraryPlateNode(library, plate)
+        sortCompoundLibraryPlateNodes(library)
+      } catch (err) {
+        handleError(err, false)
+      }
+    }
+  })
+}
 </script>
 
 <template>
@@ -302,6 +349,23 @@ const newPlate = async (experiment: Experiment) => {
             <q-separator />
             <q-item clickable v-close-popup>
               <q-item-section @click="newPlate(prop.node.experiment)">
+                {{ t('action.new_plate') }}
+              </q-item-section>
+            </q-item>
+          </q-list>
+        </q-menu>
+        {{ prop.node.label }}
+      </template>
+      <template v-slot:header-compoundlib="prop">
+        <q-icon :name="prop.node.icon || 'star'" size="24px" class="q-mr-sm" style="justify-content: end" />
+        <q-menu touch-position context-menu>
+          <q-list dense style="min-width: 100px">
+            <q-item clickable v-close-popup>
+              <q-item-section>{{ t('action.compoundlib_properties') }}</q-item-section>
+            </q-item>
+            <q-separator />
+            <q-item clickable v-close-popup>
+              <q-item-section @click="newCompoundLibPlate(prop.node.compoundlib)">
                 {{ t('action.new_plate') }}
               </q-item-section>
             </q-item>

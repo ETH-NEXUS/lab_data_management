@@ -84,6 +84,7 @@ export default {
     add_measurement: 'Add Measurement',
     map_plate: 'Map Plate',
     copy_plate: 'Copy Plate',
+    compoundlib_properties: 'Compound Library Properties',
   },
   error: {
     select_plate_dimension: 'Please select a plate dimension.',
