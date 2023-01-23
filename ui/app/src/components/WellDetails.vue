@@ -450,6 +450,7 @@ td, th
   text-align: left
 h2
   font-family: 'Courier New', Courier, monospace
+  font-size: 20px
 h4
   font-size: 1.5em
   font-weight: bold

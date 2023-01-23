@@ -37,6 +37,7 @@ export default {
     amount_column: 'Amount column',
     measurement_feature: 'Measurement feature',
     measurement_value: 'Measurement value',
+    templates: 'Templates',
   },
   hint: {
     compound_to_add: 'Select the compound to add',
@@ -59,11 +60,12 @@ export default {
     amount: 'Amount',
     chain: 'Chain',
     well_type: 'Type',
+    template_name: 'Template Name',
   },
   message: {
     project_name: 'Please enter the project name:',
     experiment_name: 'Please enter the experiment name:',
-    plate_barcode: 'Please enter (or scan) the plates barcode',
+    plate_barcode: 'Please enter (or scan) the plates barcode:',
     plate_has_no_dimension: 'The plate has no dimension assigned yet. Please specify one.',
     no_well_information: 'No existing well information do you want to create it?',
     no_compounds_found: 'No compounds found',
@@ -72,6 +74,7 @@ export default {
     successfully_mapped_plate: 'Successfully mapped plate',
     successfully_copied_plate: 'Successfully copied plate',
     no_dimension: 'No dimension',
+    template_name: 'Please enter the template name:',
   },
   action: {
     new_project: 'New project',
@@ -86,6 +89,9 @@ export default {
     map_plate: 'Map Plate',
     copy_plate: 'Copy Plate',
     compoundlib_properties: 'Compound Library Properties',
+    new_category: 'New Category',
+    category_properties: 'Category Properties',
+    new_template: 'New Template',
   },
   error: {
     select_plate_dimension: 'Please select a plate dimension.',

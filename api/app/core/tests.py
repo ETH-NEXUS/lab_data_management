@@ -1,8 +1,9 @@
 from django.test import TestCase
-from django.db import IntegrityError
+from django.db import IntegrityError, transaction
 
 from compoundlib.models import Compound, CompoundLibrary
 from .models import Plate, PlateDimension, Well, WellWithdrawal, WellCompound, Experiment, Project
+from platetemplate.models import PlateTemplate, PlateTemplateCategory
 from .mapping import Mapping, MappingList
 from .helper import charToAlphaPos
 
@@ -150,18 +151,58 @@ class PlateTest(TestCase):
 
         self.assertRaises(ValueError, MappingList.from_csv, csv_file, 'from', 'to', 'amount', delimiter=';')
 
-    def test_only_library_or_experiment_constraint(self):
+    def test_only_library_or_experiment_or_template_constraint(self):
         """ Check the constraint that only library or experiment can have a value on a plate"""
         library = CompoundLibrary.objects.create(name='CL')
         project = Project.objects.create(name='Proj')
         experiment = Experiment.objects.create(name='Exp', project=project)
-        with self.assertRaises(IntegrityError):
-            Plate.objects.create(
-                barcode='123456',
-                dimension=self.dimension,
-                library=library,
-                experiment=experiment
-            )
+        category = PlateTemplateCategory.objects.create(name='PTC')
+        template = PlateTemplate.objects.create(name='PT', category=category)
+        try:
+            with transaction.atomic():
+                Plate.objects.create(
+                    barcode='bar1',
+                    dimension=self.dimension,
+                    library=library,
+                    experiment=experiment,
+                    template=template
+                )
+            self.fail("Should raise an IntegrityError")
+        except IntegrityError:
+            pass
+        try:
+            with transaction.atomic():
+                Plate.objects.create(
+                    barcode='bar2',
+                    dimension=self.dimension,
+                    library=library,
+                    experiment=experiment
+                )
+            self.fail("Should raise an IntegrityError")
+        except IntegrityError:
+            pass
+        try:
+            with transaction.atomic():
+                Plate.objects.create(
+                    barcode='bar3',
+                    dimension=self.dimension,
+                    experiment=experiment,
+                    template=template
+                )
+            self.fail("Should raise an IntegrityError")
+        except IntegrityError:
+            pass
+        try:
+            with transaction.atomic():
+                Plate.objects.create(
+                    barcode='bar4',
+                    dimension=self.dimension,
+                    library=library,
+                    template=template
+                )
+            self.fail("Should raise an IntegrityError")
+        except IntegrityError:
+            pass
 
     def test_create_library_plate(self):
         """ Check the creation of a library plate"""

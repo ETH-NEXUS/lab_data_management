@@ -73,19 +73,22 @@ class Plate(TimeTrackedModel):
     barcode = models.CharField(max_length=50, unique=True, db_index=True)
     dimension = models.ForeignKey(
         PlateDimension, on_delete=models.RESTRICT, default=None, null=True)
+    # A plate can only be a library, experiment or template plate
     experiment = models.ForeignKey(Experiment, null=True, blank=True, on_delete=models.CASCADE, related_name=related_name)
     library = models.ForeignKey(CompoundLibrary, null=True, blank=True, on_delete=models.CASCADE, related_name=related_name)
-    template = models.ForeignKey(PlateTemplate, null=True, blank=True, on_delete=models.CASCADE, related_name=related_name)
+    template = models.OneToOneField(PlateTemplate, null=True, blank=True, on_delete=models.CASCADE, related_name='plate')
 
     class Meta:
         ordering = ('-id',)
+        # A plate can only be a library, experiment or template plate
         constraints = [
             CheckConstraint(
-                check=Q(experiment__isnull=True) & Q(library__isnull=True) |
-                Q(experiment__isnull=True) & Q(library__isnull=False) |
-                Q(experiment__isnull=False) & Q(library__isnull=True),
-                name='check_only_library_or_experiment',
-            ),
+                check=Q(experiment__isnull=True) & Q(library__isnull=True) & Q(template__isnull=True) |
+                Q(experiment__isnull=False) & Q(library__isnull=True) & Q(template__isnull=True) |
+                Q(experiment__isnull=True) & Q(library__isnull=False) & Q(template__isnull=True) |
+                Q(experiment__isnull=True) & Q(library__isnull=True) & Q(template__isnull=False),
+                name='check_only_library_or_experiment_or_template'
+            )
         ]
 
     def __str__(self):

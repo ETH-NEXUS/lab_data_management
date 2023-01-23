@@ -11,13 +11,20 @@ interface NavigationTree {
   needsUpdate: boolean
 }
 
+interface NavigationTreeFilter {
+  filter: string
+}
+
 interface WellDetails {
   showStructure: boolean
 }
 
 interface Settings {
   platePage: PlatePage
-  navigationTree: NavigationTree
+  navigationTree: NavigationTreeFilter
+  projectNavigationTree: NavigationTree
+  libraryNavigationTree: NavigationTree
+  templateNavigationTree: NavigationTree
   wellDetails: WellDetails
 }
 
@@ -29,6 +36,17 @@ export const useSettingsStore = defineStore('settings', {
         selectedWellInfo: undefined,
       },
       navigationTree: {
+        filter: '',
+      },
+      projectNavigationTree: {
+        expandedNodes: [],
+        needsUpdate: false,
+      },
+      libraryNavigationTree: {
+        expandedNodes: [],
+        needsUpdate: false,
+      },
+      templateNavigationTree: {
         expandedNodes: [],
         needsUpdate: false,
       },

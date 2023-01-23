@@ -17,7 +17,8 @@ const {t} = useI18n()
 
 const loading = ref<boolean>(true)
 const plate = ref<Plate | null>(null)
-const {platePage, navigationTree} = storeToRefs(useSettingsStore())
+const {platePage, navigationTree, projectNavigationTree, libraryNavigationTree, templateNavigationTree} =
+  storeToRefs(useSettingsStore())
 const plateDimensions = ref<Array<PlateDimension>>()
 
 const mapPlateDialog = ref<boolean>(false)
@@ -83,7 +84,15 @@ const setPlateDimension = async () => {
         dimension: selectedPlateDimension.value,
       })
       plate.value = resp.data
-      navigationTree.value.needsUpdate = true
+      if (plate.value?.experiment) {
+        projectNavigationTree.value.needsUpdate = true
+      }
+      if (plate.value?.library) {
+        libraryNavigationTree.value.needsUpdate = true
+      }
+      if (plate.value?.template) {
+        templateNavigationTree.value.needsUpdate = true
+      }
     } catch (err) {
       handleError(err)
     }
@@ -232,6 +241,16 @@ const copyPlate = async () => {
     loading.value = false
   }
 }
+
+const formatBarcode = (barcode: string | undefined) => {
+  if (!barcode) {
+    return 'N/A'
+  }
+  if (barcode.startsWith('__TEMPL__')) {
+    return `Templates/${barcode.replace('__TEMPL__', '').replaceAll('_', '/')}`
+  }
+  return barcode
+}
 </script>
 
 <template>
@@ -241,7 +260,7 @@ const copyPlate = async () => {
       <q-splitter v-model="platePage.splitter" class="full-width">
         <template v-slot:before>
           <div v-if="plate">
-            <h2>{{ plate.barcode }}</h2>
+            <h2>{{ formatBarcode(plate.barcode) }}</h2>
             <dynamic-plate
               :plate="plate"
               @well-selected="(well_info: WellInfo) => (platePage.selectedWellInfo = well_info)" />
@@ -276,7 +295,7 @@ const copyPlate = async () => {
     </q-page>
     <div v-else class="fit row wrap justify-left items-start content-start q-ml-md">
       <q-form class="col-6 self-center" @submit="setPlateDimension">
-        <h2>{{ plate?.barcode }}</h2>
+        <h2>{{ formatBarcode(plate?.barcode) }}</h2>
         <q-banner inline-actions rounded class="bg-orange text-white q-mt-lg">
           <span class="text-h6">{{ t('message.plate_has_no_dimension') }}</span>
         </q-banner>
@@ -443,6 +462,7 @@ const copyPlate = async () => {
 <style scoped lang="sass">
 h2
   font-family: 'Courier New', Courier, monospace
+  font-size: 20px
 
 .sticky-header
   /* height or max-height is important */

@@ -19,6 +19,19 @@ export interface Project {
   experiments: Array<Experiment>
 }
 
+export interface Template {
+  id: number
+  name: string
+  plate: Plate
+  category: number
+}
+
+export interface TemplateCategory {
+  id: number
+  name: string
+  templates: Array<Template>
+}
+
 export interface Meta {
   totalCount: number
 }
@@ -80,8 +93,9 @@ export interface Plate {
   id: number
   barcode: string
   dimension: PlateDimension
-  experiment?: Project
+  experiment?: Experiment
   library?: CompoundLibrary
+  template?: Template
   wells?: Array<Well>
 }
 
