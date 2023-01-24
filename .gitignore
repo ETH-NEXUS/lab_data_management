@@ -301,3 +301,5 @@ backups/
 
 *.ipynb
 *.csv
+
+Pipfile
