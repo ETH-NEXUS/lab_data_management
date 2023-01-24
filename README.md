@@ -23,3 +23,11 @@ vi .env
 ```
 make up
 ```
+
+## Import a compound library
+
+In the api container run:
+
+```bash
+./manage.py import sdf -i /data/S230470.sdf -m /data/S230470_mapping.yml -r 16 -c 24
+```
