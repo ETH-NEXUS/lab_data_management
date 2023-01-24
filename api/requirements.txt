@@ -12,5 +12,7 @@ gunicorn==20.1.0
 uvicorn==0.20.0
 psycopg2==2.9.5
 pyyaml==6.0
+pandas==1.5.2
 rdkit==2022.9.3
+
 
