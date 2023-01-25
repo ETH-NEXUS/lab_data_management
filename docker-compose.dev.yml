@@ -6,7 +6,12 @@ services:
       # We should use the same port internally and externally, otherwise the dev tools support
       # of the browser is for almost nothing
       - "8090:8090"
-    command: yarn dev --host 0.0.0.0 --port 8090
+    command:
+      - /bin/sh
+      - -c
+      - |
+        yarn
+        yarn dev --host 0.0.0.0 --port 8090
     # command: bash -c 'while true; do sleep 5; done'
     restart: unless-stopped
     depends_on:
