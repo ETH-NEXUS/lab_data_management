@@ -171,18 +171,18 @@ REST_FRAMEWORK = {
 }
 
 if DISABLE_BROWSABLE_API:
-    REST_FRAMEWORK['DEFAULT_RENDERER_CLASSES'] = [
-        'rest_framework.renderers.JSONRenderer',
-        'rest_framework_csv.renderers.CSVRenderer'
-    ]
+  REST_FRAMEWORK['DEFAULT_RENDERER_CLASSES'] = [
+      'rest_framework.renderers.JSONRenderer',
+      'rest_framework_csv.renderers.CSVRenderer'
+  ]
 
 if DISABLE_AUTH:
-    REST_FRAMEWORK['DEFAULT_AUTHENTICATION_CLASSES'] = []
-    REST_FRAMEWORK['DEFAULT_PERMISSION_CLASSES'] = []
+  REST_FRAMEWORK['DEFAULT_AUTHENTICATION_CLASSES'] = []
+  REST_FRAMEWORK['DEFAULT_PERMISSION_CLASSES'] = []
 
 FIXTURE_DIRS = []
 
-### JWT ###
+# JWT
 SIMPLE_JWT = {
     'ACCESS_TOKEN_LIFETIME': td(minutes=30),
     'REFRESH_TOKEN_LIFETIME': td(days=1),
@@ -237,40 +237,40 @@ CSRF_TRUSTED_ORIGINS = environ.get('DJANGO_CSRF_TRUSTED_ORIGINS').split(',')
 # LOGGING
 ###
 if LOG_SQL:
-    LOGGING = {
-        'version': 1,
-        'filters': {
-            'require_debug_true': {
-                '()': 'django.utils.log.RequireDebugTrue',
-            }
-        },
-        'handlers': {
-            'console': {
-                'level': 'DEBUG',
-                'filters': ['require_debug_true'],
-                'class': 'logging.StreamHandler',
-            }
-        },
-        'loggers': {
-            'django.db.backends': {
-                'level': 'DEBUG',
-                'handlers': ['console'],
-            }
-        }
-    }
+  LOGGING = {
+      'version': 1,
+      'filters': {
+          'require_debug_true': {
+              '()': 'django.utils.log.RequireDebugTrue',
+          }
+      },
+      'handlers': {
+          'console': {
+              'level': 'DEBUG',
+              'filters': ['require_debug_true'],
+              'class': 'logging.StreamHandler',
+          }
+      },
+      'loggers': {
+          'django.db.backends': {
+              'level': 'DEBUG',
+              'handlers': ['console'],
+          }
+      }
+  }
 else:
-    LOGGING = {
-        'version': 1,
-        'disable_existing_loggers': False,
-        'handlers': {
-            'console': {
-                'class': 'logging.StreamHandler',
-            },
-        },
-        'root': {
-            'handlers': ['console'],
-            'level': LOG_LEVEL,
-        },
-    }
+  LOGGING = {
+      'version': 1,
+      'disable_existing_loggers': False,
+      'handlers': {
+          'console': {
+              'class': 'logging.StreamHandler',
+          },
+      },
+      'root': {
+          'handlers': ['console'],
+          'level': LOG_LEVEL,
+      },
+  }
 
 FLOAT_PRECISION = 6

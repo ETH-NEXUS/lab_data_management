@@ -294,7 +294,7 @@ dist
 .DS_Store
 .vscode
 !.env.TEMPLATE
-/data
+data/
 static/
 media/
 backups/

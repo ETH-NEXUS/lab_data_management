@@ -5,9 +5,9 @@ from .models import PlateTemplate, PlateTemplateCategory
 
 @admin.register(PlateTemplateCategory)
 class PlateTemplateCategoryAdmin(admin.ModelAdmin):
-    pass
+  pass
 
 
 @admin.register(PlateTemplate)
 class PlateTemplateAdmin(admin.ModelAdmin):
-    pass
+  pass

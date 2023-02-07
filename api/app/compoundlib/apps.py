@@ -2,5 +2,5 @@ from django.apps import AppConfig
 
 
 class CompoundlibConfig(AppConfig):
-    default_auto_field = 'django.db.models.BigAutoField'
-    name = 'compoundlib'
+  default_auto_field = 'django.db.models.BigAutoField'
+  name = 'compoundlib'

@@ -4,16 +4,16 @@ from core.serializers import SimplePlateSerializer
 
 
 class PlateTemplateSerializer(serializers.ModelSerializer):
-    plate = SimplePlateSerializer()
+  plate = SimplePlateSerializer()
 
-    class Meta:
-        model = PlateTemplate
-        fields = ('id', 'name', 'category', 'plate')
+  class Meta:
+    model = PlateTemplate
+    fields = ('id', 'name', 'category', 'plate')
 
 
 class PlateTemplateCategorySerializer(serializers.ModelSerializer):
-    templates = PlateTemplateSerializer(many=True, read_only=True)
+  templates = PlateTemplateSerializer(many=True, read_only=True)
 
-    class Meta:
-        model = PlateTemplateCategory
-        fields = '__all__'
+  class Meta:
+    model = PlateTemplateCategory
+    fields = '__all__'
