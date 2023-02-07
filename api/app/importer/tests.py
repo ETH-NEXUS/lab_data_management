@@ -4,32 +4,32 @@ from .helper import sameSchema
 
 
 class HelperTests(TestCase):
-    def test_sameSchemaTrue(self):
-        a = {
-            'a': {
-                'b': {
-                    'c': 'xxx'
-                },
-                'x': {
-                    'y': 111
-                }
+  def test_sameSchemaTrue(self):
+    a = {
+        'a': {
+            'b': {
+                'c': 'xxx'
+            },
+            'x': {
+                'y': 111
             }
         }
-        b = deepcopy(a)
-        self.assertTrue(sameSchema(a, b))
+    }
+    b = deepcopy(a)
+    self.assertTrue(sameSchema(a, b))
 
-    def test_sameSchemaFalse(self):
-        a = {
-            'a': {
-                'b': {
-                    'c': 'xxx'
-                },
-                'x': {
-                    'y': 111
-                }
+  def test_sameSchemaFalse(self):
+    a = {
+        'a': {
+            'b': {
+                'c': 'xxx'
+            },
+            'x': {
+                'y': 111
             }
         }
-        b = deepcopy(a)
-        del b['a']['x']['y']
-        b['a']['x']['z'] = 'changed'
-        self.assertFalse(sameSchema(a, b))
+    }
+    b = deepcopy(a)
+    del b['a']['x']['y']
+    b['a']['x']['z'] = 'changed'
+    self.assertFalse(sameSchema(a, b))
