@@ -248,11 +248,17 @@ class MeasurementFeature(models.Model):
   unit = models.CharField(max_length=10, null=True, blank=True)
 
 
+class MeasurementMetadata(models.Model):
+  data = models.JSONField()
+
+
 class Measurement(TimeTrackedModel):
   related_name = 'measurements'
   well = models.ForeignKey(Well, on_delete=models.CASCADE, related_name=related_name)
   feature = models.ForeignKey(MeasurementFeature, on_delete=models.RESTRICT, related_name=related_name)
+  meta = models.ForeignKey(MeasurementMetadata, on_delete=models.RESTRICT, related_name=related_name, null=True, blank=True)
   value = models.FloatField()
+  identifier = models.CharField(max_length=20, null=True, blank=True)
 
   def __str__(self):
     return f"{self.feature.abbrev}: {self.value}{self.feature.unit}"
