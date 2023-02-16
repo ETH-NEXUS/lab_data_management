@@ -8,7 +8,7 @@
     "scripts": {
         "lint": "eslint --ext .js,.ts,.vue ./",
         "format": "prettier --write \"**/*.{js,ts,vue,scss,html,md,json}\" --ignore-path .gitignore",
-        "test": "echo \"No test specified\" && exit 0",
+        "test": "vitest",
         "dev": "quasar dev",
         "build": "quasar build"
     },
@@ -21,6 +21,7 @@
         "pinia-plugin-persist": "^1.0.0",
         "quasar": "^2.6.0",
         "v-network-graph": "^0.8.1",
+        "vitest": "^0.28.5",
         "vue": "^3.0.0",
         "vue-i18n": "^9.2.2",
         "vue-router": "^4.0.0"

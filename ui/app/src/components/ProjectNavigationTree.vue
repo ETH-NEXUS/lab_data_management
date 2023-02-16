@@ -9,6 +9,7 @@ import {useQuasar} from 'quasar'
 import {useSettingsStore} from '../stores/settings'
 import {storeToRefs} from 'pinia'
 import {useProjectStore} from '../stores/project'
+import GenerateBarcodeForm from './GenerateBarcodeForm.vue'
 
 const router = useRouter()
 const {t} = useI18n()
@@ -45,6 +46,8 @@ const nodeHandler = (node: QTreeNode) => {
     router.push(`/project/${node.project.name}`)
   }
 }
+
+const generateBarcodeDialogToggle = ref<boolean>(false)
 
 const projectNodes = ref<QTreeNode>({
   label: t('label.projects'),
@@ -237,10 +240,17 @@ const newPlate = async (experiment: Experiment) => {
       </q-menu>
       {{ prop.node.label }}
     </template>
+
     <template v-slot:header-experiment="prop">
       <q-icon :name="prop.node.icon || 'star'" size="24px" class="q-mr-sm" style="justify-content: end" />
       <q-menu touch-position context-menu>
         <q-list dense style="min-width: 100px">
+          <q-item clickable v-close-popup>
+            <q-item-section @click="generateBarcodeDialogToggle = true">
+              {{ t('action.generate_barcodes') }}
+            </q-item-section>
+          </q-item>
+          <q-separator />
           <q-item clickable v-close-popup>
             <q-item-section>{{ t('action.experiment_properties') }}</q-item-section>
           </q-item>
@@ -259,6 +269,9 @@ const newPlate = async (experiment: Experiment) => {
       {{ prop.node.label }}
     </template>
   </q-tree>
+  <q-dialog v-model="generateBarcodeDialogToggle">
+    <GenerateBarcodeForm />
+  </q-dialog>
 </template>
 
 <style lang="sass">
