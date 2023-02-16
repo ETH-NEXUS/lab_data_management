@@ -16,7 +16,7 @@ fi
 if [ "$DEV" == "True" ]; then
   python manage.py runserver 0.0.0.0:${PORT}
 else
-  gunicorn labmgmt.asgi:application \
+  gunicorn ldm.asgi:application \
     --log-file - \
     --workers 16 \
     --worker-class uvicorn.workers.UvicornWorker \

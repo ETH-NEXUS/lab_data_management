@@ -2,6 +2,7 @@ django==4.1.7
 django_extensions==3.2.1
 django-cors-headers==3.13.0
 django-filter==22.1
+django-auth-ldap==0.0.0
 djangorestframework==3.14.0
 # drf-schema-adapter==3.0.0
 git+https://github.com/dameyerdave/drf-schema-adapter@filter_to_filterset#egg=drf-schema-adapter
