@@ -1,9 +1,21 @@
 <script setup lang="ts">
 import {useI18n} from 'vue-i18n'
-import {ref} from 'vue'
+import {defineProps, ref} from 'vue'
 import {useQuasar} from 'quasar'
-import {sidesData, csvColumnsNames} from 'components/data'
-import {downloadCSVData, generateBarcodes} from 'components/helpers'
+import {sidesData} from 'components/data'
+
+import {useProjectStore} from 'stores/project'
+
+const emit = defineEmits(['update'])
+
+const props = defineProps({
+  experimentId: {
+    type: Number,
+    required: true,
+  },
+})
+
+const projectStore = useProjectStore()
 
 const prefix = ref<string>('')
 const number_of_plates = ref<number | null>(null)
@@ -22,7 +34,7 @@ const onCheck = () => {
   }
 }
 
-const onSubmit = () => {
+const onSubmit = async () => {
   if (sides.value.length === 0) {
     $q.notify({
       message: 'Please select at least one side',
@@ -32,8 +44,8 @@ const onSubmit = () => {
   }
 
   if (prefix.value && number_of_plates.value && sides.value) {
-    const barcodes = generateBarcodes(prefix.value, number_of_plates.value, sides.value)
-    downloadCSVData(csvColumnsNames, barcodes, 'barcodes.csv')
+    await projectStore.generateBarcodes(props.experimentId, prefix.value, number_of_plates.value, sides.value)
+    emit('update')
   }
 }
 
@@ -47,22 +59,20 @@ const onReset = () => {
   <q-card class="formDialog">
     <q-card-section class="row items-center q-pb-none">
       <div class="text-h6">{{ t('action.generate_barcodes') }}</div>
-      <q-space></q-space>
-      <q-btn icon="close" flat round dense v-close-popup></q-btn>
+      <!--      <q-space></q-space>-->
+      <!--      <q-btn icon="close" flat round dense v-close-popup></q-btn>-->
     </q-card-section>
 
     <q-card-section>
       <div class="q-pa-md" style="max-width: 400px">
-        <q-form @submit="onSubmit" @reset="onReset" class="q-gutter-md">
+        <q-form @submit="onSubmit" @reset="onReset" class="q-gutter-md full-width">
           <q-input
-            filled
             v-model="prefix"
             :label="t('action.enter_prefix')"
             lazy-rules
             :rules="[val => (val && val.length > 0) || t('action.validation_prefix')]"></q-input>
 
           <q-input
-            filled
             type="number"
             v-model="number_of_plates"
             :label="t('action.enter_number_of_plates')"
@@ -85,10 +95,11 @@ const onReset = () => {
               </div>
             </div>
           </div>
-
-          <div>
+          <q-separator class="q-mt-lg"></q-separator>
+          <div class="q-mt-lg">
             <q-btn label="Submit" type="submit" color="primary"></q-btn>
             <q-btn label="Reset" type="reset" color="primary" flat class="q-ml-sm"></q-btn>
+            <q-btn flat label="Cancel" v-close-popup></q-btn>
           </div>
         </q-form>
       </div>
@@ -98,12 +109,12 @@ const onReset = () => {
 
 <style>
 .formDialog {
-  width: 80vmin;
+  width: 35vmin;
 }
 
 .outerDiv {
   margin-top: 20px;
-  padding: 20px 20px 40px 50px;
+  padding: 20px 20px 50px 75px;
 }
 .innerDiv {
   width: 100px;

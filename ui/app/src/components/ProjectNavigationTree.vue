@@ -44,6 +44,9 @@ const nodeHandler = (node: QTreeNode) => {
     router.push(`/plate/${node.plate.barcode}`)
   } else if ('project' in node) {
     router.push(`/project/${node.project.name}`)
+  } else if ('experiment' in node) {
+    console.log('NODE 1', node)
+    router.push(`/project/${node.experiment.project}/experiment/${node.experiment.id}`)
   }
 }
 
@@ -270,7 +273,7 @@ const newPlate = async (experiment: Experiment) => {
     </template>
   </q-tree>
   <q-dialog v-model="generateBarcodeDialogToggle">
-    <GenerateBarcodeForm />
+    <GenerateBarcodeForm experiment-id="1" />
   </q-dialog>
 </template>
 

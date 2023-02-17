@@ -40,5 +40,21 @@ export const useProjectStore = defineStore('project', () => {
     return plate
   }
 
-  return {projects, initialize, add, addExperiment, addPlate}
+  const generateBarcodes = async (
+    experimentId: number,
+    prefix: string,
+    numberOfPlates: number,
+    sides: Array<string>
+  ) => {
+    await api.post('/api/experiments/barcodes/', {
+      number_of_plates: numberOfPlates,
+      experiment_id: experimentId,
+      sides: sides,
+      prefix: prefix,
+    })
+    const resp_p = await api.get('/api/projects/')
+    projects.value = resp_p.data.results
+  }
+
+  return {projects, initialize, add, addExperiment, addPlate, generateBarcodes}
 })
