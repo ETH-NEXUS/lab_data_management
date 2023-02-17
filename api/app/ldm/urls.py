@@ -17,9 +17,18 @@ from django.contrib import admin
 from django.urls import path, include
 from drf_auto_endpoint.router import router
 from core.views import MappingPreviewView
+from rest_framework_simplejwt.views import (
+    TokenObtainPairView,
+    TokenRefreshView,
+)
+from users.urls import router as user_router
 
 urlpatterns = [
+
     path('admin/', admin.site.urls),
+    path('api/auth/token/', TokenObtainPairView.as_view(), name='token_obtain_pair'),
+    path('api/auth/token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
     path('api/', include(router.urls)),
+    path('api/', include(user_router.urls)),
     path('api/mapping_preview/', MappingPreviewView.as_view())
 ]

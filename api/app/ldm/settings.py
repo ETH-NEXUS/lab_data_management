@@ -47,6 +47,7 @@ INSTALLED_APPS = [
     'django_extensions',
     'corsheaders',
     'rest_framework',
+    'rest_framework_simplejwt',
     'drf_auto_endpoint',
     'core',
     'importer',
@@ -173,7 +174,7 @@ MEDIA_ROOT = '/vol/web/media'
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 DISABLE_BROWSABLE_API = False
-DISABLE_AUTH = True
+DISABLE_AUTH = False
 
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': (
@@ -239,7 +240,7 @@ SIMPLE_JWT = {
     'TOKEN_TYPE_CLAIM': 'token_type',
     'TOKEN_USER_CLASS': 'rest_framework_simplejwt.models.TokenUser',
     # We overwrite the token obtain serializer to support OTP
-    'TOKEN_OBTAIN_SERIALIZER': 'users.serializers.TokenObtainPair2FASerializer',
+    # 'TOKEN_OBTAIN_SERIALIZER': 'users.serializers.TokenObtainPair2FASerializer',
 
     'JTI_CLAIM': 'jti',
 
