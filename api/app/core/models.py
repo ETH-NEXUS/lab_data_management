@@ -28,7 +28,6 @@ class Project(TimeTrackedModel):
 
 
 
-
 class Experiment(TimeTrackedModel):
     related_name = 'experiments'
     name = models.CharField(max_length=50)
@@ -37,6 +36,8 @@ class Experiment(TimeTrackedModel):
 
     def __str__(self):
         return self.name
+
+
 
     class Meta:
         unique_together = ('name', 'project')
@@ -52,7 +53,10 @@ class BarcodeSpecification(TimeTrackedModel):
     def __str__(self):
         return self.prefix
 
-    # def generate_barcode(self):
+    class Meta:
+        ordering = ['id']
+
+    # def generate_barcodes(self):
     #     return [{
     #         'NorthBarcode': f"{self.prefix}_{i + 1}${self.prefix}_{i + 1}" if 'North' in self.sides else '',
     #         'SouthBarcode': f"{self.prefix}_{i + 1}${self.prefix}_{i + 1}" if 'South' in self.sides else '',

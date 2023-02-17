@@ -17,6 +17,7 @@ const loading = ref<boolean>(true)
 const project = ref<Project | null>(null)
 const experiment = ref<Experiment | null>(null)
 const generateBarcodeDialogToggle = ref<boolean>(false)
+const editToggle = ref<boolean>(false)
 
 const {t} = useI18n()
 
@@ -47,6 +48,14 @@ const getExperiment = (id: number) => {
 const update = async () => {
   await initialize()
 }
+const deleteBarcode = async (id: number) => {
+  try {
+    await projectStore.deleteBarcode(id)
+    await initialize()
+  } catch (err) {
+    handleError(err)
+  }
+}
 </script>
 
 <template>
@@ -70,27 +79,17 @@ const update = async () => {
             {{ formatDate(experiment.created_at) }}
           </div>
 
+          <div class="text-overline">Barcode sets:</div>
+
           <div
-            class="text-body1 text-grey-8 q-mt-lg"
+            class="text-body1 text-grey-8 q-mt-sm"
             v-if="getExperiment(Number(route.params.experiment)).barcode_specifications">
             <q-list>
               <div v-for="(s, i) in experiment.barcode_specifications" :key="`${s.prefix}-${s.id}`">
                 <q-item>
                   <q-item-section>
-                    <q-item-label class="text-secondary">Barcode set #{{ i + 1 }}</q-item-label>
-                    <q-btn
-                      flat
-                      label="Download csv"
-                      type="submit"
-                      color="secondary"
-                      class="q-mt-md"
-                      @click="
-                        downloadCSVData(
-                          csvColumnsNames,
-                          generateBarcodes(s.prefix, s.number_of_plates, s.sides),
-                          'barcodes.csv'
-                        )
-                      "></q-btn>
+                    <q-item-label class="text-subtitle1 q-mt-lg">Barcode set #{{ i + 1 }}</q-item-label>
+
                     <q-item-label caption lines="2">
                       <q-table
                         :rows="generateBarcodes(s.prefix, s.number_of_plates, s.sides)"
@@ -98,6 +97,47 @@ const update = async () => {
                     </q-item-label>
                   </q-item-section>
                 </q-item>
+                <q-btn
+                  flat
+                  label="Download csv"
+                  type="submit"
+                  color="secondary"
+                  class="q-mt-md"
+                  @click="
+                    downloadCSVData(
+                      csvColumnsNames,
+                      generateBarcodes(s.prefix, s.number_of_plates, s.sides),
+                      'barcodes.csv'
+                    )
+                  "></q-btn>
+
+                <q-btn
+                  flat
+                  label="Delete specification"
+                  color="red"
+                  class="q-mt-md"
+                  @click="deleteBarcode(s.id)"></q-btn>
+
+                <q-btn
+                  flat
+                  label="Edit specification"
+                  color="warning"
+                  class="q-mt-md"
+                  @click="editToggle = !editToggle"></q-btn>
+
+                <div :class="`${editToggle ? 'visible' : 'hidden'} q-mt-lg`">
+                  <GenerateBarcodeForm
+                    :edit="true"
+                    @update="update"
+                    :experiment-id="experiment.id"
+                    :prefilledData="{
+                      index: i,
+                      prefix: s.prefix,
+                      number_of_plates: s.number_of_plates,
+                      sides: s.sides,
+                      id: s.id,
+                    }" />
+                </div>
               </div>
             </q-list>
           </div>
@@ -116,4 +156,8 @@ const update = async () => {
   </q-page>
 </template>
 
-<style scoped lang="sass"></style>
+<style scoped lang="sass">
+
+.hidden
+  visibility: hidden
+</style>

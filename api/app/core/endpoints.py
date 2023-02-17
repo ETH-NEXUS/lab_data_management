@@ -13,8 +13,8 @@ from .models import (
     Measurement,
     MeasurementFeature,
     PlateMapping,
-    Experiment)
-from .serializers import (PlateSerializer, ExperimentSerializer, ProjectSerializer, PlateMappingSerializer)
+    Experiment, BarcodeSpecification)
+from .serializers import (PlateSerializer, ExperimentSerializer, ProjectSerializer, PlateMappingSerializer, BarcodeSpecificationSerializer)
 from .views import (PlateViewSet, WellViewSet, PlateMappingViewSet, ExperimentViewSet)
 
 
@@ -62,6 +62,12 @@ class ExperimentEndpoint(DefaultEndpoint):
     base_serializer = ExperimentSerializer
     model = Experiment
     base_viewset = ExperimentViewSet
+
+@register
+class BarcodeSpecification(DefaultEndpoint):
+    base_serializer = BarcodeSpecificationSerializer
+    model = BarcodeSpecification
+
 
 
 @register
