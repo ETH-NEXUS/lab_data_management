@@ -5,6 +5,10 @@ export default {
   failed: 'Action failed',
   success: 'Action was successful',
   label: {
+    username: 'Username',
+    password: 'Password',
+    login: 'Login',
+    logout: 'Logout',
     compound_libraries: 'Compound Libraries',
     projects: 'Projects',
     filter: 'Filter',
@@ -40,6 +44,8 @@ export default {
     templates: 'Templates',
   },
   hint: {
+    username: 'Enter your ETH username',
+    password: 'Enter your ETH password',
     compound_to_add: 'Select the compound to add',
     well_to_transfer_from: 'Select the well to transfer the compound from',
     amount_to_transfer: 'Enter the amount to transfer',
@@ -63,6 +69,8 @@ export default {
     template_name: 'Template Name',
   },
   message: {
+    successfully_logged_in: 'Successfully logged in',
+    logged_out: 'You are logged out - see you soon again',
     project_name: 'Please enter the project name:',
     experiment_name: 'Please enter the experiment name:',
     plate_barcode: 'Please enter (or scan) the plates barcode:',
@@ -95,6 +103,7 @@ export default {
   },
   error: {
     select_plate_dimension: 'Please select a plate dimension.',
+    no_details_available: 'No details available.',
   },
   unit: {
     amount: 'µl',

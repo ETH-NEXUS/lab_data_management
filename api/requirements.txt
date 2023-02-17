@@ -4,9 +4,10 @@ django-cors-headers==3.13.0
 django-filter==22.1
 django-auth-ldap==4.1.0
 djangorestframework==3.14.0
+djangorestframework-simplejwt==5.2.2
+djangorestframework-csv==2.1.1
 # drf-schema-adapter==3.0.0
 git+https://github.com/dameyerdave/drf-schema-adapter@filter_to_filterset#egg=drf-schema-adapter
-djangorestframework-csv==2.1.1
 markdown==3.4.1
 friendlylog==1.0.2
 gunicorn==20.1.0
