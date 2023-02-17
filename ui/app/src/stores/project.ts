@@ -52,9 +52,21 @@ export const useProjectStore = defineStore('project', () => {
       sides: sides,
       prefix: prefix,
     })
-    const resp_p = await api.get('/api/projects/')
-    projects.value = resp_p.data.results
   }
 
-  return {projects, initialize, add, addExperiment, addPlate, generateBarcodes}
+  const updateBarcode = async (id: number, prefix: string, numberOfPlates: number, sides: Array<string>) => {
+    console.log(id, prefix, numberOfPlates, sides)
+    await api.patch(`/api/barcodespecifications/${id}/`, {
+      number_of_plates: numberOfPlates,
+      id: id,
+      sides: sides,
+      prefix: prefix,
+    })
+  }
+
+  const deleteBarcode = async (id: number) => {
+    await api.delete(`/api/barcodespecifications/${id}/`)
+  }
+
+  return {projects, initialize, add, addExperiment, addPlate, generateBarcodes, updateBarcode, deleteBarcode}
 })

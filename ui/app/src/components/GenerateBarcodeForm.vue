@@ -13,13 +13,22 @@ const props = defineProps({
     type: Number,
     required: true,
   },
+  prefilledData: {
+    type: Object,
+    required: false,
+  },
+  edit: {
+    type: Boolean,
+    required: false,
+    default: false,
+  },
 })
 
 const projectStore = useProjectStore()
 
-const prefix = ref<string>('')
-const number_of_plates = ref<number | null>(null)
-const sides = ref<string[]>([])
+const prefix = ref<string>(props.prefilledData?.prefix || '')
+const number_of_plates = ref<number | null>(props.prefilledData?.number_of_plates || null)
+const sides = ref<string[]>(props.prefilledData?.sides || [])
 
 const {t} = useI18n()
 const $q = useQuasar()
@@ -28,6 +37,8 @@ const onCheck = () => {
   sides.value = []
   for (const side of sidesData) {
     const checkbox = document.getElementById(side.id) as HTMLInputElement
+    console.log(checkbox)
+    console.log(checkbox.checked)
     if (checkbox.checked) {
       sides.value.push(side.label)
     }
@@ -44,8 +55,24 @@ const onSubmit = async () => {
   }
 
   if (prefix.value && number_of_plates.value && sides.value) {
-    await projectStore.generateBarcodes(props.experimentId, prefix.value, number_of_plates.value, sides.value)
-    emit('update')
+    if (props.prefilledData?.id) {
+      await projectStore.updateBarcode(
+        props.prefilledData.id,
+        prefix.value,
+        number_of_plates.value,
+        sides.value
+      )
+      emit('update')
+    } else {
+      await projectStore.generateBarcodes(
+        props.experimentId,
+        prefix.value,
+        number_of_plates.value,
+        sides.value
+      )
+      emit('update')
+      return
+    }
   }
 }
 
@@ -56,11 +83,11 @@ const onReset = () => {
 </script>
 
 <template>
-  <q-card class="formDialog">
+  <q-card :class="`${props.edit ? '' : 'formDialog'} q-mb-lg`" :bordered="false">
     <q-card-section class="row items-center q-pb-none">
-      <div class="text-h6">{{ t('action.generate_barcodes') }}</div>
-      <!--      <q-space></q-space>-->
-      <!--      <q-btn icon="close" flat round dense v-close-popup></q-btn>-->
+      <div class="text-h6">
+        {{ props.edit ? 'Edit barcode specifications' : t('action.generate_barcodes') }}
+      </div>
     </q-card-section>
 
     <q-card-section>
@@ -82,7 +109,7 @@ const onReset = () => {
               val => val > 0 || t('action.validation_positive_number'),
             ]"></q-input>
 
-          <div class="outerDiv">
+          <div class="outerDiv" v-if="!props.edit">
             <div class="innerDiv">
               <div v-for="side in sidesData" :key="side.id">
                 <input
@@ -90,16 +117,34 @@ const onReset = () => {
                   :id="side.id"
                   :style="side.styleCheckbox"
                   :value="side.id"
+                  :checked="props.prefilledData?.sides.includes(side.label)"
                   @change="onCheck()" />
-                <label :for="side.id" :style="side.styleLabel">{{ side.label }}</label>
+                <label :for="side.id" :style="side.styleLabel">
+                  {{ side.label }}
+                </label>
               </div>
             </div>
           </div>
-          <q-separator class="q-mt-lg"></q-separator>
+          <div v-else>
+            <q-select
+              v-model="sides"
+              :label="t('action.select_sides')"
+              :options="sidesData.map(side => side.label)"
+              multiple
+              use-chips
+              stack-label
+              :rules="[val => (val && val.length > 0) || t('action.validation_sides')]"
+              :emit-value="true"
+              :map-options="true"
+              :fill-input="true"
+              :input-debounce="0"
+              :max-height="200"
+              :style="{width: '100%'}"></q-select>
+          </div>
+
           <div class="q-mt-lg">
             <q-btn label="Submit" type="submit" color="primary"></q-btn>
             <q-btn label="Reset" type="reset" color="primary" flat class="q-ml-sm"></q-btn>
-            <q-btn flat label="Cancel" v-close-popup></q-btn>
           </div>
         </q-form>
       </div>
@@ -109,7 +154,7 @@ const onReset = () => {
 
 <style>
 .formDialog {
-  width: 35vmin;
+  width: 20%;
 }
 
 .outerDiv {
