@@ -1,6 +1,13 @@
 import {number} from '@intlify/core-base'
 import {CompoundExpressionNode} from '@vue/compiler-core'
 
+export interface Barcode {
+  NorthBarcode: string
+  SouthBarcode: string
+  EastBarcode: string
+  WestBarcode: string
+}
+
 export interface Todo {
   id: number
   content: string
@@ -11,12 +18,15 @@ export interface Experiment {
   name: string
   plates: Array<Plate>
   project: number
+  barcode_specifications?: Array<Barcode>
+  description?: string
 }
 
 export interface Project {
   id: number
   name: string
   experiments: Array<Experiment>
+  description?: string
 }
 
 export interface Template {
