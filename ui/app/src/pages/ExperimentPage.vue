@@ -82,7 +82,7 @@ const deleteBarcode = async (id: number) => {
           <div class="text-overline">Barcode sets:</div>
 
           <div
-            class="text-body1 text-grey-8 q-mt-sm"
+            class="text-body1 text-grey-8"
             v-if="getExperiment(Number(route.params.experiment)).barcode_specifications">
             <q-list>
               <div v-for="(s, i) in experiment.barcode_specifications" :key="`${s.prefix}-${s.id}`">
