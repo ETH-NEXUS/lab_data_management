@@ -42,6 +42,15 @@ class Experiment(TimeTrackedModel):
     class Meta:
         unique_together = ('name', 'project')
 
+    # it is still not clear what to do if the experiment has several barcode specifications for now the function only
+    # checks if the given barcode is in the list of all barcodes we should probably rewrite it at the moment when we
+    # will know at what moment of the workflow the aunction will be called and what it should do then
+    def check_barcode(self, barcode: str) -> bool:
+        barcode_specifications = self.barcode_specifications.all()
+        for barcode_specification in barcode_specifications:
+            if barcode.startswith(barcode_specification.prefix):
+                return True
+
 
 class BarcodeSpecification(TimeTrackedModel):
     related_name = 'barcode_specifications'
@@ -63,6 +72,7 @@ class BarcodeSpecification(TimeTrackedModel):
     #         'EastBarcode': f"{self.prefix}_{i + 1}${self.prefix}_{i + 1}" if 'East' in self.sides else '',
     #         'WestBarcode': f"{self.prefix}_{i + 1}${self.prefix}_{i + 1}" if 'West' in self.sides else '',
     #     } for i in range(self.number_of_plates)]
+
 
 
 
