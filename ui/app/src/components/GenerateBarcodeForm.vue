@@ -83,7 +83,7 @@ const onReset = () => {
 </script>
 
 <template>
-  <q-card :class="`${props.edit ? '' : 'formDialog'} q-mb-lg`" :bordered="false">
+  <q-card :class="`${props.edit ? 'editFormDialog' : 'formDialog'} q-mb-lg`" :bordered="false">
     <q-card-section class="row items-center q-pb-none">
       <div class="text-h6">
         {{ props.edit ? 'Edit barcode specifications' : t('action.generate_barcodes') }}
@@ -167,5 +167,9 @@ const onReset = () => {
   background-color: #4ca4f3;
   position: relative;
   border-radius: 5px;
+}
+
+.editFormDialog {
+  width: 60%;
 }
 </style>
