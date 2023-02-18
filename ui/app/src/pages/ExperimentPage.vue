@@ -29,7 +29,6 @@ const initialize = async () => {
         projectStore.projects.find((p: Project) => p.id === Number(route.params.project)) || null
       experiment.value = await getExperiment(Number(route.params.experiment))
     }
-    console.log('projectStore', projectStore.projects)
   } catch (err) {
     handleError(err)
   } finally {
@@ -54,6 +53,18 @@ const deleteBarcode = async (id: number) => {
     await initialize()
   } catch (err) {
     handleError(err)
+  }
+}
+
+const openEditField = (index: number) => {
+  const id = `edit-${index}`
+  const editForm = document.getElementById(id) as HTMLInputElement
+  if (editForm) {
+    if (editForm.classList.contains('hidden')) {
+      editForm.classList.remove('hidden')
+    } else {
+      editForm.classList.add('hidden')
+    }
   }
 }
 </script>
@@ -123,9 +134,9 @@ const deleteBarcode = async (id: number) => {
                   label="Edit specification"
                   color="warning"
                   class="q-mt-md"
-                  @click="editToggle = !editToggle"></q-btn>
+                  @click="openEditField(i)"></q-btn>
 
-                <div :class="`${editToggle ? 'visible' : 'hidden'} q-mt-lg`">
+                <div :id="`edit-${i}`" :class="`hidden q-mt-lg`">
                   <GenerateBarcodeForm
                     :edit="true"
                     @update="update"
