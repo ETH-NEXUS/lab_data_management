@@ -4,6 +4,14 @@
 export default {
   experiment: {
     description: 'Description',
+    number_plates: 'Number of plates',
+    created_at: 'Created at',
+    barcode_sets: 'Barcode sets',
+    delete_specifications: 'Delete specifications',
+    edit_specifications: 'Edit specifications',
+    add_plates: 'Add plates to the experiment using these specifications',
+    add_plates_to_experiment: 'Add plates to the experiment',
+    choose_dimensions: 'Choose the dimensions of the plate',
   },
   failed: 'Action failed',
   success: 'Action was successful',

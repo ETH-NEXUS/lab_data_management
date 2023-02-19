@@ -156,3 +156,8 @@ export interface PlateMapping {
   mapping_file: File | undefined
   amount: number | undefined
 }
+
+export interface DimensionsOption {
+  label: string
+  value: number
+}

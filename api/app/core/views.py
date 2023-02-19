@@ -1,13 +1,15 @@
 import csv
 from uuid import uuid4
 
+from django.core.exceptions import ValidationError
+from django.db import IntegrityError
 from compoundlib.serializers import (SimpleCompoundLibrarySerializer)
 from django.db.models import Prefetch, Q
 from rest_framework import viewsets, views, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
 
-from .models import (Well, Plate, Measurement, WellWithdrawal, WellCompound, PlateMapping, Experiment, BarcodeSpecification)
+from .models import (Well, Plate, Measurement, WellWithdrawal, WellCompound, PlateMapping, Experiment, BarcodeSpecification, PlateDimension)
 from .serializers import (PlateSerializer, WellSerializer, PlateMappingSerializer, SimpleExperimentSerializer,
                           ExperimentSerializer)
 
@@ -130,3 +132,39 @@ class ExperimentViewSet(viewsets.ModelViewSet):
                                                      sides=data['sides'], experiment=experiment)
         barcode_specification.save()
         return Response(status=status.HTTP_200_OK)
+
+
+    @action(detail=False, methods=['post'])
+    def bulk_add_plates(self, request):
+        try:
+            experiment_id = int(request.data['experiment_id'])
+            barcode_specification_id = int(request.data['barcode_specification_id'])
+            plate_dimension_id = int(request.data['plate_dimension_id'])
+            experiment = Experiment.objects.get(pk=experiment_id)
+            barcode_specification = BarcodeSpecification.objects.get(pk=barcode_specification_id)
+            plate_dimension = PlateDimension.objects.get(pk=plate_dimension_id)
+            number_of_plates = barcode_specification.number_of_plates
+        except Experiment.DoesNotExist:
+            return Response({'error': 'Experiment not found'}, status=status.HTTP_404_NOT_FOUND)
+        except BarcodeSpecification.DoesNotExist:
+            return Response({'error': 'Barcode specification not found'}, status=status.HTTP_404_NOT_FOUND)
+        except PlateDimension.DoesNotExist:
+            return Response({'error': 'Plate dimension not found'}, status=status.HTTP_404_NOT_FOUND)
+
+        plates = []
+        for i in range(number_of_plates):
+            plate = Plate(barcode=barcode_specification.get_barcode_by_number(i + 1), experiment=experiment,
+                          dimension=plate_dimension)
+            plates.append(plate)
+
+
+        try:
+            Plate.objects.bulk_create(plates)
+        except IntegrityError:
+            return Response({'error': 'Could not save plates to database. Probably you have already added the plates '
+                                      'with these barcode prefix to the current experiment'},
+                            status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        except ValidationError:
+            return Response({'error': 'Invalid plate data'}, status=status.HTTP_400_BAD_REQUEST)
+
+        return Response({'success': 'Plates added successfully'}, status=status.HTTP_200_OK)

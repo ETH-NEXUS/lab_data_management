@@ -4,19 +4,25 @@ import {onMounted, ref} from 'vue'
 import {useI18n} from 'vue-i18n'
 import {handleError} from 'src/helpers/errorHandling'
 import {useProjectStore} from 'stores/project'
-import {Project, Experiment} from 'src/components/models'
+import {Project, Experiment, DimensionsOption} from 'src/components/models'
 import {formatDate} from 'src/helpers/dateTime'
 import GenerateBarcodeForm from '../components/GenerateBarcodeForm.vue'
 import {downloadCSVData, generateBarcodes} from 'components/helpers'
 import {csvColumnsNames} from 'components/data'
+import {PlateDimension} from 'src/components/models'
+import {useQuasar} from 'quasar'
 
 const route = useRoute()
 const projectStore = useProjectStore()
 
+const $q = useQuasar()
+const options = ref<DimensionsOption[]>([])
+const dimension = ref<number | null>(null)
 const loading = ref<boolean>(true)
 const project = ref<Project | null>(null)
 const experiment = ref<Experiment | null>(null)
 const generateBarcodeDialogToggle = ref<boolean>(false)
+
 const editToggle = ref<boolean>(false)
 
 const {t} = useI18n()
@@ -27,8 +33,13 @@ const initialize = async () => {
     if (projectStore.projects) {
       project.value =
         projectStore.projects.find((p: Project) => p.id === Number(route.params.project)) || null
-      experiment.value = await getExperiment(Number(route.params.experiment))
     }
+    if (projectStore.plateDimensions) {
+      options.value = projectStore.plateDimensions.map((d: PlateDimension) => {
+        return {label: d.name, value: d.id}
+      })
+    }
+    experiment.value = await getExperiment(Number(route.params.experiment))
   } catch (err) {
     handleError(err)
   } finally {
@@ -60,11 +71,33 @@ const openEditField = (index: number) => {
   const id = `edit-${index}`
   const editForm = document.getElementById(id) as HTMLInputElement
   if (editForm) {
-    if (editForm.classList.contains('hidden')) {
-      editForm.classList.remove('hidden')
-    } else {
-      editForm.classList.add('hidden')
+    if (editForm) {
+      editForm.classList.toggle('hidden')
     }
+  }
+}
+
+const openDimensionsOptions = (index: number) => {
+  const id = `dimensions-${index}`
+  const dimensionsForm = document.getElementById(id) as HTMLInputElement
+  if (dimensionsForm) {
+    dimensionsForm.classList.toggle('hidden')
+  }
+}
+
+const addPlatesToExperiment = async (experimentId: number, barcodeSpecificationsId: number) => {
+  try {
+    if (dimension.value) {
+      await projectStore.addPlatesToExperiment(experimentId, barcodeSpecificationsId, dimension.value)
+      await initialize()
+    } else {
+      $q.notify({
+        type: 'negative',
+        message: 'Please select a dimension',
+      })
+    }
+  } catch (err) {
+    handleError(err)
   }
 }
 </script>
@@ -77,20 +110,20 @@ const openEditField = (index: number) => {
     <div class="q-pa-md row items-start q-gutter-md">
       <q-card class="my-card" flat>
         <q-card-section class="q-pt-xs">
-          <div class="text-overline">{{t('description')}}:</div>
+          <div class="text-overline">{{ t('experiment.description') }}:</div>
           <div class="text-body1 text-grey-8">
             {{ experiment.description || 'No description provided' }}
           </div>
-          <div class="text-overline">Number of plates:</div>
+          <div class="text-overline">{{ t('experiment.number_plates') }}:</div>
           <div class="text-body1 text-grey-8">
             {{ experiment.plates.length }}
           </div>
-          <div class="text-overline">Created at:</div>
+          <div class="text-overline">{{ t('experiment.created_at') }}:</div>
           <div class="text-body1 text-grey-8">
             {{ formatDate(experiment.created_at) }}
           </div>
 
-          <div class="text-overline">Barcode sets:</div>
+          <div class="text-overline">{{ t('experiment.barcode_sets') }}:</div>
 
           <div
             class="text-body1 text-grey-8"
@@ -99,10 +132,34 @@ const openEditField = (index: number) => {
               <div v-for="(s, i) in experiment.barcode_specifications" :key="`${s.prefix}-${s.id}`">
                 <q-item>
                   <q-item-section>
-                    <q-item-label class="text-subtitle1 q-mt-lg">Barcode set #{{ i + 1 }}</q-item-label>
+                    <q-item-label class="text-body1 q-mt-lg">Barcode set #{{ i + 1 }}</q-item-label>
+                    <div
+                      class="text-primary cursor-pointer q-mt-lg q-mb-sm"
+                      @click="openDimensionsOptions(i)">
+                      >> {{ t('experiment.add_plates') }}
+                    </div>
+                    {{}}
+                    <div :id="`dimensions-${i}`" :class="`hidden q-my-lg`">
+                      <div v-if="!(experiment.plates && experiment.plates[0].barcode.includes(s.prefix))">
+                        <p class="text-subtitle2">{{ t('experiment.choose_dimensions') }}:</p>
+                        <q-option-group :options="options" type="radio" v-model="dimension"></q-option-group>
+
+                        <q-btn
+                          label="Add plates"
+                          type="submit"
+                          color="secondary"
+                          class="q-mt-md"
+                          @click="addPlatesToExperiment(experiment.id, s.id)"></q-btn>
+                      </div>
+                      <div v-else class="text-subtitle2 text-red-3">
+                        *You have already added the plates with these barcode specifications to this
+                        experiment
+                      </div>
+                    </div>
 
                     <q-item-label caption lines="2">
                       <q-table
+                        bordered
                         :rows="generateBarcodes(s.prefix, s.number_of_plates, s.sides)"
                         row-key="name"></q-table>
                     </q-item-label>
@@ -124,20 +181,17 @@ const openEditField = (index: number) => {
 
                 <q-btn
                   flat
-                  label="Delete specification"
+                  label="Delete specifications"
                   color="red"
                   class="q-mt-md"
                   @click="deleteBarcode(s.id)"></q-btn>
 
                 <q-btn
                   flat
-                  label="Edit specification"
+                  label="Edit specifications"
                   color="warning"
                   class="q-mt-md"
                   @click="openEditField(i)"></q-btn>
-
-                <q-separator class="q-my-md"></q-separator>
-                <div>>> Add paltes to the experiment using these specifications/div>
 
                 <div :id="`edit-${i}`" :class="`hidden q-mt-lg`">
                   <GenerateBarcodeForm
