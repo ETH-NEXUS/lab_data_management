@@ -37,8 +37,6 @@ const onCheck = () => {
   sides.value = []
   for (const side of sidesData) {
     const checkbox = document.getElementById(side.id) as HTMLInputElement
-    console.log(checkbox)
-    console.log(checkbox.checked)
     if (checkbox.checked) {
       sides.value.push(side.label)
     }
@@ -167,9 +165,5 @@ const onReset = () => {
   background-color: #4ca4f3;
   position: relative;
   border-radius: 5px;
-}
-
-.editFormDialog {
-  width: 60%;
 }
 </style>

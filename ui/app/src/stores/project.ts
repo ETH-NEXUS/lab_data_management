@@ -1,14 +1,18 @@
 import {defineStore} from 'pinia'
-import {Project, Experiment, Plate} from 'src/components/models'
+import {Project, Experiment, PlateDimension} from 'src/components/models'
 import {api} from 'src/boot/axios'
 import {ref} from 'vue'
 
 export const useProjectStore = defineStore('project', () => {
   const projects = ref<Array<Project>>([])
+  const plateDimensions = ref<Array<PlateDimension>>([])
 
   const initialize = async () => {
     const resp_p = await api.get('/api/projects/')
     projects.value = resp_p.data.results
+
+    const res_d = await api.get('/api/platedimensions/')
+    plateDimensions.value = res_d.data.results
   }
 
   const add = async (projectName: string) => {
@@ -68,5 +72,37 @@ export const useProjectStore = defineStore('project', () => {
     await api.delete(`/api/barcodespecifications/${id}/`)
   }
 
-  return {projects, initialize, add, addExperiment, addPlate, generateBarcodes, updateBarcode, deleteBarcode}
+  const addPlatesToExperiment = async (
+    experimentId: number,
+    barcodeSpecificationsId: number,
+    dimension: number
+  ) => {
+    alert(
+      'experimentId: ' +
+        experimentId +
+        ' barcodeSpecificationsId: ' +
+        barcodeSpecificationsId +
+        ' dimension: ' +
+        dimension +
+        ''
+    )
+    await api.post('/api/experiments/bulk_add_plates/', {
+      experiment_id: experimentId,
+      barcode_specification_id: barcodeSpecificationsId,
+      plate_dimension_id: dimension,
+    })
+  }
+
+  return {
+    projects,
+    initialize,
+    add,
+    addExperiment,
+    addPlate,
+    generateBarcodes,
+    updateBarcode,
+    deleteBarcode,
+    plateDimensions,
+    addPlatesToExperiment,
+  }
 })

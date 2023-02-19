@@ -65,13 +65,9 @@ class BarcodeSpecification(TimeTrackedModel):
     class Meta:
         ordering = ['id']
 
-    # def generate_barcodes(self):
-    #     return [{
-    #         'NorthBarcode': f"{self.prefix}_{i + 1}${self.prefix}_{i + 1}" if 'North' in self.sides else '',
-    #         'SouthBarcode': f"{self.prefix}_{i + 1}${self.prefix}_{i + 1}" if 'South' in self.sides else '',
-    #         'EastBarcode': f"{self.prefix}_{i + 1}${self.prefix}_{i + 1}" if 'East' in self.sides else '',
-    #         'WestBarcode': f"{self.prefix}_{i + 1}${self.prefix}_{i + 1}" if 'West' in self.sides else '',
-    #     } for i in range(self.number_of_plates)]
+    def get_barcode_by_number(self, number: int) -> str:
+        return f"{self.prefix}_{number}"
+
 
 
 
@@ -136,7 +132,8 @@ class Plate(TimeTrackedModel):
                       Q(experiment__isnull=True) & Q(library__isnull=False) & Q(template__isnull=True) |
                       Q(experiment__isnull=True) & Q(library__isnull=True) & Q(template__isnull=False),
                 name='check_only_library_or_experiment_or_template'
-            )
+            ),
+            models.UniqueConstraint(fields=['barcode', 'experiment'], name='unique_barcode_experiment'),
         ]
 
     def __str__(self):
