@@ -77,7 +77,7 @@ const openEditField = (index: number) => {
     <div class="q-pa-md row items-start q-gutter-md">
       <q-card class="my-card" flat>
         <q-card-section class="q-pt-xs">
-          <div class="text-overline">Description:</div>
+          <div class="text-overline">{{t('description')}}:</div>
           <div class="text-body1 text-grey-8">
             {{ experiment.description || 'No description provided' }}
           </div>
@@ -135,6 +135,9 @@ const openEditField = (index: number) => {
                   color="warning"
                   class="q-mt-md"
                   @click="openEditField(i)"></q-btn>
+
+                <q-separator class="q-my-md"></q-separator>
+                <div>>> Add paltes to the experiment using these specifications/div>
 
                 <div :id="`edit-${i}`" :class="`hidden q-mt-lg`">
                   <GenerateBarcodeForm

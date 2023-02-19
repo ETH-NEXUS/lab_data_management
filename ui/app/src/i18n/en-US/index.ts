@@ -2,6 +2,9 @@
 // so you can safely delete all default props below
 
 export default {
+  experiment: {
+    description: 'Description',
+  },
   failed: 'Action failed',
   success: 'Action was successful',
   label: {
