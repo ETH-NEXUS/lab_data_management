@@ -82,25 +82,25 @@ const onReset = () => {
 
 <template>
   <q-card :class="`${props.edit ? 'editFormDialog' : 'formDialog'} q-mb-lg`" :bordered="false">
-    <q-card-section class="row items-center q-pb-none">
-      <div class="text-h6">
-        {{ props.edit ? 'Edit barcode specifications' : t('action.generate_barcodes') }}
-      </div>
-    </q-card-section>
-
     <q-card-section>
-      <div class="q-pa-md" style="max-width: 400px">
-        <q-form @submit="onSubmit" @reset="onReset" class="q-gutter-md full-width">
+      <div style="max-width: 400px">
+        <div class="text-h6 q-pb-md">
+          {{ props.edit ? 'Edit barcode specifications' : t('action.generate_barcodes') }}
+        </div>
+        <q-form dense @submit="onSubmit" @reset="onReset" class="full-width">
+          <p class="text-body2">{{ t('action.enter_prefix') }}:</p>
           <q-input
+            :dense="true"
             v-model="prefix"
-            :label="t('action.enter_prefix')"
             lazy-rules
             :rules="[val => (val && val.length > 0) || t('action.validation_prefix')]"></q-input>
 
+          <p class="text-body2">{{ t('action.enter_number_of_plates') }}:</p>
+
           <q-input
+            :dense="true"
             type="number"
             v-model="number_of_plates"
-            :label="t('action.enter_number_of_plates')"
             lazy-rules
             :rules="[
               val => (val !== null && val !== '') || t('action.validation_number_of_plates'),
@@ -140,9 +140,9 @@ const onReset = () => {
               :style="{width: '100%'}"></q-select>
           </div>
 
-          <div class="q-mt-lg">
-            <q-btn label="Submit" type="submit" color="primary"></q-btn>
-            <q-btn label="Reset" type="reset" color="primary" flat class="q-ml-sm"></q-btn>
+          <div class="q-mt-lg fir row wrap justify-end">
+            <q-btn flat label="Reset" type="reset" color="primary"></q-btn>
+            <q-btn class="q-ml-sm" flat label="Ok" type="submit" color="primary"></q-btn>
           </div>
         </q-form>
       </div>
