@@ -8,14 +8,14 @@ from .models import (
     PlateDimension,
     Well,
     Project,
-    Experiment,
     WellCompound,
     WellWithdrawal,
     Measurement,
     MeasurementFeature,
-    PlateMapping)
-from .serializers import (PlateSerializer, ExperimentSerializer, ProjectSerializer, PlateMappingSerializer)
-from .views import (PlateViewSet, WellViewSet, PlateMappingViewSet)
+    PlateMapping,
+    Experiment, BarcodeSpecification)
+from .serializers import (PlateSerializer, ExperimentSerializer, ProjectSerializer, PlateMappingSerializer, BarcodeSpecificationSerializer)
+from .views import (PlateViewSet, WellViewSet, PlateMappingViewSet, ExperimentViewSet)
 
 
 class DefaultEndpoint(Endpoint):
@@ -36,7 +36,7 @@ class PlateEndpoint(DefaultEndpoint):
   base_serializer = PlateSerializer
   base_viewset = PlateViewSet
   filter_fields = ('barcode', 'library', 'experiment')
-  ordering_fields = ('barcode', )
+  ordering_fields = ('barcode',)
 
 
 @register
@@ -48,7 +48,7 @@ class PlateDimensionEndpoint(DefaultEndpoint):
 class WellEndpoint(DefaultEndpoint):
   base_viewset = WellViewSet
   model = Well
-  filter_fields = ('plate__barcode', )
+  filter_fields = ('plate__barcode',)
 
 
 @register
@@ -61,6 +61,13 @@ class ProjectEndpoint(DefaultEndpoint):
 class ExperimentEndpoint(DefaultEndpoint):
   base_serializer = ExperimentSerializer
   model = Experiment
+  base_viewset = ExperimentViewSet
+
+
+@register
+class BarcodeSpecification(DefaultEndpoint):
+  base_serializer = BarcodeSpecificationSerializer
+  model = BarcodeSpecification
 
 
 @register

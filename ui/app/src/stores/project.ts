@@ -1,14 +1,22 @@
 import {defineStore} from 'pinia'
-import {Project, Experiment, Plate} from 'src/components/models'
+import {Project, Experiment, PlateDimension} from 'src/components/models'
 import {api} from 'src/boot/axios'
 import {ref} from 'vue'
 
 export const useProjectStore = defineStore('project', () => {
   const projects = ref<Array<Project>>([])
+  const plateDimensions = ref<Array<PlateDimension>>([])
+  const experiments = ref<Array<Experiment>>([])
 
   const initialize = async () => {
     const resp_p = await api.get('/api/projects/')
     projects.value = resp_p.data.results
+
+    const resp_e = await api.get('/api/experiments/')
+    experiments.value = resp_e.data.results
+
+    const res_d = await api.get('/api/platedimensions/')
+    plateDimensions.value = res_d.data.results
   }
 
   const add = async (projectName: string) => {
@@ -40,5 +48,66 @@ export const useProjectStore = defineStore('project', () => {
     return plate
   }
 
-  return {projects, initialize, add, addExperiment, addPlate}
+  const generateBarcodes = async (
+    experimentId: number,
+    prefix: string,
+    numberOfPlates: number,
+    sides: Array<string>
+  ) => {
+    await api.post('/api/experiments/barcodes/', {
+      number_of_plates: numberOfPlates,
+      experiment_id: experimentId,
+      sides: sides,
+      prefix: prefix,
+    })
+  }
+
+  const updateBarcode = async (id: number, prefix: string, numberOfPlates: number, sides: Array<string>) => {
+    console.log(id, prefix, numberOfPlates, sides)
+    await api.patch(`/api/barcodespecifications/${id}/`, {
+      number_of_plates: numberOfPlates,
+      id: id,
+      sides: sides,
+      prefix: prefix,
+    })
+  }
+
+  const deleteBarcode = async (id: number) => {
+    await api.delete(`/api/barcodespecifications/${id}/`)
+  }
+
+  const addPlatesToExperiment = async (
+    experimentId: number,
+    barcodeSpecificationsId: number,
+    dimension: number
+  ) => {
+    alert(
+      'experimentId: ' +
+        experimentId +
+        ' barcodeSpecificationsId: ' +
+        barcodeSpecificationsId +
+        ' dimension: ' +
+        dimension +
+        ''
+    )
+    await api.post('/api/experiments/bulk_add_plates/', {
+      experiment_id: experimentId,
+      barcode_specification_id: barcodeSpecificationsId,
+      plate_dimension_id: dimension,
+    })
+  }
+
+  return {
+    projects,
+    initialize,
+    add,
+    addExperiment,
+    addPlate,
+    generateBarcodes,
+    updateBarcode,
+    deleteBarcode,
+    plateDimensions,
+    addPlatesToExperiment,
+    experiments,
+  }
 })

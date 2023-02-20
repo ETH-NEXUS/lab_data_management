@@ -2,6 +2,17 @@
 // so you can safely delete all default props below
 
 export default {
+  experiment: {
+    description: 'Description',
+    number_plates: 'Number of plates',
+    created_at: 'Created at',
+    barcode_sets: 'Barcode sets',
+    delete_specifications: 'Delete specifications',
+    edit_specifications: 'Edit specifications',
+    add_plates: 'Add plates to the experiment using these specifications',
+    add_plates_to_experiment: 'Add plates to the experiment',
+    choose_dimensions: 'Choose the dimensions of the plate',
+  },
   failed: 'Action failed',
   success: 'Action was successful',
   label: {
@@ -90,6 +101,13 @@ export default {
     new_experiment: 'New Experiment',
     submit: 'Submit',
     experiment_properties: 'Experiment properties',
+    generate_barcodes: 'Generate barcodes',
+    enter_prefix: 'Enter a prefix *',
+    enter_number_of_plates: 'Enter the number of plates *',
+    select_sides: 'Select sides',
+    validation_number_of_plates: 'Please enter a number',
+    validation_positive_number_of_plates: 'Please enter a positive number',
+    validation_prefix: 'Please type something',
     new_plate: 'New Plate',
     create_well: 'Create Well',
     add_compound: 'Add Compound',

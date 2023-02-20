@@ -2,10 +2,6 @@ import {RouteRecordRaw} from 'vue-router'
 
 const routes: RouteRecordRaw[] = [
   {
-    path: '/login',
-    component: () => import('pages/LoginPage.vue'),
-  },
-  {
     path: '/',
     component: () => import('layouts/MainLayout.vue'),
     children: [
@@ -16,6 +12,10 @@ const routes: RouteRecordRaw[] = [
       {
         path: 'plate/:barcode',
         component: () => import('pages/PlatePage.vue'),
+      },
+      {
+        path: 'project/:project/experiment/:experiment',
+        component: () => import('pages/ExperimentPage.vue'),
       },
     ],
   },

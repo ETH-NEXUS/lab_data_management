@@ -1,9 +1,10 @@
+from compoundlib.models import CompoundLibrary, Compound
 from rest_framework import serializers
+
 from .models import (
     Well, Plate, Measurement, MeasurementFeature, PlateDimension, Project, Experiment, WellCompound,
-    WellWithdrawal, PlateMapping, MappingError, WellType
+    WellWithdrawal, PlateMapping, MappingError, WellType, BarcodeSpecification
 )
-from compoundlib.models import CompoundLibrary, Compound
 
 
 class UndefinedAffineModelSerializer(serializers.ModelSerializer):
@@ -168,8 +169,17 @@ class PlateSerializer(serializers.ModelSerializer):
     fields = '__all__'
 
 
+class BarcodeSpecificationSerializer(serializers.ModelSerializer):
+  class Meta:
+    model = BarcodeSpecification
+    fields = '__all__'
+
+
+
+
 class ExperimentSerializer(serializers.ModelSerializer):
   plates = PlateSerializer(many=True, required=False, allow_null=True)
+  barcode_specifications = BarcodeSpecificationSerializer(many=True, required=False, allow_null=True)
 
   class Meta:
     model = Experiment
