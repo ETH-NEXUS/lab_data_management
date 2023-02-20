@@ -140,7 +140,14 @@ const addPlatesToExperiment = async (experimentId: number, barcodeSpecifications
                     </div>
                     {{}}
                     <div :id="`dimensions-${i}`" :class="`hidden q-my-lg`">
-                      <div v-if="!(experiment.plates && experiment.plates[0].barcode.includes(s.prefix))">
+                      <div
+                        v-if="
+                          !(
+                            experiment.plates.length > 0 &&
+                            experiment.plates[0].barcode &&
+                            experiment.plates[0].barcode.includes(s.prefix)
+                          )
+                        ">
                         <p class="text-subtitle2">{{ t('experiment.choose_dimensions') }}:</p>
                         <q-option-group :options="options" type="radio" v-model="dimension"></q-option-group>
 

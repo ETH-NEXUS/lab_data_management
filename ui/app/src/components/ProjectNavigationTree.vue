@@ -50,8 +50,6 @@ const nodeHandler = (node: QTreeNode) => {
   }
 }
 
-const generateBarcodeDialogToggle = ref<boolean>(false)
-
 const projectNodes = ref<QTreeNode>({
   label: t('label.projects'),
   icon: 'biotech',
@@ -249,12 +247,6 @@ const newPlate = async (experiment: Experiment) => {
       <q-menu touch-position context-menu>
         <q-list dense style="min-width: 100px">
           <q-item clickable v-close-popup>
-            <q-item-section @click="generateBarcodeDialogToggle = true">
-              {{ t('action.generate_barcodes') }}
-            </q-item-section>
-          </q-item>
-          <q-separator />
-          <q-item clickable v-close-popup>
             <q-item-section>{{ t('action.experiment_properties') }}</q-item-section>
           </q-item>
           <q-separator />
@@ -272,9 +264,6 @@ const newPlate = async (experiment: Experiment) => {
       {{ prop.node.label }}
     </template>
   </q-tree>
-  <q-dialog v-model="generateBarcodeDialogToggle">
-    <GenerateBarcodeForm experiment-id="1" />
-  </q-dialog>
 </template>
 
 <style lang="sass">
