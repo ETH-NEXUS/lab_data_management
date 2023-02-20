@@ -10,9 +10,11 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/4.1/ref/settings/
 """
 
+import ldap
 from pathlib import Path
 from os import environ
 from datetime import timedelta as td
+from django_auth_ldap.config import LDAPSearch
 
 from corsheaders.defaults import default_headers
 
@@ -28,8 +30,9 @@ SECRET_KEY = 'django-insecure-ba*bz(ouxsm(gwf_^r=+2*-0h0yh^5d4dz(t6$k+x2@drh(kv_
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = (environ.get('DJANGO_DEBUG', 'False')) == 'True'
-LOG_SQL = False
 LOG_LEVEL = environ.get('DJANGO_LOG_LEVEL', 'INFO')
+LOG_SQL = False
+LOG_LDAP = False
 
 # Application definition
 
@@ -44,6 +47,7 @@ INSTALLED_APPS = [
     'django_extensions',
     'corsheaders',
     'rest_framework',
+    'rest_framework_simplejwt',
     'drf_auto_endpoint',
     'core',
     'importer',
@@ -62,7 +66,7 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
 
-ROOT_URLCONF = 'labmgmt.urls'
+ROOT_URLCONF = 'ldm.urls'
 
 TEMPLATES = [
     {
@@ -80,7 +84,7 @@ TEMPLATES = [
     },
 ]
 
-WSGI_APPLICATION = 'labmgmt.wsgi.application'
+WSGI_APPLICATION = 'ldm.wsgi.application'
 
 
 # Database
@@ -96,6 +100,34 @@ DATABASES = {
         'PASSWORD': environ.get('POSTGRES_PASSWORD'),
     }
 }
+
+# LDAP Authentication
+# https://django-auth-ldap.readthedocs.io/en/latest/authentication.html
+
+AUTHENTICATION_BACKENDS = [
+    "django_auth_ldap.backend.LDAPBackend",
+    "django.contrib.auth.backends.ModelBackend",
+]
+
+AUTH_LDAP_GLOBAL_OPTIONS = {ldap.OPT_X_TLS_REQUIRE_CERT: ldap.OPT_X_TLS_NEVER}
+AUTH_LDAP_SERVER_URI = environ.get('LDAP_SERVER_URI', 'ldaps://ldaps-rz-1.ethz.ch:636,ldaps://ldaps-rz-2.ethz.ch,ldaps://ldaps-hit-2.ethz.ch,ldaps://ldaps-hit-1.ethz.ch')
+AUTH_LDAP_BIND_DN = environ.get('LDAP_BIND_DN', 'cn=nexus-tpreports_proxy,ou=admins,ou=nethz,ou=id,ou=auth,o=ethz,c=ch')
+AUTH_LDAP_BIND_PASSWORD = environ.get('LDAP_PASSWORD')
+AUTH_LDAP_USER_ATTR_MAP = {
+    "username": "cn",
+    "first_name": "givenName",
+    "last_name": "sn",
+    "email": "mail",
+}
+AUTH_LDAP_USER_SEARCH = LDAPSearch(
+    environ.get('LDAP_SEARCH_BASE', 'ou=users,ou=nethz,ou=id,ou=auth,o=ethz,c=ch'),
+    ldap.SCOPE_SUBTREE,
+    environ.get('LDAP_FILTER', '(&(ou=@nexus.ethz.ch)(eduPersonAffiliation=staff)(cn=%(user)s))')
+)
+# since we've manually updated some users' names, we need to ensure they don't get overwritten
+# AUTH_LDAP_ALWAYS_UPDATE_USER = False
+# disable auto-creation of users since we're not taking calls for new users anymore
+# AUTH_LDAP_NO_NEW_USERS = False
 
 
 # Password validation
@@ -142,7 +174,7 @@ MEDIA_ROOT = '/vol/web/media'
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 DISABLE_BROWSABLE_API = False
-DISABLE_AUTH = True
+DISABLE_AUTH = False
 
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': (
@@ -208,7 +240,7 @@ SIMPLE_JWT = {
     'TOKEN_TYPE_CLAIM': 'token_type',
     'TOKEN_USER_CLASS': 'rest_framework_simplejwt.models.TokenUser',
     # We overwrite the token obtain serializer to support OTP
-    'TOKEN_OBTAIN_SERIALIZER': 'users.serializers.TokenObtainPair2FASerializer',
+    # 'TOKEN_OBTAIN_SERIALIZER': 'users.serializers.TokenObtainPair2FASerializer',
 
     'JTI_CLAIM': 'jti',
 
@@ -236,41 +268,29 @@ CSRF_TRUSTED_ORIGINS = environ.get('DJANGO_CSRF_TRUSTED_ORIGINS').split(',')
 ###
 # LOGGING
 ###
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'handlers': {
+        'console': {
+            'class': 'logging.StreamHandler',
+        },
+    },
+    'root': {
+        'level': LOG_LEVEL,
+        'handlers': ['console'],
+    },
+    'loggers': {}
+}
 if LOG_SQL:
-  LOGGING = {
-      'version': 1,
-      'filters': {
-          'require_debug_true': {
-              '()': 'django.utils.log.RequireDebugTrue',
-          }
-      },
-      'handlers': {
-          'console': {
-              'level': 'DEBUG',
-              'filters': ['require_debug_true'],
-              'class': 'logging.StreamHandler',
-          }
-      },
-      'loggers': {
-          'django.db.backends': {
-              'level': 'DEBUG',
-              'handlers': ['console'],
-          }
-      }
+  LOGGING['loggers']['django.db.backends'] = {
+      'level': 'DEBUG',
+      'handlers': ['console'],
   }
-else:
-  LOGGING = {
-      'version': 1,
-      'disable_existing_loggers': False,
-      'handlers': {
-          'console': {
-              'class': 'logging.StreamHandler',
-          },
-      },
-      'root': {
-          'handlers': ['console'],
-          'level': LOG_LEVEL,
-      },
+if LOG_LDAP:
+  LOGGING['loggers']['django_auth_ldap'] = {
+      'level': 'DEBUG',
+      'handlers': ['console'],
   }
 
 FLOAT_PRECISION = 6

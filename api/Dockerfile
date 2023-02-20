@@ -14,17 +14,26 @@ ENV GIT_LASTCOMMITDATE=${GIT_LASTCOMMITDATE}
 
 VOLUME [ "/notebooks" ]
 
+# Update the package cache
+RUN apt-get update
+
+# Used for LDAP authentication
+RUN apt-get install -y libsasl2-dev python-dev libldap2-dev libssl-dev
+
+# Install Python requirements
 COPY ./requirements.txt /
 COPY ./requirements.jupyter.txt /
 RUN pip --disable-pip-version-check install --upgrade pip
 RUN pip install -r /requirements.txt
 
+# Used for jupyter (R-kernel)
 RUN if [ "${ENABLE_JUPYTER}" = "True" ]; then pip install -r /requirements.jupyter.txt; fi
-RUN if [ "${ENABLE_JUPYTER}" = "True" ]; then apt-get update && apt-get install -y r-base nodejs npm; fi
+RUN if [ "${ENABLE_JUPYTER}" = "True" ]; then apt-get install -y r-base nodejs npm; fi
 RUN if [ "${ENABLE_JUPYTER}" = "True" ]; then R -e 'install.packages("IRkernel")'; fi
 RUN if [ "${ENABLE_JUPYTER}" = "True" ]; then R -e 'IRkernel::installspec()'; fi
 RUN if [ "${ENABLE_JUPYTER}" = "True" ]; then jupyter labextension install @techrah/text-shortcuts; fi
 
+# Create the required directories
 RUN mkdir -p /app
 RUN mkdir -p /vol/web/media
 RUN mkdir -p /vol/web/static
