@@ -9,7 +9,6 @@ import {useQuasar} from 'quasar'
 import {useSettingsStore} from '../stores/settings'
 import {storeToRefs} from 'pinia'
 import {useProjectStore} from '../stores/project'
-import GenerateBarcodeForm from './GenerateBarcodeForm.vue'
 
 const router = useRouter()
 const {t} = useI18n()
@@ -45,7 +44,6 @@ const nodeHandler = (node: QTreeNode) => {
   } else if ('project' in node) {
     router.push(`/project/${node.project.name}`)
   } else if ('experiment' in node) {
-    console.log('NODE 1', node)
     router.push(`/project/${node.experiment.project}/experiment/${node.experiment.id}`)
   }
 }

@@ -30,16 +30,10 @@ const {t} = useI18n()
 const initialize = async () => {
   try {
     await projectStore.initialize()
-    if (projectStore.projects) {
-      project.value =
-        projectStore.projects.find((p: Project) => p.id === Number(route.params.project)) || null
-    }
-    if (projectStore.plateDimensions) {
-      options.value = projectStore.plateDimensions.map((d: PlateDimension) => {
-        return {label: d.name, value: d.id}
-      })
-    }
-    experiment.value = await getExperiment(Number(route.params.experiment))
+    const {projects, plateDimensions, experiments} = projectStore
+    project.value = projects?.find((p: Project) => p.id === Number(route.params.project)) ?? null
+    options.value = plateDimensions?.map((d: PlateDimension) => ({label: d.name, value: d.id})) ?? []
+    experiment.value = experiments?.find((e: Experiment) => e.id === Number(route.params.experiment)) ?? null
   } catch (err) {
     handleError(err)
   } finally {
