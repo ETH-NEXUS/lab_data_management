@@ -6,10 +6,14 @@ import {ref} from 'vue'
 export const useProjectStore = defineStore('project', () => {
   const projects = ref<Array<Project>>([])
   const plateDimensions = ref<Array<PlateDimension>>([])
+  const experiments = ref<Array<Experiment>>([])
 
   const initialize = async () => {
     const resp_p = await api.get('/api/projects/')
     projects.value = resp_p.data.results
+
+    const resp_e = await api.get('/api/experiments/')
+    experiments.value = resp_e.data.results
 
     const res_d = await api.get('/api/platedimensions/')
     plateDimensions.value = res_d.data.results
@@ -104,5 +108,6 @@ export const useProjectStore = defineStore('project', () => {
     deleteBarcode,
     plateDimensions,
     addPlatesToExperiment,
+    experiments,
   }
 })
