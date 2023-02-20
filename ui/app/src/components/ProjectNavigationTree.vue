@@ -43,6 +43,8 @@ const nodeHandler = (node: QTreeNode) => {
     router.push(`/plate/${node.plate.barcode}`)
   } else if ('project' in node) {
     router.push(`/project/${node.project.name}`)
+  } else if ('experiment' in node) {
+    router.push(`/project/${node.experiment.project}/experiment/${node.experiment.id}`)
   }
 }
 
@@ -237,6 +239,7 @@ const newPlate = async (experiment: Experiment) => {
       </q-menu>
       {{ prop.node.label }}
     </template>
+
     <template v-slot:header-experiment="prop">
       <q-icon :name="prop.node.icon || 'star'" size="24px" class="q-mr-sm" style="justify-content: end" />
       <q-menu touch-position context-menu>

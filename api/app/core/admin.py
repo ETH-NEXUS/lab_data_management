@@ -1,7 +1,8 @@
 from django.contrib import admin
 from django.utils.html import mark_safe
 
-from .models import (Plate, PlateDimension, Measurement, MeasurementFeature, Sample, Well, Location, Project)
+from .models import (Plate, PlateDimension, Measurement, MeasurementFeature, Sample, Well, Location, Project,
+                     Experiment, BarcodeSpecification)
 
 
 @admin.register(Plate)
@@ -36,17 +37,18 @@ class PlateDimensionAdmin(admin.ModelAdmin):
 class WellAdmin(admin.ModelAdmin):
   list_display = ('__str__', 'plate', 'position', 'hr_position', 'sample', 'amount', 'get_measurements')
   search_fields = ('plate__barcode', 'compounds__identifier')
-  list_filter = ('plate__barcode', )
+  list_filter = ('plate__barcode',)
   autocomplete_fields = ('plate', 'compounds', 'sample')
 
   def get_measurements(self, well: Well):
     return ', '.join([str(m) for m in well.measurements.all()])
+
   get_measurements.short_description = 'measurements'
 
 
 @admin.register(Measurement)
 class MeasurementAdmin(admin.ModelAdmin):
-  list_display = ('value', )
+  list_display = ('value',)
 
 
 @admin.register(MeasurementFeature)
@@ -68,3 +70,13 @@ class LocationAdmin(admin.ModelAdmin):
 @admin.register(Project)
 class ProjectAdmin(admin.ModelAdmin):
   list_display = ('name',)
+
+
+@admin.register(Experiment)
+class ProjectAdmin(admin.ModelAdmin):
+  list_display = ('name',)
+
+
+@admin.register(BarcodeSpecification)
+class ProjectAdmin(admin.ModelAdmin):
+  list_display = ('prefix', 'number_of_plates')
