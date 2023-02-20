@@ -4,7 +4,7 @@ import {onMounted, ref} from 'vue'
 import {useI18n} from 'vue-i18n'
 import {handleError} from 'src/helpers/errorHandling'
 import {useProjectStore} from 'stores/project'
-import {Project, Experiment, DimensionsOption} from 'src/components/models'
+import {Project, Experiment, DimensionsOption, Barcode} from 'src/components/models'
 import {formatDate} from 'src/helpers/dateTime'
 import GenerateBarcodeForm from '../components/GenerateBarcodeForm.vue'
 import {downloadCSVData, generateBarcodes} from 'components/helpers'
@@ -22,8 +22,6 @@ const loading = ref<boolean>(true)
 const project = ref<Project | null>(null)
 const experiment = ref<Experiment | null>(null)
 const generateBarcodeDialogToggle = ref<boolean>(false)
-
-const editToggle = ref<boolean>(false)
 
 const {t} = useI18n()
 
@@ -94,6 +92,18 @@ const addPlatesToExperiment = async (experimentId: number, barcodeSpecifications
     handleError(err)
   }
 }
+
+const download = (): void => {
+  let barcodes: Barcode[] = []
+  const barcodeSpecifications = experiment.value?.barcode_specifications || []
+
+  for (const spec of barcodeSpecifications) {
+    const generatedBarcodes = generateBarcodes(spec.prefix, spec.number_of_plates, spec.sides)
+    barcodes = [...barcodes, ...generatedBarcodes]
+  }
+
+  downloadCSVData(csvColumnsNames, barcodes, 'barcodes.csv')
+}
 </script>
 
 <template>
@@ -118,6 +128,13 @@ const addPlatesToExperiment = async (experimentId: number, barcodeSpecifications
           </div>
 
           <div class="text-overline">{{ t('experiment.barcode_sets') }}:</div>
+
+          <q-btn
+            label="Download csv"
+            type="submit"
+            color="secondary"
+            class="q-mt-md"
+            @click="download"></q-btn>
 
           <div
             class="text-body1 text-grey-8"
@@ -166,19 +183,6 @@ const addPlatesToExperiment = async (experimentId: number, barcodeSpecifications
                     </q-item-label>
                   </q-item-section>
                 </q-item>
-                <q-btn
-                  flat
-                  label="Download csv"
-                  type="submit"
-                  color="secondary"
-                  class="q-mt-md"
-                  @click="
-                    downloadCSVData(
-                      csvColumnsNames,
-                      generateBarcodes(s.prefix, s.number_of_plates, s.sides),
-                      'barcodes.csv'
-                    )
-                  "></q-btn>
 
                 <q-btn
                   flat
@@ -214,7 +218,7 @@ const addPlatesToExperiment = async (experimentId: number, barcodeSpecifications
 
         <q-card-actions>
           <q-btn color="secondary" class="q-mt-lg" @click="generateBarcodeDialogToggle = true">
-            Add barcodes
+            Add barcode specifications
           </q-btn>
         </q-card-actions>
       </q-card>

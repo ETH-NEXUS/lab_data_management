@@ -1,4 +1,6 @@
-type generalObject = {[key: string]: string}
+import {Barcode} from 'components/models'
+
+export type GeneralObject = {[key: string]: string}
 
 export const generateBarcodes = (prefix: string, numberOfPlates: number, sides: string[]) => {
   const shouldIncludeSide: Record<string, boolean> = {}
@@ -17,7 +19,11 @@ export const generateBarcodes = (prefix: string, numberOfPlates: number, sides: 
   })
 }
 
-export const downloadCSVData = (columns: Array<string>, items: generalObject[], fileName: string): void => {
+export const downloadCSVData = (
+  columns: Array<string>,
+  items: GeneralObject[] | Barcode[],
+  fileName: string
+): void => {
   let csv = columns.join(',')
   csv += '\r\n'
 
