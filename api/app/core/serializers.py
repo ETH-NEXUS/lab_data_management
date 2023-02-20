@@ -174,17 +174,7 @@ class BarcodeSpecificationSerializer(serializers.ModelSerializer):
     model = BarcodeSpecification
     fields = '__all__'
 
-  def update(self, instance, validated_data):
-    print('UPDATING BARCODE SPECIFICATION')
-    try:
-      for attr, value in validated_data.items():
-        print(attr, value)
-        setattr(instance, attr, value)
-      instance.save()
-      return instance
 
-    except Exception as ex:
-      raise Exception(f"Error updating barcode specification: {ex}")
 
 
 class ExperimentSerializer(serializers.ModelSerializer):
