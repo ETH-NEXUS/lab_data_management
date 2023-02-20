@@ -49,6 +49,7 @@ const getExperiment = (id: number) => {
 
 const update = async () => {
   await initialize()
+  generateBarcodeDialogToggle.value = false
 }
 const deleteBarcode = async (id: number) => {
   try {
