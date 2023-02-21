@@ -17,6 +17,10 @@ const routes: RouteRecordRaw[] = [
         path: 'plate/:barcode',
         component: () => import('pages/PlatePage.vue'),
       },
+      {
+        path: 'project/:project/experiment/:experiment',
+        component: () => import('pages/ExperimentPage.vue'),
+      },
     ],
   },
 
