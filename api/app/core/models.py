@@ -190,6 +190,7 @@ class Plate(TimeTrackedModel):
                   target_well=well,
                   amount=mapping.amount
               )
+      return 0
   # TODO: implement unmap!!!
 
 

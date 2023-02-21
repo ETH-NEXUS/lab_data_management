@@ -28,8 +28,8 @@ api.interceptors.request.use(
         config.headers.Authorization = `JWT ${token}`
       }
     }
-    // Add a trailing slash to the url
-    if (!config.url?.endsWith('/')) {
+    // Add a trailing slash to the url if there are no parameters in the url
+    if (!config.url?.includes('?') && !config.url?.endsWith('/')) {
       config.url += '/'
     }
     LoadingBar.start()

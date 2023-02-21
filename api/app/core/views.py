@@ -14,6 +14,11 @@ from .serializers import (PlateSerializer, WellSerializer, PlateMappingSerialize
                           ExperimentSerializer)
 
 
+
+class ProjectViewSet(viewsets.ModelViewSet):
+  serializer_class = WellSerializer
+  queryset = Well.objects.all()
+
 class PlateViewSet(viewsets.ModelViewSet):
   def get_serializer_class(self):
     # if self.action == 'list':

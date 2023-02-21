@@ -157,7 +157,7 @@ const onReset = () => {
 
 .outerDiv {
   margin-top: 20px;
-  padding: 20px 20px 50px 75px;
+  padding: 20px 20px 50px 60px;
 }
 .innerDiv {
   width: 100px;
