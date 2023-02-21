@@ -131,15 +131,14 @@ const download = (): void => {
           <div class="text-overline">{{ t('experiment.barcode_sets') }}:</div>
 
           <q-btn
+            v-if="experiment.barcode_specifications.length > 0"
             label="Download csv"
             type="submit"
             color="secondary"
             class="q-mt-md"
             @click="download"></q-btn>
 
-          <div
-            class="text-body1 text-grey-8"
-            v-if="getExperiment(Number(route.params.experiment)).barcode_specifications">
+          <div class="text-body1 text-grey-8" v-if="experiment.barcode_specifications">
             <q-list>
               <div v-for="(s, i) in experiment.barcode_specifications" :key="`${s.prefix}-${s.id}`">
                 <q-item>
