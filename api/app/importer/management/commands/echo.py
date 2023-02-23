@@ -3,13 +3,13 @@ import os
 import re
 import traceback
 from typing import List, Dict
-
 from core.mapping import Mapping, MappingList
 from core.models import Plate, PlateMapping
 from django.core.files import File
 from django.core.management.base import BaseCommand
 from friendlylog import colored_logger as log
 import yaml
+from django.core.files.base import ContentFile
 
 # add plates to the experiment, put the echo files to /data/echo and run the
 # command:   ./manage.py echo -p /data/echo -m /data/echo/echo-headers.yml
@@ -72,7 +72,8 @@ def get_csv_files(path: str) -> list[dict[str, list[dict[str, str]] | str]]:
     for root, dirs, files in os.walk(path, topdown=False):
         for file in files:
             if file.endswith(".csv") and 'transfer' in file:
-                file_path = os.path.join(root, file)
+                subdirectory = os.path.relpath(root, path)
+                file_path = os.path.join(path, subdirectory, file)
                 with open(os.path.join(root, file), 'r') as csv_file:
                     log.debug(f"Reading file {file}")
                     csv_reader = csv.reader(csv_file, delimiter=',')
@@ -115,19 +116,14 @@ def parse_plate_data(mapping_data, file_path, headers):
             mapping_list.add(mapping)
     mapping_success = source_plate.map(mapping_list, destination_plate)
     if mapping_success:
-        with open(file_path, 'rb') as file:
-            file_object = File(file_path)
-            PlateMapping.objects.create(source_plate=source_plate,
-                                        target_plate=destination_plate,
-                                        mapping_file=file_object)
+        file_content = open(file_path, 'rb').read()
+        file_name = os.path.basename(file_path)
+        plate_mapping = PlateMapping(source_plate=source_plate,
+            target_plate=destination_plate)
+        plate_mapping.mapping_file.save(file_name, ContentFile(file_content))
         log.info(f"Successfully mapped {source_plate_barcode} to "
                  f"{destination_plate_barcode}")
 
-        PlateMapping.objects.create(source_plate=source_plate,
-                                    target_plate=destination_plate,
-                                    mapping_file=file_object)
-        log.info(f"Successfully mapped {source_plate_barcode} to "
-                 f"{destination_plate_barcode}")
 
 
 class Command(BaseCommand):
