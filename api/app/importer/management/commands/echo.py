@@ -72,8 +72,14 @@ def parse_plate_data(mapping_data):
 
     plates = Plate.objects.all()
     source_plate = plates.filter(barcode=source_plate_barcode).first()
+
     destination_plate = plates.filter(
         barcode=destination_plate_barcode).first()
+
+    if not destination_plate:
+        raise ValueError(
+            f"Destination plate with barcode '{destination_plate_barcode}' "
+            f"not found. Please add plates to the experiment.")
     number_of_columns = destination_plate.dimension.cols
 
 
