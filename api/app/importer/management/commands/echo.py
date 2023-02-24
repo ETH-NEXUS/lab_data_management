@@ -44,12 +44,12 @@ def convert_position_to_index(position: str, number_of_columns: int) -> int:
         return index
 
 
-def read_csv_file(reader: csv.reader) -> List[Dict[str, str]]:
+def read_csv_file(reader: csv.reader, headers) -> List[Dict[str, str]]:
     """
     Reads a CSV file and returns a list of dictionaries representing each row in the file.
     """
     table_data = []
-    column_headers = default_column_headers
+    column_headers = list(headers.values())
     for row_index, table_row in enumerate(reader):
         if len(table_row) > 0 and table_row[0] == 'Source Plate Name':
             column_headers = table_row
@@ -62,7 +62,8 @@ def read_csv_file(reader: csv.reader) -> List[Dict[str, str]]:
     return table_data
 
 
-def get_csv_files(path: str) -> list[dict[str, list[dict[str, str]] | str]]:
+def get_csv_files(path: str, headers) -> list[dict[str, list[dict[str, str]] |
+                                                   str]]:
     """
     Recursively searches the given directory for CSV files with "transfer" in their name,
     reads each file using the read_csv_file function, and returns a list of tables
@@ -78,11 +79,12 @@ def get_csv_files(path: str) -> list[dict[str, list[dict[str, str]] | str]]:
                     log.debug(f"Reading file {file}")
                     csv_reader = csv.reader(csv_file, delimiter=',')
                     files_data.append({"file_path": file_path,
-                                          "data": read_csv_file(csv_reader)})
+                                          "data": read_csv_file(csv_reader,
+                                                                headers)})
     return files_data
 
 
-# ./manage.py echo -p /data/echo -e exp
+
 def parse_plate_data(mapping_data, file_path, headers):
     source_plate_barcode = mapping_data[0][headers['source_plate_barcode']]
     destination_plate_barcode = mapping_data[0][
@@ -134,7 +136,7 @@ class Command(BaseCommand):
         parser.add_argument('--experiment', '-e', type=str, required=False)
         parser.add_argument('--mapping-file', '-m', type=str,
             help='A yml file with the column headers, otherwise default '
-                 'headers are used used')
+                 'headers are used')
 
     def handle(self, *args, **options):
         headers = default_column_headers
@@ -154,7 +156,7 @@ class Command(BaseCommand):
 
         try:
             path = options.get('path')
-            data = get_csv_files(path)
+            data = get_csv_files(path, headers)
             for mapping in data:
                 parse_plate_data(mapping['data'], mapping['file_path'],
                                  headers)
