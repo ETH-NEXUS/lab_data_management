@@ -178,7 +178,7 @@ class BarcodeSpecificationSerializer(serializers.ModelSerializer):
 
 
 class ExperimentSerializer(serializers.ModelSerializer):
-  plates = PlateSerializer(many=True, required=False, allow_null=True)
+  plates  = SimplePlateSerializer(many=True, required=False, allow_null=True)
   barcode_specifications = BarcodeSpecificationSerializer(many=True, required=False, allow_null=True)
 
   class Meta:

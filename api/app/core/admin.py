@@ -2,7 +2,7 @@ from django.contrib import admin
 from django.utils.html import mark_safe
 
 from .models import (Plate, PlateDimension, Measurement, MeasurementFeature, Sample, Well, Location, Project,
-                     Experiment, BarcodeSpecification)
+                     Experiment, BarcodeSpecification, PlateMapping)
 
 
 @admin.register(Plate)
@@ -80,3 +80,9 @@ class ProjectAdmin(admin.ModelAdmin):
 @admin.register(BarcodeSpecification)
 class ProjectAdmin(admin.ModelAdmin):
   list_display = ('prefix', 'number_of_plates')
+
+
+@admin.register(PlateMapping)
+class PlateMappingAdmin(admin.ModelAdmin):
+  list_display = ('source_plate', 'target_plate', 'mapping_file')
+  search_fields = ('source_plate', 'target_plate', 'mapping_file')
