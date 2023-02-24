@@ -4,8 +4,8 @@ import re
 import traceback
 from typing import List, Dict
 from core.mapping import Mapping, MappingList
+from importer.mapping import EchoMapping
 from core.models import Plate, PlateMapping
-from django.core.files import File
 from django.core.management.base import BaseCommand
 from friendlylog import colored_logger as log
 import yaml
@@ -17,31 +17,6 @@ from django.core.files.base import ContentFile
 # you can try it out with the LLD compound library. Make sure to add plates
 # with the barcode prefix BAF210901 and the correct dimensions to the
 # experiment first. This can be done in the UI.
-
-default_column_headers = {"source_plate_name": "Source Plate Name",
-    "source_plate_barcode": "Source Plate Barcode",
-    "source_plate_type": "Source Plate Type", "source_well": "Source Well",
-    "source_concentration": "Source Concentration",
-    "source_concentration_units": "Source Concentration Units",
-    "destination_plate_name": "Destination Plate Name",
-    "destination_plate_barcode": "Destination Plate Barcode",
-    "destination_well": "Destination Well",
-    "destination_concentration": "Destination Concentration",
-    "destination_concentration_units": "Destination Concentration Units",
-    "compound_name": "Compound Name", "transfer_volume": "Transfer Volume",
-    "actual_volume": "Actual Volume", "transfer_status": "Transfer Status",
-    "current_fluid_height": "Current Fluid Height",
-    "current_fluid_volume": "Current Fluid Volume", "percent_dms": "% DMSO"}
-
-
-def convert_position_to_index(position: str, number_of_columns: int) -> int:
-    match = re.match(r'([a-zA-Z]+)(\d+)', position)
-    if match:
-        letter = match.group(1)
-        col = int(match.group(2))
-        row = ord(letter.upper()) - 64
-        index = row * number_of_columns + col
-        return index
 
 
 def read_csv_file(reader: csv.reader, headers) -> List[Dict[str, str]]:
@@ -109,9 +84,10 @@ def parse_plate_data(mapping_data, file_path, headers):
                       f"{entry[headers['destination_well']]} from"
                       f" {source_plate_barcode} to {destination_plate_barcode}")
 
-            from_pos = convert_position_to_index(entry[headers['source_well']],
+            from_pos = EchoMapping.convert_position_to_index(entry[headers[
+                'source_well']],
                                                  number_of_columns)
-            to_pos = convert_position_to_index(
+            to_pos = EchoMapping.convert_position_to_index(
                 entry[headers['destination_well']], number_of_columns)
             mapping = Mapping(from_pos=from_pos, to_pos=to_pos,
                               amount=float(entry[headers['actual_volume']]))
@@ -139,7 +115,7 @@ class Command(BaseCommand):
                  'headers are used')
 
     def handle(self, *args, **options):
-        headers = default_column_headers
+        headers = EchoMapping.DEFAULT_COLUMN_HEADERS
         headers_file = options.get('headers_file', None)
         if headers_file:
             try:
