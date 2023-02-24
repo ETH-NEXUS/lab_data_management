@@ -20,7 +20,8 @@ class Command(BaseCommand):
         parser.add_argument('--type', '-t', type=str, required=True,
                             help='Type of mapping, e. g. echo')
         parser.add_argument('--path', '-p', type=str, required=True,
-                            help='Path to the directory with the echo output')
+                            help='Path to the directory containing the '
+                                 'mapping files')
         parser.add_argument('--experiment', '-e', type=str, required=True)
         parser.add_argument('--mapping-file', '-m', type=str,
                             help='A yml file with the column headers, otherwise default '
