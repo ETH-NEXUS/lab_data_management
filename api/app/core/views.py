@@ -147,7 +147,7 @@ class ExperimentViewSet(viewsets.ModelViewSet):
 
     @action(detail=False, methods=['post'])
     def barcodes(self, request):
-        """ Returns an array of barcodes prepared for the downloadCSV function"""
+        """ Saves a barcode specifications for an experiment"""
         data = request.data
         experiment = Experiment.objects.get(pk=data['experiment_id'])
         barcode_specification = BarcodeSpecification(prefix=data['prefix'],

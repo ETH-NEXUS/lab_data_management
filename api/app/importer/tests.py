@@ -39,7 +39,10 @@ class HelperTests(TestCase):
 
 class ConvertPositionToIndexTestCase(TestCase):
     def test_single_letter(self):
-        # Test a position with a single-letter row label
+        '''
+        Test a position with a single-letter row label
+        '''
+
         position = "B3"
         number_of_columns = 4
         expected_index = 7
@@ -48,7 +51,10 @@ class ConvertPositionToIndexTestCase(TestCase):
             expected_index)
 
     def test_first_column(self):
-        # Test a position in the first column
+        '''
+        Test a position in the first column
+        '''
+
         position = "A1"
         number_of_columns = 4
         expected_index = 0
@@ -57,7 +63,10 @@ class ConvertPositionToIndexTestCase(TestCase):
             expected_index)
 
     def test_last_column(self):
-        # Test a position in the last column
+        '''
+        Test a position in the last column
+        '''
+
         position = "D3"
         number_of_columns = 4
         expected_index = 11
@@ -67,7 +76,10 @@ class ConvertPositionToIndexTestCase(TestCase):
 
 
     def test_multi_letter(self):
-        # Test a position with a multi-letter row label
+        '''
+        Test a position with a multi-letter row label
+        '''
+
         position = "AA11"
         number_of_columns = 4
         expected_index = 105
