@@ -153,7 +153,7 @@ class Plate(TimeTrackedModel):
         for char in letters:
             row += ord(char.upper()) - 65
 
-        index = row * number_of_columns + + (col - 1)
+        index = row * number_of_columns + (col - 1)
         return index
 
     def map(self, mappingList: MappingList, target: 'Plate'):
