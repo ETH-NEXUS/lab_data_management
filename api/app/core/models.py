@@ -1,5 +1,5 @@
 import math
-
+import re
 from compoundlib.models import CompoundLibrary, Compound
 from django.conf import settings
 from django.contrib.postgres.fields import ArrayField
@@ -142,6 +142,19 @@ class Plate(TimeTrackedModel):
         """Copy a plate. Same as map but 1-to-1"""
         self.map(MappingList.one_to_one(self.dimension.num_wells, amount),
                  target)
+
+    @staticmethod
+    def convert_position_to_index(position: str,
+                                  number_of_columns: int) -> int:
+        match = re.match(r'([a-zA-Z]+)(\d+)', position)
+        letters = match.group(1)
+        col = int(match.group(2))
+        row = 0
+        for char in letters:
+            row += ord(char.upper()) - 65
+
+        index = row * number_of_columns + + (col - 1)
+        return index
 
     def map(self, mappingList: MappingList, target: 'Plate'):
         """
