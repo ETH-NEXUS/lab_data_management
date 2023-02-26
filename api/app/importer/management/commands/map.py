@@ -1,5 +1,5 @@
 import traceback
-from importer.mapping import EchoMapping
+from importer.mapping import EchoMapping, MeasurementMapping
 from django.core.management.base import BaseCommand
 from friendlylog import colored_logger as log
 import yaml
@@ -15,6 +15,8 @@ import yaml
 # experiment first. This can be done in the UI.
 
 
+# ./manage.py map -t measurement -p /data/M1000  -e exp
+
 class Command(BaseCommand):
     def add_arguments(self, parser):
         parser.add_argument('--type', '-t', type=str, required=True,
@@ -28,6 +30,7 @@ class Command(BaseCommand):
                                  'headers are used')
 
     def handle(self, *args, **options):
+        path = options.get('path')
         if options.get('type') == 'echo':
             headers = EchoMapping.DEFAULT_COLUMN_HEADERS
             headers_file = options.get('headers_file', None)
@@ -45,7 +48,6 @@ class Command(BaseCommand):
                     return
 
             try:
-                path = options.get('path')
                 data = EchoMapping.get_csv_echo_files(path, headers)
                 for mapping in data:
                     EchoMapping.parse_plate_data(mapping['data'],
@@ -55,3 +57,12 @@ class Command(BaseCommand):
             except Exception as ex:
                 log.error(ex)
                 traceback.print_exc()
+
+        elif options.get('type') == 'measurement':
+            data = MeasurementMapping.get_measurement_files(path)
+            for item in data:
+                try:
+                    MeasurementMapping.parse_measurement_data(item['measurement_data'], item['barcode'])
+                except Exception as ex:
+                    log.error(ex)
+                    traceback.print_exc()
