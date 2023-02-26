@@ -3,13 +3,14 @@ import json
 import os
 from os.path import isfile
 from typing import List, Dict
-from core.models import Plate, PlateMapping
-from core.mapping import Mapping, MappingList
-from django.core.files.base import ContentFile
 
 import yaml
+from django.core.files.base import ContentFile
 from friendlylog import colored_logger as log
 
+from core.mapping import Mapping, MappingList
+from core.models import Plate, PlateMapping, Measurement, Well, \
+    MeasurementMetadata, MeasurementFeature
 from .helper import sameSchema
 
 
@@ -93,8 +94,6 @@ class EchoMapping():
         "current_fluid_height": "Current Fluid Height",
         "current_fluid_volume": "Current Fluid Volume",
         "percent_dms": "% DMSO"}
-
-
 
     @staticmethod
     def read_csv_echo_file(reader: csv.reader, headers) -> List[
@@ -186,3 +185,143 @@ class EchoMapping():
         else:
             log.error(f"Failed to map {source_plate_barcode} to "
                       f"{destination_plate_barcode}")
+
+
+class MeasurementMapping:
+
+    @staticmethod
+    def get_measurement_files(path: str):
+        files_data = []
+        for root, dirs, files in os.walk(path, topdown=False):
+            for file in files:
+                if file.endswith(".asc"):
+                    file_path = os.path.join(root, file)
+                    barcode_delimiter_index = file.find('_')
+                    barcode = file[barcode_delimiter_index + 1: -4]
+                    files_data.append(
+                        {"barcode": barcode, "file_path": file_path,
+                            "measurement_data": MeasurementMapping.read_measurement_file(
+                                file_path)})
+                    log.info(f"Read file  {file_path} ")
+
+        return files_data
+
+    @staticmethod
+    def read_measurement_file(file_path: str) -> Dict[str, List[str]]:
+        with open(file_path, 'r', encoding="iso-8859-1") as measurement_file:
+            measurement_data = measurement_file.readlines()
+            metadata_start_index = MeasurementMapping.find_metadata_start_index(
+                measurement_data)
+            metadata_list = MeasurementMapping.parse_measurement_metadata(
+                measurement_data[metadata_start_index:])
+            return {"values": measurement_data[: metadata_start_index],
+                "metadata": metadata_list}
+
+    @staticmethod
+    def parse_measurement_data(measurement_data: Dict[str, List[str]],
+                               barcode: str) -> None:
+
+        plate = Plate.objects.get(barcode=barcode)
+
+        if not plate:
+            raise ValueError(f"Plate with barcode '{barcode}' "
+                             f"not found. Please add plates to the experiment.")
+        number_of_columns = plate.dimension.cols
+
+        # We drop the first line if it contains 'A1' because it is the header
+        if 'A1' in measurement_data['values'][0].strip().split('\t'):
+            first_line = measurement_data['values'][0].strip().split('\t')
+        else:
+            first_line = measurement_data['values'][1].strip().split('\t')
+        indices = MeasurementMapping.find_indices(first_line)
+
+        metadata_list = measurement_data['metadata']
+
+        for line in measurement_data['values']:
+            try:
+                line_list = line.strip().split('\t')
+
+                well_position_str = line_list[indices[0]]
+                well_position = Plate.convert_position_to_index(
+                    well_position_str.strip().lstrip(), number_of_columns)
+                identifier = line_list[indices[1]]
+                values = line_list[2:]
+                well = Well.objects.filter(position=well_position,
+                                           plate=plate).first()
+
+                if well:
+                    for index, value in enumerate(values):
+                        pass
+                        measurement = Measurement.objects.create(well=well,
+                                                                 value=value,
+                                                                 identifier=identifier,
+                                                                 meta=
+                                                                 metadata_list[
+                                                                     index][
+                                                                     0],
+                                                                 feature=metadata_list[index][1])
+                        measurement.save()
+                        log.debug(f"Succesfully created measurement for well "
+                                  f"{well_position} with value {value}")
+            except (ValueError, Well.DoesNotExist) as e:
+                log.error(f"Error processing line: {line.strip()}. {str(e)}")
+
+    @staticmethod
+    def parse_measurement_metadata(metadata):
+        """
+        Creates metadata objects for every value of measurement.
+        """
+        metadata_objects_list = []
+        dict_list = [{}]
+        measurement_feature_name = 'unknown'
+        for index, line in enumerate(metadata):
+            if ":" in line:
+                key, value = line.split(':', 1)
+                key = key.strip().lstrip()
+                value = value.strip().lstrip()
+                if key in dict_list[-1]:
+                    dict_list.append({})
+                dict_list[-1][key] = value
+                if key == 'Range':
+                    measurement_feature_name = metadata[index + 1].strip().lstrip()
+        measurement_feature = MeasurementFeature.objects.get_or_create(name=measurement_feature_name)[0]
+
+        for item in dict_list:
+            measurement_metadata = MeasurementMetadata.objects.create(data=json.dumps(item))
+            log.debug(f"Successfully created metadata")
+            metadata_objects_list.append((measurement_metadata, measurement_feature))
+        return metadata_objects_list
+
+    @staticmethod
+    def find_indices(line_list: list[str]) -> tuple[int, int]:
+        """
+        find, which column has the identifier and which has the well (we
+        do it by checking the first line and finding the index of 'A1'
+        we can not use regular expressions because there are identifiers
+        like 'NC1' which is the same pattern as by well names
+        """
+        well_index = 0
+        identifier_index = 1
+        for index, item in enumerate(line_list):
+            # If the item is a numeric character or string, skip it, because
+            # it is a value
+            if item.isnumeric():
+                continue
+            if item == 'A1':
+                well_index = index
+            else:
+                identifier_index = index
+        return well_index, identifier_index
+
+    @staticmethod
+    def find_metadata_start_index(measurement_data: list[str]) -> int:
+        """
+        in the lines of the measurement file, finds the index of the line where
+        metadata starts
+        """
+        index = -1
+        for index, line in enumerate(measurement_data):
+            if line.startswith('Date of measurement'):
+                index = index
+                break
+        return index
