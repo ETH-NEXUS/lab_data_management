@@ -323,7 +323,10 @@ class Measurement(TimeTrackedModel):
     identifier = models.CharField(max_length=20, null=True, blank=True)
 
     def __str__(self):
-        return f"{self.feature.abbrev}: {self.value}{self.feature.unit}"
+        if self.feature.abbrev and self.feature.unit:
+            return f"{self.feature.abbrev}: {self.value}{self.feature.unit}"
+        else:
+            return f"{self.feature.name}: {self.value}"
 
     class Meta:
         unique_together = ('well', 'feature')
