@@ -1,5 +1,5 @@
 import traceback
-from importer.mapping import EchoMapping, MeasurementMapping
+from importer.mappers import EchoMapper, MeasurementMapper
 from django.core.management.base import BaseCommand
 from friendlylog import colored_logger as log
 import yaml
@@ -32,7 +32,7 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         path = options.get('path')
         if options.get('type') == 'echo':
-            headers = EchoMapping.DEFAULT_COLUMN_HEADERS
+            headers = EchoMapper.DEFAULT_COLUMN_HEADERS
             headers_file = options.get('headers_file', None)
             if headers_file:
                 try:
@@ -48,9 +48,9 @@ class Command(BaseCommand):
                     return
 
             try:
-                data = EchoMapping.get_csv_echo_files(path, headers)
+                data = EchoMapper.get_csv_echo_files(path, headers)
                 for mapping in data:
-                    EchoMapping.parse_plate_data(mapping['data'],
+                    EchoMapper.parse_plate_data(mapping['data'],
                                                  mapping['file_path'], headers,
                                                  options.get('experiment'))
 
@@ -59,10 +59,10 @@ class Command(BaseCommand):
                 traceback.print_exc()
 
         elif options.get('type') == 'measurement':
-            data = MeasurementMapping.get_measurement_files(path)
+            data = MeasurementMapper.get_measurement_files(path)
             for item in data:
                 try:
-                    MeasurementMapping.parse_measurement_data(item['measurement_data'], item['barcode'])
+                    MeasurementMapper.parse_measurement_data(item['measurement_data'], item['barcode'])
                 except Exception as ex:
                     log.error(ex)
                     traceback.print_exc()
