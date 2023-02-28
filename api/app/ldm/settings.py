@@ -111,7 +111,7 @@ AUTHENTICATION_BACKENDS = [
 ]
 
 AUTH_LDAP_GLOBAL_OPTIONS = {ldap.OPT_X_TLS_REQUIRE_CERT: ldap.OPT_X_TLS_NEVER}
-AUTH_LDAP_SERVER_URI = environ.get('LDAP_SERVER_URI', 'ldaps://ldaps-rz-1.ethz.ch:636,ldaps://ldaps-rz-2.ethz.ch,ldaps://ldaps-hit-2.ethz.ch,ldaps://ldaps-hit-1.ethz.ch')
+AUTH_LDAP_SERVER_URI = environ.get('LDAP_SERVER_URI', 'ldaps://ldaps-rz-1.ethz.ch,ldaps://ldaps-rz-2.ethz.ch,ldaps://ldaps-hit-2.ethz.ch,ldaps://ldaps-hit-1.ethz.ch')
 AUTH_LDAP_BIND_DN = environ.get('LDAP_BIND_DN', 'cn=nexus-tpreports_proxy,ou=admins,ou=nethz,ou=id,ou=auth,o=ethz,c=ch')
 AUTH_LDAP_BIND_PASSWORD = environ.get('LDAP_PASSWORD')
 AUTH_LDAP_USER_ATTR_MAP = {
