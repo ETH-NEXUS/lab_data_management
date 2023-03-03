@@ -143,12 +143,23 @@ class Plate(TimeTrackedModel):
         self.map(MappingList.one_to_one(self.dimension.num_wells, amount),
                  target)
 
+    # @staticmethod
+    # def convert_position_to_index(position: str,
+    #                               number_of_columns: int) -> int:
+    #     match = re.match(r'([a-zA-Z]+)(\d+)', position)
+    #     letters = match.group(1)
+    #     col = int(match.group(2))
+    #     row = 0
+    #     for char in letters:
+    #         row += ord(char.upper()) - 65
 
+    #     index = row * number_of_columns + (col - 1)
+    #     return index
 
     def map(self, mappingList: MappingList, target: 'Plate'):
         """
-    Maps this plate to another plate using a mapping list.
-    """
+        Maps this plate to another plate using a mapping list.
+        """
         with transaction.atomic():
             for mapping in mappingList:
                 try:
@@ -213,7 +224,7 @@ class WellType(models.Model):
 class Well(TimeTrackedModel):
     related_name = 'wells'
     plate = models.ForeignKey(Plate, on_delete=models.CASCADE,
-                              related_name=related_name)
+                              related_name=related_name, db_index=True)
     position = models.PositiveIntegerField(db_index=True)
     sample = models.ForeignKey(Sample, null=True, blank=True,
                                on_delete=models.RESTRICT,
@@ -233,24 +244,30 @@ class Well(TimeTrackedModel):
     @property
     def amount(self) -> float:
         """
-    Summarizes the compound amounts, subtracts the withdrawals and
-    returns the total amount of compound in this well.
-    """
+        Summarizes the compound amounts, subtracts the withdrawals and
+        returns the total amount of compound in this well.
+        """
         amount = self.well_compounds.all().aggregate(Sum('amount'))[
-                     'amount__sum'] or 0
+            'amount__sum'] or 0
         withdrawal = self.withdrawals.all().aggregate(Sum('amount'))[
-                         'amount__sum'] or 0
+            'amount__sum'] or 0
         return round(amount - withdrawal, settings.FLOAT_PRECISION)
 
     @property
     def initial_amount(self) -> float:
         """
-    Summarizes the compound amounts, subtracts the withdrawals and
-    returns the total amount of compound in this well.
-    """
+        Summarizes the compound amounts, subtracts the withdrawals and
+        returns the total amount of compound in this well.
+        """
         amount = self.well_compounds.all().aggregate(Sum('amount'))[
-                     'amount__sum'] or 0
+            'amount__sum'] or 0
         return amount
+
+    def measurement(self, abbrev: str) -> float:
+        """ Returns the value of a measurements given by its abbrev """
+        for measurement in self.measurements.all():
+            if measurement.feature.abbrev == abbrev:
+                return measurement.value
 
     class Meta:
         unique_together = ('plate', 'position')
