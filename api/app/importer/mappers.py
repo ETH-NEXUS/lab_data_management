@@ -4,128 +4,146 @@ import os
 from glob import glob
 from typing import List, Dict
 from django.core.files.base import ContentFile
+from django.core.exceptions import ObjectDoesNotExist
 from friendlylog import colored_logger as log
+import chardet
 
 from core.mapping import Mapping, MappingList
 from core.models import Plate, PlateMapping, Measurement, Well, \
-    MeasurementMetadata, MeasurementFeature
+    MeasurementMetadata, MeasurementFeature, MappingError, \
+    BarcodeSpecification, PlateDimension
+
 
 class BaseMapper:
     @staticmethod
-    def get_files(self, _glob:str) -> List[str]:
+    def get_files(_glob: str) -> List[str]:
         """Get all files in the given path that match the glob pattern"""
         return glob(_glob)
 
+    def run(self, _glob, **kwargs):
+        """Run the mapper"""
+        for filename in self.get_files(_glob):
+            log.info(f"Processing file {filename}...")
+            with open(filename, 'rb') as file:
+                encoding = chardet.detect(file.read()).get('encoding')
+            with open(filename, 'r', encoding=encoding) as file:
+                data = self.parse(filename, file, headers=kwargs['headers'])
+            self.map(data, filename=filename)
+
+    def parse(self, filename, file, **kwargs) -> Dict:
+        raise NotImplementedError()
+
+    def map(self, data: Dict, **kwargs):
+        raise NotImplementedError()
+
+
 class EchoMapper(BaseMapper):
-    DEFAULT_COLUMN_HEADERS = {
-        "source_plate_name": "Source Plate Name",
-        "source_plate_barcode": "Source Plate Barcode",
+    DEFAULT_COLUMNS = {"source_plate_barcode": "Source Plate Barcode",
         "source_plate_type": "Source Plate Type", "source_well": "Source Well",
-        "source_concentration": "Source Concentration",
-        "source_concentration_units": "Source Concentration Units",
         "destination_plate_name": "Destination Plate Name",
         "destination_plate_barcode": "Destination Plate Barcode",
         "destination_well": "Destination Well",
-        "destination_concentration": "Destination Concentration",
-        "destination_concentration_units": "Destination Concentration Units",
-        "compound_name": "Compound Name", "transfer_volume": "Transfer Volume",
-        "actual_volume": "Actual Volume", "transfer_status": "Transfer Status",
-        "current_fluid_height": "Current Fluid Height",
-        "current_fluid_volume": "Current Fluid Volume",
-        "percent_dms": "% DMSO"
-    }
+        "actual_volume": "Actual Volume"}
 
-    @staticmethod
-    def read_csv_echo_file(reader: csv.reader, headers) -> List[
-        Dict[str, str]]:
-        """
-        Reads a CSV file and returns a list of dictionaries representing each row in the file.
-        """
-        table_data = []
-        column_headers = list(headers.values())
-        for row_index, table_row in enumerate(reader):
-            if len(table_row) > 0 and table_row[0] == 'Source Plate Name':
-                column_headers = table_row
+    def __fast_forward_to_header_row(self, file, headers):
+        row = next(file)
+        while 'DETAILS' not in row:  # tuple(headers.values())[0]
+            row = next(file)
+        return file
 
-            if row_index > 9:
-                row_object = {}
-                for cell_index, cell in enumerate(table_row):
-                    row_object[column_headers[cell_index]] = cell
-                table_data.append(row_object)
-        return table_data
+    def parse(self, filename, file, **kwargs):
+        headers = kwargs.get('headers', EchoMapper.DEFAULT_COLUMNS)
+        self.__fast_forward_to_header_row(file, headers)
+        result = []
+        reader = csv.DictReader(file, delimiter=',')
 
-    @staticmethod
-    def get_csv_echo_files(path: str, headers) -> list[
-        dict[str, list[dict[str, str]] | str]]:
-        """
-        Recursively searches the given directory for CSV files with "transfer" in their name,
-        reads each file using the read_csv_file function, and returns a list of tables
-        representing the data in the CSV files.
-        """
-        files_data = []
-        for root, dirs, files in os.walk(path, topdown=False):
-            for file in files:
-                if file.endswith(".csv") and 'transfer' in file:
-                    subdirectory = os.path.relpath(root, path)
-                    file_path = os.path.join(path, subdirectory, file)
-                    with open(os.path.join(root, file), 'r') as csv_file:
-                        log.debug(f"Reading file {file}")
-                        csv_reader = csv.reader(csv_file, delimiter=',')
-                        files_data.append({"file_path": file_path,
-                                              "data":
-                                                  EchoMapper.read_csv_echo_file(
-                                                  csv_reader, headers)})
-        return files_data
+        for row in reader:
+            result.append({new_key: row[old_key] for new_key, old_key in
+                              headers.items()})
+        file.close()
+        return result
 
-    @staticmethod
-    def parse_plate_data(mapping_data, file_path, headers, experiment_name):
-        source_plate_barcode = mapping_data[0][headers['source_plate_barcode']]
-        destination_plate_barcode = mapping_data[0][
-            headers['destination_plate_barcode']]
-
-        source_plate = Plate.objects.get(barcode=source_plate_barcode)
-        destination_plate = Plate.objects.get(
-            barcode=destination_plate_barcode)
-
-        if not destination_plate:
-            raise ValueError(
-                f"Destination plate with barcode '{destination_plate_barcode}' "
-                f"not found. Please add plates to the experiment.")
-        number_of_columns = destination_plate.dimension.cols
-
-        if destination_plate.experiment.name != experiment_name:
-            raise ValueError(
-                f"Destination plate with barcode '{destination_plate_barcode}' "
-                f"does not belong to experiment '{experiment_name}'.")
+    def map(self, data: List[Dict], **kwargs):
+        try:
+            source_plate = Plate.objects.get(
+                barcode=data[0]['source_plate_barcode'])
+            if source_plate.dimension is None:
+                source_plate.dimension = self.__find_plate_dimension(
+                    data[0]['source_plate_name'])
+                source_plate.save()
+        except ObjectDoesNotExist:
+            raise MappingError(f"Source plate with barcode does not "
+                               f"exist.")
+        try:
+            destination_plate = Plate.objects.get(
+                barcode=data[0]['destination_plate_barcode'])
+        except ObjectDoesNotExist:
+            destination_plate = self.__create_plate_by_name_and_barcode(
+                plate_name=data[0]['destination_plate_name'],
+                barcode=data[0]['destination_plate_barcode'])
 
         mapping_list = MappingList()
-        for entry in mapping_data:
-            if len(entry) > 0:
-                log.debug(f"Mapping {entry[headers['source_well']]} to "
-                          f"{entry[headers['destination_well']]} from"
-                          f" {source_plate_barcode} to {destination_plate_barcode}")
 
-                from_pos = Plate.convert_position_to_index(
-                    entry[headers['source_well']], number_of_columns)
-                to_pos = Plate.convert_position_to_index(
-                    entry[headers['destination_well']], number_of_columns)
+        for entry in data:
+            print('ENTRY: ', entry)
+            if len(entry) > 0:
+                log.info(f"Mapping {entry['source_well']} to "
+                         f"{entry['destination_well']} from"
+                         f" {source_plate.barcode} to "
+                         f"{destination_plate.barcode}")
+
+                from_pos = source_plate.dimension.position(
+                    entry['source_well'])
+                to_pos = destination_plate.dimension.position(
+                    entry['destination_well'])
                 mapping = Mapping(from_pos=from_pos, to_pos=to_pos,
-                                  amount=float(
-                                      entry[headers['actual_volume']]))
+                                  amount=float(entry['actual_volume']))
                 mapping_list.add(mapping)
         mapping_success = source_plate.map(mapping_list, destination_plate)
         if mapping_success:
-            file_content = open(file_path, 'rb').read()
-            file_name = os.path.basename(file_path)
+            file_content = open(kwargs['filename'], 'rb').read()
+            file_name = os.path.basename(kwargs['filename'])
             plate_mapping = PlateMapping(source_plate=source_plate,
                                          target_plate=destination_plate)
             plate_mapping.mapping_file.save(file_name,
                                             ContentFile(file_content))
-            log.info(f"Successfully mapped {source_plate_barcode} to "
-                     f"{destination_plate_barcode}")
+            log.info(f"Successfully mapped {source_plate.barcode} to "
+                     f"{destination_plate.barcode}")
         else:
-            log.error(f"Failed to map {source_plate_barcode} to "
-                      f"{destination_plate_barcode}")
+            log.error(f"Failed to map {source_plate.barcode} to "
+                      f"{destination_plate.barcode}")
+
+    def __create_plate_by_name_and_barcode(self, plate_name: str, barcode:
+    str):
+        try:
+            barcode_prefix = barcode.split('_')[0]
+            barcode_specification = BarcodeSpecification.objects.get(
+                prefix=barcode_prefix)
+        except ObjectDoesNotExist:
+            raise ValueError(f"No barcode specification found for {barcode}. "
+                             f"Please add it in the user interface.")
+
+        return Plate.objects.create(barcode=barcode,
+                                    experiment=barcode_specification.experiment,
+                                    dimension=self.__find_plate_dimension(
+                                        plate_name))
+
+
+    def __find_plate_dimension(self, plate_name: str):
+        # default and the most common dimension
+        plate_dimension_name = 'dim_384_16x24'
+        try:
+            if '96' in plate_name:
+                plate_dimension_name = 'dim_96_8x12'
+            elif '1536' in plate_name:
+                plate_dimension_name = 'dim_1536_32x48'
+            plate_dimension = PlateDimension.objects.get(
+                name=plate_dimension_name)
+            return plate_dimension
+        except ObjectDoesNotExist:
+            raise ValueError(
+                f"No plate dimension found for name {plate_dimension_name}. "
+                f"Please add it in the user interface.")
 
 
 class MeasurementMapper:
@@ -198,9 +216,10 @@ class MeasurementMapper:
                                                                  identifier=identifier,
                                                                  meta=
                                                                  metadata_list[
-                                                                     index][
-                                                                     0],
-                                                                 feature=metadata_list[index][1])
+                                                                     index][0],
+                                                                 feature=
+                                                                 metadata_list[
+                                                                     index][1])
                         measurement.save()
                         log.debug(f"Succesfully created measurement for well "
                                   f"{well_position} with value {value}")
@@ -224,13 +243,17 @@ class MeasurementMapper:
                     dict_list.append({})
                 dict_list[-1][key] = value
                 if key == 'Range':
-                    measurement_feature_name = metadata[index + 1].strip().lstrip()
-        measurement_feature = MeasurementFeature.objects.get_or_create(name=measurement_feature_name)[0]
+                    measurement_feature_name = metadata[
+                        index + 1].strip().lstrip()
+        measurement_feature = MeasurementFeature.objects.get_or_create(
+            name=measurement_feature_name)[0]
 
         for item in dict_list:
-            measurement_metadata = MeasurementMetadata.objects.create(data=json.dumps(item))
+            measurement_metadata = MeasurementMetadata.objects.create(
+                data=json.dumps(item))
             log.debug(f"Successfully created metadata")
-            metadata_objects_list.append((measurement_metadata, measurement_feature))
+            metadata_objects_list.append(
+                (measurement_metadata, measurement_feature))
         return metadata_objects_list
 
     @staticmethod

@@ -1,0 +1,2895 @@
+- model: core.well
+  pk: 64002
+  fields:
+    created_at: 2023-02-28 08:21:43.154394+00:00
+    modified_at: 2023-02-28 08:21:43.154641+00:00
+    plate: 201
+    position: 2
+    sample: null
+    type: 1
+- model: core.well
+  pk: 64003
+  fields:
+    created_at: 2023-02-28 08:21:43.173341+00:00
+    modified_at: 2023-02-28 08:21:43.173545+00:00
+    plate: 201
+    position: 3
+    sample: null
+    type: 1
+- model: core.well
+  pk: 64004
+  fields:
+    created_at: 2023-02-28 08:21:43.191523+00:00
+    modified_at: 2023-02-28 08:21:43.191705+00:00
+    plate: 201
+    position: 4
+    sample: null
+    type: 1
+- model: core.well
+  pk: 64005
+  fields:
+    created_at: 2023-02-28 08:21:43.209643+00:00
+    modified_at: 2023-02-28 08:21:43.209833+00:00
+    plate: 201
+    position: 5
+    sample: null
+    type: 1
+- model: core.well
+  pk: 64006
+  fields:
+    created_at: 2023-02-28 08:21:43.227567+00:00
+    modified_at: 2023-02-28 08:21:43.227748+00:00
+    plate: 201
+    position: 6
+    sample: null
+    type: 1
+- model: core.well
+  pk: 64007
+  fields:
+    created_at: 2023-02-28 08:21:43.244737+00:00
+    modified_at: 2023-02-28 08:21:43.244920+00:00
+    plate: 201
+    position: 7
+    sample: null
+    type: 1
+- model: core.well
+  pk: 64008
+  fields:
+    created_at: 2023-02-28 08:21:43.261151+00:00
+    modified_at: 2023-02-28 08:21:43.261335+00:00
+    plate: 201
+    position: 8
+    sample: null
+    type: 1
+- model: core.well
+  pk: 64009
+  fields:
+    created_at: 2023-02-28 08:21:43.278660+00:00
+    modified_at: 2023-02-28 08:21:43.278885+00:00
+    plate: 201
+    position: 9
+    sample: null
+    type: 1
+- model: core.well
+  pk: 64010
+  fields:
+    created_at: 2023-02-28 08:21:43.298300+00:00
+    modified_at: 2023-02-28 08:21:43.298478+00:00
+    plate: 201
+    position: 10
+    sample: null
+    type: 1
+- model: core.well
+  pk: 64011
+  fields:
+    created_at: 2023-02-28 08:21:43.319295+00:00
+    modified_at: 2023-02-28 08:21:43.319532+00:00
+    plate: 201
+    position: 11
+    sample: null
+    type: 1
+- model: core.well
+  pk: 64012
+  fields:
+    created_at: 2023-02-28 08:21:43.336521+00:00
+    modified_at: 2023-02-28 08:21:43.336702+00:00
+    plate: 201
+    position: 12
+    sample: null
+    type: 1
+- model: core.well
+  pk: 64013
+  fields:
+    created_at: 2023-02-28 08:21:43.355266+00:00
+    modified_at: 2023-02-28 08:21:43.355452+00:00
+    plate: 201
+    position: 13
+    sample: null
+    type: 1
+- model: core.well
+  pk: 64014
+  fields:
+    created_at: 2023-02-28 08:21:43.372921+00:00
+    modified_at: 2023-02-28 08:21:43.373097+00:00
+    plate: 201
+    position: 14
+    sample: null
+    type: 1
+- model: core.well
+  pk: 64015
+  fields:
+    created_at: 2023-02-28 08:21:43.390448+00:00
+    modified_at: 2023-02-28 08:21:43.390626+00:00
+    plate: 201
+    position: 15
+    sample: null
+    type: 1
+- model: core.well
+  pk: 64016
+  fields:
+    created_at: 2023-02-28 08:21:43.407627+00:00
+    modified_at: 2023-02-28 08:21:43.407830+00:00
+    plate: 201
+    position: 16
+    sample: null
+    type: 1
+- model: core.well
+  pk: 64017
+  fields:
+    created_at: 2023-02-28 08:21:43.425998+00:00
+    modified_at: 2023-02-28 08:21:43.426246+00:00
+    plate: 201
+    position: 17
+    sample: null
+    type: 1
+- model: core.well
+  pk: 64018
+  fields:
+    created_at: 2023-02-28 08:21:43.443604+00:00
+    modified_at: 2023-02-28 08:21:43.443789+00:00
+    plate: 201
+    position: 18
+    sample: null
+    type: 1
+- model: core.well
+  pk: 64019
+  fields:
+    created_at: 2023-02-28 08:21:43.460297+00:00
+    modified_at: 2023-02-28 08:21:43.460491+00:00
+    plate: 201
+    position: 19
+    sample: null
+    type: 1
+- model: core.well
+  pk: 64020
+  fields:
+    created_at: 2023-02-28 08:21:43.477722+00:00
+    modified_at: 2023-02-28 08:21:43.477935+00:00
+    plate: 201
+    position: 20
+    sample: null
+    type: 1
+- model: core.well
+  pk: 64021
+  fields:
+    created_at: 2023-02-28 08:21:43.496152+00:00
+    modified_at: 2023-02-28 08:21:43.496346+00:00
+    plate: 201
+    position: 21
+    sample: null
+    type: 1
+- model: core.well
+  pk: 64022
+  fields:
+    created_at: 2023-02-28 08:21:43.513628+00:00
+    modified_at: 2023-02-28 08:21:43.513822+00:00
+    plate: 201
+    position: 24
+    sample: null
+    type: 1
+- model: core.well
+  pk: 64023
+  fields:
+    created_at: 2023-02-28 08:21:43.530162+00:00
+    modified_at: 2023-02-28 08:21:43.530340+00:00
+    plate: 201
+    position: 25
+    sample: null
+    type: 1
+- model: core.well
+  pk: 64024
+  fields:
+    created_at: 2023-02-28 08:21:43.549213+00:00
+    modified_at: 2023-02-28 08:21:43.549408+00:00
+    plate: 201
+    position: 26
+    sample: null
+    type: 1
+- model: core.well
+  pk: 64025
+  fields:
+    created_at: 2023-02-28 08:21:43.568158+00:00
+    modified_at: 2023-02-28 08:21:43.568392+00:00
+    plate: 201
+    position: 27
+    sample: null
+    type: 1
+- model: core.well
+  pk: 64026
+  fields:
+    created_at: 2023-02-28 08:21:43.587326+00:00
+    modified_at: 2023-02-28 08:21:43.587532+00:00
+    plate: 201
+    position: 28
+    sample: null
+    type: 1
+- model: core.well
+  pk: 64027
+  fields:
+    created_at: 2023-02-28 08:21:43.604021+00:00
+    modified_at: 2023-02-28 08:21:43.604311+00:00
+    plate: 201
+    position: 29
+    sample: null
+    type: 1
+- model: core.well
+  pk: 64028
+  fields:
+    created_at: 2023-02-28 08:21:43.623173+00:00
+    modified_at: 2023-02-28 08:21:43.623362+00:00
+    plate: 201
+    position: 30
+    sample: null
+    type: 1
+- model: core.well
+  pk: 64029
+  fields:
+    created_at: 2023-02-28 08:21:43.642590+00:00
+    modified_at: 2023-02-28 08:21:43.642941+00:00
+    plate: 201
+    position: 31
+    sample: null
+    type: 1
+- model: core.well
+  pk: 64030
+  fields:
+    created_at: 2023-02-28 08:21:43.662034+00:00
+    modified_at: 2023-02-28 08:21:43.662339+00:00
+    plate: 201
+    position: 32
+    sample: null
+    type: 1
+- model: core.well
+  pk: 64031
+  fields:
+    created_at: 2023-02-28 08:21:43.685475+00:00
+    modified_at: 2023-02-28 08:21:43.685755+00:00
+    plate: 201
+    position: 33
+    sample: null
+    type: 1
+- model: core.well
+  pk: 64032
+  fields:
+    created_at: 2023-02-28 08:21:43.703131+00:00
+    modified_at: 2023-02-28 08:21:43.703327+00:00
+    plate: 201
+    position: 34
+    sample: null
+    type: 1
+- model: core.well
+  pk: 64033
+  fields:
+    created_at: 2023-02-28 08:21:43.721178+00:00
+    modified_at: 2023-02-28 08:21:43.721358+00:00
+    plate: 201
+    position: 35
+    sample: null
+    type: 1
+- model: core.well
+  pk: 64034
+  fields:
+    created_at: 2023-02-28 08:21:43.739586+00:00
+    modified_at: 2023-02-28 08:21:43.739840+00:00
+    plate: 201
+    position: 36
+    sample: null
+    type: 1
+- model: core.well
+  pk: 64035
+  fields:
+    created_at: 2023-02-28 08:21:43.760433+00:00
+    modified_at: 2023-02-28 08:21:43.760619+00:00
+    plate: 201
+    position: 37
+    sample: null
+    type: 1
+- model: core.well
+  pk: 64036
+  fields:
+    created_at: 2023-02-28 08:21:43.780622+00:00
+    modified_at: 2023-02-28 08:21:43.780844+00:00
+    plate: 201
+    position: 38
+    sample: null
+    type: 1
+- model: core.well
+  pk: 64037
+  fields:
+    created_at: 2023-02-28 08:21:43.802008+00:00
+    modified_at: 2023-02-28 08:21:43.802358+00:00
+    plate: 201
+    position: 39
+    sample: null
+    type: 1
+- model: core.well
+  pk: 64038
+  fields:
+    created_at: 2023-02-28 08:21:43.825159+00:00
+    modified_at: 2023-02-28 08:21:43.825384+00:00
+    plate: 201
+    position: 40
+    sample: null
+    type: 1
+- model: core.well
+  pk: 64039
+  fields:
+    created_at: 2023-02-28 08:21:43.845299+00:00
+    modified_at: 2023-02-28 08:21:43.845512+00:00
+    plate: 201
+    position: 41
+    sample: null
+    type: 1
+- model: core.well
+  pk: 64040
+  fields:
+    created_at: 2023-02-28 08:21:43.869061+00:00
+    modified_at: 2023-02-28 08:21:43.869556+00:00
+    plate: 201
+    position: 42
+    sample: null
+    type: 1
+- model: core.well
+  pk: 64041
+  fields:
+    created_at: 2023-02-28 08:21:43.897371+00:00
+    modified_at: 2023-02-28 08:21:43.897646+00:00
+    plate: 201
+    position: 43
+    sample: null
+    type: 1
+- model: core.well
+  pk: 64042
+  fields:
+    created_at: 2023-02-28 08:21:43.925351+00:00
+    modified_at: 2023-02-28 08:21:43.925714+00:00
+    plate: 201
+    position: 46
+    sample: null
+    type: 1
+- model: core.well
+  pk: 64043
+  fields:
+    created_at: 2023-02-28 08:21:43.951898+00:00
+    modified_at: 2023-02-28 08:21:43.952244+00:00
+    plate: 201
+    position: 47
+    sample: null
+    type: 1
+- model: core.well
+  pk: 64044
+  fields:
+    created_at: 2023-02-28 08:21:43.974180+00:00
+    modified_at: 2023-02-28 08:21:43.974379+00:00
+    plate: 201
+    position: 48
+    sample: null
+    type: 1
+- model: core.well
+  pk: 64045
+  fields:
+    created_at: 2023-02-28 08:21:44.004027+00:00
+    modified_at: 2023-02-28 08:21:44.004382+00:00
+    plate: 201
+    position: 49
+    sample: null
+    type: 1
+- model: core.well
+  pk: 64046
+  fields:
+    created_at: 2023-02-28 08:21:44.025015+00:00
+    modified_at: 2023-02-28 08:21:44.025203+00:00
+    plate: 201
+    position: 50
+    sample: null
+    type: 1
+- model: core.well
+  pk: 64047
+  fields:
+    created_at: 2023-02-28 08:21:44.047614+00:00
+    modified_at: 2023-02-28 08:21:44.047839+00:00
+    plate: 201
+    position: 51
+    sample: null
+    type: 1
+- model: core.well
+  pk: 64048
+  fields:
+    created_at: 2023-02-28 08:21:44.071302+00:00
+    modified_at: 2023-02-28 08:21:44.071533+00:00
+    plate: 201
+    position: 52
+    sample: null
+    type: 1
+- model: core.well
+  pk: 64049
+  fields:
+    created_at: 2023-02-28 08:21:44.095883+00:00
+    modified_at: 2023-02-28 08:21:44.096077+00:00
+    plate: 201
+    position: 53
+    sample: null
+    type: 1
+- model: core.well
+  pk: 64050
+  fields:
+    created_at: 2023-02-28 08:21:44.118325+00:00
+    modified_at: 2023-02-28 08:21:44.118541+00:00
+    plate: 201
+    position: 54
+    sample: null
+    type: 1
+- model: core.well
+  pk: 64051
+  fields:
+    created_at: 2023-02-28 08:21:44.142488+00:00
+    modified_at: 2023-02-28 08:21:44.142747+00:00
+    plate: 201
+    position: 55
+    sample: null
+    type: 1
+- model: core.well
+  pk: 64052
+  fields:
+    created_at: 2023-02-28 08:21:44.166526+00:00
+    modified_at: 2023-02-28 08:21:44.166767+00:00
+    plate: 201
+    position: 56
+    sample: null
+    type: 1
+- model: core.well
+  pk: 64053
+  fields:
+    created_at: 2023-02-28 08:21:44.191415+00:00
+    modified_at: 2023-02-28 08:21:44.191640+00:00
+    plate: 201
+    position: 57
+    sample: null
+    type: 1
+- model: core.well
+  pk: 64054
+  fields:
+    created_at: 2023-02-28 08:21:44.214382+00:00
+    modified_at: 2023-02-28 08:21:44.214626+00:00
+    plate: 201
+    position: 58
+    sample: null
+    type: 1
+- model: core.well
+  pk: 64055
+  fields:
+    created_at: 2023-02-28 08:21:44.236798+00:00
+    modified_at: 2023-02-28 08:21:44.237044+00:00
+    plate: 201
+    position: 59
+    sample: null
+    type: 1
+- model: core.well
+  pk: 64056
+  fields:
+    created_at: 2023-02-28 08:21:44.255004+00:00
+    modified_at: 2023-02-28 08:21:44.255240+00:00
+    plate: 201
+    position: 60
+    sample: null
+    type: 1
+- model: core.well
+  pk: 64057
+  fields:
+    created_at: 2023-02-28 08:21:44.273897+00:00
+    modified_at: 2023-02-28 08:21:44.274085+00:00
+    plate: 201
+    position: 61
+    sample: null
+    type: 1
+- model: core.well
+  pk: 64058
+  fields:
+    created_at: 2023-02-28 08:21:44.296643+00:00
+    modified_at: 2023-02-28 08:21:44.296875+00:00
+    plate: 201
+    position: 62
+    sample: null
+    type: 1
+- model: core.well
+  pk: 64059
+  fields:
+    created_at: 2023-02-28 08:21:44.321246+00:00
+    modified_at: 2023-02-28 08:21:44.321467+00:00
+    plate: 201
+    position: 63
+    sample: null
+    type: 1
+- model: core.well
+  pk: 64060
+  fields:
+    created_at: 2023-02-28 08:21:44.344192+00:00
+    modified_at: 2023-02-28 08:21:44.344430+00:00
+    plate: 201
+    position: 64
+    sample: null
+    type: 1
+- model: core.well
+  pk: 64061
+  fields:
+    created_at: 2023-02-28 08:21:44.368835+00:00
+    modified_at: 2023-02-28 08:21:44.369054+00:00
+    plate: 201
+    position: 65
+    sample: null
+    type: 1
+- model: core.well
+  pk: 64062
+  fields:
+    created_at: 2023-02-28 08:21:44.389164+00:00
+    modified_at: 2023-02-28 08:21:44.389353+00:00
+    plate: 201
+    position: 68
+    sample: null
+    type: 1
+- model: core.well
+  pk: 64063
+  fields:
+    created_at: 2023-02-28 08:21:44.408870+00:00
+    modified_at: 2023-02-28 08:21:44.409063+00:00
+    plate: 201
+    position: 69
+    sample: null
+    type: 1
+- model: core.well
+  pk: 64064
+  fields:
+    created_at: 2023-02-28 08:21:44.429746+00:00
+    modified_at: 2023-02-28 08:21:44.429933+00:00
+    plate: 201
+    position: 70
+    sample: null
+    type: 1
+- model: core.well
+  pk: 64065
+  fields:
+    created_at: 2023-02-28 08:21:44.447870+00:00
+    modified_at: 2023-02-28 08:21:44.448067+00:00
+    plate: 201
+    position: 71
+    sample: null
+    type: 1
+- model: core.well
+  pk: 64066
+  fields:
+    created_at: 2023-02-28 08:21:44.468504+00:00
+    modified_at: 2023-02-28 08:21:44.468890+00:00
+    plate: 201
+    position: 72
+    sample: null
+    type: 1
+- model: core.well
+  pk: 64067
+  fields:
+    created_at: 2023-02-28 08:21:44.492819+00:00
+    modified_at: 2023-02-28 08:21:44.493054+00:00
+    plate: 201
+    position: 73
+    sample: null
+    type: 1
+- model: core.well
+  pk: 64068
+  fields:
+    created_at: 2023-02-28 08:21:44.512630+00:00
+    modified_at: 2023-02-28 08:21:44.513149+00:00
+    plate: 201
+    position: 74
+    sample: null
+    type: 1
+- model: core.well
+  pk: 64069
+  fields:
+    created_at: 2023-02-28 08:21:44.538057+00:00
+    modified_at: 2023-02-28 08:21:44.538628+00:00
+    plate: 201
+    position: 75
+    sample: null
+    type: 1
+- model: core.well
+  pk: 64070
+  fields:
+    created_at: 2023-02-28 08:21:44.566010+00:00
+    modified_at: 2023-02-28 08:21:44.566370+00:00
+    plate: 201
+    position: 76
+    sample: null
+    type: 1
+- model: core.well
+  pk: 64071
+  fields:
+    created_at: 2023-02-28 08:21:44.589482+00:00
+    modified_at: 2023-02-28 08:21:44.589818+00:00
+    plate: 201
+    position: 77
+    sample: null
+    type: 1
+- model: core.well
+  pk: 64072
+  fields:
+    created_at: 2023-02-28 08:21:44.612913+00:00
+    modified_at: 2023-02-28 08:21:44.613235+00:00
+    plate: 201
+    position: 78
+    sample: null
+    type: 1
+- model: core.well
+  pk: 64073
+  fields:
+    created_at: 2023-02-28 08:21:44.634381+00:00
+    modified_at: 2023-02-28 08:21:44.634625+00:00
+    plate: 201
+    position: 79
+    sample: null
+    type: 1
+- model: core.well
+  pk: 64074
+  fields:
+    created_at: 2023-02-28 08:21:44.652810+00:00
+    modified_at: 2023-02-28 08:21:44.653052+00:00
+    plate: 201
+    position: 80
+    sample: null
+    type: 1
+- model: core.well
+  pk: 64075
+  fields:
+    created_at: 2023-02-28 08:21:44.673926+00:00
+    modified_at: 2023-02-28 08:21:44.674127+00:00
+    plate: 201
+    position: 81
+    sample: null
+    type: 1
+- model: core.well
+  pk: 64076
+  fields:
+    created_at: 2023-02-28 08:21:44.697772+00:00
+    modified_at: 2023-02-28 08:21:44.698072+00:00
+    plate: 201
+    position: 82
+    sample: null
+    type: 1
+- model: core.well
+  pk: 64077
+  fields:
+    created_at: 2023-02-28 08:21:44.721889+00:00
+    modified_at: 2023-02-28 08:21:44.722097+00:00
+    plate: 201
+    position: 83
+    sample: null
+    type: 1
+- model: core.well
+  pk: 64078
+  fields:
+    created_at: 2023-02-28 08:21:44.742137+00:00
+    modified_at: 2023-02-28 08:21:44.742365+00:00
+    plate: 201
+    position: 84
+    sample: null
+    type: 1
+- model: core.well
+  pk: 64079
+  fields:
+    created_at: 2023-02-28 08:21:44.763993+00:00
+    modified_at: 2023-02-28 08:21:44.764243+00:00
+    plate: 201
+    position: 85
+    sample: null
+    type: 1
+- model: core.well
+  pk: 64080
+  fields:
+    created_at: 2023-02-28 08:21:44.783039+00:00
+    modified_at: 2023-02-28 08:21:44.783321+00:00
+    plate: 201
+    position: 86
+    sample: null
+    type: 1
+- model: core.well
+  pk: 64081
+  fields:
+    created_at: 2023-02-28 08:21:44.802163+00:00
+    modified_at: 2023-02-28 08:21:44.802420+00:00
+    plate: 201
+    position: 87
+    sample: null
+    type: 1
+- model: core.well
+  pk: 64082
+  fields:
+    created_at: 2023-02-28 08:21:44.825160+00:00
+    modified_at: 2023-02-28 08:21:44.825351+00:00
+    plate: 201
+    position: 90
+    sample: null
+    type: 1
+- model: core.well
+  pk: 64083
+  fields:
+    created_at: 2023-02-28 08:21:44.845657+00:00
+    modified_at: 2023-02-28 08:21:44.845885+00:00
+    plate: 201
+    position: 91
+    sample: null
+    type: 1
+- model: core.well
+  pk: 64084
+  fields:
+    created_at: 2023-02-28 08:21:44.865137+00:00
+    modified_at: 2023-02-28 08:21:44.865334+00:00
+    plate: 201
+    position: 92
+    sample: null
+    type: 1
+- model: core.well
+  pk: 64085
+  fields:
+    created_at: 2023-02-28 08:21:44.887383+00:00
+    modified_at: 2023-02-28 08:21:44.887635+00:00
+    plate: 201
+    position: 93
+    sample: null
+    type: 1
+- model: core.well
+  pk: 64086
+  fields:
+    created_at: 2023-02-28 08:21:44.907353+00:00
+    modified_at: 2023-02-28 08:21:44.907683+00:00
+    plate: 201
+    position: 94
+    sample: null
+    type: 1
+- model: core.well
+  pk: 64087
+  fields:
+    created_at: 2023-02-28 08:21:44.928597+00:00
+    modified_at: 2023-02-28 08:21:44.928783+00:00
+    plate: 201
+    position: 95
+    sample: null
+    type: 1
+- model: core.well
+  pk: 64088
+  fields:
+    created_at: 2023-02-28 08:21:44.950942+00:00
+    modified_at: 2023-02-28 08:21:44.951243+00:00
+    plate: 201
+    position: 96
+    sample: null
+    type: 1
+- model: core.well
+  pk: 64089
+  fields:
+    created_at: 2023-02-28 08:21:44.971790+00:00
+    modified_at: 2023-02-28 08:21:44.972040+00:00
+    plate: 201
+    position: 97
+    sample: null
+    type: 1
+- model: core.well
+  pk: 64090
+  fields:
+    created_at: 2023-02-28 08:21:44.989604+00:00
+    modified_at: 2023-02-28 08:21:44.989801+00:00
+    plate: 201
+    position: 98
+    sample: null
+    type: 1
+- model: core.well
+  pk: 64091
+  fields:
+    created_at: 2023-02-28 08:21:45.007175+00:00
+    modified_at: 2023-02-28 08:21:45.007366+00:00
+    plate: 201
+    position: 99
+    sample: null
+    type: 1
+- model: core.well
+  pk: 64092
+  fields:
+    created_at: 2023-02-28 08:21:45.026924+00:00
+    modified_at: 2023-02-28 08:21:45.027158+00:00
+    plate: 201
+    position: 100
+    sample: null
+    type: 1
+- model: core.well
+  pk: 64093
+  fields:
+    created_at: 2023-02-28 08:21:45.043928+00:00
+    modified_at: 2023-02-28 08:21:45.044105+00:00
+    plate: 201
+    position: 101
+    sample: null
+    type: 1
+- model: core.well
+  pk: 64094
+  fields:
+    created_at: 2023-02-28 08:21:45.060982+00:00
+    modified_at: 2023-02-28 08:21:45.061227+00:00
+    plate: 201
+    position: 102
+    sample: null
+    type: 1
+- model: core.well
+  pk: 64095
+  fields:
+    created_at: 2023-02-28 08:21:45.078545+00:00
+    modified_at: 2023-02-28 08:21:45.078763+00:00
+    plate: 201
+    position: 103
+    sample: null
+    type: 1
+- model: core.well
+  pk: 64096
+  fields:
+    created_at: 2023-02-28 08:21:45.104960+00:00
+    modified_at: 2023-02-28 08:21:45.105205+00:00
+    plate: 201
+    position: 104
+    sample: null
+    type: 1
+- model: core.well
+  pk: 64097
+  fields:
+    created_at: 2023-02-28 08:21:45.122163+00:00
+    modified_at: 2023-02-28 08:21:45.122345+00:00
+    plate: 201
+    position: 105
+    sample: null
+    type: 1
+- model: core.well
+  pk: 64098
+  fields:
+    created_at: 2023-02-28 08:21:45.139129+00:00
+    modified_at: 2023-02-28 08:21:45.139327+00:00
+    plate: 201
+    position: 106
+    sample: null
+    type: 1
+- model: core.well
+  pk: 64099
+  fields:
+    created_at: 2023-02-28 08:21:45.157609+00:00
+    modified_at: 2023-02-28 08:21:45.157795+00:00
+    plate: 201
+    position: 107
+    sample: null
+    type: 1
+- model: core.well
+  pk: 64100
+  fields:
+    created_at: 2023-02-28 08:21:45.175940+00:00
+    modified_at: 2023-02-28 08:21:45.176193+00:00
+    plate: 201
+    position: 108
+    sample: null
+    type: 1
+- model: core.well
+  pk: 64101
+  fields:
+    created_at: 2023-02-28 08:21:45.192844+00:00
+    modified_at: 2023-02-28 08:21:45.193023+00:00
+    plate: 201
+    position: 109
+    sample: null
+    type: 1
+- model: core.well
+  pk: 64102
+  fields:
+    created_at: 2023-02-28 08:21:45.211807+00:00
+    modified_at: 2023-02-28 08:21:45.211992+00:00
+    plate: 201
+    position: 112
+    sample: null
+    type: 1
+- model: core.well
+  pk: 64103
+  fields:
+    created_at: 2023-02-28 08:21:45.232471+00:00
+    modified_at: 2023-02-28 08:21:45.232664+00:00
+    plate: 201
+    position: 113
+    sample: null
+    type: 1
+- model: core.well
+  pk: 64104
+  fields:
+    created_at: 2023-02-28 08:21:45.249914+00:00
+    modified_at: 2023-02-28 08:21:45.250091+00:00
+    plate: 201
+    position: 114
+    sample: null
+    type: 1
+- model: core.well
+  pk: 64105
+  fields:
+    created_at: 2023-02-28 08:21:45.267751+00:00
+    modified_at: 2023-02-28 08:21:45.267931+00:00
+    plate: 201
+    position: 115
+    sample: null
+    type: 1
+- model: core.well
+  pk: 64106
+  fields:
+    created_at: 2023-02-28 08:21:45.287498+00:00
+    modified_at: 2023-02-28 08:21:45.287755+00:00
+    plate: 201
+    position: 116
+    sample: null
+    type: 1
+- model: core.well
+  pk: 64107
+  fields:
+    created_at: 2023-02-28 08:21:45.306561+00:00
+    modified_at: 2023-02-28 08:21:45.306820+00:00
+    plate: 201
+    position: 117
+    sample: null
+    type: 1
+- model: core.well
+  pk: 64108
+  fields:
+    created_at: 2023-02-28 08:21:45.326980+00:00
+    modified_at: 2023-02-28 08:21:45.327213+00:00
+    plate: 201
+    position: 118
+    sample: null
+    type: 1
+- model: core.well
+  pk: 64109
+  fields:
+    created_at: 2023-02-28 08:21:45.344064+00:00
+    modified_at: 2023-02-28 08:21:45.344313+00:00
+    plate: 201
+    position: 119
+    sample: null
+    type: 1
+- model: core.well
+  pk: 64110
+  fields:
+    created_at: 2023-02-28 08:21:45.363064+00:00
+    modified_at: 2023-02-28 08:21:45.363315+00:00
+    plate: 201
+    position: 120
+    sample: null
+    type: 1
+- model: core.well
+  pk: 64111
+  fields:
+    created_at: 2023-02-28 08:21:45.380635+00:00
+    modified_at: 2023-02-28 08:21:45.380824+00:00
+    plate: 201
+    position: 121
+    sample: null
+    type: 1
+- model: core.well
+  pk: 64112
+  fields:
+    created_at: 2023-02-28 08:21:45.397167+00:00
+    modified_at: 2023-02-28 08:21:45.397347+00:00
+    plate: 201
+    position: 122
+    sample: null
+    type: 1
+- model: core.well
+  pk: 64113
+  fields:
+    created_at: 2023-02-28 08:21:45.414484+00:00
+    modified_at: 2023-02-28 08:21:45.414688+00:00
+    plate: 201
+    position: 123
+    sample: null
+    type: 1
+- model: core.well
+  pk: 64114
+  fields:
+    created_at: 2023-02-28 08:21:45.434348+00:00
+    modified_at: 2023-02-28 08:21:45.434598+00:00
+    plate: 201
+    position: 124
+    sample: null
+    type: 1
+- model: core.well
+  pk: 64115
+  fields:
+    created_at: 2023-02-28 08:21:45.451562+00:00
+    modified_at: 2023-02-28 08:21:45.451739+00:00
+    plate: 201
+    position: 125
+    sample: null
+    type: 1
+- model: core.well
+  pk: 64116
+  fields:
+    created_at: 2023-02-28 08:21:45.467958+00:00
+    modified_at: 2023-02-28 08:21:45.468186+00:00
+    plate: 201
+    position: 126
+    sample: null
+    type: 1
+- model: core.well
+  pk: 64117
+  fields:
+    created_at: 2023-02-28 08:21:45.486814+00:00
+    modified_at: 2023-02-28 08:21:45.487046+00:00
+    plate: 201
+    position: 127
+    sample: null
+    type: 1
+- model: core.well
+  pk: 64118
+  fields:
+    created_at: 2023-02-28 08:21:45.504478+00:00
+    modified_at: 2023-02-28 08:21:45.504664+00:00
+    plate: 201
+    position: 128
+    sample: null
+    type: 1
+- model: core.well
+  pk: 64119
+  fields:
+    created_at: 2023-02-28 08:21:45.523024+00:00
+    modified_at: 2023-02-28 08:21:45.523277+00:00
+    plate: 201
+    position: 129
+    sample: null
+    type: 1
+- model: core.well
+  pk: 64120
+  fields:
+    created_at: 2023-02-28 08:21:45.540886+00:00
+    modified_at: 2023-02-28 08:21:45.541066+00:00
+    plate: 201
+    position: 130
+    sample: null
+    type: 1
+- model: core.well
+  pk: 64121
+  fields:
+    created_at: 2023-02-28 08:21:45.560915+00:00
+    modified_at: 2023-02-28 08:21:45.561114+00:00
+    plate: 201
+    position: 131
+    sample: null
+    type: 1
+- model: core.well
+  pk: 64122
+  fields:
+    created_at: 2023-02-28 08:21:45.578474+00:00
+    modified_at: 2023-02-28 08:21:45.578657+00:00
+    plate: 201
+    position: 134
+    sample: null
+    type: 1
+- model: core.well
+  pk: 64123
+  fields:
+    created_at: 2023-02-28 08:21:45.595806+00:00
+    modified_at: 2023-02-28 08:21:45.595999+00:00
+    plate: 201
+    position: 135
+    sample: null
+    type: 1
+- model: core.well
+  pk: 64124
+  fields:
+    created_at: 2023-02-28 08:21:45.615241+00:00
+    modified_at: 2023-02-28 08:21:45.615481+00:00
+    plate: 201
+    position: 136
+    sample: null
+    type: 1
+- model: core.well
+  pk: 64125
+  fields:
+    created_at: 2023-02-28 08:21:45.638732+00:00
+    modified_at: 2023-02-28 08:21:45.638913+00:00
+    plate: 201
+    position: 137
+    sample: null
+    type: 1
+- model: core.well
+  pk: 64126
+  fields:
+    created_at: 2023-02-28 08:21:45.656976+00:00
+    modified_at: 2023-02-28 08:21:45.657234+00:00
+    plate: 201
+    position: 138
+    sample: null
+    type: 1
+- model: core.well
+  pk: 64127
+  fields:
+    created_at: 2023-02-28 08:21:45.674904+00:00
+    modified_at: 2023-02-28 08:21:45.675123+00:00
+    plate: 201
+    position: 139
+    sample: null
+    type: 1
+- model: core.well
+  pk: 64128
+  fields:
+    created_at: 2023-02-28 08:21:45.694817+00:00
+    modified_at: 2023-02-28 08:21:45.694999+00:00
+    plate: 201
+    position: 140
+    sample: null
+    type: 1
+- model: core.well
+  pk: 64129
+  fields:
+    created_at: 2023-02-28 08:21:45.715410+00:00
+    modified_at: 2023-02-28 08:21:45.715657+00:00
+    plate: 201
+    position: 141
+    sample: null
+    type: 1
+- model: core.well
+  pk: 64130
+  fields:
+    created_at: 2023-02-28 08:21:45.742030+00:00
+    modified_at: 2023-02-28 08:21:45.742550+00:00
+    plate: 201
+    position: 142
+    sample: null
+    type: 1
+- model: core.well
+  pk: 64131
+  fields:
+    created_at: 2023-02-28 08:21:45.770033+00:00
+    modified_at: 2023-02-28 08:21:45.770314+00:00
+    plate: 201
+    position: 143
+    sample: null
+    type: 1
+- model: core.well
+  pk: 64132
+  fields:
+    created_at: 2023-02-28 08:21:45.791358+00:00
+    modified_at: 2023-02-28 08:21:45.791548+00:00
+    plate: 201
+    position: 144
+    sample: null
+    type: 1
+- model: core.well
+  pk: 64133
+  fields:
+    created_at: 2023-02-28 08:21:45.810368+00:00
+    modified_at: 2023-02-28 08:21:45.810567+00:00
+    plate: 201
+    position: 145
+    sample: null
+    type: 1
+- model: core.well
+  pk: 64134
+  fields:
+    created_at: 2023-02-28 08:21:45.832413+00:00
+    modified_at: 2023-02-28 08:21:45.832649+00:00
+    plate: 201
+    position: 146
+    sample: null
+    type: 1
+- model: core.well
+  pk: 64135
+  fields:
+    created_at: 2023-02-28 08:21:45.851163+00:00
+    modified_at: 2023-02-28 08:21:45.851367+00:00
+    plate: 201
+    position: 147
+    sample: null
+    type: 1
+- model: core.well
+  pk: 64136
+  fields:
+    created_at: 2023-02-28 08:21:45.868322+00:00
+    modified_at: 2023-02-28 08:21:45.868550+00:00
+    plate: 201
+    position: 148
+    sample: null
+    type: 1
+- model: core.well
+  pk: 64137
+  fields:
+    created_at: 2023-02-28 08:21:45.889786+00:00
+    modified_at: 2023-02-28 08:21:45.890201+00:00
+    plate: 201
+    position: 149
+    sample: null
+    type: 1
+- model: core.well
+  pk: 64138
+  fields:
+    created_at: 2023-02-28 08:21:45.917103+00:00
+    modified_at: 2023-02-28 08:21:45.917589+00:00
+    plate: 201
+    position: 150
+    sample: null
+    type: 1
+- model: core.well
+  pk: 64139
+  fields:
+    created_at: 2023-02-28 08:21:45.947560+00:00
+    modified_at: 2023-02-28 08:21:45.948010+00:00
+    plate: 201
+    position: 151
+    sample: null
+    type: 1
+- model: core.well
+  pk: 64140
+  fields:
+    created_at: 2023-02-28 08:21:45.985339+00:00
+    modified_at: 2023-02-28 08:21:45.985763+00:00
+    plate: 201
+    position: 152
+    sample: null
+    type: 1
+- model: core.well
+  pk: 64141
+  fields:
+    created_at: 2023-02-28 08:21:46.072450+00:00
+    modified_at: 2023-02-28 08:21:46.072962+00:00
+    plate: 201
+    position: 153
+    sample: null
+    type: 1
+- model: core.well
+  pk: 64142
+  fields:
+    created_at: 2023-02-28 08:21:46.107501+00:00
+    modified_at: 2023-02-28 08:21:46.108170+00:00
+    plate: 201
+    position: 156
+    sample: null
+    type: 1
+- model: core.well
+  pk: 64143
+  fields:
+    created_at: 2023-02-28 08:21:46.134876+00:00
+    modified_at: 2023-02-28 08:21:46.135120+00:00
+    plate: 201
+    position: 157
+    sample: null
+    type: 1
+- model: core.well
+  pk: 64144
+  fields:
+    created_at: 2023-02-28 08:21:46.161443+00:00
+    modified_at: 2023-02-28 08:21:46.161675+00:00
+    plate: 201
+    position: 158
+    sample: null
+    type: 1
+- model: core.well
+  pk: 64145
+  fields:
+    created_at: 2023-02-28 08:21:46.192885+00:00
+    modified_at: 2023-02-28 08:21:46.193127+00:00
+    plate: 201
+    position: 159
+    sample: null
+    type: 1
+- model: core.well
+  pk: 64146
+  fields:
+    created_at: 2023-02-28 08:21:46.217587+00:00
+    modified_at: 2023-02-28 08:21:46.217860+00:00
+    plate: 201
+    position: 160
+    sample: null
+    type: 1
+- model: core.well
+  pk: 64147
+  fields:
+    created_at: 2023-02-28 08:21:46.244745+00:00
+    modified_at: 2023-02-28 08:21:46.244976+00:00
+    plate: 201
+    position: 161
+    sample: null
+    type: 1
+- model: core.well
+  pk: 64148
+  fields:
+    created_at: 2023-02-28 08:21:46.281720+00:00
+    modified_at: 2023-02-28 08:21:46.282109+00:00
+    plate: 201
+    position: 162
+    sample: null
+    type: 1
+- model: core.well
+  pk: 64149
+  fields:
+    created_at: 2023-02-28 08:21:46.431054+00:00
+    modified_at: 2023-02-28 08:21:46.431406+00:00
+    plate: 201
+    position: 163
+    sample: null
+    type: 1
+- model: core.well
+  pk: 64150
+  fields:
+    created_at: 2023-02-28 08:21:46.465047+00:00
+    modified_at: 2023-02-28 08:21:46.465416+00:00
+    plate: 201
+    position: 164
+    sample: null
+    type: 1
+- model: core.well
+  pk: 64151
+  fields:
+    created_at: 2023-02-28 08:21:46.513374+00:00
+    modified_at: 2023-02-28 08:21:46.513829+00:00
+    plate: 201
+    position: 165
+    sample: null
+    type: 1
+- model: core.well
+  pk: 64152
+  fields:
+    created_at: 2023-02-28 08:21:46.548775+00:00
+    modified_at: 2023-02-28 08:21:46.549386+00:00
+    plate: 201
+    position: 166
+    sample: null
+    type: 1
+- model: core.well
+  pk: 64153
+  fields:
+    created_at: 2023-02-28 08:21:46.588100+00:00
+    modified_at: 2023-02-28 08:21:46.588577+00:00
+    plate: 201
+    position: 167
+    sample: null
+    type: 1
+- model: core.well
+  pk: 64154
+  fields:
+    created_at: 2023-02-28 08:21:46.622352+00:00
+    modified_at: 2023-02-28 08:21:46.622753+00:00
+    plate: 201
+    position: 168
+    sample: null
+    type: 1
+- model: core.well
+  pk: 64155
+  fields:
+    created_at: 2023-02-28 08:21:46.658210+00:00
+    modified_at: 2023-02-28 08:21:46.658599+00:00
+    plate: 201
+    position: 169
+    sample: null
+    type: 1
+- model: core.well
+  pk: 64156
+  fields:
+    created_at: 2023-02-28 08:21:46.691649+00:00
+    modified_at: 2023-02-28 08:21:46.691938+00:00
+    plate: 201
+    position: 170
+    sample: null
+    type: 1
+- model: core.well
+  pk: 64157
+  fields:
+    created_at: 2023-02-28 08:21:46.720058+00:00
+    modified_at: 2023-02-28 08:21:46.720577+00:00
+    plate: 201
+    position: 171
+    sample: null
+    type: 1
+- model: core.well
+  pk: 64158
+  fields:
+    created_at: 2023-02-28 08:21:46.752859+00:00
+    modified_at: 2023-02-28 08:21:46.753593+00:00
+    plate: 201
+    position: 172
+    sample: null
+    type: 1
+- model: core.well
+  pk: 64159
+  fields:
+    created_at: 2023-02-28 08:21:46.789466+00:00
+    modified_at: 2023-02-28 08:21:46.790000+00:00
+    plate: 201
+    position: 173
+    sample: null
+    type: 1
+- model: core.well
+  pk: 64160
+  fields:
+    created_at: 2023-02-28 08:21:46.816901+00:00
+    modified_at: 2023-02-28 08:21:46.817126+00:00
+    plate: 201
+    position: 174
+    sample: null
+    type: 1
+- model: core.well
+  pk: 64161
+  fields:
+    created_at: 2023-02-28 08:21:46.842191+00:00
+    modified_at: 2023-02-28 08:21:46.842459+00:00
+    plate: 201
+    position: 175
+    sample: null
+    type: 1
+- model: core.well
+  pk: 64162
+  fields:
+    created_at: 2023-02-28 08:21:46.868401+00:00
+    modified_at: 2023-02-28 08:21:46.868711+00:00
+    plate: 201
+    position: 178
+    sample: null
+    type: 1
+- model: core.well
+  pk: 64163
+  fields:
+    created_at: 2023-02-28 08:21:46.894758+00:00
+    modified_at: 2023-02-28 08:21:46.894987+00:00
+    plate: 201
+    position: 179
+    sample: null
+    type: 1
+- model: core.well
+  pk: 64164
+  fields:
+    created_at: 2023-02-28 08:21:46.925241+00:00
+    modified_at: 2023-02-28 08:21:46.925495+00:00
+    plate: 201
+    position: 180
+    sample: null
+    type: 1
+- model: core.well
+  pk: 64165
+  fields:
+    created_at: 2023-02-28 08:21:46.955085+00:00
+    modified_at: 2023-02-28 08:21:46.955468+00:00
+    plate: 201
+    position: 181
+    sample: null
+    type: 1
+- model: core.well
+  pk: 64166
+  fields:
+    created_at: 2023-02-28 08:21:46.983872+00:00
+    modified_at: 2023-02-28 08:21:46.984164+00:00
+    plate: 201
+    position: 182
+    sample: null
+    type: 1
+- model: core.well
+  pk: 64167
+  fields:
+    created_at: 2023-02-28 08:21:47.018541+00:00
+    modified_at: 2023-02-28 08:21:47.018909+00:00
+    plate: 201
+    position: 183
+    sample: null
+    type: 1
+- model: core.well
+  pk: 64168
+  fields:
+    created_at: 2023-02-28 08:21:47.048102+00:00
+    modified_at: 2023-02-28 08:21:47.048575+00:00
+    plate: 201
+    position: 184
+    sample: null
+    type: 1
+- model: core.well
+  pk: 64169
+  fields:
+    created_at: 2023-02-28 08:21:47.072238+00:00
+    modified_at: 2023-02-28 08:21:47.072475+00:00
+    plate: 201
+    position: 185
+    sample: null
+    type: 1
+- model: core.well
+  pk: 64170
+  fields:
+    created_at: 2023-02-28 08:21:47.094840+00:00
+    modified_at: 2023-02-28 08:21:47.095029+00:00
+    plate: 201
+    position: 186
+    sample: null
+    type: 1
+- model: core.well
+  pk: 64171
+  fields:
+    created_at: 2023-02-28 08:21:47.115861+00:00
+    modified_at: 2023-02-28 08:21:47.116095+00:00
+    plate: 201
+    position: 187
+    sample: null
+    type: 1
+- model: core.well
+  pk: 64172
+  fields:
+    created_at: 2023-02-28 08:21:47.141195+00:00
+    modified_at: 2023-02-28 08:21:47.141435+00:00
+    plate: 201
+    position: 188
+    sample: null
+    type: 1
+- model: core.well
+  pk: 64173
+  fields:
+    created_at: 2023-02-28 08:21:47.165720+00:00
+    modified_at: 2023-02-28 08:21:47.165929+00:00
+    plate: 201
+    position: 189
+    sample: null
+    type: 1
+- model: core.well
+  pk: 64174
+  fields:
+    created_at: 2023-02-28 08:21:47.187911+00:00
+    modified_at: 2023-02-28 08:21:47.188179+00:00
+    plate: 201
+    position: 190
+    sample: null
+    type: 1
+- model: core.well
+  pk: 64175
+  fields:
+    created_at: 2023-02-28 08:21:47.205636+00:00
+    modified_at: 2023-02-28 08:21:47.205827+00:00
+    plate: 201
+    position: 191
+    sample: null
+    type: 1
+- model: core.well
+  pk: 64176
+  fields:
+    created_at: 2023-02-28 08:21:47.225389+00:00
+    modified_at: 2023-02-28 08:21:47.225573+00:00
+    plate: 201
+    position: 192
+    sample: null
+    type: 1
+- model: core.well
+  pk: 64177
+  fields:
+    created_at: 2023-02-28 08:21:47.243482+00:00
+    modified_at: 2023-02-28 08:21:47.243661+00:00
+    plate: 201
+    position: 193
+    sample: null
+    type: 1
+- model: core.well
+  pk: 64178
+  fields:
+    created_at: 2023-02-28 08:21:47.261133+00:00
+    modified_at: 2023-02-28 08:21:47.261323+00:00
+    plate: 201
+    position: 194
+    sample: null
+    type: 1
+- model: core.well
+  pk: 64179
+  fields:
+    created_at: 2023-02-28 08:21:47.279176+00:00
+    modified_at: 2023-02-28 08:21:47.279506+00:00
+    plate: 201
+    position: 195
+    sample: null
+    type: 1
+- model: core.well
+  pk: 64180
+  fields:
+    created_at: 2023-02-28 08:21:47.301316+00:00
+    modified_at: 2023-02-28 08:21:47.301504+00:00
+    plate: 201
+    position: 196
+    sample: null
+    type: 1
+- model: core.well
+  pk: 64181
+  fields:
+    created_at: 2023-02-28 08:21:47.321685+00:00
+    modified_at: 2023-02-28 08:21:47.321909+00:00
+    plate: 201
+    position: 197
+    sample: null
+    type: 1
+- model: core.well
+  pk: 64182
+  fields:
+    created_at: 2023-02-28 08:21:47.341475+00:00
+    modified_at: 2023-02-28 08:21:47.341691+00:00
+    plate: 201
+    position: 200
+    sample: null
+    type: 1
+- model: core.well
+  pk: 64183
+  fields:
+    created_at: 2023-02-28 08:21:47.363834+00:00
+    modified_at: 2023-02-28 08:21:47.364020+00:00
+    plate: 201
+    position: 201
+    sample: null
+    type: 1
+- model: core.well
+  pk: 64184
+  fields:
+    created_at: 2023-02-28 08:21:47.383302+00:00
+    modified_at: 2023-02-28 08:21:47.383509+00:00
+    plate: 201
+    position: 202
+    sample: null
+    type: 1
+- model: core.well
+  pk: 64185
+  fields:
+    created_at: 2023-02-28 08:21:47.401994+00:00
+    modified_at: 2023-02-28 08:21:47.402247+00:00
+    plate: 201
+    position: 203
+    sample: null
+    type: 1
+- model: core.well
+  pk: 64186
+  fields:
+    created_at: 2023-02-28 08:21:47.422230+00:00
+    modified_at: 2023-02-28 08:21:47.422475+00:00
+    plate: 201
+    position: 204
+    sample: null
+    type: 1
+- model: core.well
+  pk: 64187
+  fields:
+    created_at: 2023-02-28 08:21:47.441872+00:00
+    modified_at: 2023-02-28 08:21:47.442081+00:00
+    plate: 201
+    position: 205
+    sample: null
+    type: 1
+- model: core.well
+  pk: 64188
+  fields:
+    created_at: 2023-02-28 08:21:47.461321+00:00
+    modified_at: 2023-02-28 08:21:47.461544+00:00
+    plate: 201
+    position: 206
+    sample: null
+    type: 1
+- model: core.well
+  pk: 64189
+  fields:
+    created_at: 2023-02-28 08:21:47.483720+00:00
+    modified_at: 2023-02-28 08:21:47.483959+00:00
+    plate: 201
+    position: 207
+    sample: null
+    type: 1
+- model: core.well
+  pk: 64190
+  fields:
+    created_at: 2023-02-28 08:21:47.501828+00:00
+    modified_at: 2023-02-28 08:21:47.502046+00:00
+    plate: 201
+    position: 208
+    sample: null
+    type: 1
+- model: core.well
+  pk: 64191
+  fields:
+    created_at: 2023-02-28 08:21:47.519511+00:00
+    modified_at: 2023-02-28 08:21:47.519698+00:00
+    plate: 201
+    position: 209
+    sample: null
+    type: 1
+- model: core.well
+  pk: 64192
+  fields:
+    created_at: 2023-02-28 08:21:47.536148+00:00
+    modified_at: 2023-02-28 08:21:47.536332+00:00
+    plate: 201
+    position: 210
+    sample: null
+    type: 1
+- model: core.well
+  pk: 64193
+  fields:
+    created_at: 2023-02-28 08:21:47.555262+00:00
+    modified_at: 2023-02-28 08:21:47.555516+00:00
+    plate: 201
+    position: 211
+    sample: null
+    type: 1
+- model: core.well
+  pk: 64194
+  fields:
+    created_at: 2023-02-28 08:21:47.572287+00:00
+    modified_at: 2023-02-28 08:21:47.572488+00:00
+    plate: 201
+    position: 212
+    sample: null
+    type: 1
+- model: core.well
+  pk: 64195
+  fields:
+    created_at: 2023-02-28 08:21:47.588873+00:00
+    modified_at: 2023-02-28 08:21:47.589052+00:00
+    plate: 201
+    position: 213
+    sample: null
+    type: 1
+- model: core.well
+  pk: 64196
+  fields:
+    created_at: 2023-02-28 08:21:47.605861+00:00
+    modified_at: 2023-02-28 08:21:47.606137+00:00
+    plate: 201
+    position: 214
+    sample: null
+    type: 1
+- model: core.well
+  pk: 64197
+  fields:
+    created_at: 2023-02-28 08:21:47.624887+00:00
+    modified_at: 2023-02-28 08:21:47.625080+00:00
+    plate: 201
+    position: 215
+    sample: null
+    type: 1
+- model: core.well
+  pk: 64198
+  fields:
+    created_at: 2023-02-28 08:21:47.643539+00:00
+    modified_at: 2023-02-28 08:21:47.643725+00:00
+    plate: 201
+    position: 216
+    sample: null
+    type: 1
+- model: core.well
+  pk: 64199
+  fields:
+    created_at: 2023-02-28 08:21:47.660164+00:00
+    modified_at: 2023-02-28 08:21:47.660342+00:00
+    plate: 201
+    position: 217
+    sample: null
+    type: 1
+- model: core.well
+  pk: 64200
+  fields:
+    created_at: 2023-02-28 08:21:47.679165+00:00
+    modified_at: 2023-02-28 08:21:47.679358+00:00
+    plate: 201
+    position: 218
+    sample: null
+    type: 1
+- model: core.well
+  pk: 64201
+  fields:
+    created_at: 2023-02-28 08:21:47.698382+00:00
+    modified_at: 2023-02-28 08:21:47.698564+00:00
+    plate: 201
+    position: 219
+    sample: null
+    type: 1
+- model: core.well
+  pk: 64202
+  fields:
+    created_at: 2023-02-28 08:21:47.716635+00:00
+    modified_at: 2023-02-28 08:21:47.716827+00:00
+    plate: 201
+    position: 222
+    sample: null
+    type: 1
+- model: core.well
+  pk: 64203
+  fields:
+    created_at: 2023-02-28 08:21:47.733547+00:00
+    modified_at: 2023-02-28 08:21:47.733726+00:00
+    plate: 201
+    position: 223
+    sample: null
+    type: 1
+- model: core.well
+  pk: 64204
+  fields:
+    created_at: 2023-02-28 08:21:47.751485+00:00
+    modified_at: 2023-02-28 08:21:47.751694+00:00
+    plate: 201
+    position: 224
+    sample: null
+    type: 1
+- model: core.well
+  pk: 64205
+  fields:
+    created_at: 2023-02-28 08:21:47.769059+00:00
+    modified_at: 2023-02-28 08:21:47.769298+00:00
+    plate: 201
+    position: 225
+    sample: null
+    type: 1
+- model: core.well
+  pk: 64206
+  fields:
+    created_at: 2023-02-28 08:21:47.785993+00:00
+    modified_at: 2023-02-28 08:21:47.786231+00:00
+    plate: 201
+    position: 226
+    sample: null
+    type: 1
+- model: core.well
+  pk: 64207
+  fields:
+    created_at: 2023-02-28 08:21:47.804797+00:00
+    modified_at: 2023-02-28 08:21:47.805500+00:00
+    plate: 201
+    position: 227
+    sample: null
+    type: 1
+- model: core.well
+  pk: 64208
+  fields:
+    created_at: 2023-02-28 08:21:47.831604+00:00
+    modified_at: 2023-02-28 08:21:47.831780+00:00
+    plate: 201
+    position: 228
+    sample: null
+    type: 1
+- model: core.well
+  pk: 64209
+  fields:
+    created_at: 2023-02-28 08:21:47.848639+00:00
+    modified_at: 2023-02-28 08:21:47.848823+00:00
+    plate: 201
+    position: 229
+    sample: null
+    type: 1
+- model: core.well
+  pk: 64210
+  fields:
+    created_at: 2023-02-28 08:21:47.865938+00:00
+    modified_at: 2023-02-28 08:21:47.866119+00:00
+    plate: 201
+    position: 230
+    sample: null
+    type: 1
+- model: core.well
+  pk: 64211
+  fields:
+    created_at: 2023-02-28 08:21:47.883316+00:00
+    modified_at: 2023-02-28 08:21:47.883541+00:00
+    plate: 201
+    position: 231
+    sample: null
+    type: 1
+- model: core.well
+  pk: 64212
+  fields:
+    created_at: 2023-02-28 08:21:47.901905+00:00
+    modified_at: 2023-02-28 08:21:47.902089+00:00
+    plate: 201
+    position: 232
+    sample: null
+    type: 1
+- model: core.well
+  pk: 64213
+  fields:
+    created_at: 2023-02-28 08:21:47.919851+00:00
+    modified_at: 2023-02-28 08:21:47.920066+00:00
+    plate: 201
+    position: 233
+    sample: null
+    type: 1
+- model: core.well
+  pk: 64214
+  fields:
+    created_at: 2023-02-28 08:21:47.936839+00:00
+    modified_at: 2023-02-28 08:21:47.937060+00:00
+    plate: 201
+    position: 234
+    sample: null
+    type: 1
+- model: core.well
+  pk: 64215
+  fields:
+    created_at: 2023-02-28 08:21:47.955953+00:00
+    modified_at: 2023-02-28 08:21:47.956260+00:00
+    plate: 201
+    position: 235
+    sample: null
+    type: 1
+- model: core.well
+  pk: 64216
+  fields:
+    created_at: 2023-02-28 08:21:47.973233+00:00
+    modified_at: 2023-02-28 08:21:47.973445+00:00
+    plate: 201
+    position: 236
+    sample: null
+    type: 1
+- model: core.well
+  pk: 64217
+  fields:
+    created_at: 2023-02-28 08:21:47.990569+00:00
+    modified_at: 2023-02-28 08:21:47.990755+00:00
+    plate: 201
+    position: 237
+    sample: null
+    type: 1
+- model: core.well
+  pk: 64218
+  fields:
+    created_at: 2023-02-28 08:21:48.007868+00:00
+    modified_at: 2023-02-28 08:21:48.008053+00:00
+    plate: 201
+    position: 238
+    sample: null
+    type: 1
+- model: core.well
+  pk: 64219
+  fields:
+    created_at: 2023-02-28 08:21:48.027282+00:00
+    modified_at: 2023-02-28 08:21:48.027459+00:00
+    plate: 201
+    position: 239
+    sample: null
+    type: 1
+- model: core.well
+  pk: 64220
+  fields:
+    created_at: 2023-02-28 08:21:48.044170+00:00
+    modified_at: 2023-02-28 08:21:48.044352+00:00
+    plate: 201
+    position: 240
+    sample: null
+    type: 1
+- model: core.well
+  pk: 64221
+  fields:
+    created_at: 2023-02-28 08:21:48.061911+00:00
+    modified_at: 2023-02-28 08:21:48.062092+00:00
+    plate: 201
+    position: 241
+    sample: null
+    type: 1
+- model: core.well
+  pk: 64222
+  fields:
+    created_at: 2023-02-28 08:21:48.079988+00:00
+    modified_at: 2023-02-28 08:21:48.080262+00:00
+    plate: 201
+    position: 244
+    sample: null
+    type: 1
+- model: core.well
+  pk: 64223
+  fields:
+    created_at: 2023-02-28 08:21:48.101433+00:00
+    modified_at: 2023-02-28 08:21:48.101646+00:00
+    plate: 201
+    position: 245
+    sample: null
+    type: 1
+- model: core.well
+  pk: 64224
+  fields:
+    created_at: 2023-02-28 08:21:48.122079+00:00
+    modified_at: 2023-02-28 08:21:48.122333+00:00
+    plate: 201
+    position: 246
+    sample: null
+    type: 1
+- model: core.well
+  pk: 64225
+  fields:
+    created_at: 2023-02-28 08:21:48.139451+00:00
+    modified_at: 2023-02-28 08:21:48.139650+00:00
+    plate: 201
+    position: 247
+    sample: null
+    type: 1
+- model: core.well
+  pk: 64226
+  fields:
+    created_at: 2023-02-28 08:21:48.158313+00:00
+    modified_at: 2023-02-28 08:21:48.158590+00:00
+    plate: 201
+    position: 248
+    sample: null
+    type: 1
+- model: core.well
+  pk: 64227
+  fields:
+    created_at: 2023-02-28 08:21:48.176945+00:00
+    modified_at: 2023-02-28 08:21:48.177186+00:00
+    plate: 201
+    position: 249
+    sample: null
+    type: 1
+- model: core.well
+  pk: 64228
+  fields:
+    created_at: 2023-02-28 08:21:48.195533+00:00
+    modified_at: 2023-02-28 08:21:48.195750+00:00
+    plate: 201
+    position: 250
+    sample: null
+    type: 1
+- model: core.well
+  pk: 64229
+  fields:
+    created_at: 2023-02-28 08:21:48.213623+00:00
+    modified_at: 2023-02-28 08:21:48.213847+00:00
+    plate: 201
+    position: 251
+    sample: null
+    type: 1
+- model: core.well
+  pk: 64230
+  fields:
+    created_at: 2023-02-28 08:21:48.232863+00:00
+    modified_at: 2023-02-28 08:21:48.233069+00:00
+    plate: 201
+    position: 252
+    sample: null
+    type: 1
+- model: core.well
+  pk: 64231
+  fields:
+    created_at: 2023-02-28 08:21:48.250151+00:00
+    modified_at: 2023-02-28 08:21:48.250363+00:00
+    plate: 201
+    position: 253
+    sample: null
+    type: 1
+- model: core.well
+  pk: 64232
+  fields:
+    created_at: 2023-02-28 08:21:48.266568+00:00
+    modified_at: 2023-02-28 08:21:48.266744+00:00
+    plate: 201
+    position: 254
+    sample: null
+    type: 1
+- model: core.well
+  pk: 64233
+  fields:
+    created_at: 2023-02-28 08:21:48.283883+00:00
+    modified_at: 2023-02-28 08:21:48.284358+00:00
+    plate: 201
+    position: 255
+    sample: null
+    type: 1
+- model: core.well
+  pk: 64234
+  fields:
+    created_at: 2023-02-28 08:21:48.302958+00:00
+    modified_at: 2023-02-28 08:21:48.303225+00:00
+    plate: 201
+    position: 256
+    sample: null
+    type: 1
+- model: core.well
+  pk: 64235
+  fields:
+    created_at: 2023-02-28 08:21:48.321189+00:00
+    modified_at: 2023-02-28 08:21:48.321373+00:00
+    plate: 201
+    position: 257
+    sample: null
+    type: 1
+- model: core.well
+  pk: 64236
+  fields:
+    created_at: 2023-02-28 08:21:48.338723+00:00
+    modified_at: 2023-02-28 08:21:48.338936+00:00
+    plate: 201
+    position: 258
+    sample: null
+    type: 1
+- model: core.well
+  pk: 64237
+  fields:
+    created_at: 2023-02-28 08:21:48.360450+00:00
+    modified_at: 2023-02-28 08:21:48.360635+00:00
+    plate: 201
+    position: 259
+    sample: null
+    type: 1
+- model: core.well
+  pk: 64238
+  fields:
+    created_at: 2023-02-28 08:21:48.378038+00:00
+    modified_at: 2023-02-28 08:21:48.378279+00:00
+    plate: 201
+    position: 260
+    sample: null
+    type: 1
+- model: core.well
+  pk: 64239
+  fields:
+    created_at: 2023-02-28 08:21:48.395187+00:00
+    modified_at: 2023-02-28 08:21:48.395389+00:00
+    plate: 201
+    position: 261
+    sample: null
+    type: 1
+- model: core.well
+  pk: 64240
+  fields:
+    created_at: 2023-02-28 08:21:48.411776+00:00
+    modified_at: 2023-02-28 08:21:48.411957+00:00
+    plate: 201
+    position: 262
+    sample: null
+    type: 1
+- model: core.well
+  pk: 64241
+  fields:
+    created_at: 2023-02-28 08:21:48.429742+00:00
+    modified_at: 2023-02-28 08:21:48.429960+00:00
+    plate: 201
+    position: 263
+    sample: null
+    type: 1
+- model: core.well
+  pk: 64242
+  fields:
+    created_at: 2023-02-28 08:21:48.446591+00:00
+    modified_at: 2023-02-28 08:21:48.446770+00:00
+    plate: 201
+    position: 266
+    sample: null
+    type: 1
+- model: core.well
+  pk: 64243
+  fields:
+    created_at: 2023-02-28 08:21:48.463675+00:00
+    modified_at: 2023-02-28 08:21:48.463853+00:00
+    plate: 201
+    position: 267
+    sample: null
+    type: 1
+- model: core.well
+  pk: 64244
+  fields:
+    created_at: 2023-02-28 08:21:48.480164+00:00
+    modified_at: 2023-02-28 08:21:48.480353+00:00
+    plate: 201
+    position: 268
+    sample: null
+    type: 1
+- model: core.well
+  pk: 64245
+  fields:
+    created_at: 2023-02-28 08:21:48.499530+00:00
+    modified_at: 2023-02-28 08:21:48.499709+00:00
+    plate: 201
+    position: 269
+    sample: null
+    type: 1
+- model: core.well
+  pk: 64246
+  fields:
+    created_at: 2023-02-28 08:21:48.516531+00:00
+    modified_at: 2023-02-28 08:21:48.516715+00:00
+    plate: 201
+    position: 270
+    sample: null
+    type: 1
+- model: core.well
+  pk: 64247
+  fields:
+    created_at: 2023-02-28 08:21:48.532732+00:00
+    modified_at: 2023-02-28 08:21:48.532912+00:00
+    plate: 201
+    position: 271
+    sample: null
+    type: 1
+- model: core.well
+  pk: 64248
+  fields:
+    created_at: 2023-02-28 08:21:48.549287+00:00
+    modified_at: 2023-02-28 08:21:48.549512+00:00
+    plate: 201
+    position: 272
+    sample: null
+    type: 1
+- model: core.well
+  pk: 64249
+  fields:
+    created_at: 2023-02-28 08:21:48.568579+00:00
+    modified_at: 2023-02-28 08:21:48.568761+00:00
+    plate: 201
+    position: 273
+    sample: null
+    type: 1
+- model: core.well
+  pk: 64250
+  fields:
+    created_at: 2023-02-28 08:21:48.585056+00:00
+    modified_at: 2023-02-28 08:21:48.585296+00:00
+    plate: 201
+    position: 274
+    sample: null
+    type: 1
+- model: core.well
+  pk: 64251
+  fields:
+    created_at: 2023-02-28 08:21:48.601563+00:00
+    modified_at: 2023-02-28 08:21:48.601746+00:00
+    plate: 201
+    position: 275
+    sample: null
+    type: 1
+- model: core.well
+  pk: 64252
+  fields:
+    created_at: 2023-02-28 08:21:48.619826+00:00
+    modified_at: 2023-02-28 08:21:48.620023+00:00
+    plate: 201
+    position: 276
+    sample: null
+    type: 1
+- model: core.well
+  pk: 64253
+  fields:
+    created_at: 2023-02-28 08:21:48.637960+00:00
+    modified_at: 2023-02-28 08:21:48.638230+00:00
+    plate: 201
+    position: 277
+    sample: null
+    type: 1
+- model: core.well
+  pk: 64254
+  fields:
+    created_at: 2023-02-28 08:21:48.655127+00:00
+    modified_at: 2023-02-28 08:21:48.655328+00:00
+    plate: 201
+    position: 278
+    sample: null
+    type: 1
+- model: core.well
+  pk: 64255
+  fields:
+    created_at: 2023-02-28 08:21:48.671786+00:00
+    modified_at: 2023-02-28 08:21:48.672063+00:00
+    plate: 201
+    position: 279
+    sample: null
+    type: 1
+- model: core.well
+  pk: 64256
+  fields:
+    created_at: 2023-02-28 08:21:48.691163+00:00
+    modified_at: 2023-02-28 08:21:48.691359+00:00
+    plate: 201
+    position: 280
+    sample: null
+    type: 1
+- model: core.well
+  pk: 64257
+  fields:
+    created_at: 2023-02-28 08:21:48.708692+00:00
+    modified_at: 2023-02-28 08:21:48.708920+00:00
+    plate: 201
+    position: 281
+    sample: null
+    type: 1
+- model: core.well
+  pk: 64258
+  fields:
+    created_at: 2023-02-28 08:21:48.725696+00:00
+    modified_at: 2023-02-28 08:21:48.725877+00:00
+    plate: 201
+    position: 282
+    sample: null
+    type: 1
+- model: core.well
+  pk: 64259
+  fields:
+    created_at: 2023-02-28 08:21:48.741902+00:00
+    modified_at: 2023-02-28 08:21:48.742083+00:00
+    plate: 201
+    position: 283
+    sample: null
+    type: 1
+- model: core.well
+  pk: 64260
+  fields:
+    created_at: 2023-02-28 08:21:48.760156+00:00
+    modified_at: 2023-02-28 08:21:48.760335+00:00
+    plate: 201
+    position: 284
+    sample: null
+    type: 1
+- model: core.well
+  pk: 64261
+  fields:
+    created_at: 2023-02-28 08:21:48.777042+00:00
+    modified_at: 2023-02-28 08:21:48.777274+00:00
+    plate: 201
+    position: 285
+    sample: null
+    type: 1
+- model: core.well
+  pk: 64262
+  fields:
+    created_at: 2023-02-28 08:21:48.793917+00:00
+    modified_at: 2023-02-28 08:21:48.794100+00:00
+    plate: 201
+    position: 288
+    sample: null
+    type: 1
+- model: core.well
+  pk: 64263
+  fields:
+    created_at: 2023-02-28 08:21:48.810742+00:00
+    modified_at: 2023-02-28 08:21:48.810933+00:00
+    plate: 201
+    position: 289
+    sample: null
+    type: 1
+- model: core.well
+  pk: 64264
+  fields:
+    created_at: 2023-02-28 08:21:48.829678+00:00
+    modified_at: 2023-02-28 08:21:48.829891+00:00
+    plate: 201
+    position: 290
+    sample: null
+    type: 1
+- model: core.well
+  pk: 64265
+  fields:
+    created_at: 2023-02-28 08:21:48.851842+00:00
+    modified_at: 2023-02-28 08:21:48.852241+00:00
+    plate: 201
+    position: 291
+    sample: null
+    type: 1
+- model: core.well
+  pk: 64266
+  fields:
+    created_at: 2023-02-28 08:21:48.876325+00:00
+    modified_at: 2023-02-28 08:21:48.876699+00:00
+    plate: 201
+    position: 292
+    sample: null
+    type: 1
+- model: core.well
+  pk: 64267
+  fields:
+    created_at: 2023-02-28 08:21:48.899891+00:00
+    modified_at: 2023-02-28 08:21:48.900310+00:00
+    plate: 201
+    position: 293
+    sample: null
+    type: 1
+- model: core.well
+  pk: 64268
+  fields:
+    created_at: 2023-02-28 08:21:48.919931+00:00
+    modified_at: 2023-02-28 08:21:48.920300+00:00
+    plate: 201
+    position: 294
+    sample: null
+    type: 1
+- model: core.well
+  pk: 64269
+  fields:
+    created_at: 2023-02-28 08:21:48.937278+00:00
+    modified_at: 2023-02-28 08:21:48.937463+00:00
+    plate: 201
+    position: 295
+    sample: null
+    type: 1
+- model: core.well
+  pk: 64270
+  fields:
+    created_at: 2023-02-28 08:21:48.958257+00:00
+    modified_at: 2023-02-28 08:21:48.958457+00:00
+    plate: 201
+    position: 296
+    sample: null
+    type: 1
+- model: core.well
+  pk: 64271
+  fields:
+    created_at: 2023-02-28 08:21:48.978801+00:00
+    modified_at: 2023-02-28 08:21:48.978982+00:00
+    plate: 201
+    position: 297
+    sample: null
+    type: 1
+- model: core.well
+  pk: 64272
+  fields:
+    created_at: 2023-02-28 08:21:48.998168+00:00
+    modified_at: 2023-02-28 08:21:48.998368+00:00
+    plate: 201
+    position: 298
+    sample: null
+    type: 1
+- model: core.well
+  pk: 64273
+  fields:
+    created_at: 2023-02-28 08:21:49.017874+00:00
+    modified_at: 2023-02-28 08:21:49.018106+00:00
+    plate: 201
+    position: 299
+    sample: null
+    type: 1
+- model: core.well
+  pk: 64274
+  fields:
+    created_at: 2023-02-28 08:21:49.037839+00:00
+    modified_at: 2023-02-28 08:21:49.038305+00:00
+    plate: 201
+    position: 300
+    sample: null
+    type: 1
+- model: core.well
+  pk: 64275
+  fields:
+    created_at: 2023-02-28 08:21:49.055151+00:00
+    modified_at: 2023-02-28 08:21:49.055343+00:00
+    plate: 201
+    position: 301
+    sample: null
+    type: 1
+- model: core.well
+  pk: 64276
+  fields:
+    created_at: 2023-02-28 08:21:49.073940+00:00
+    modified_at: 2023-02-28 08:21:49.074329+00:00
+    plate: 201
+    position: 302
+    sample: null
+    type: 1
+- model: core.well
+  pk: 64277
+  fields:
+    created_at: 2023-02-28 08:21:49.092999+00:00
+    modified_at: 2023-02-28 08:21:49.093248+00:00
+    plate: 201
+    position: 303
+    sample: null
+    type: 1
+- model: core.well
+  pk: 64278
+  fields:
+    created_at: 2023-02-28 08:21:49.110536+00:00
+    modified_at: 2023-02-28 08:21:49.110717+00:00
+    plate: 201
+    position: 304
+    sample: null
+    type: 1
+- model: core.well
+  pk: 64279
+  fields:
+    created_at: 2023-02-28 08:21:49.126980+00:00
+    modified_at: 2023-02-28 08:21:49.127230+00:00
+    plate: 201
+    position: 305
+    sample: null
+    type: 1
+- model: core.well
+  pk: 64280
+  fields:
+    created_at: 2023-02-28 08:21:49.144867+00:00
+    modified_at: 2023-02-28 08:21:49.145143+00:00
+    plate: 201
+    position: 306
+    sample: null
+    type: 1
+- model: core.well
+  pk: 64281
+  fields:
+    created_at: 2023-02-28 08:21:49.163745+00:00
+    modified_at: 2023-02-28 08:21:49.163934+00:00
+    plate: 201
+    position: 307
+    sample: null
+    type: 1
+- model: core.well
+  pk: 64282
+  fields:
+    created_at: 2023-02-28 08:21:49.180785+00:00
+    modified_at: 2023-02-28 08:21:49.180964+00:00
+    plate: 201
+    position: 310
+    sample: null
+    type: 1
+- model: core.well
+  pk: 64283
+  fields:
+    created_at: 2023-02-28 08:21:49.199280+00:00
+    modified_at: 2023-02-28 08:21:49.199463+00:00
+    plate: 201
+    position: 311
+    sample: null
+    type: 1
+- model: core.well
+  pk: 64284
+  fields:
+    created_at: 2023-02-28 08:21:49.217302+00:00
+    modified_at: 2023-02-28 08:21:49.217545+00:00
+    plate: 201
+    position: 312
+    sample: null
+    type: 1
+- model: core.well
+  pk: 64285
+  fields:
+    created_at: 2023-02-28 08:21:49.236012+00:00
+    modified_at: 2023-02-28 08:21:49.236247+00:00
+    plate: 201
+    position: 313
+    sample: null
+    type: 1
+- model: core.well
+  pk: 64286
+  fields:
+    created_at: 2023-02-28 08:21:49.252909+00:00
+    modified_at: 2023-02-28 08:21:49.253100+00:00
+    plate: 201
+    position: 314
+    sample: null
+    type: 1
+- model: core.well
+  pk: 64287
+  fields:
+    created_at: 2023-02-28 08:21:49.269893+00:00
+    modified_at: 2023-02-28 08:21:49.270077+00:00
+    plate: 201
+    position: 315
+    sample: null
+    type: 1
+- model: core.well
+  pk: 64288
+  fields:
+    created_at: 2023-02-28 08:21:49.288344+00:00
+    modified_at: 2023-02-28 08:21:49.288554+00:00
+    plate: 201
+    position: 316
+    sample: null
+    type: 1
+- model: core.well
+  pk: 64289
+  fields:
+    created_at: 2023-02-28 08:21:49.307195+00:00
+    modified_at: 2023-02-28 08:21:49.307396+00:00
+    plate: 201
+    position: 317
+    sample: null
+    type: 1
+- model: core.well
+  pk: 64290
+  fields:
+    created_at: 2023-02-28 08:21:49.324515+00:00
+    modified_at: 2023-02-28 08:21:49.324694+00:00
+    plate: 201
+    position: 318
+    sample: null
+    type: 1
+- model: core.well
+  pk: 64291
+  fields:
+    created_at: 2023-02-28 08:21:49.341514+00:00
+    modified_at: 2023-02-28 08:21:49.341717+00:00
+    plate: 201
+    position: 319
+    sample: null
+    type: 1
+- model: core.well
+  pk: 64292
+  fields:
+    created_at: 2023-02-28 08:21:49.361470+00:00
+    modified_at: 2023-02-28 08:21:49.361674+00:00
+    plate: 201
+    position: 320
+    sample: null
+    type: 1
+- model: core.well
+  pk: 64293
+  fields:
+    created_at: 2023-02-28 08:21:49.378464+00:00
+    modified_at: 2023-02-28 08:21:49.378655+00:00
+    plate: 201
+    position: 321
+    sample: null
+    type: 1
+- model: core.well
+  pk: 64294
+  fields:
+    created_at: 2023-02-28 08:21:49.395617+00:00
+    modified_at: 2023-02-28 08:21:49.395797+00:00
+    plate: 201
+    position: 322
+    sample: null
+    type: 1
+- model: core.well
+  pk: 64295
+  fields:
+    created_at: 2023-02-28 08:21:49.412764+00:00
+    modified_at: 2023-02-28 08:21:49.412946+00:00
+    plate: 201
+    position: 323
+    sample: null
+    type: 1
+- model: core.well
+  pk: 64296
+  fields:
+    created_at: 2023-02-28 08:21:49.432869+00:00
+    modified_at: 2023-02-28 08:21:49.433050+00:00
+    plate: 201
+    position: 324
+    sample: null
+    type: 1
+- model: core.well
+  pk: 64297
+  fields:
+    created_at: 2023-02-28 08:21:49.450823+00:00
+    modified_at: 2023-02-28 08:21:49.451010+00:00
+    plate: 201
+    position: 325
+    sample: null
+    type: 1
+- model: core.well
+  pk: 64298
+  fields:
+    created_at: 2023-02-28 08:21:49.467940+00:00
+    modified_at: 2023-02-28 08:21:49.468171+00:00
+    plate: 201
+    position: 326
+    sample: null
+    type: 1
+- model: core.well
+  pk: 64299
+  fields:
+    created_at: 2023-02-28 08:21:49.489370+00:00
+    modified_at: 2023-02-28 08:21:49.489737+00:00
+    plate: 201
+    position: 327
+    sample: null
+    type: 1
+- model: core.well
+  pk: 64300
+  fields:
+    created_at: 2023-02-28 08:21:49.512972+00:00
+    modified_at: 2023-02-28 08:21:49.513268+00:00
+    plate: 201
+    position: 328
+    sample: null
+    type: 1
+- model: core.well
+  pk: 64301
+  fields:
+    created_at: 2023-02-28 08:21:49.535992+00:00
+    modified_at: 2023-02-28 08:21:49.536379+00:00
+    plate: 201
+    position: 329
+    sample: null
+    type: 1
+- model: core.well
+  pk: 64302
+  fields:
+    created_at: 2023-02-28 08:21:49.563949+00:00
+    modified_at: 2023-02-28 08:21:49.564235+00:00
+    plate: 201
+    position: 332
+    sample: null
+    type: 1
+- model: core.well
+  pk: 64303
+  fields:
+    created_at: 2023-02-28 08:21:49.586913+00:00
+    modified_at: 2023-02-28 08:21:49.587362+00:00
+    plate: 201
+    position: 333
+    sample: null
+    type: 1
+- model: core.well
+  pk: 64304
+  fields:
+    created_at: 2023-02-28 08:21:49.611251+00:00
+    modified_at: 2023-02-28 08:21:49.611496+00:00
+    plate: 201
+    position: 334
+    sample: null
+    type: 1
+- model: core.well
+  pk: 64305
+  fields:
+    created_at: 2023-02-28 08:21:49.636630+00:00
+    modified_at: 2023-02-28 08:21:49.636935+00:00
+    plate: 201
+    position: 335
+    sample: null
+    type: 1
+- model: core.well
+  pk: 64306
+  fields:
+    created_at: 2023-02-28 08:21:49.659736+00:00
+    modified_at: 2023-02-28 08:21:49.659968+00:00
+    plate: 201
+    position: 336
+    sample: null
+    type: 1
+- model: core.well
+  pk: 64307
+  fields:
+    created_at: 2023-02-28 08:21:49.683245+00:00
+    modified_at: 2023-02-28 08:21:49.683522+00:00
+    plate: 201
+    position: 337
+    sample: null
+    type: 1
+- model: core.well
+  pk: 64308
+  fields:
+    created_at: 2023-02-28 08:21:49.709380+00:00
+    modified_at: 2023-02-28 08:21:49.709644+00:00
+    plate: 201
+    position: 338
+    sample: null
+    type: 1
+- model: core.well
+  pk: 64309
+  fields:
+    created_at: 2023-02-28 08:21:49.732877+00:00
+    modified_at: 2023-02-28 08:21:49.733126+00:00
+    plate: 201
+    position: 339
+    sample: null
+    type: 1
+- model: core.well
+  pk: 64310
+  fields:
+    created_at: 2023-02-28 08:21:49.759782+00:00
+    modified_at: 2023-02-28 08:21:49.760273+00:00
+    plate: 201
+    position: 340
+    sample: null
+    type: 1
+- model: core.well
+  pk: 64311
+  fields:
+    created_at: 2023-02-28 08:21:49.785520+00:00
+    modified_at: 2023-02-28 08:21:49.785779+00:00
+    plate: 201
+    position: 341
+    sample: null
+    type: 1
+- model: core.well
+  pk: 64312
+  fields:
+    created_at: 2023-02-28 08:21:49.813046+00:00
+    modified_at: 2023-02-28 08:21:49.813391+00:00
+    plate: 201
+    position: 342
+    sample: null
+    type: 1
+- model: core.well
+  pk: 64313
+  fields:
+    created_at: 2023-02-28 08:21:49.844696+00:00
+    modified_at: 2023-02-28 08:21:49.844924+00:00
+    plate: 201
+    position: 343
+    sample: null
+    type: 1
+- model: core.well
+  pk: 64314
+  fields:
+    created_at: 2023-02-28 08:21:49.881165+00:00
+    modified_at: 2023-02-28 08:21:49.881436+00:00
+    plate: 201
+    position: 344
+    sample: null
+    type: 1
+- model: core.well
+  pk: 64315
+  fields:
+    created_at: 2023-02-28 08:21:49.977815+00:00
+    modified_at: 2023-02-28 08:21:49.978177+00:00
+    plate: 201
+    position: 345
+    sample: null
+    type: 1
+- model: core.well
+  pk: 64316
+  fields:
+    created_at: 2023-02-28 08:21:50.008945+00:00
+    modified_at: 2023-02-28 08:21:50.009375+00:00
+    plate: 201
+    position: 346
+    sample: null
+    type: 1
+- model: core.well
+  pk: 64317
+  fields:
+    created_at: 2023-02-28 08:21:50.040051+00:00
+    modified_at: 2023-02-28 08:21:50.040845+00:00
+    plate: 201
+    position: 347
+    sample: null
+    type: 1
+- model: core.well
+  pk: 64318
+  fields:
+    created_at: 2023-02-28 08:21:50.082693+00:00
+    modified_at: 2023-02-28 08:21:50.083044+00:00
+    plate: 201
+    position: 348
+    sample: null
+    type: 1
+- model: core.well
+  pk: 64319
+  fields:
+    created_at: 2023-02-28 08:21:50.115000+00:00
+    modified_at: 2023-02-28 08:21:50.115312+00:00
+    plate: 201
+    position: 349
+    sample: null
+    type: 1
+- model: core.well
+  pk: 64320
+  fields:
+    created_at: 2023-02-28 08:21:50.144111+00:00
+    modified_at: 2023-02-28 08:21:50.144753+00:00
+    plate: 201
+    position: 350
+    sample: null
+    type: 1
+- model: core.well
+  pk: 64321
+  fields:
+    created_at: 2023-02-28 08:21:50.172736+00:00
+    modified_at: 2023-02-28 08:21:50.173077+00:00
+    plate: 201
+    position: 351
+    sample: null
+    type: 1
+- model: core.plate
+  pk: 201
+  fields:
+    created_at: 2023-02-28 08:15:45.494960+00:00
+    modified_at: 2023-02-28 08:15:45.495219+00:00
+    barcode: LLD_4541_C
+    dimension: 2
+    experiment: null
+    library: 1
+    template: null
+- model: compoundlib.compoundlibrary
+  pk: 1
+  fields:
+    name: 20200803_LLD_24000
+    file_name: 20200803_LLD_24000.sdf

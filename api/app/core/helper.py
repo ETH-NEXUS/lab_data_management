@@ -1,31 +1,48 @@
 from string import ascii_lowercase
+import re
+
+LETTERS = {letter: str(index) for index, letter in
+    enumerate(ascii_lowercase, start=1)}
 
 
-LETTERS = {letter: str(index) for index, letter in enumerate(ascii_lowercase, start=1)}
-
-
-def charToAlphaPos(chr: str):
-  """
-  Maps a character to a number
-  A,a -> 1
-  B,b -> 2
-  ...
-  Z,z -> 26
-  """
-  if len(chr) != 1:
-    raise Exception("Can only convert one char")
-  return int(LETTERS[chr.lower()])
+def charToAlphaPos(letters: str):
+    """
+    Maps a character sequence to a number
+    A,a -> 1
+    B,b -> 2
+    ...
+    Z,z -> 26
+    AA,aa -> 27
+    AB,ab -> 28
+    ...
+    AZ,az -> 52
+    """
+    if not re.match(r'[A-z]+', letters):
+        raise ValueError('Only letters are allowed!')
+    pos = 0
+    for index, char in enumerate(letters[::-1]):
+        pos += (ord(char.upper()) - ord('A') + 1) * (26 ** index)
+    return pos
 
 
 def posToAlphaChar(pos: int):
-  """
-  Maps a number to a character
-  1 -> A
-  2 -> B
-  ...
-  26 -> Z
-  """
-  try:
-    return ascii_lowercase[pos - 1].upper()
-  except IndexError:
-    return '?'
+    """
+    Maps a number to a character
+    1 -> A
+    2 -> B
+    ...
+    26 -> Z
+    ...
+    27 -> AA
+    28 -> AB
+    ...
+    52 -> AZ
+    """
+    try:
+        letter = ''
+        while pos > 0:
+            pos, remainder = divmod(pos - 1, 26)
+            letter = ascii_lowercase[remainder].upper() + letter
+        return letter
+    except IndexError:
+        return '?'

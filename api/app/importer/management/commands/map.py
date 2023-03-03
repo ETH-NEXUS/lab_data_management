@@ -3,12 +3,13 @@ from importer.mappers import EchoMapper, MeasurementMapper
 from django.core.management.base import BaseCommand
 from friendlylog import colored_logger as log
 import yaml
+from os.path import join
 
 
 # add plates to the experiment, put the echo files to /data/echo and run the
 # following command:
 
-# ./manage.py map -t echo -p /data/echo -m /data/echo/echo-headers.yml -e exp
+# ./manage.py map -t echo -p /data/echo -m /data/echo/echo-headers.yml
 
 # you can try it out with the LLD compound library. Make sure to add plates
 # with the barcode prefix BAF210901 and the correct dimensions to the
@@ -17,6 +18,9 @@ import yaml
 
 # ./manage.py map -t measurement -p /data/M1000  -e exp
 
+
+ECHO_DIR = '/data/echo'
+
 class Command(BaseCommand):
     def add_arguments(self, parser):
         parser.add_argument('--type', '-t', type=str, required=True,
@@ -24,7 +28,7 @@ class Command(BaseCommand):
         parser.add_argument('--path', '-p', type=str, required=True,
                             help='Path to the directory containing the '
                                  'mapping files')
-        parser.add_argument('--experiment', '-e', type=str, required=True)
+        parser.add_argument('--experiment', '-e', type=str, required=False)
         parser.add_argument('--mapping-file', '-m', type=str,
                             help='A yml file with the column headers, otherwise default '
                                  'headers are used')
@@ -32,7 +36,7 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         path = options.get('path')
         if options.get('type') == 'echo':
-            headers = EchoMapper.DEFAULT_COLUMN_HEADERS
+            headers = EchoMapper.DEFAULT_COLUMNS
             headers_file = options.get('headers_file', None)
             if headers_file:
                 try:
@@ -48,11 +52,9 @@ class Command(BaseCommand):
                     return
 
             try:
-                data = EchoMapper.get_csv_echo_files(path, headers)
-                for mapping in data:
-                    EchoMapper.parse_plate_data(mapping['data'],
-                                                 mapping['file_path'], headers,
-                                                 options.get('experiment'))
+                mapper = EchoMapper()
+                mapper.run(join(ECHO_DIR, '**', '*-transfer-*.csv'), headers=headers)
+
 
             except Exception as ex:
                 log.error(ex)
@@ -62,7 +64,8 @@ class Command(BaseCommand):
             data = MeasurementMapper.get_measurement_files(path)
             for item in data:
                 try:
-                    MeasurementMapper.parse_measurement_data(item['measurement_data'], item['barcode'])
+                    MeasurementMapper.parse_measurement_data(item[
+                                                                  'measurement_data'], item['barcode'])
                 except Exception as ex:
                     log.error(ex)
                     traceback.print_exc()
