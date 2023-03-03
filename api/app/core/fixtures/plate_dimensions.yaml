@@ -1,6 +1,18 @@
-- model: core.PlateDimension
+- model: core.platedimension
   pk: 1
   fields:
-    name: simple_3x2
-    cols: 3
-    rows: 2
+    name: dim_96_8x12
+    rows: 8
+    cols: 12
+- model: core.platedimension
+  pk: 2
+  fields:
+    name: dim_384_16x24
+    rows: 16
+    cols: 24
+- model: core.platedimension
+  pk: 3
+  fields:
+    name: dim_1536_32x48
+    rows: 32
+    cols: 48

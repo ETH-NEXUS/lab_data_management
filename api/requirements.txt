@@ -16,5 +16,6 @@ psycopg2==2.9.5
 pyyaml==6.0
 pandas==1.5.3
 rdkit==2022.9.4
+chardet==5.1.0
 
 
