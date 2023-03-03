@@ -1,0 +1,6 @@
+- model: core.MeasurementFeature
+  pk: 1
+  fields:
+    name: TEST
+    abbrev: TST
+    unit: t

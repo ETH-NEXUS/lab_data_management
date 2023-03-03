@@ -6,10 +6,6 @@ services:
   ui:
     build:
       context: ui
-      args:
-        GIT_VERSION: "${GIT_VERSION}"
-        GIT_BRANCH: "${GIT_BRANCH}"
-        GIT_LASTCOMMITDATE: "${GIT_LASTCOMMITDATE}"
     volumes:
       - ./ui/app:/app
       # - "web_root:/app/dist:z"
@@ -21,6 +17,7 @@ services:
       context: api
       args:
         ENABLE_JUPYTER: ${ENABLE_JUPYTER}
+        ENABLE_RKERNEL: ${ENABLE_RKERNEL}
     hostname: api
     restart: unless-stopped
     entrypoint: sh -c '/app/entrypoint.sh'
@@ -33,6 +30,10 @@ services:
       - ./api/media:/vol/web/media:z
       - ./data:/data
     env_file: .env
+    environment:
+      - GIT_VERSION
+      - GIT_BRANCH
+      - GIT_LASTCOMMITDATE
     depends_on:
       - db
   db:

@@ -1,6 +1,9 @@
 import csv
 import re
 from os.path import isfile
+from typing import Union
+import re
+import csv
 
 from .helper import charToAlphaPos, posToAlphaChar
 
@@ -66,9 +69,14 @@ class MappingList():
         return mappings
 
     @classmethod
-    def from_csv(cls, csv_file: str, from_col: str | int, to_col: str | int,
-        amount_col: str | int, delimiter: str = ',',
-        quotechar: str = '"') -> 'MappingList':
+    def from_csv(
+            cls,
+            csv_file: str,
+            from_col: Union[str, int],
+            to_col: Union[str, int],
+            amount_col: Union[str, int],
+            delimiter: str = ',',
+            quotechar: str = '"') -> 'MappingList':
         """
         Returns a MappingList generated from csv.
         The values are taken from the given colum names of indexes.
@@ -77,22 +85,22 @@ class MappingList():
             mappings = cls()
             with open(csv_file, 'r', newline='') as cf:
                 if isinstance(from_col, str):
-                    reader = csv.DictReader(cf, delimiter=delimiter,
-                                            quotechar=quotechar)
+                    reader = csv.DictReader(cf, delimiter=delimiter, quotechar=quotechar)
                 else:
-                    reader = csv.reader(cf, delimiter=delimiter,
-                                        quotechar=quotechar)
+                    reader = csv.reader(cf, delimiter=delimiter, quotechar=quotechar)
                 for row in reader:
-                    mappings.add(
-                        Mapping(row[from_col], row[to_col], row[amount_col]))
+                    mappings.add(Mapping(
+                        row[from_col],
+                        row[to_col],
+                        row[amount_col]
+                    ))
             return mappings
         else:
             raise FileNotFoundError(f"Cannot find csv file {csv_file}.")
 
 
 class PositionMappingError():
-    def __init__(self, position,
-                 message="Cannot convert position to row, col: {}"):
+    def __init__(self, position, message="Cannot convert position to row, col: {}"):
         self.message = message.format(position)
         super().__init__(self.message)
 
@@ -106,7 +114,7 @@ class PositionMapper():
     @staticmethod
     def map(position: str) -> tuple[int, int]:
         match = re.match(r'(?P<alpha>[A-Z]+)(?P<num>[0-9]+)', position,
-            re.IGNORECASE)
+                         re.IGNORECASE)
         if match:
             row = charToAlphaPos(match.group('alpha'))
             col = int(match.group('num'))

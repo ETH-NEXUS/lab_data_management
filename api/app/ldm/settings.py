@@ -22,7 +22,6 @@ from corsheaders.defaults import default_headers
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 
-
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/4.1/howto/deployment/checklist/
 
@@ -296,3 +295,12 @@ if LOG_LDAP:
 
 FLOAT_PRECISION = 6
 DATA_UPLOAD_MAX_NUMBER_FIELDS = 8000
+
+NOTEBOOK_ARGUMENTS = [
+    '--ip', '*',
+    '--allow-root',
+    '--no-browser',
+    '--notebook-dir', '/notebooks',
+    '--NotebookApp.token', '',
+    '--NotebookApp.password', '',
+]

@@ -1,13 +1,12 @@
 django==4.1.7
 django_extensions==3.2.1
-django-cors-headers==3.13.0
+django-cors-headers==3.14.0
 django-filter==22.1
 django-auth-ldap==4.1.0
 djangorestframework==3.14.0
 djangorestframework-simplejwt==5.2.2
 djangorestframework-csv==2.1.1
-# drf-schema-adapter==3.0.0
-git+https://github.com/dameyerdave/drf-schema-adapter@filter_to_filterset#egg=drf-schema-adapter
+drf-schema-adapter==3.0.5
 markdown==3.4.1
 friendlylog==1.0.2
 gunicorn==20.1.0
@@ -15,7 +14,8 @@ uvicorn==0.20.0
 psycopg2==2.9.5
 pyyaml==6.0
 pandas==1.5.3
-rdkit==2022.9.4
+numpy==1.24.2
+rdkit==2022.9.5
 chardet==5.1.0
 
 
