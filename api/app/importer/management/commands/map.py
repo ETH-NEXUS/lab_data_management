@@ -5,7 +5,6 @@ from friendlylog import colored_logger as log
 import yaml
 from os.path import join
 
-
 # add plates to the experiment, put the echo files to /data/echo and run the
 # following command:
 
@@ -20,6 +19,8 @@ from os.path import join
 
 
 ECHO_DIR = '/data/echo'
+MEASUREMENT_DIR = '/data/M1000'
+
 
 class Command(BaseCommand):
     def add_arguments(self, parser):
@@ -53,7 +54,8 @@ class Command(BaseCommand):
 
             try:
                 mapper = EchoMapper()
-                mapper.run(join(ECHO_DIR, '**', '*-transfer-*.csv'), headers=headers)
+                mapper.run(join(ECHO_DIR, '**', '*-transfer-*.csv'),
+                           headers=headers)
 
 
             except Exception as ex:
@@ -61,11 +63,14 @@ class Command(BaseCommand):
                 traceback.print_exc()
 
         elif options.get('type') == 'measurement':
-            data = MeasurementMapper.get_measurement_files(path)
-            for item in data:
-                try:
-                    MeasurementMapper.parse_measurement_data(item[
-                                                                  'measurement_data'], item['barcode'])
-                except Exception as ex:
-                    log.error(ex)
-                    traceback.print_exc()
+            mapper = MeasurementMapper()
+            mapper.run(join(MEASUREMENT_DIR,  '*.asc'))
+
+            # data = MeasurementMapper.get_measurement_files(path)
+            # for item in data:
+            #     try:
+            #         MeasurementMapper.parse_measurement_data(
+            #             item['measurement_data'], item['barcode'])
+            #     except Exception as ex:
+            #         log.error(ex)
+            #         traceback.print_exc()
