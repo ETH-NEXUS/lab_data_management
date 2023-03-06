@@ -13,3 +13,18 @@
   fields:
     name: N
     description: Negative Control
+- model: core.WellType
+  pk: 4
+  fields:
+    name: R1
+    description: Reference 1
+- model: core.WellType
+  pk: 5
+  fields:
+    name: R3
+    description: Reference 3
+- model: core.WellType
+  pk: 6
+  fields:
+    name: R10
+    description: Reference 10
