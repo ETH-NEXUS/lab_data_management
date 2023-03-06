@@ -1,5 +1,5 @@
 import math
-import re
+import numpy as np
 from compoundlib.models import CompoundLibrary, Compound
 from django.conf import settings
 from django.contrib.postgres.fields import ArrayField
@@ -9,6 +9,7 @@ from django.db import models, transaction
 from django.db.models import F, Sum, CheckConstraint, Q
 from django.utils.translation import gettext_lazy as _
 from platetemplate.models import PlateTemplate
+from typing import List
 
 from .basemodels import TimeTrackedModel
 from .mapping import MappingList
@@ -138,6 +139,58 @@ class Plate(TimeTrackedModel):
     def num_wells(self):
         return self.dimension.num_wells
 
+    def well_at(self, position: int) -> 'Well':
+        try:
+            return self.wells.get(position=position)
+        except Well.DoesNotExist:
+            return None
+
+    def mean(self, abbrev: str, type: str = 'C'):
+        measurements = [w.measurement(abbrev) for w in self.wells.filter(type__name=type)]
+        return np.mean(measurements)
+
+    def std(self, abbrev: str, type: str = 'C'):
+        measurements = [w.measurement(abbrev) for w in self.wells.filter(type__name=type)]
+        return np.std(measurements)
+
+    @staticmethod
+    def __z_factor(measurement1: List[float], measurement2: List[float]):
+        mean1 = np.mean(measurement1)
+        mean2 = np.mean(measurement2)
+        std1 = np.std(measurement1)
+        std2 = np.std(measurement2)
+        return 1 - (3 * (std1 + std2)) / abs(mean1 - mean2)
+
+    def z_prime(self, abbrev: str) -> float:
+        """
+        Calculates the z' (prime) factor of the plate given by a barcode
+        """
+        measurement_positive = [w.measurement(abbrev) for w in self.wells.filter(type__name='P')]
+        measurement_negative = [w.measurement(abbrev) for w in self.wells.filter(type__name='N')]
+        return self.__z_factor(measurement_positive, measurement_negative)
+
+    def z_factor(self, abbrev: str) -> float:
+        """
+        Calculates the z factor of the plate given by a barcode
+        """
+        measurement_positive = [w.measurement(abbrev) for w in self.wells.filter(type__name='P')]
+        measurement_samples = [w.measurement(abbrev) for w in self.wells.filter(type__name='C')]
+        return self.__z_factor(measurement_positive, measurement_samples)
+
+    def z_scores(self, abbrev: str, type: str = 'C') -> List[float]:
+        """ Returns the z scores of all wells in a list where the index is the position """
+        scores = []
+        mean = self.mean(abbrev, type)
+        std = self.std(abbrev, type)
+        for pos in range(self.num_wells):
+            well = self.well_at(pos)
+            if well:
+                value = (well.measurement(abbrev) - mean) / std
+            else:
+                value = None
+            scores.append(value)
+        return scores
+
     def copy(self, target: 'Plate', amount: float = 0):
         """Copy a plate. Same as map but 1-to-1"""
         self.map(MappingList.one_to_one(self.dimension.num_wells, amount),
@@ -220,6 +273,13 @@ class WellType(models.Model):
     name = models.CharField(max_length=50, db_index=True)
     description = models.TextField()
 
+    @classmethod
+    def by_name(cls, name: str):
+        return cls.objects.get(name=name)
+
+    def __str__(self):
+        return f"{self.name} ({self.description})"
+
 
 class Well(TimeTrackedModel):
     related_name = 'wells'
@@ -268,6 +328,10 @@ class Well(TimeTrackedModel):
         for measurement in self.measurements.all():
             if measurement.feature.abbrev == abbrev:
                 return measurement.value
+
+    def z_score(self, abbrev: str, type: str = 'C'):
+        """ Returns the z score for this well """
+        return (self.measurement(abbrev) - self.plate.mean(abbrev, type)) / self.plate.std(abbrev, type)
 
     class Meta:
         unique_together = ('plate', 'position')
