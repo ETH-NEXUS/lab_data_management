@@ -48,6 +48,8 @@ class MappingTest(TestCase):
 
 
 class PlateTest(TestCase):
+    fixtures = ('well_types',)
+
     def setUp(self):
         self.dimension = PlateDimension.objects.create(
             name='dim_3x2',
@@ -234,6 +236,8 @@ class PlateTest(TestCase):
 
 
 class WellTest(TestCase):
+    fixtures = ('well_types',)
+
     def setUp(self):
         self.dimension = PlateDimension.objects.create(
             name='dim_3x2',
