@@ -3,6 +3,7 @@ import yaml
 from .helper import sameSchema
 from os.path import isfile
 
+
 class MappingFileSchemaError():
     def __init__(self, mapping={},
                  message="Error in mapping file schema. Should be {}"):
@@ -11,10 +12,18 @@ class MappingFileSchemaError():
 
 
 class SdfMapping():
-    DEFAULT_MAPPING = {'compound': {'identifier': 'IDNUMBER', 'name': 'NAME',
-        'structure': 'STRUCTURE'},
-        'plate': {'barcode': 'PLATE_NUMBER1', 'position': 'POS_IN_PLATE',
-            'amount': 'PLATE_AMOUNT1', }}
+    DEFAULT_MAPPING = {
+        'compound': {
+            'identifier': 'IDNUMBER',
+            'name': 'NAME',
+            'structure': 'STRUCTURE'
+        },
+        'plate': {
+            'barcode': 'PLATE_NUMBER1',
+            'position': 'POS_IN_PLATE',
+            'amount': 'PLATE_AMOUNT1'
+        }
+    }
 
     def __init__(self, mappingFile: str = None):
         self.mapping = self.DEFAULT_MAPPING
