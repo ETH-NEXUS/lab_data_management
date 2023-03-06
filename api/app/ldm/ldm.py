@@ -69,7 +69,7 @@ def plate(barcode: str):
     return df(f"/api/plates/?barcode={barcode}")
 
 
-def measurement(barcode: str, abbrev: str):
+def measurement(barcode: str, abbrev: str, matrix: bool = False):
     """ 
     Returns a pandas DataFrame with the measurement values given by
     abbrev. The DataFrame can be used to display a heatmap of the 
@@ -81,13 +81,23 @@ def measurement(barcode: str, abbrev: str):
     ```
     """
     plate = Plate.objects.get(barcode=barcode)
-    df = pd.DataFrame(np.nan, index=range(plate.num_wells), columns=('row', 'col', 'position', 'value'))
+    if matrix:
+        df = pd.DataFrame(np.nan, index=[posToAlphaChar(row) for row in range(1, plate.dimension.rows + 1)], columns=range(1, plate.dimension.cols + 1))
+    else:
+        df = pd.DataFrame(np.nan, index=range(plate.num_wells), columns=('row', 'col', 'position', 'value'))
+
     for position in range(plate.num_wells):
         row, col = plate.dimension.row_col(position)
         row = posToAlphaChar(row)
         try:
             well = Well.objects.get(plate=plate, position=position)
-            df.iloc[position] = [row, col, position, well.measurement(abbrev) or np.nan]
+            if matrix:
+                df.loc[row, col] = well.measurement(abbrev) or np.nan
+            else:
+                df.iloc[position] = [row, col, position, well.measurement(abbrev) or np.nan]
         except Well.DoesNotExist:
-            df.iloc[position] = [row, col, position, np.nan]
+            if matrix:
+                df.loc[row, col] = np.nan
+            else:
+                df.iloc[position] = [row, col, position, np.nan]
     return df
