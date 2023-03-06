@@ -8,19 +8,17 @@ from core.models import Plate
 
 
 class CompoundLibraryViewSet(viewsets.ModelViewSet):
-  serializer_class = CompoundLibrarySerializer
+    serializer_class = CompoundLibrarySerializer
 
-  def get_queryset(self):
-    plates = Prefetch('plates', queryset=Plate.objects.all().order_by('barcode'))
-    return CompoundLibrary.objects.all().prefetch_related(plates)
+    def get_queryset(self):
+        plates = Prefetch("plates", queryset=Plate.objects.all().order_by("barcode"))
+        return CompoundLibrary.objects.all().prefetch_related(plates)
 
 
 class CompoundViewSet(viewsets.ModelViewSet):
-  serializer_class = CompoundSerializer
-  queryset = Compound.objects.all()
+    serializer_class = CompoundSerializer
+    queryset = Compound.objects.all()
 
-  @action(detail=True, methods=['get'])
-  def structure(self, request, pk=None):
-    return Response({
-        'src': Compound.objects.get(pk=pk).structure_image
-    })
+    @action(detail=True, methods=["get"])
+    def structure(self, request, pk=None):
+        return Response({"src": Compound.objects.get(pk=pk).structure_image})

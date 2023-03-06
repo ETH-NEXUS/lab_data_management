@@ -2,13 +2,11 @@ import csv
 import re
 from os.path import isfile
 from typing import Union
-import re
-import csv
 
 from .helper import charToAlphaPos, posToAlphaChar
 
 
-class Mapping():
+class Mapping:
     """Represents one mapping"""
 
     def __init__(self, from_pos: int, to_pos: int, amount: float = 0):
@@ -32,7 +30,7 @@ class Mapping():
         return self.__amount
 
 
-class MappingList():
+class MappingList:
     """
     Represents a list of mappings.
     This can be used to map one plate to another.
@@ -70,42 +68,41 @@ class MappingList():
 
     @classmethod
     def from_csv(
-            cls,
-            csv_file: str,
-            from_col: Union[str, int],
-            to_col: Union[str, int],
-            amount_col: Union[str, int],
-            delimiter: str = ',',
-            quotechar: str = '"') -> 'MappingList':
+        cls,
+        csv_file: str,
+        from_col: Union[str, int],
+        to_col: Union[str, int],
+        amount_col: Union[str, int],
+        delimiter: str = ",",
+        quotechar: str = '"',
+    ) -> "MappingList":
         """
         Returns a MappingList generated from csv.
         The values are taken from the given colum names of indexes.
         """
         if isfile(csv_file):
             mappings = cls()
-            with open(csv_file, 'r', newline='') as cf:
+            with open(csv_file, "r", newline="") as cf:
                 if isinstance(from_col, str):
-                    reader = csv.DictReader(cf, delimiter=delimiter, quotechar=quotechar)
+                    reader = csv.DictReader(
+                        cf, delimiter=delimiter, quotechar=quotechar
+                    )
                 else:
                     reader = csv.reader(cf, delimiter=delimiter, quotechar=quotechar)
                 for row in reader:
-                    mappings.add(Mapping(
-                        row[from_col],
-                        row[to_col],
-                        row[amount_col]
-                    ))
+                    mappings.add(Mapping(row[from_col], row[to_col], row[amount_col]))
             return mappings
         else:
             raise FileNotFoundError(f"Cannot find csv file {csv_file}.")
 
 
-class PositionMappingError():
+class PositionMappingError:
     def __init__(self, position, message="Cannot convert position to row, col: {}"):
         self.message = message.format(position)
         super().__init__(self.message)
 
 
-class PositionMapper():
+class PositionMapper:
     """
     Maps a string notation position to row, col and the other way round.
     i.e. A2 -> row: 0, col: 1
@@ -113,11 +110,10 @@ class PositionMapper():
 
     @staticmethod
     def map(position: str) -> tuple[int, int]:
-        match = re.match(r'(?P<alpha>[A-Z]+)(?P<num>[0-9]+)', position,
-                         re.IGNORECASE)
+        match = re.match(r"(?P<alpha>[A-Z]+)(?P<num>[0-9]+)", position, re.IGNORECASE)
         if match:
-            row = charToAlphaPos(match.group('alpha'))
-            col = int(match.group('num'))
+            row = charToAlphaPos(match.group("alpha"))
+            col = int(match.group("num"))
 
         else:
             raise PositionMappingError(position)
@@ -125,7 +121,8 @@ class PositionMapper():
 
     @staticmethod
     def unmap(row: int, col: int) -> str:
-        return (f"{posToAlphaChar(row)}{col}")
+        return f"{posToAlphaChar(row)}{col}"
+
 
 # @staticmethod
 #     def convert_position_to_index(position: str,

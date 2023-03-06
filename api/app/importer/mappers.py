@@ -2,25 +2,26 @@ import csv
 import json
 import os
 from glob import glob
-from typing import List, Dict
+from typing import Dict, List
 
 import chardet
+from core.mapping import Mapping, MappingList
+from core.models import (
+    BarcodeSpecification,
+    MappingError,
+    Measurement,
+    MeasurementFeature,
+    MeasurementMetadata,
+    Plate,
+    PlateDimension,
+    PlateMapping,
+    Well,
+)
 from django.core.exceptions import ObjectDoesNotExist
 from django.core.files.base import ContentFile
 from friendlylog import colored_logger as log
 
-from core.mapping import Mapping, MappingList
-from core.models import (
-    Plate,
-    PlateMapping,
-    Measurement,
-    Well,
-    MeasurementMetadata,
-    MeasurementFeature,
-    MappingError,
-    BarcodeSpecification,
-    PlateDimension,
-)
+from .helper import row_col_from_name
 
 
 class BaseMapper:
@@ -36,7 +37,13 @@ class BaseMapper:
             with open(filename, "rb") as file:
                 encoding = chardet.detect(file.read()).get("encoding")
             with open(filename, "r", encoding=encoding) as file:
+            with open(filename, "rb") as file:
+                encoding = chardet.detect(file.read()).get("encoding")
+            with open(filename, "r", encoding=encoding) as file:
                 data = self.parse(
+                    filename,
+                    file,
+                    headers=kwargs["headers"] if "headers" in kwargs else None,
                     filename,
                     file,
                     headers=kwargs["headers"] if "headers" in kwargs else None,
@@ -55,22 +62,28 @@ class EchoMapper(BaseMapper):
         "source_plate_barcode": "Source Plate Barcode",
         "source_plate_type": "Source Plate Type",
         "source_well": "Source Well",
+        "source_plate_type": "Source Plate Type",
+        "source_well": "Source Well",
         "destination_plate_name": "Destination Plate Name",
         "destination_plate_barcode": "Destination Plate Barcode",
         "destination_well": "Destination Well",
+        "actual_volume": "Actual Volume",
         "actual_volume": "Actual Volume",
     }
 
     def __fast_forward_to_header_row(self, file, headers):
         row = next(file)
         while "DETAILS" not in row:  # tuple(headers.values())[0]
+        while "DETAILS" not in row:  # tuple(headers.values())[0]
             row = next(file)
         return file
 
     def parse(self, filename, file, **kwargs):
         headers = kwargs.get("headers", EchoMapper.DEFAULT_COLUMNS)
+        headers = kwargs.get("headers", EchoMapper.DEFAULT_COLUMNS)
         self.__fast_forward_to_header_row(file, headers)
         result = []
+        reader = csv.DictReader(file, delimiter=",")
         reader = csv.DictReader(file, delimiter=",")
 
         for row in reader:
@@ -83,19 +96,25 @@ class EchoMapper(BaseMapper):
     def map(self, data: List[Dict], **kwargs):
         try:
             source_plate = Plate.objects.get(barcode=data[0]["source_plate_barcode"])
+            source_plate = Plate.objects.get(barcode=data[0]["source_plate_barcode"])
             if source_plate.dimension is None:
-                source_plate.dimension = self.__find_plate_dimension(
+                source_plate.dimension = self.__get_plate_dimension(
                     data[0]["source_plate_name"]
                 )
                 source_plate.save()
-        except ObjectDoesNotExist:
-            raise MappingError(f"Source plate with barcode does not " f"exist.")
+        except Plate.DoesNotExist:
+            raise MappingError(
+                f"Source plate with barcode {data[0]['source_plate_barcode']} does not exist."
+            )
         try:
             destination_plate = Plate.objects.get(
+                barcode=data[0]["destination_plate_barcode"]
                 barcode=data[0]["destination_plate_barcode"]
             )
         except ObjectDoesNotExist:
             destination_plate = self.__create_plate_by_name_and_barcode(
+                plate_name=data[0]["destination_plate_name"],
+                barcode=data[0]["destination_plate_barcode"],
                 plate_name=data[0]["destination_plate_name"],
                 barcode=data[0]["destination_plate_barcode"],
             )
@@ -110,10 +129,12 @@ class EchoMapper(BaseMapper):
                     f" {source_plate.barcode} to "
                     f"{destination_plate.barcode}"
                 )
-
                 from_pos = source_plate.dimension.position(entry["source_well"])
                 to_pos = destination_plate.dimension.position(entry["destination_well"])
                 mapping = Mapping(
+                    from_pos=from_pos,
+                    to_pos=to_pos,
+                    amount=float(entry["actual_volume"]),
                     from_pos=from_pos,
                     to_pos=to_pos,
                     amount=float(entry["actual_volume"]),
@@ -123,9 +144,12 @@ class EchoMapper(BaseMapper):
         if mapping_success:
             file_content = open(kwargs["filename"], "rb").read()
             file_name = os.path.basename(kwargs["filename"])
+            file_content = open(kwargs["filename"], "rb").read()
+            file_name = os.path.basename(kwargs["filename"])
             plate_mapping = PlateMapping(
                 source_plate=source_plate, target_plate=destination_plate
             )
+            plate_mapping.mapping_file.save(file_name, ContentFile(file_content))
             plate_mapping.mapping_file.save(file_name, ContentFile(file_content))
             log.info(
                 f"Successfully mapped {source_plate.barcode} to "
@@ -138,7 +162,9 @@ class EchoMapper(BaseMapper):
             )
 
     def __create_plate_by_name_and_barcode(self, plate_name: str, barcode: str):
+    def __create_plate_by_name_and_barcode(self, plate_name: str, barcode: str):
         try:
+            barcode_prefix = barcode.split("_")[0]
             barcode_prefix = barcode.split("_")[0]
             barcode_specification = BarcodeSpecification.objects.get(
                 prefix=barcode_prefix
@@ -152,24 +178,18 @@ class EchoMapper(BaseMapper):
         return Plate.objects.create(
             barcode=barcode,
             experiment=barcode_specification.experiment,
-            dimension=self.__find_plate_dimension(plate_name),
+            dimension=self.__get_plate_dimension(plate_name),
         )
 
-    def __find_plate_dimension(self, plate_name: str):
-        # default and the most common dimension
-        plate_dimension_name = "dim_384_16x24"
+    def __get_plate_dimension(self, plate_name: str):
         try:
-            if "96" in plate_name:
-                plate_dimension_name = "dim_96_8x12"
-            elif "1536" in plate_name:
-                plate_dimension_name = "dim_1536_32x48"
-            plate_dimension = PlateDimension.objects.get(name=plate_dimension_name)
+            rows, cols = row_col_from_name(plate_name)
+            plate_dimension = PlateDimension.objects.get(rows=rows, cols=cols)
             return plate_dimension
-        except ObjectDoesNotExist:
-            raise ValueError(
-                f"No plate dimension found for name {plate_dimension_name}. "
-                f"Please add it in the user interface."
-            )
+        except ValueError:
+            raise
+        except PlateDimension.DoesNotExist:
+            raise ValueError(f"No plate dimension found: {rows}x{cols}")
 
 
 class MeasurementMapper(BaseMapper):
@@ -177,15 +197,23 @@ class MeasurementMapper(BaseMapper):
         log.info(f"Read file  {filename} ")
         barcode_delimiter_index = filename.find("_")
         barcode = filename[barcode_delimiter_index + 1 : -4]
+        barcode_delimiter_index = filename.find("_")
+        barcode = filename[barcode_delimiter_index + 1 : -4]
         data = file.readlines()
         metadata_start_index = self.__find_metadata_start_index(data)
+        metadata_list = self.__parse_measurement_metadata(data[metadata_start_index:])
         metadata_list = self.__parse_measurement_metadata(data[metadata_start_index:])
 
         return {
             "barcode": barcode,
             "filename": filename,
             "measurement_data": {
+            "barcode": barcode,
+            "filename": filename,
+            "measurement_data": {
                 "values": data[:metadata_start_index],
+                "metadata": metadata_list,
+            },
                 "metadata": metadata_list,
             },
         }
@@ -201,19 +229,24 @@ class MeasurementMapper(BaseMapper):
         else:
             values = data["measurement_data"]["values"]
 
-            # We drop the first line if it contains 'A1' because it is the header
+            # We drop the first line if it contains 'A1' because it is the
+            # header
             if "A1" in values[0].strip().split("\t"):
                 first_line = values[0].strip().split("\t")
             else:
+                first_line = values[1].strip().split("\t")
                 first_line = values[1].strip().split("\t")
             indices = self.__find_indices(first_line)
             metadata_list = data["measurement_data"]["metadata"]
             for line in values:
                 try:
                     line_list = line.strip().split("\t")
+                    line_list = line.strip().split("\t")
 
                     well_position_str = line_list[indices[0]]
                     well_position = plate.dimension.position(
+                        well_position_str.strip().lstrip()
+                    )
                         well_position_str.strip().lstrip()
                     )
                     identifier = line_list[indices[1]]
@@ -228,7 +261,11 @@ class MeasurementMapper(BaseMapper):
                                 well=well,
                                 value=value,
                                 identifier=identifier,
+                                well=well,
+                                value=value,
+                                identifier=identifier,
                                 meta=metadata_list[index][0],
+                                feature=metadata_list[index][1],
                                 feature=metadata_list[index][1],
                             )
                             measurement.save()
@@ -238,6 +275,7 @@ class MeasurementMapper(BaseMapper):
                             )
                 except (ValueError, Well.DoesNotExist) as e:
                     log.error(f"Error processing line: {line.strip()}. {str(e)}")
+                    log.error(f"Error processing line: {line.strip()}. {str(e)}")
 
     def __parse_measurement_metadata(self, metadata):
         """
@@ -246,14 +284,18 @@ class MeasurementMapper(BaseMapper):
         metadata_objects_list = []
         dict_list = [{}]
         measurement_feature_name = "unknown"
+        measurement_feature_name = "unknown"
         for index, line in enumerate(metadata):
             if ":" in line:
+                key, value = line.split(":", 1)
                 key, value = line.split(":", 1)
                 key = key.strip().lstrip()
                 value = value.strip().lstrip()
                 if key in dict_list[-1]:
                     dict_list.append({})
                 dict_list[-1][key] = value
+                if key == "Range":
+                    measurement_feature_name = metadata[index + 1].strip().lstrip()
                 if key == "Range":
                     measurement_feature_name = metadata[index + 1].strip().lstrip()
         measurement_feature = MeasurementFeature.objects.get_or_create(
@@ -264,7 +306,7 @@ class MeasurementMapper(BaseMapper):
             measurement_metadata = MeasurementMetadata.objects.create(
                 data=json.dumps(item)
             )
-            log.debug(f"Successfully created metadata")
+            log.debug("Successfully created metadata")
             metadata_objects_list.append((measurement_metadata, measurement_feature))
         return metadata_objects_list
 
@@ -283,6 +325,7 @@ class MeasurementMapper(BaseMapper):
             if item.isnumeric():
                 continue
             if item == "A1":
+            if item == "A1":
                 well_index = index
             else:
                 identifier_index = index
@@ -295,6 +338,7 @@ class MeasurementMapper(BaseMapper):
         """
         index = -1
         for index, line in enumerate(measurement_data):
+            if line.startswith("Date of measurement"):
             if line.startswith("Date of measurement"):
                 index = index
                 break

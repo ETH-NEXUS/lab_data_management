@@ -19,7 +19,6 @@ services:
   api:
     environment:
       - DJANGO_DEBUG=True
-      - DEV=True
     ports:
       - "5090:5000"
       - "8890:8888"
