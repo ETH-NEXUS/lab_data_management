@@ -6,8 +6,7 @@ from base64 import b64encode
 
 
 class CompoundLibrary(models.Model):
-
-    name = models.CharField(max_length=50, unique=True, verbose_name='compound library')
+    name = models.CharField(max_length=50, unique=True, verbose_name="compound library")
     file_name = models.CharField(max_length=255, null=True)
 
     def __str__(self):
@@ -15,7 +14,7 @@ class CompoundLibrary(models.Model):
 
     class Meta:
         verbose_name_plural = "compound libraries"
-        ordering = ('name',)
+        ordering = ("name",)
 
 
 class Compound(models.Model):
@@ -33,5 +32,5 @@ class Compound(models.Model):
         mol = Chem.MolFromSmiles(self.structure)
         img = Draw.MolToImage(mol)
         buffer = BytesIO()
-        img.save(buffer, format='PNG')
+        img.save(buffer, format="PNG")
         return f"data:image/png;base64,{b64encode(buffer.getvalue()).decode()}"

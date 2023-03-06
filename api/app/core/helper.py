@@ -1,8 +1,7 @@
 from string import ascii_lowercase
 import re
 
-LETTERS = {letter: str(index) for index, letter in
-    enumerate(ascii_lowercase, start=1)}
+LETTERS = {letter: str(index) for index, letter in enumerate(ascii_lowercase, start=1)}
 
 
 def charToAlphaPos(letters: str):
@@ -17,11 +16,11 @@ def charToAlphaPos(letters: str):
     ...
     AZ,az -> 52
     """
-    if not re.match(r'[A-z]+', letters):
-        raise ValueError('Only letters are allowed!')
+    if not re.match(r"[A-z]+", letters):
+        raise ValueError("Only letters are allowed!")
     pos = 0
     for index, char in enumerate(letters[::-1]):
-        pos += (ord(char.upper()) - ord('A') + 1) * (26 ** index)
+        pos += (ord(char.upper()) - ord("A") + 1) * (26**index)
     return pos
 
 
@@ -39,10 +38,10 @@ def posToAlphaChar(pos: int):
     52 -> AZ
     """
     try:
-        letter = ''
+        letter = ""
         while pos > 0:
             pos, remainder = divmod(pos - 1, 26)
             letter = ascii_lowercase[remainder].upper() + letter
         return letter
     except IndexError:
-        return '?'
+        return "?"

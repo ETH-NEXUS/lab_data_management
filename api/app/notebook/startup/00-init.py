@@ -6,7 +6,7 @@ import django
 from os import chdir, environ
 from sys import path
 
-APP_DIR = '/app'
+APP_DIR = "/app"
 path.insert(0, APP_DIR)
 environ["DJANGO_ALLOW_ASYNC_UNSAFE"] = "true"
 chdir(APP_DIR)

@@ -25,15 +25,21 @@ from rest_framework_simplejwt.views import (
 from users.urls import router as user_router
 
 urlpatterns = [
-    path('admin/', admin.site.urls),
-    path('api/auth/token/', TokenObtainPairView.as_view(), name='token_obtain_pair'),
-    path('api/auth/token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
-    path('api/', include(router.urls)),
-    path('api/', include(user_router.urls)),
-    path('api/mapping_preview/', MappingPreviewView.as_view())
+    path("admin/", admin.site.urls),
+    path(
+        "api/auth/token/",
+        TokenObtainPairView.as_view(),
+        name="token_obtain_pair",
+    ),
+    path(
+        "api/auth/token/refresh/",
+        TokenRefreshView.as_view(),
+        name="token_refresh",
+    ),
+    path("api/", include(router.urls)),
+    path("api/", include(user_router.urls)),
+    path("api/mapping_preview/", MappingPreviewView.as_view()),
 ]
 
 if not settings.DISABLE_BROWSABLE_API and not settings.DISABLE_AUTH:
-    urlpatterns += [
-        path('api-auth/', include('rest_framework.urls'))
-    ]
+    urlpatterns += [path("api-auth/", include("rest_framework.urls"))]

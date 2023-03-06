@@ -1,8 +1,9 @@
 -r requirements.txt
 -r requirements.jupyter.txt
+black
+isort
 flake8
 autoflake
-autopep8
 pur
 pytest-django
 pytest-cov

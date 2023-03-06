@@ -14,7 +14,8 @@ up: env_var
 	@docker-compose -f docker-compose.yml -f docker-compose.dev.yml up -d
 
 format:
+	# @find ./api/app -type f -name '*.py' ! -path '*/migrations/*' -exec pycodestyle --first '{}' \;
+	# @find ./api/app -type f -name '*.py' ! -path '*/migrations/*' -exec autopep8 --in-place --aggressive --aggressive '{}' \;
+	@find ./api/app -type f -name '*.py' ! -path '*/migrations/*' -exec black '{}' \;
 	@find ./api/app -type f -name '*.py' ! -path '*/migrations/*' -exec autoflake --in-place --remove-unused-variables --remove-all-unused-imports '{}' \;
-	@find ./api/app -type f -name '*.py' ! -path '*/migrations/*' -exec pycodestyle --first '{}' \;
-	@find ./api/app -type f -name '*.py' ! -path '*/migrations/*' -exec autopep8 --in-place --aggressive --aggressive '{}' \;
 	@flake8 ./api/app --exclude */migrations/*

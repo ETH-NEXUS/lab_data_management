@@ -70,8 +70,6 @@ api.interceptors.response.use(
     } else if (error.response.status === 401 && originalConfig._retry) {
       // If the token cannot be refreshed we logout and route to the login page
       await userStore.removeToken()
-      const router = useRouter()
-      await router.push({path: '/login'})
     } else if (error.response) {
       if (!error.response.data.hidden) {
         Notify.create({
