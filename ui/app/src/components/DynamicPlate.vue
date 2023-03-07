@@ -70,7 +70,7 @@ const percentageToHsl = (percentage: number, hue0: number, hue1: number) => {
               position: positionFromRowCol(row, col, props.plate.dimension),
             })
           ">
-          <a v-if="wells[row][col]">
+          <a v-if="wells[row][col]" :class="{'bg-warning': wells[row][col]!.status}">
             {{ wells[row][col]!.hr_position }}
           </a>
           <q-tooltip

@@ -162,6 +162,24 @@ const filterMeasurementFeatures = (query: string, update: (f: () => void) => voi
           </h2>
         </div>
       </div>
+      <div v-if="props.wellInfo.well.status" class="row">
+        <div class="col-4 bg-orange-2">
+          <h4 class="q-ma-none vertical-top">
+            <q-icon name="o_warning" color="red" />
+            {{ t('title.status') }}
+          </h4>
+        </div>
+        <div class="col-8 bg-orange-2">
+          <table>
+            <tr>
+              <th>{{ props.wellInfo.well.status }}</th>
+            </tr>
+          </table>
+        </div>
+        <div class="col-12">
+          <hr />
+        </div>
+      </div>
       <div class="row">
         <div class="col-4">
           <h4 class="q-ma-none vertical-top">
