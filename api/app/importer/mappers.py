@@ -2,13 +2,13 @@ import csv
 import json
 import os
 from glob import glob
-from typing import Dict, List
+from itertools import dropwhile
+from tqdm import tqdm
 
 import chardet
 from core.mapping import Mapping, MappingList
 from core.models import (
     BarcodeSpecification,
-    MappingError,
     Measurement,
     MeasurementFeature,
     MeasurementMetadata,
@@ -17,8 +17,8 @@ from core.models import (
     PlateMapping,
     Well,
 )
-from django.core.exceptions import ObjectDoesNotExist
-from django.core.files.base import ContentFile
+from core.config import Config
+from django.core.files import File
 from friendlylog import colored_logger as log
 
 from .helper import row_col_from_name
@@ -26,7 +26,7 @@ from .helper import row_col_from_name
 
 class BaseMapper:
     @staticmethod
-    def get_files(_glob: str) -> List[str]:
+    def get_files(_glob: str) -> list[str]:
         """Get all files in the given path that match the glob pattern"""
         return glob(_glob)
 
@@ -40,128 +40,158 @@ class BaseMapper:
             with open(filename, "rb") as file:
                 encoding = chardet.detect(file.read()).get("encoding")
             with open(filename, "r", encoding=encoding) as file:
-                data = self.parse(
-                    filename,
-                    file,
-                    headers=kwargs["headers"] if "headers" in kwargs else None,
-                    filename,
-                    file,
-                    headers=kwargs["headers"] if "headers" in kwargs else None,
-                )
-            self.map(data, filename=filename)
+                data = self.parse(filename, file, **kwargs)
+            kwargs.update({"filename": filename})
+            self.map(data, **kwargs)
 
-    def parse(self, filename, file, **kwargs) -> Dict:
+    def parse(self, filename, file, **kwargs) -> dict:
         raise NotImplementedError
 
-    def map(self, data: Dict, **kwargs):
+    def map(self, data: dict, **kwargs):
         raise NotImplementedError
 
 
 class EchoMapper(BaseMapper):
-    DEFAULT_COLUMNS = {
-        "source_plate_barcode": "Source Plate Barcode",
-        "source_plate_type": "Source Plate Type",
-        "source_well": "Source Well",
-        "source_plate_type": "Source Plate Type",
-        "source_well": "Source Well",
-        "destination_plate_name": "Destination Plate Name",
-        "destination_plate_barcode": "Destination Plate Barcode",
-        "destination_well": "Destination Well",
-        "actual_volume": "Actual Volume",
-        "actual_volume": "Actual Volume",
-    }
+    DEFAULT_COLUMNS = Config.current.importer.echo.default.columns
 
     def __fast_forward_to_header_row(self, file, headers):
-        row = next(file)
-        while "DETAILS" not in row:  # tuple(headers.values())[0]
-        while "DETAILS" not in row:  # tuple(headers.values())[0]
-            row = next(file)
-        return file
+        """
+        Fast forward to header column determined
+        by finding the first column name
+        """
+        pattern = list(headers.values())[0]
+        return dropwhile(lambda line: pattern not in line, file)
 
-    def parse(self, filename, file, **kwargs):
+    def parse(self, _, file, **kwargs):
         headers = kwargs.get("headers", EchoMapper.DEFAULT_COLUMNS)
-        headers = kwargs.get("headers", EchoMapper.DEFAULT_COLUMNS)
-        self.__fast_forward_to_header_row(file, headers)
+        file = self.__fast_forward_to_header_row(file, headers)
         result = []
         reader = csv.DictReader(file, delimiter=",")
         reader = csv.DictReader(file, delimiter=",")
 
         for row in reader:
+            # If there are None values in any of the following keys
+            # or if there is a second header column we continue
+            must_keys = (
+                "source_plate_barcode",
+                "source_plate_type",
+                "source_well",
+                "destination_plate_name",
+                "destination_plate_barcode",
+                "destination_well",
+                "actual_volume",
+            )
+            if any(
+                [
+                    row[headers.get(key)] is None
+                    or row[headers.get(key)] == headers.get(key)
+                    for key in must_keys
+                ]
+            ):
+                continue
+
             result.append(
                 {new_key: row[old_key] for new_key, old_key in headers.items()}
             )
-        file.close()
         return result
 
-    def map(self, data: List[Dict], **kwargs):
-        try:
-            source_plate = Plate.objects.get(barcode=data[0]["source_plate_barcode"])
-            source_plate = Plate.objects.get(barcode=data[0]["source_plate_barcode"])
-            if source_plate.dimension is None:
-                source_plate.dimension = self.__get_plate_dimension(
-                    data[0]["source_plate_name"]
-                )
-                source_plate.save()
-        except Plate.DoesNotExist:
-            raise MappingError(
-                f"Source plate with barcode {data[0]['source_plate_barcode']} does not exist."
-            )
-        try:
-            destination_plate = Plate.objects.get(
-                barcode=data[0]["destination_plate_barcode"]
-                barcode=data[0]["destination_plate_barcode"]
-            )
-        except ObjectDoesNotExist:
-            destination_plate = self.__create_plate_by_name_and_barcode(
-                plate_name=data[0]["destination_plate_name"],
-                barcode=data[0]["destination_plate_barcode"],
-                plate_name=data[0]["destination_plate_name"],
-                barcode=data[0]["destination_plate_barcode"],
-            )
+    def map(self, data: list[dict], **kwargs):
+        def __debug(msg):
+            if kwargs.get("debug"):
+                log.debug(msg)
 
-        mapping_list = MappingList()
+        # Plates cache by barcode
+        plates = {}
+        # MappingList cache by source plate barcode
+        mapping_lists = {}
+        # Process later queue
+        queue = []
 
-        for entry in data:
-            if len(entry) > 0:
-                log.info(
-                    f"Mapping {entry['source_well']} to "
-                    f"{entry['destination_well']} from"
-                    f" {source_plate.barcode} to "
-                    f"{destination_plate.barcode}"
+        with tqdm(
+            desc="Processing mappings",
+            unit="mappings",
+            total=len(data),
+        ) as mbar:
+            for entry in data:
+                source_plate_barcode = data[0]["source_plate_barcode"]
+                destination_plate_name = data[0]["destination_plate_name"]
+                destination_plate_barcode = data[0]["destination_plate_barcode"]
+
+                if source_plate_barcode in plates:
+                    source_plate = plates.get(source_plate_barcode)
+                else:
+                    try:
+                        source_plate = Plate.objects.get(barcode=source_plate_barcode)
+                        plates[source_plate_barcode] = source_plate
+                    except Plate.DoesNotExist:
+                        log.warning(
+                            f"""Source plate with barcode {data[0]['source_plate_barcode']} does not exist.
+                            I try again later..."""
+                        )
+                        queue.append(entry)
+                        continue
+
+                if destination_plate_barcode in plates:
+                    destination_plate = plates.get(destination_plate_barcode)
+                else:
+                    try:
+                        destination_plate = Plate.objects.get(
+                            barcode=destination_plate_barcode
+                        )
+                    except Plate.DoesNotExist:
+                        destination_plate = self.__create_plate_by_name_and_barcode(
+                            destination_plate_name, destination_plate_barcode
+                        )
+
+                if source_plate_barcode in mapping_lists:
+                    mapping_list = mapping_lists.get(source_plate_barcode)
+                else:
+                    mapping_list = MappingList(target=destination_plate)
+                    mapping_lists[source_plate_barcode] = mapping_list
+
+                source_well = entry["source_well"]
+                destination_well = entry["destination_well"]
+                __debug(
+                    f"Mapping {source_plate.barcode}:{source_well} -> {destination_plate.barcode}:{destination_well}"
                 )
-                from_pos = source_plate.dimension.position(entry["source_well"])
-                to_pos = destination_plate.dimension.position(entry["destination_well"])
+                from_pos = source_plate.dimension.position(source_well)
+                to_pos = destination_plate.dimension.position(destination_well)
+
                 mapping = Mapping(
                     from_pos=from_pos,
                     to_pos=to_pos,
                     amount=float(entry["actual_volume"]),
-                    from_pos=from_pos,
-                    to_pos=to_pos,
-                    amount=float(entry["actual_volume"]),
+                    status=entry["transfer_status"],
                 )
                 mapping_list.add(mapping)
-        mapping_success = source_plate.map(mapping_list, destination_plate)
-        if mapping_success:
-            file_content = open(kwargs["filename"], "rb").read()
-            file_name = os.path.basename(kwargs["filename"])
-            file_content = open(kwargs["filename"], "rb").read()
-            file_name = os.path.basename(kwargs["filename"])
-            plate_mapping = PlateMapping(
-                source_plate=source_plate, target_plate=destination_plate
-            )
-            plate_mapping.mapping_file.save(file_name, ContentFile(file_content))
-            plate_mapping.mapping_file.save(file_name, ContentFile(file_content))
-            log.info(
-                f"Successfully mapped {source_plate.barcode} to "
-                f"{destination_plate.barcode}"
-            )
-        else:
-            log.error(
-                f"Failed to map {source_plate.barcode} to "
-                f"{destination_plate.barcode}"
-            )
 
-    def __create_plate_by_name_and_barcode(self, plate_name: str, barcode: str):
+                mbar.update(1)
+
+        for source_plate_barcode, mapping_list in mapping_lists.items():
+            source_plate = plates.get(source_plate_barcode)
+            if source_plate.map(mapping_list, mapping_list.target):
+                with open(kwargs["filename"], "rb") as file:
+                    PlateMapping.objects.create(
+                        source_plate=source_plate,
+                        target_plate=mapping_list.target,
+                        mapping_file=File(file, os.path.basename(file.name)),
+                    )
+                log.info(
+                    f"Mapped {source_plate.barcode} -> {mapping_list.target.barcode}"
+                )
+            else:
+                log.error(
+                    f"Error mapping {source_plate.barcode} -> {mapping_list.target.barcode}"
+                )
+
+        # If there are entries queued because the source plate did not yet exist
+        # we try map those again but only once.
+        MAX_TRY_QUEUE = 3
+        try_queue = kwargs.get("try_queue", 0)
+        if try_queue < MAX_TRY_QUEUE and len(queue) > 0:
+            kwargs.update({"try_queue": try_queue + 1})
+            self.map(queue, **kwargs)
+
     def __create_plate_by_name_and_barcode(self, plate_name: str, barcode: str):
         try:
             barcode_prefix = barcode.split("_")[0]
@@ -169,11 +199,8 @@ class EchoMapper(BaseMapper):
             barcode_specification = BarcodeSpecification.objects.get(
                 prefix=barcode_prefix
             )
-        except ObjectDoesNotExist:
-            raise ValueError(
-                f"No barcode specification found for {barcode}. "
-                f"Please add it in the user interface."
-            )
+        except BarcodeSpecification.DoesNotExist:
+            raise ValueError(f"No barcode specification found for {barcode}.")
 
         return Plate.objects.create(
             barcode=barcode,
@@ -218,7 +245,7 @@ class MeasurementMapper(BaseMapper):
             },
         }
 
-    def map(self, data: Dict, **kwargs):
+    def map(self, data: dict, **kwargs):
         try:
             plate = Plate.objects.get(barcode=data["barcode"])
         except Plate.DoesNotExist:

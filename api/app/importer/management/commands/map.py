@@ -27,11 +27,17 @@ class Command(BaseCommand):
             type=str,
             help="A yml file with the column headers, otherwise default headers are used",
         )
+        parser.add_argument(
+            "--debug",
+            "-d",
+            action="store_true",
+            help="Enable debug mode",
+        )
 
     def handle(self, *args, **options):
         path = options.get("path")
         if options.get("machine") == "echo":
-            headers = None
+            headers = EchoMapper.DEFAULT_COLUMNS
             headers_file = options.get("headers_file", None)
             if headers_file:
                 try:
@@ -46,7 +52,11 @@ class Command(BaseCommand):
 
             try:
                 mapper = EchoMapper()
-                mapper.run(join(path, "**", "*-transfer-*.csv"), headers)
+                mapper.run(
+                    join(path, "**", "*-transfer-*.csv"),
+                    headers=headers,
+                    debug=options.get("debug", False),
+                )
             except Exception as ex:
                 log.error(ex)
                 traceback.print_exc()
