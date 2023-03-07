@@ -1,0 +1,17 @@
+importer:
+  echo:
+    default:
+      columns:
+        source_plate_barcode: Source Plate Barcode
+        source_plate_type: Source Plate Type
+        source_well: Source Well
+        destination_plate_name: Destination Plate Name
+        destination_plate_barcode: Destination Plate Barcode
+        destination_well: Destination Well
+        actual_volume: Actual Volume
+        transfer_status: Transfer Status
+  # m1000:
+  #   default:
+  #     columns:
+  #       A: B
+  #       C: D

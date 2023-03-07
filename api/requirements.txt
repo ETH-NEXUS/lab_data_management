@@ -18,4 +18,6 @@ numpy==1.24.2
 rdkit==2022.9.5
 chardet==5.1.0
 tqdm==4.65.0
+easydict==1.10
+schema==0.7.5
 
