@@ -17,12 +17,13 @@ if [ "$ENABLE_JUPYTER" == "True" ]; then
   python manage.py shell_plus --notebook &
 fi
 
-gunicorn ldm.asgi:application \
-  --log-file - \
-  --workers 16 \
-  --worker-class uvicorn.workers.UvicornWorker \
-  --timeout 300 \
-  --reload \
-  --bind 0.0.0.0:${PORT}
-
-
+if [ "$DJANGO_DEBUG" == "True" ]; then
+  python manage.py runserver 0.0.0.0:${PORT}
+else
+  gunicorn ldm.asgi:application \
+    --log-file - \
+    --workers 16 \
+    --worker-class uvicorn.workers.UvicornWorker \
+    --timeout 300 \
+    --bind 0.0.0.0:${PORT}
+fi
