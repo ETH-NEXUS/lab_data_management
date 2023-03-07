@@ -9,10 +9,13 @@ from .helper import charToAlphaPos, posToAlphaChar
 class Mapping:
     """Represents one mapping"""
 
-    def __init__(self, from_pos: int, to_pos: int, amount: float = 0):
+    def __init__(
+        self, from_pos: int, to_pos: int, amount: float = 0, status: str = None
+    ):
         self.__from = int(from_pos)
         self.__to = int(to_pos)
         self.__amount = float(amount)
+        self.__status = str(status)
 
     def __str__(self):
         return f"Mapping: {self.__from} -> {self.__to} ({self.__amount})"
@@ -29,6 +32,10 @@ class Mapping:
     def amount(self) -> float:
         return self.__amount
 
+    @property
+    def status(self) -> str:
+        return self.__status
+
 
 class MappingList:
     """
@@ -36,12 +43,22 @@ class MappingList:
     This can be used to map one plate to another.
     """
 
-    def __init__(self):
+    def __init__(self, source=None, target=None):
+        self.__source = source
+        self.__target = target
         self.__mappings = []
         self.current = 0
 
     def add(self, mapping: Mapping):
         self.__mappings.append(mapping)
+
+    @property
+    def source(self):
+        return self.__source
+
+    @property
+    def target(self):
+        return self.__target
 
     def __iter__(self):
         self.current = 0
