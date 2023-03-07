@@ -233,19 +233,6 @@ class Plate(TimeTrackedModel):
         """Copy a plate. Same as map but 1-to-1"""
         self.map(MappingList.one_to_one(self.dimension.num_wells, amount), target)
 
-    # @staticmethod
-    # def convert_position_to_index(position: str,
-    #                               number_of_columns: int) -> int:
-    #     match = re.match(r'([a-zA-Z]+)(\d+)', position)
-    #     letters = match.group(1)
-    #     col = int(match.group(2))
-    #     row = 0
-    #     for char in letters:
-    #         row += ord(char.upper()) - 65
-
-    #     index = row * number_of_columns + (col - 1)
-    #     return index
-
     def map(self, mappingList: MappingList, target: "Plate"):
         """
         Maps this plate to another plate using a mapping list.
@@ -262,9 +249,10 @@ class Plate(TimeTrackedModel):
                         raise MappingError(_("Target plate has no dimension assigned"))
                     if mapping.to_pos >= target.num_wells:
                         raise MappingError(_("Target plate too small"))
-                    well, created = Well.objects.get_or_create(
+                    well, created = Well.objects.update_or_create(
                         position=mapping.to_pos,
                         plate=target,
+                        defaults={"status": mapping.status},
                     )
                     if created:
                         well.save()
@@ -350,6 +338,7 @@ class Well(TimeTrackedModel):
     type = models.ForeignKey(
         WellType, on_delete=models.RESTRICT, default=1, db_index=True
     )
+    status = models.TextField(null=True, blank=True)
 
     def __str__(self):
         return f"{self.plate.barcode}: {self.hr_position}"
