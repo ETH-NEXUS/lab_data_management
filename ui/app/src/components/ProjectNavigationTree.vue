@@ -95,7 +95,7 @@ const addPlateNode = (experiment: Experiment, plate: Plate) => {
     const experimentNode = projectNode.children?.find(c => c.experiment.id === experiment.id)
     if (experimentNode) {
       experimentNode.children?.push({
-        label: `${plate.barcode} (${plate.dimension?.name || t('message.no_dimension')})`,
+        label: `${plate.barcode} (${plate.dimension || t('message.no_dimension')})`,
         icon: 'o_view_module',
         header: 'plate',
         handler: nodeHandler,

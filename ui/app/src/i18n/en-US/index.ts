@@ -78,6 +78,7 @@ export default {
     chain: 'Chain',
     well_type: 'Type',
     template_name: 'Template Name',
+    status: 'Status',
   },
   message: {
     successfully_logged_in: 'Successfully logged in',

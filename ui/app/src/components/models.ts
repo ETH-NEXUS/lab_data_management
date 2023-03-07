@@ -97,6 +97,7 @@ export interface Well {
   withdrawals?: Array<Withdrawal>
   donors?: Array<Withdrawal>
   mixture?: boolean
+  status: string
 }
 
 export interface PlateDimension {
