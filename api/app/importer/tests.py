@@ -1,19 +1,17 @@
 from copy import deepcopy
 from os import makedirs
 from os.path import join
+from pathlib import Path
 
 from django.test import TestCase
 
-from core.models import Plate, PlateDimension
-from .helper import sameSchema
-from .mappers import BaseMapper
-
-from pathlib import Path
 from core.helper import posToAlphaChar
+from core.models import PlateDimension
+from .helper import sameSchema
+from .mappers import BaseMapper, EchoMapper
 
 
 class HelperTests(TestCase):
-
 
     def test_sameSchemaTrue(self):
         a = {'a': {'b': {'c': 'xxx'}, 'x': {'y': 111}}}
@@ -36,8 +34,6 @@ class ConvertPositionToIndexTests(TestCase):
         self.dimension_384 = PlateDimension.objects.get(name='dim_384_16x24')
         self.dimension_1536 = PlateDimension.objects.get(name='dim_1536_32x48')
 
-
-
     def test_single_letter(self):
         '''
         Test a position with a single-letter row label
@@ -45,9 +41,7 @@ class ConvertPositionToIndexTests(TestCase):
 
         position = "B3"
         expected_index = 26
-        self.assertEqual(
-            self.dimension_384.position(position),
-            expected_index)
+        self.assertEqual(self.dimension_384.position(position), expected_index)
 
     def test_first_column(self):
         '''
@@ -67,7 +61,6 @@ class ConvertPositionToIndexTests(TestCase):
         expected_index = 74
         self.assertEqual(self.dimension_384.position(position), expected_index)
 
-
     def test_last_column(self):
         '''
         Test a position in the last column
@@ -75,7 +68,8 @@ class ConvertPositionToIndexTests(TestCase):
 
         position = "AA11"
         expected_index = 1258
-        self.assertEqual(self.dimension_1536.position(position), expected_index)
+        self.assertEqual(self.dimension_1536.position(position),
+                         expected_index)
 
     def test_index_to_letter(self):
         '''
@@ -84,23 +78,15 @@ class ConvertPositionToIndexTests(TestCase):
 
         index = 27
         expected_letter = 'AA'
-        self.assertEqual(
-            posToAlphaChar(index),
-            expected_letter)
+        self.assertEqual(posToAlphaChar(index), expected_letter)
         self.assertEqual(posToAlphaChar(28), "AB")
         self.assertEqual(posToAlphaChar(52), "AZ")
         self.assertEqual(posToAlphaChar(703), "AAA")
         self.assertEqual(posToAlphaChar(73116), "DDDD")
 
 
-
-
 class MapperTests(TestCase):
-    fixtures = [
-        'plate_dimensions',
-        'well_types',
-        'test/compound_library'
-    ]
+    fixtures = ['plate_dimensions', 'well_types', 'test/compound_library']
 
     TEST_DATA_FOLDER = './temp'
     ECHO_DIR = join(TEST_DATA_FOLDER, 'echo')
@@ -137,7 +123,7 @@ class MapperTests(TestCase):
         self.create_echo_test_data()
 
     def tearDown(self):
-        #TODO: Delete files
+        # TODO: Delete files
         pass
 
     def test_get_files(self):
@@ -146,3 +132,16 @@ class MapperTests(TestCase):
             [join(self.ECHO_DIR, barcode, 'ID-123-transfer-Echo_01_123.csv')
                 for barcode in self.BARCODES],
             mapper.get_files(join(self.ECHO_DIR, '**', '*-transfer-*.csv')))
+
+    def test_parse_echo_file(self):
+        mapper = EchoMapper()
+        with open(join(self.ECHO_DIR, self.BARCODES[0],
+            'ID-123-transfer-Echo_01_123.csv'), 'r') as file:
+            data = mapper.parse('test.csv', file)
+            for item in data:
+                print('\n', item)
+        self.assertEqual(len(data), 6)
+        self.assertDictEqual(data[0], {
+            'source_plate_barcode': 'LLD_4541_C',
+            'destination_plate_barcode': self.BARCODES[0]
+        })
