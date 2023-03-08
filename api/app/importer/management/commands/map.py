@@ -1,5 +1,5 @@
 import traceback
-from importer.mappers import EchoMapper, MeasurementMapper
+from importer.mappers import EchoMapper, M1000Mapper
 from django.core.management.base import BaseCommand
 from friendlylog import colored_logger as log
 import yaml
@@ -36,6 +36,7 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         path = options.get("path")
+
         if options.get("machine") == "echo":
             headers = EchoMapper.DEFAULT_COLUMNS
             headers_file = options.get("headers_file", None)
@@ -49,7 +50,6 @@ class Command(BaseCommand):
                 except yaml.YAMLError as e:
                     log.error(f"Error parsing the YAML file '{headers_file}': {e}")
                     return
-
             try:
                 mapper = EchoMapper()
                 mapper.run(
@@ -62,14 +62,9 @@ class Command(BaseCommand):
                 traceback.print_exc()
 
         elif options.get("machine") == "m1000":
-            mapper = MeasurementMapper()
-            mapper.run(join(path, "*.asc"))
-
-            # data = MeasurementMapper.get_measurement_files(path)
-            # for item in data:
-            #     try:
-            #         MeasurementMapper.parse_measurement_data(
-            #             item['measurement_data'], item['barcode'])
-            #     except Exception as ex:
-            #         log.error(ex)
-            #         traceback.print_exc()
+            try:
+                mapper = M1000Mapper()
+                mapper.run(join(path, "*.asc"))
+            except Exception as ex:
+                log.error(ex)
+                traceback.print_exc()
