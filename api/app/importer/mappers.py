@@ -65,7 +65,8 @@ class EchoMapper(BaseMapper):
 
         for row in reader:
             result.append(
-                {new_key: row[old_key] for new_key, old_key in headers.items()}
+                {new_key: row[old_key] for new_key, old_key in
+                    headers.items() if row[old_key] != None}
                 )
         file.close()
         return result
