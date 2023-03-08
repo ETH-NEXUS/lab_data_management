@@ -1,11 +1,14 @@
 import csv
-import json
 import os
+import re
+from io import TextIOWrapper
 from glob import glob
 from itertools import dropwhile
 from tqdm import tqdm
+from datetime import datetime as dt
+from contextlib import redirect_stderr
 
-import chardet
+from chardet.universaldetector import UniversalDetector
 from core.mapping import Mapping, MappingList
 from core.models import (
     BarcodeSpecification,
@@ -16,12 +19,18 @@ from core.models import (
     PlateDimension,
     PlateMapping,
     Well,
+    MappingError,
 )
 from core.config import Config
 from django.core.files import File
+from django.utils import timezone
 from friendlylog import colored_logger as log
 
 from .helper import row_col_from_name
+
+import logging
+
+logging.getLogger("chardet.charsetprober").setLevel(logging.INFO)
 
 
 class BaseMapper:
@@ -34,20 +43,29 @@ class BaseMapper:
         """Run the mapper"""
         for filename in self.get_files(_glob):
             log.info(f"Processing file {filename}...")
-            with open(filename, "rb") as file:
-                encoding = chardet.detect(file.read()).get("encoding")
+            with redirect_stderr(None):
+                detector = UniversalDetector()
+                with open(filename, "rb") as file:
+                    for line in file:
+                        detector.feed(line)
+                        if detector.done:
+                            break
+                    detector.close()
+                encoding = detector.result.get("encoding")
             with open(filename, "r", encoding=encoding) as file:
-            with open(filename, "rb") as file:
-                encoding = chardet.detect(file.read()).get("encoding")
-            with open(filename, "r", encoding=encoding) as file:
-                data = self.parse(filename, file, **kwargs)
+                ret = self.parse(file, **kwargs)
+                if isinstance(ret, tuple):
+                    data = ret[0]
+                    kwargs.update(ret[1])
+                else:
+                    data = ret
             kwargs.update({"filename": filename})
             self.map(data, **kwargs)
 
-    def parse(self, filename, file, **kwargs) -> dict:
+    def parse(self, file: TextIOWrapper, **kwargs) -> list[dict]:
         raise NotImplementedError
 
-    def map(self, data: dict, **kwargs):
+    def map(self, data: list[dict], **kwargs) -> None:
         raise NotImplementedError
 
 
@@ -62,11 +80,10 @@ class EchoMapper(BaseMapper):
         pattern = list(headers.values())[0]
         return dropwhile(lambda line: pattern not in line, file)
 
-    def parse(self, _, file, **kwargs):
+    def parse(self, file: TextIOWrapper, **kwargs) -> list[dict]:
         headers = kwargs.get("headers", EchoMapper.DEFAULT_COLUMNS)
         file = self.__fast_forward_to_header_row(file, headers)
-        result = []
-        reader = csv.DictReader(file, delimiter=",")
+        results = []
         reader = csv.DictReader(file, delimiter=",")
 
         for row in reader:
@@ -90,12 +107,12 @@ class EchoMapper(BaseMapper):
             ):
                 continue
 
-            result.append(
+            results.append(
                 {new_key: row[old_key] for new_key, old_key in headers.items()}
             )
-        return result
+        return results
 
-    def map(self, data: list[dict], **kwargs):
+    def map(self, data: list[dict], **kwargs) -> None:
         def __debug(msg):
             if kwargs.get("debug"):
                 log.debug(msg)
@@ -113,9 +130,9 @@ class EchoMapper(BaseMapper):
             total=len(data),
         ) as mbar:
             for entry in data:
-                source_plate_barcode = data[0]["source_plate_barcode"]
-                destination_plate_name = data[0]["destination_plate_name"]
-                destination_plate_barcode = data[0]["destination_plate_barcode"]
+                source_plate_barcode = entry["source_plate_barcode"]
+                destination_plate_name = entry["destination_plate_name"]
+                destination_plate_barcode = entry["destination_plate_barcode"]
 
                 if source_plate_barcode in plates:
                     source_plate = plates.get(source_plate_barcode)
@@ -125,7 +142,7 @@ class EchoMapper(BaseMapper):
                         plates[source_plate_barcode] = source_plate
                     except Plate.DoesNotExist:
                         log.warning(
-                            f"""Source plate with barcode {data[0]['source_plate_barcode']} does not exist.
+                            f"""Source plate with barcode {entry['source_plate_barcode']} does not exist.
                             I try again later..."""
                         )
                         queue.append(entry)
@@ -219,154 +236,191 @@ class EchoMapper(BaseMapper):
             raise ValueError(f"No plate dimension found: {rows}x{cols}")
 
 
-class MeasurementMapper(BaseMapper):
-    def parse(self, filename, file, **kwargs):
-        log.info(f"Read file  {filename} ")
-        barcode_delimiter_index = filename.find("_")
-        barcode = filename[barcode_delimiter_index + 1 : -4]
-        barcode_delimiter_index = filename.find("_")
-        barcode = filename[barcode_delimiter_index + 1 : -4]
-        data = file.readlines()
-        metadata_start_index = self.__find_metadata_start_index(data)
-        metadata_list = self.__parse_measurement_metadata(data[metadata_start_index:])
-        metadata_list = self.__parse_measurement_metadata(data[metadata_start_index:])
+class M1000Mapper(BaseMapper):
+    RE_FILENAME = r"(?P<date>[0-9]+)-(?P<time>[0-9]+)_(?P<barcode>[^\.]+)\.asc"
+    RE_POS = r"^(?P<pos>[A-Z]+[0-9]+)\t(?P<rest>.+)\t$"
+    RE_NUM = r"[0-9\.]+"
+    RE_DATE_OF_MEASUREMENT = r"^Date of measurement: (?P<date>[^\/]+)\/Time of measurement: (?P<time>[0-9:]+)$"
+    RE_PLATE_DESCRIPTION = r"^Plate Description: (?P<description>.+)$"
+    RE_META_DATA = r"^    (?P<key>[^:]+): (?P<value>.+)$"
 
-        return {
-            "barcode": barcode,
-            "filename": filename,
-            "measurement_data": {
-            "barcode": barcode,
-            "filename": filename,
-            "measurement_data": {
-                "values": data[:metadata_start_index],
-                "metadata": metadata_list,
-            },
-                "metadata": metadata_list,
-            },
-        }
-
-    def map(self, data: dict, **kwargs):
-        try:
-            plate = Plate.objects.get(barcode=data["barcode"])
-        except Plate.DoesNotExist:
-            raise ValueError(
-                f"Plate with barcode {data['barcode']} not found. "
-                f"Please add plates to the experiment."
-            )
+    def parse(self, file: TextIOWrapper, **kwargs) -> list[dict]:
+        match = re.match(self.RE_FILENAME, os.path.basename(file.name))
+        if match:
+            barcode = match.group("barcode")
         else:
-            values = data["measurement_data"]["values"]
-
-            # We drop the first line if it contains 'A1' because it is the
-            # header
-            if "A1" in values[0].strip().split("\t"):
-                first_line = values[0].strip().split("\t")
-            else:
-                first_line = values[1].strip().split("\t")
-                first_line = values[1].strip().split("\t")
-            indices = self.__find_indices(first_line)
-            metadata_list = data["measurement_data"]["metadata"]
-            for line in values:
-                try:
-                    line_list = line.strip().split("\t")
-                    line_list = line.strip().split("\t")
-
-                    well_position_str = line_list[indices[0]]
-                    well_position = plate.dimension.position(
-                        well_position_str.strip().lstrip()
-                    )
-                        well_position_str.strip().lstrip()
-                    )
-                    identifier = line_list[indices[1]]
-                    values = line_list[2:]
-                    well = Well.objects.filter(
-                        position=well_position, plate=plate
-                    ).first()
-
-                    if well:
-                        for index, value in enumerate(values):
-                            measurement = Measurement.objects.create(
-                                well=well,
-                                value=value,
-                                identifier=identifier,
-                                well=well,
-                                value=value,
-                                identifier=identifier,
-                                meta=metadata_list[index][0],
-                                feature=metadata_list[index][1],
-                                feature=metadata_list[index][1],
-                            )
-                            measurement.save()
-                            log.debug(
-                                f"Succesfully created measurement for well "
-                                f"{well_position} with value {value}"
-                            )
-                except (ValueError, Well.DoesNotExist) as e:
-                    log.error(f"Error processing line: {line.strip()}. {str(e)}")
-                    log.error(f"Error processing line: {line.strip()}. {str(e)}")
-
-    def __parse_measurement_metadata(self, metadata):
-        """
-        Creates metadata objects for every value of measurement.
-        """
-        metadata_objects_list = []
-        dict_list = [{}]
-        measurement_feature_name = "unknown"
-        measurement_feature_name = "unknown"
-        for index, line in enumerate(metadata):
-            if ":" in line:
-                key, value = line.split(":", 1)
-                key, value = line.split(":", 1)
-                key = key.strip().lstrip()
-                value = value.strip().lstrip()
-                if key in dict_list[-1]:
-                    dict_list.append({})
-                dict_list[-1][key] = value
-                if key == "Range":
-                    measurement_feature_name = metadata[index + 1].strip().lstrip()
-                if key == "Range":
-                    measurement_feature_name = metadata[index + 1].strip().lstrip()
-        measurement_feature = MeasurementFeature.objects.get_or_create(
-            name=measurement_feature_name
-        )[0]
-
-        for item in dict_list:
-            measurement_metadata = MeasurementMetadata.objects.create(
-                data=json.dumps(item)
+            raise MappingError(
+                f"File name {os.path.basename(file.name)} does not much conventions."
             )
-            log.debug("Successfully created metadata")
-            metadata_objects_list.append((measurement_metadata, measurement_feature))
-        return metadata_objects_list
 
-    def __find_indices(self, line_list: list[str]) -> tuple[int, int]:
-        """
-        find, which column has the identifier and which has the well (we
-        do it by checking the first line and finding the index of 'A1'
-        we can not use regular expressions because there are identifiers
-        like 'NC1' which is the same pattern as by well names
-        """
-        well_index = 0
-        identifier_index = 1
-        for index, item in enumerate(line_list):
-            # If the item is a numeric character or string, skip it, because
-            # it is a value
-            if item.isnumeric():
-                continue
-            if item == "A1":
-            if item == "A1":
-                well_index = index
+        results = []
+        measurement_date = timezone.now()
+        plate_description = None
+        meta_data = [{}]
+        meta_data_idx = 0
+        for line in file:
+            if match := re.match(self.RE_POS, line):
+                parts = match.group("rest").split("\t")
+                values = []
+                identifier = None
+                for part in parts:
+                    if re.match(self.RE_NUM, part):
+                        values.append(float(part))
+                    else:
+                        identifier = part
+                results.append(
+                    {
+                        "position": match.group("pos"),
+                        "values": values,
+                        "identifier": identifier,
+                    }
+                )
+            elif match := re.match(self.RE_DATE_OF_MEASUREMENT, line):
+                measurement_date = dt.strptime(
+                    f"{match.group('date')} {match.group('time')}", "%Y-%m-%d %H:%M:%S"
+                )
+            elif match := re.match(self.RE_PLATE_DESCRIPTION, line):
+                plate_description = match.group("description")
+            elif match := re.match(self.RE_META_DATA, line):
+                if match.group("key") in meta_data[meta_data_idx]:
+                    meta_data_idx += 1
+                    meta_data.append({})
+                meta_data[meta_data_idx][match.group("key")] = match.group("value")
             else:
-                identifier_index = index
-        return well_index, identifier_index
+                pass
 
-    def __find_metadata_start_index(self, measurement_data: list[str]) -> int:
-        """
-        in the lines of the measurement file, finds the index of the line where
-        metadata starts
-        """
-        index = -1
-        for index, line in enumerate(measurement_data):
-            if line.startswith("Date of measurement"):
-            if line.startswith("Date of measurement"):
-                index = index
-                break
-        return index
+        kwargs.update(
+            {
+                "barcode": barcode,
+                "measurement_date": measurement_date,
+                "plate_description": plate_description,
+                "meta_data": meta_data,
+            }
+        )
+        return results, kwargs
+
+    def map(self, data: list[dict], **kwargs) -> None:
+        barcode = kwargs.get("barcode")
+        try:
+            plate = Plate.objects.get(barcode=barcode)
+        except Plate.DoesNotExist:
+            raise ValueError(f"Plate with barcode {barcode} does not exist.")
+
+        with tqdm(
+            desc="Processing measurements",
+            unit="measurement",
+            total=len(data),
+        ) as mbar:
+            for entry in data:
+                position = plate.dimension.position(entry.get("position"))
+                well = plate.well_at(position)
+                if not well:
+                    well = Well.objects.create(plate=plate, position=position)
+
+                for idx, value in enumerate(entry.get("values")):
+                    feature, _ = MeasurementFeature.objects.get_or_create(
+                        abbrev=kwargs.get("meta_data")[idx].get("Label")
+                    )
+                    metadata, _ = MeasurementMetadata.objects.get_or_create(
+                        data=kwargs.get("meta_data")[idx]
+                    )
+                    # log.debug(f"Add measurement {plate.barcode}{well.hr_position}: {value}")
+                    Measurement.objects.update_or_create(
+                        well=well,
+                        feature=feature,
+                        defaults={
+                            "value": value,
+                            "identifier": entry.get("identifier"),
+                            "meta": metadata,
+                        },
+                    )
+                mbar.update(1)
+
+            # try:
+            #     line_list = line.strip().split("\t")
+
+            #     well_position_str = line_list[indices[0]]
+            #     well_position = plate.dimension.position(
+            #         well_position_str.strip().lstrip()
+            #     )
+            #     identifier = line_list[indices[1]]
+            #     values = line_list[2:]
+            #     well = Well.objects.filter(position=well_position, plate=plate).first()
+
+            #     if well:
+            #         for index, value in enumerate(values):
+            #             measurement = Measurement.objects.create(
+            #                 well=well,
+            #                 value=value,
+            #                 identifier=identifier,
+            #                 meta=metadata_list[index][0],
+            #                 feature=metadata_list[index][1],
+            #             )
+            #             measurement.save()
+            #             log.debug(
+            #                 f"Succesfully created measurement for well "
+            #                 f"{well_position} with value {value}"
+            #             )
+            # except (ValueError, Well.DoesNotExist) as e:
+            #     log.error(f"Error processing line: {line.strip()}. {str(e)}")
+
+    # def __parse_measurement_metadata(self, metadata):
+    #     """
+    #     Creates metadata objects for every value of measurement.
+    #     """
+    #     metadata_objects_list = []
+    #     dict_list = [{}]
+    #     measurement_feature_name = "unknown"
+    #     for index, line in enumerate(metadata):
+    #         if ":" in line:
+    #             key, value = line.split(":", 1)
+    #             key = key.strip().lstrip()
+    #             value = value.strip().lstrip()
+    #             if key in dict_list[-1]:
+    #                 dict_list.append({})
+    #             dict_list[-1][key] = value
+    #             if key == "Range":
+    #                 measurement_feature_name = metadata[index + 1].strip().lstrip()
+    #     measurement_feature = MeasurementFeature.objects.get_or_create(
+    #         name=measurement_feature_name
+    #     )[0]
+
+    #     for item in dict_list:
+    #         measurement_metadata = MeasurementMetadata.objects.create(
+    #             data=json.dumps(item)
+    #         )
+    #         log.debug("Successfully created metadata")
+    #         metadata_objects_list.append((measurement_metadata, measurement_feature))
+    #     return metadata_objects_list
+
+    # def __find_indices(self, line_list: list[str]) -> tuple[int, int]:
+    #     """
+    #     find, which column has the identifier and which has the well (we
+    #     do it by checking the first line and finding the index of 'A1'
+    #     we can not use regular expressions because there are identifiers
+    #     like 'NC1' which is the same pattern as by well names
+    #     """
+    #     well_index = 0
+    #     identifier_index = 1
+    #     for index, item in enumerate(line_list):
+    #         # If the item is a numeric character or string, skip it, because
+    #         # it is a value
+    #         if item.isnumeric():
+    #             continue
+    #         if item == "A1":
+    #             well_index = index
+    #         else:
+    #             identifier_index = index
+    #     return well_index, identifier_index
+
+    # def __find_metadata_start_index(self, measurement_data: list[str]) -> int:
+    #     """
+    #     in the lines of the measurement file, finds the index of the line where
+    #     metadata starts
+    #     """
+    #     index = -1
+    #     for index, line in enumerate(measurement_data):
+    #         if line.startswith("Date of measurement"):
+    #             index = index
+    #             break
+    #     return index
