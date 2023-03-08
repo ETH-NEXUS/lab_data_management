@@ -46,6 +46,11 @@ const selectedMappingFileAmountColumn = ref<string | undefined>()
 const copyPlateDialog = ref<boolean>(false)
 const copyPlateAmount = ref<number>(0)
 
+const applyTemplateDialog = ref<boolean>(false)
+const selectedTemplatePlateId = ref<number>()
+const templatePlateOptions = ref<Array<PlateLabelValue>>([])
+const filteredTemplatePlateOptions = ref<Array<PlateLabelValue>>([])
+
 onMounted(async () => {
   loading.value = true
   try {
@@ -149,6 +154,26 @@ const filterTargetPlates = (query: string, update: (f: () => void) => void) => {
       a.label.localeCompare(b.label)
     )
   })
+}
+
+const filterTemplatePlates = (query: string, update: (f: () => void) => void) => {
+  console.warn('Not implemented')
+  // TODO: Need to be implemened
+  // update(() => {
+  //   if (plate.value?.experiment) {
+  //     filteredTargetPlateBarcodeOptions.value = targetPlateBarcodeOptions.value.filter(m => m.experiment)
+  //   } else {
+  //     filteredTargetPlateBarcodeOptions.value = targetPlateBarcodeOptions.value
+  //   }
+  //   if (query.length > 1) {
+  //     filteredTargetPlateBarcodeOptions.value = targetPlateBarcodeOptions.value.filter(m =>
+  //       m.label.includes(query)
+  //     )
+  //   }
+  //   filteredTargetPlateBarcodeOptions.value = filteredTargetPlateBarcodeOptions.value.sort((a, b) =>
+  //     a.label.localeCompare(b.label)
+  //   )
+  // })
 }
 
 const mappingFileUploaded = ({files, xhr}: {files: readonly File[]; xhr: {response: string}}) => {
@@ -277,6 +302,12 @@ const formatBarcode = (barcode: string | undefined) => {
                 icon="o_copy"
                 color="secondary"
                 @click="() => (copyPlateDialog = true)" />
+              <q-btn
+                class="q-ml-xs"
+                :label="t('action.apply_template')"
+                icon="o_apply"
+                color="secondary"
+                @click="() => (applyTemplateDialog = true)" />
             </div>
           </div>
         </template>
@@ -444,6 +475,41 @@ const formatBarcode = (barcode: string | undefined) => {
             reverse-fill-mask
             :hint="t('hint.amount_to_transfer')"
             input-class="text-right" />
+        </q-card-body>
+        <q-card-actions align="right" class="bg-white text-teal">
+          <q-btn flat :label="t('label.cancel')" v-close-popup />
+          <q-btn
+            flat
+            :label="t('label.copy')"
+            :disabled="!selectedTargetPlateId || copyPlateAmount <= 0"
+            v-close-popup
+            @click="copyPlate" />
+        </q-card-actions>
+      </q-card>
+    </q-dialog>
+    <q-dialog v-model="applyTemplateDialog" persistent>
+      <q-card style="width: 700px; max-width: 80vw" class="q-px-sm">
+        <q-card-body class="q-gutter-y-sm">
+          <q-select
+            filled
+            v-model="selectedTemplatePlateId"
+            emit-value
+            map-options
+            use-input
+            input-debounce="0"
+            :label="t('label.template_plate')"
+            :options="filteredTemplatePlateOptions"
+            @filter="filterTemplatePlates"
+            behavior="menu"
+            :hint="t('hint.template_plate')">
+            <template v-slot:no-option>
+              <q-item>
+                <q-item-section class="text-grey">
+                  {{ t('message.no_plates_found') }}
+                </q-item-section>
+              </q-item>
+            </template>
+          </q-select>
         </q-card-body>
         <q-card-actions align="right" class="bg-white text-teal">
           <q-btn flat :label="t('label.cancel')" v-close-popup />
