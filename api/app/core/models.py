@@ -233,28 +233,41 @@ class Plate(TimeTrackedModel):
         """Copy a plate. Same as map but 1-to-1"""
         self.map(MappingList.one_to_one(self.dimension.num_wells, amount), target)
 
+    def apply_template(self, template_plate: "Plate"):
+        """
+        Applies a template plate to this plate
+        """
+        if self.num_wells != template_plate.num_wells:
+            raise MappingError(
+                f"{_('Template plate must have the same amount of wells')}: {self.num_wells} != {template_plate.num_wells}"
+            )
+        for position in range(template_plate.num_wells):
+            template_well = template_plate.well_at(position)
+            well = self.well_at(position)
+            # TODO: At the moment we only map the type
+            well.type = template_well.type
+
     def map(self, mappingList: MappingList, target: "Plate"):
         """
         Maps this plate to another plate using a mapping list.
         """
         with transaction.atomic():
             for mapping in mappingList:
-                try:
-                    from_well = Well.objects.get(plate=self, position=mapping.from_pos)
-                except ObjectDoesNotExist:
-                    from_well = None
+                from_well = self.well_at(mapping.from_pos)
                 # We only need to map wells that are not empty
                 if from_well:
                     if not target.dimension:
                         raise MappingError(_("Target plate has no dimension assigned"))
                     if mapping.to_pos >= target.num_wells:
                         raise MappingError(_("Target plate too small"))
+
                     well, created = Well.objects.update_or_create(
                         position=mapping.to_pos,
                         plate=target,
                         defaults={"status": mapping.status},
                     )
                     if created:
+                        # To create an id
                         well.save()
                     for compound in from_well.compounds.all():
                         # The amount is a suggestion derived from the distribution
@@ -418,14 +431,15 @@ class WellWithdrawal(TimeTrackedModel):
 
 
 class MeasurementFeature(models.Model):
+    abbrev = models.CharField(max_length=20, unique=True)
     name = models.CharField(
         max_length=50, null=True, blank=True, verbose_name="measurement"
     )
-    abbrev = models.CharField(max_length=4, null=True, blank=True)
     unit = models.CharField(max_length=10, null=True, blank=True)
 
 
 class MeasurementMetadata(models.Model):
+    # TODO: Add a hashing feature to only keep same measurement once
     data = models.JSONField()
 
 
@@ -464,30 +478,16 @@ class PlateMapping(TimeTrackedModel):
     target_plate = models.ForeignKey(
         Plate, on_delete=models.CASCADE, related_name="mapped_from_plates"
     )
-    from_column = models.CharField(max_length=50, null=True)
-    to_column = models.CharField(max_length=50, null=True)
     mapping_file = models.FileField(null=True)
 
+    # If we map from csv
+    from_column = models.CharField(max_length=50, null=True)
+    to_column = models.CharField(max_length=50, null=True)
     amount_column = models.CharField(max_length=50, null=True)
     delimiter = models.CharField(max_length=1, default=",", null=True)
     quotechar = models.CharField(max_length=1, default='"', null=True)
 
+    # If we copy a plate
     amount = models.FloatField(
         default=None, validators=[MinValueValidator(0)], null=True
     )
-    #
-    # def save(self, *args, **kwargs):
-    #     if not self.pk:
-    #         # Object is created: We apply the mapping to the source plate.
-    #         if self.mapping_file and self.from_column and self.to_column:
-    #             self.source_plate.map(
-    #                 MappingList.from_csv(self.mapping_file.name,
-    #                                      self.from_column,
-    #                                      self.to_column,
-    #                                      self.amount_column,
-    #                                      self.delimiter,
-    #                                      self.quotechar), self.target_plate)
-    #         else:
-    #             self.source_plate.copy(self.target_plate, self.amount)
-    #     # TODO: What do we do on an update or delete??
-    #     super().save(*args, **kwargs)
