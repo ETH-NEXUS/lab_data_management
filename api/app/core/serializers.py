@@ -15,6 +15,7 @@ from .models import (
     MappingError,
     WellType,
     BarcodeSpecification,
+    MappingList,
 )
 
 
@@ -222,6 +223,31 @@ class ProjectSerializer(serializers.ModelSerializer):
 class PlateMappingSerializer(UndefinedAffineModelSerializer):
     def save(self, **kwargs):
         try:
+            if not self.validated_data["id"]:
+                # Object is created: We apply the mapping to the source plate.
+                mapping_file = self.validated_data["mapping_file"]
+                from_column = self.validated_data["from_column"]
+                to_column = self.validated_data["to_column"]
+                amount_column = self.validated_data["amount_column"]
+                delimiter = self.validated_data["delimiter"]
+                quotechar = self.validated_data["quotechar"]
+                sourcePlate = Plate.objects.get(pk=self.validated_data["source_plate"])
+                targetPlate = Plate.objects.get(pk=self.validated_data["target_plate"])
+                if mapping_file and from_column and to_column:
+                    sourcePlate.map(
+                        MappingList.from_csv(
+                            mapping_file["name"],
+                            from_column,
+                            to_column,
+                            amount_column,
+                            delimiter,
+                            quotechar,
+                        ),
+                        targetPlate,
+                    )
+                else:
+                    sourcePlate.copy(targetPlate, self.validated_data["amount"])
+            # TODO: What do we do on an update or delete??
             return super().save(**kwargs)
         except MappingError as ex:
             raise serializers.ValidationError({"detail": ex})
