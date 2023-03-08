@@ -62,7 +62,7 @@ class BaseMapper:
             kwargs.update({"filename": filename})
             self.map(data, **kwargs)
 
-    def parse(self, file: TextIOWrapper, **kwargs) -> list[dict]:
+    def parse(self, file: TextIOWrapper, **kwargs):
         raise NotImplementedError
 
     def map(self, data: list[dict], **kwargs) -> None:
@@ -321,6 +321,7 @@ class M1000Mapper(BaseMapper):
                     feature, _ = MeasurementFeature.objects.get_or_create(
                         abbrev=kwargs.get("meta_data")[idx].get("Label")
                     )
+                    # TODO: Prove senseless duplication
                     metadata, _ = MeasurementMetadata.objects.get_or_create(
                         data=kwargs.get("meta_data")[idx]
                     )
@@ -335,92 +336,3 @@ class M1000Mapper(BaseMapper):
                         },
                     )
                 mbar.update(1)
-
-            # try:
-            #     line_list = line.strip().split("\t")
-
-            #     well_position_str = line_list[indices[0]]
-            #     well_position = plate.dimension.position(
-            #         well_position_str.strip().lstrip()
-            #     )
-            #     identifier = line_list[indices[1]]
-            #     values = line_list[2:]
-            #     well = Well.objects.filter(position=well_position, plate=plate).first()
-
-            #     if well:
-            #         for index, value in enumerate(values):
-            #             measurement = Measurement.objects.create(
-            #                 well=well,
-            #                 value=value,
-            #                 identifier=identifier,
-            #                 meta=metadata_list[index][0],
-            #                 feature=metadata_list[index][1],
-            #             )
-            #             measurement.save()
-            #             log.debug(
-            #                 f"Succesfully created measurement for well "
-            #                 f"{well_position} with value {value}"
-            #             )
-            # except (ValueError, Well.DoesNotExist) as e:
-            #     log.error(f"Error processing line: {line.strip()}. {str(e)}")
-
-    # def __parse_measurement_metadata(self, metadata):
-    #     """
-    #     Creates metadata objects for every value of measurement.
-    #     """
-    #     metadata_objects_list = []
-    #     dict_list = [{}]
-    #     measurement_feature_name = "unknown"
-    #     for index, line in enumerate(metadata):
-    #         if ":" in line:
-    #             key, value = line.split(":", 1)
-    #             key = key.strip().lstrip()
-    #             value = value.strip().lstrip()
-    #             if key in dict_list[-1]:
-    #                 dict_list.append({})
-    #             dict_list[-1][key] = value
-    #             if key == "Range":
-    #                 measurement_feature_name = metadata[index + 1].strip().lstrip()
-    #     measurement_feature = MeasurementFeature.objects.get_or_create(
-    #         name=measurement_feature_name
-    #     )[0]
-
-    #     for item in dict_list:
-    #         measurement_metadata = MeasurementMetadata.objects.create(
-    #             data=json.dumps(item)
-    #         )
-    #         log.debug("Successfully created metadata")
-    #         metadata_objects_list.append((measurement_metadata, measurement_feature))
-    #     return metadata_objects_list
-
-    # def __find_indices(self, line_list: list[str]) -> tuple[int, int]:
-    #     """
-    #     find, which column has the identifier and which has the well (we
-    #     do it by checking the first line and finding the index of 'A1'
-    #     we can not use regular expressions because there are identifiers
-    #     like 'NC1' which is the same pattern as by well names
-    #     """
-    #     well_index = 0
-    #     identifier_index = 1
-    #     for index, item in enumerate(line_list):
-    #         # If the item is a numeric character or string, skip it, because
-    #         # it is a value
-    #         if item.isnumeric():
-    #             continue
-    #         if item == "A1":
-    #             well_index = index
-    #         else:
-    #             identifier_index = index
-    #     return well_index, identifier_index
-
-    # def __find_metadata_start_index(self, measurement_data: list[str]) -> int:
-    #     """
-    #     in the lines of the measurement file, finds the index of the line where
-    #     metadata starts
-    #     """
-    #     index = -1
-    #     for index, line in enumerate(measurement_data):
-    #         if line.startswith("Date of measurement"):
-    #             index = index
-    #             break
-    #     return index
