@@ -19,3 +19,6 @@ format:
 	@find ./api/app -type f -name '*.py' ! -path '*/migrations/*' -exec black '{}' \;
 	@find ./api/app -type f -name '*.py' ! -path '*/migrations/*' -exec autoflake --in-place --remove-unused-variables --remove-all-unused-imports '{}' \;
 	@flake8 ./api/app --exclude */migrations/*
+
+deploy: env_var
+	@./scripts/deploy.sh
