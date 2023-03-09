@@ -30,7 +30,7 @@ services:
       - ./api/static:/vol/web/static:z
       - ./api/media:/vol/web/media:z
       - smnrp-data:/etc/letsencrypt
-      - /etc/pki/tls/certs/DCcerts2023/ldm.nexus.ethz.ch.crt.pem:/etc/letsencrypt/live/ldm.nexus.ethz.ch/fullchain.pem:ro
+      - /etc/pki/tls/certs/DCcerts2023/ldm.nexus.ethz.ch.chain.crt.pem:/etc/letsencrypt/live/ldm.nexus.ethz.ch/fullchain.pem:ro
       - /etc/pki/tls/private/key2023/ldm.nexus.ethz.ch.privkey.pem:/etc/letsencrypt/live/ldm.nexus.ethz.ch/privatekey.pem:ro
 
     ports:
