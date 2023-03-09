@@ -30,6 +30,8 @@ services:
       - ./api/static:/vol/web/static:z
       - ./api/media:/vol/web/media:z
       - smnrp-data:/etc/letsencrypt
+      - /etc/pki/tls/certs/postfix.pem:/etc/letsencrypt/live/ldm.nexus.ethz.ch/fullchain.pem:ro
+      - /etc/pki/tls/private/postfix.pem:/etc/letsencrypt/live/ldm.nexus.ethz.ch/privatekey.pem:ro
 
     ports:
       - "80:80"
