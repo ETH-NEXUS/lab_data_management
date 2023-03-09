@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import {computed, defineProps, defineEmits, PropType} from 'vue'
+import {computed, defineProps, defineEmits, PropType, ref, onMounted} from 'vue'
 import {Plate, Well} from './models'
 import {positionFromRowCol} from '../helpers/plate'
 
@@ -9,6 +9,14 @@ const props = defineProps({
     required: true,
   },
 })
+
+onMounted(() => {
+  measurementsValuesIndices.value = findNumberOfMeasurements()
+})
+
+const currentMeasurementValueIndex = ref<number>(0)
+const showHeatmap = ref<boolean>(false)
+const measurementsValuesIndices = ref<number[]>([])
 
 const emit = defineEmits(['well-selected'])
 
@@ -38,17 +46,63 @@ const wells = computed(() => {
   return _wells
 })
 
+const maxMeasurement = computed(() => {
+  return findMaxMeasurement()
+})
+
+const minMeasurement = computed(() => {
+  return findMinMesurement()
+})
+
 const percentageToHsl = (percentage: number, hue0: number, hue1: number) => {
   // if percentage is not given (-1) we return a transparent color
   if (percentage === -1) {
     return 'rgba(255,255,255,0)'
   }
-  var hue = percentage * (hue1 - hue0) + hue0
+  let hue = percentage * (hue1 - hue0) + hue0
   return 'hsl(' + hue + ', 100%, 50%)'
+}
+
+const findNumberOfMeasurements = () => {
+  const {wells = []} = props.plate
+  const maxMeasurements = Math.max(...wells.map(({measurements = []}) => measurements.length), 0)
+  return Array.from({length: maxMeasurements}, (_, index) => index)
+}
+
+const findMaxMeasurement = () => {
+  return props.plate.wells?.reduce((max, {measurements = []}) => {
+    return Math.max(max, ...measurements.map(m => m.value))
+  }, 0)
+}
+const findMinMesurement = () => {
+  return props.plate.wells?.reduce((min, {measurements = []}) => {
+    return Math.min(min, ...measurements.map(m => m.value))
+  }, 0)
+}
+
+const findMeasurementPercentage = (value: number) => {
+  if (minMeasurement.value !== undefined && maxMeasurement.value !== undefined && value) {
+    return (value - minMeasurement.value) / (maxMeasurement.value - minMeasurement.value)
+  }
+  return 0
+}
+
+const toggleHeatmap = () => {
+  showHeatmap.value = !showHeatmap.value
 }
 </script>
 
 <template>
+  {{ measurementsValuesIndices }}
+  {{ currentMeasurementValueIndex }}
+  <div v-if="measurementsValuesIndices.length > 0">
+    <q-btn flat color="primary" @click="toggleHeatmap">Show Heatmap</q-btn>
+  </div>
+
+  <!--  <div class="q-pa-lg">-->
+  <!--    <q-option-group :options="measurementsValuesIndices" color="primary"></q-option-group>-->
+  <!--  </div>-->
+
   <div>
     <table v-if="props.plate">
       <tr>
@@ -61,7 +115,21 @@ const percentageToHsl = (percentage: number, hue0: number, hue1: number) => {
         <th>
           {{ alpha[row] }}
         </th>
+
         <td
+          :style="{
+            backgroundColor: showHeatmap
+              ? percentageToHsl(
+                  findMeasurementPercentage(
+                    wells[row][col]?.measurements[currentMeasurementValueIndex]?.value
+                      ? wells[row][col]?.measurements[currentMeasurementValueIndex].value
+                      : 0
+                  ),
+                  120,
+                  0
+                )
+              : 'transparent',
+          }"
           :key="`cols${col}`"
           v-for="(_, col) of props.plate.dimension.cols"
           @click="
