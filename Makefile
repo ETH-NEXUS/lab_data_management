@@ -22,3 +22,7 @@ format:
 
 deploy: env_var
 	@./scripts/deploy.sh
+
+
+ps:
+	@docker ps --format "$(FORMAT)"
