@@ -11,7 +11,10 @@ services:
     command: >
       bash -c "\
         yarn install
+        rm -rf /app/dist/*
         yarn run build
+        mv /app/dist/spa/* /app/dist/.
+        rm -rf /app/dist/spa
       "
   api:
     environment:
