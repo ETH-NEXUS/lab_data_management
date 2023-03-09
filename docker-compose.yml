@@ -8,7 +8,7 @@ services:
       context: ui
     volumes:
       - ./ui/app:/app
-      # - "web_root:/app/dist:z"
+      - "web_root:/app/dist:z"
     hostname: ui
     restart: "no"
     env_file: .env
