@@ -305,3 +305,4 @@ temp/
 
 Pipfile
 .sass-cache
+.quasar
