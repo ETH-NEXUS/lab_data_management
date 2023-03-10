@@ -1,5 +1,7 @@
 import {WellInfo} from './../components/models'
 import {defineStore} from 'pinia'
+import {Palette} from 'components/data'
+import {ref} from 'vue'
 
 interface PlatePage {
   splitter: number
@@ -26,6 +28,8 @@ interface Settings {
   libraryNavigationTree: NavigationTree
   templateNavigationTree: NavigationTree
   wellDetails: WellDetails
+  palette: Palette
+  showHeatmap: boolean
 }
 
 export const useSettingsStore = defineStore('settings', {
@@ -53,6 +57,9 @@ export const useSettingsStore = defineStore('settings', {
       wellDetails: {
         showStructure: true,
       },
+      palette: {value: 'orange', label: 'Palette 1', from: '#fff7bc', to: '#993404'},
+
+      showHeatmap: false,
     } as Settings),
   persist: {
     enabled: true,
