@@ -90,18 +90,22 @@ const findMeasurementPercentage = (value: number) => {
 const toggleHeatmap = () => {
   showHeatmap.value = !showHeatmap.value
 }
+
+const changeCurrentValueIndex= (n: number) => {
+  currentMeasurementValueIndex.value = n
+}
+
 </script>
 
 <template>
-  {{ measurementsValuesIndices }}
-  {{ currentMeasurementValueIndex }}
-  <div v-if="measurementsValuesIndices.length > 0">
-    <q-btn flat color="primary" @click="toggleHeatmap">Show Heatmap</q-btn>
+
+  <div v-if="measurementsValuesIndices.length > 0" class="q-pa-sm">
+    <q-btn flat color="primary" @click="toggleHeatmap" >Show Heatmap</q-btn>
+        <div class="q-pa-sm" v-if="measurementsValuesIndices.length > 1">
+      <p  @click="changeCurrentValueIndex(n)" class="text-blue-5 cursor-pointer" v-for="n of measurementsValuesIndices" :key="`index_${n}`">>> {{`Value ${n}`}} </p>
+    </div>
   </div>
 
-  <!--  <div class="q-pa-lg">-->
-  <!--    <q-option-group :options="measurementsValuesIndices" color="primary"></q-option-group>-->
-  <!--  </div>-->
 
   <div>
     <table v-if="props.plate">
