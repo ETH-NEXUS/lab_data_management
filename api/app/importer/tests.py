@@ -1,18 +1,16 @@
 from copy import deepcopy
 from os import makedirs
 from os.path import join
+from io import StringIO
 from pathlib import Path
 
 from django.test import TestCase
 
 from core.models import PlateDimension
 from .helper import sameSchema, row_col_from_wells, closest, row_col_from_name
-from .mappers import BaseMapper
+from .mappers import BaseMapper, M1000Mapper
 
-from pathlib import Path
 from core.helper import posToAlphaChar
-from core.models import PlateDimension
-from .mappers import BaseMapper, EchoMapper
 
 
 class HelperTest(TestCase):
@@ -26,8 +24,6 @@ class HelperTest(TestCase):
         a = {"a": {"b": {"c": "xxx"}, "x": {"y": 111}}}
         a = {"a": {"b": {"c": "xxx"}, "x": {"y": 111}}}
         b = deepcopy(a)
-        del b["a"]["x"]["y"]
-        b["a"]["x"]["z"] = "changed"
         del b["a"]["x"]["y"]
         b["a"]["x"]["z"] = "changed"
         self.assertFalse(sameSchema(a, b))
@@ -87,9 +83,7 @@ class ConvertPositionToIndexTests(TestCase):
 
     def test_single_letter(self):
         """
-        """
         Test a position with a single-letter row label
-        """
         """
 
         position = "B3"
@@ -99,9 +93,7 @@ class ConvertPositionToIndexTests(TestCase):
 
     def test_first_column(self):
         """
-        """
         Test a position in the first column
-        """
         """
 
         position = "A1"
@@ -110,9 +102,7 @@ class ConvertPositionToIndexTests(TestCase):
 
     def test_random_column(self):
         """
-        """
         Test a position in the last column
-        """
         """
 
         position = "D3"
@@ -121,9 +111,7 @@ class ConvertPositionToIndexTests(TestCase):
 
     def test_last_column(self):
         """
-        """
         Test a position in the last column
-        """
         """
 
         position = "AA11"
@@ -132,9 +120,7 @@ class ConvertPositionToIndexTests(TestCase):
 
     def test_index_to_letter(self):
         """
-        """
         Test a position in the last column
-        """
         """
 
         index = 27
@@ -168,11 +154,6 @@ class MapperTests(TestCase):
             with open(join(_dir, "ID-123-transfer-Echo_01_123.csv"), "w") as ef:
                 ef.write(
                     f"""
-            Path(join(_dir, "something.csv")).touch()
-            Path(join(_dir, "dfg-transfer-file.tsv")).touch()
-            with open(join(_dir, "ID-123-transfer-Echo_01_123.csv"), "w") as ef:
-                ef.write(
-                    f"""
                     Run ID,14618
                     Run Date/Time,02/09/2021 10:30:32
                     Application Name,
@@ -189,8 +170,6 @@ class MapperTests(TestCase):
                     384LDV_DMSO,LLD_4541_C,384LDV_DMSO,A13,0,N/A,Corning_384_3577,{barcode},A13,0,N/A,N/A,30,30,,2.013,9.983,98.519
                     384LDV_DMSO,LLD_4541_C,384LDV_DMSO,A14,0,N/A,Corning_384_3577,{barcode},A14,0,N/A,N/A,30,30,,2.001,9.973,99.701
                     384LDV_DMSO,LLD_4541_C,384LDV_DMSO,A15,0,N/A,Corning_384_3577,{barcode},A15,0,N/A,N/A,30,30,,1.964,9.793,99.643
-                    """
-                )
                     """
                 )
 
@@ -210,3 +189,75 @@ class MapperTests(TestCase):
             ],
             mapper.get_files(join(self.ECHO_DIR, "**", "*-transfer-*.csv")),
         )
+
+    def test_determine_indexes(self):
+        mapper = M1000Mapper()
+        buffer = StringIO(
+            """
+            NC1	A1	11115	
+            NC1	A2	12345	
+            SM1_1	A3	12154	
+            SM1_17	A4	13443	
+            SM1_33	A5	13463	
+            SM1_49	A6	12691	
+            SM1_65	A7	11312	
+            SM1_81	A8	11963	
+            SM1_97	A9	11729
+            """
+        )
+        setattr(buffer, "name", "buffer")
+        pos, id = mapper.determine_indexes(buffer)
+        self.assertEqual(1, pos)
+        self.assertEqual(0, id)
+
+        buffer2 = StringIO(
+            """
+            A1	NC1	11115   
+            A2	NC1	12345	
+            A3	SM1_1	12154	
+            A4	SM1_17	13443	
+            A5	SM1_33	13463	
+            A6	SM1_49	12691	
+            A7	SM1_65	11312	
+            A8	SM1_81	11963	
+            A9	SM1_97	11729	
+            """
+        )
+        setattr(buffer2, "name", "buffer")
+        pos, id = mapper.determine_indexes(buffer2)
+        self.assertEqual(0, pos)
+        self.assertEqual(1, id)
+
+        buffer3 = StringIO(
+            """
+            A1	NC1	11115	123   
+            A2	NC1	12345	123	
+            A3	SM1_1	12154	123	
+            A4	SM1_17	13443	123	
+            A5	SM1_33	13463	123	
+            A6	SM1_49	12691	123	
+            A7	SM1_65	11312	123	
+            A8	SM1_81	11963	123	
+            A9	SM1_97	11729	123	
+            """
+        )
+        setattr(buffer3, "name", "buffer")
+        pos, id = mapper.determine_indexes(buffer3)
+        self.assertEqual(0, pos)
+        self.assertEqual(1, id)
+
+        buffer4 = StringIO(
+            """
+            Well positions	Layout	Acceptor	Donor	
+            A1	SM1_1	24672	7395	
+            A2	SM1_17	2648	8369	
+            A3	SM1_33	25020	6833	
+            A4	SM1_49	26200	7496	
+            A5	SM1_65	25072	7049	
+            A6	SM1_81	26242	7389	
+            """
+        )
+        setattr(buffer4, "name", "buffer")
+        pos, id = mapper.determine_indexes(buffer4)
+        self.assertEqual(0, pos)
+        self.assertEqual(1, id)
