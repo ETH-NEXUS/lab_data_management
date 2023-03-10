@@ -21,20 +21,31 @@ const measurementsValuesIndices = ref<number[]>([])
 const measurementsMetadata = ref<{feature: string; abbreviation: string; unit: string} | null>(null)
 const palette = ref<string>('green_red')
 
-const palettes = {
+type Palette = {
+  val: string
+  label: string
+  from: string
+  to: string
+}
+
+const palettes: Record<string, Palette> = {
   green_red: {val: 'green_red', label: 'Palette 1', from: '#00FF00', to: '#FF0000'},
   green_brown: {val: 'green_brown', label: 'Palette 2', from: '#b8e186', to: '#8c510a'},
   blue_red: {val: 'blue_red', label: 'Palette 2', from: '#92c5de', to: '#d6604d'},
   blue: {val: 'blue', label: 'Palette 4', from: '#92c5de', to: '#0b2746'},
 }
 
-const paletteToFunction = {
-  green_red: (percentage: number) =>
-    percentageToHsl(percentage, palettes.green_red.from, palettes.green_red.to),
-  blue_red: (percentage: number) => percentageToHsl(percentage, palettes.blue_red.from, palettes.blue_red.to),
-  green_brown: (percentage: number) =>
-    percentageToHsl(percentage, palettes.green_brown.from, palettes.green_brown.to),
-  blue: (percentage: number) => percentageToHsl(percentage, palettes.blue.from, palettes.blue.to),
+type PaletteToFunction = {
+  [key in keyof typeof palettes]: (percentage: number) => string
+}
+
+const paletteToFunction: PaletteToFunction = {} as PaletteToFunction
+
+for (const key in palettes) {
+  if (palettes.hasOwnProperty(key)) {
+    const {from, to} = palettes[key]
+    paletteToFunction[key] = (percentage: number) => percentageToHsl(percentage, from, to)
+  }
 }
 
 const emit = defineEmits(['well-selected'])
