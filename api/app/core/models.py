@@ -1,4 +1,5 @@
 import math
+import random
 from django.forms import ValidationError
 import numpy as np
 from compoundlib.models import CompoundLibrary, Compound
@@ -166,6 +167,14 @@ class Plate(TimeTrackedModel):
     def num_wells(self):
         return self.dimension.num_wells
 
+    @property
+    def z_primes(self):
+        results = {}
+        for measurement in self.__measurements():
+            z_prime = self.z_prime(measurement)
+            results[measurement] = z_prime if not math.isnan(z_prime) else "N/A"
+        return results
+
     def well_at(self, position: int, create_if_not_exist: bool = False) -> "Well":
         if position > self.num_wells:
             raise ValueError(f"Position must be less than {self.num_wells}.")
@@ -187,6 +196,14 @@ class Plate(TimeTrackedModel):
             w.measurement(abbrev) for w in self.wells.filter(type__name=type)
         ]
         return np.std(measurements)
+
+    def __measurements(self) -> list[str]:
+        results = []
+        well = self.well_at(random.randrange(self.num_wells))
+        for measurement in well.measurements.all():
+            if measurement.feature.abbrev not in results:
+                results.append(measurement.feature.abbrev)
+        return results
 
     @staticmethod
     def __z_factor(measurement1: List[float], measurement2: List[float]):
