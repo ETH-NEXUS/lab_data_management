@@ -2,6 +2,7 @@
 import {computed, defineProps, defineEmits, PropType, ref, onMounted} from 'vue'
 import {Plate, Well} from './models'
 import {positionFromRowCol} from '../helpers/plate'
+import {palettes} from 'components/data'
 
 const props = defineProps({
   plate: {
@@ -20,20 +21,6 @@ const showHeatmap = ref<boolean>(false)
 const measurementsValuesIndices = ref<number[]>([])
 const measurementsMetadata = ref<{feature: string; abbreviation: string; unit: string} | null>(null)
 const palette = ref<string>('green_red')
-
-type Palette = {
-  val: string
-  label: string
-  from: string
-  to: string
-}
-
-const palettes: Record<string, Palette> = {
-  green_red: {val: 'green_red', label: 'Palette 1', from: '#00FF00', to: '#FF0000'},
-  green_brown: {val: 'green_brown', label: 'Palette 2', from: '#b8e186', to: '#8c510a'},
-  blue_red: {val: 'blue_red', label: 'Palette 2', from: '#92c5de', to: '#d6604d'},
-  blue: {val: 'blue', label: 'Palette 4', from: '#92c5de', to: '#0b2746'},
-}
 
 type PaletteToFunction = {
   [key in keyof typeof palettes]: (percentage: number) => string
