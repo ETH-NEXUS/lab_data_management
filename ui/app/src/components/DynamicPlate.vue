@@ -2,7 +2,7 @@
 import {computed, defineProps, defineEmits, PropType, ref, onMounted} from 'vue'
 import {Plate, Well} from './models'
 import {positionFromRowCol} from '../helpers/plate'
-import {palettes} from 'components/data'
+import {palettes, Palette} from 'components/data'
 import {percentageToHsl} from 'components/helpers'
 
 const props = defineProps({
@@ -14,14 +14,14 @@ const props = defineProps({
 
 onMounted(() => {
   measurementsValuesIndices.value = findNumberOfMeasurements()
-  measurementsMetadata.value = findMeasurementMetadata(currentMeasurementValueIndex.value)
+  measurementsMetadata.value = findMeasurementMetadata(selectedMeasurementValueIndex.value)
 })
 
-const currentMeasurementValueIndex = ref<number>(0)
+const selectedMeasurementValueIndex = ref<number>(0)
 const showHeatmap = ref<boolean>(false)
 const measurementsValuesIndices = ref<number[]>([])
 const measurementsMetadata = ref<{feature: string; abbreviation: string; unit: string} | null>(null)
-const palette = ref<string>('green_red')
+const palette = ref<Palette>({value: 'orange', label: 'Palette 1', from: '#fff7bc', to: '#993404'})
 
 type PaletteToFunction = {
   [key in keyof typeof palettes]: (percentage: number) => string
@@ -110,52 +110,12 @@ const findMeasurementMetadata = (n: number) => {
   return null
 }
 
-const toggleHeatmap = () => {
-  showHeatmap.value = !showHeatmap.value
-}
-
-const changeCurrentValueIndex = (n: number) => {
-  currentMeasurementValueIndex.value = n
+const changeSelectedValueIndex = (n: number) => {
+  selectedMeasurementValueIndex.value = n
 }
 </script>
 
 <template>
-  <div v-if="measurementsValuesIndices.length > 0" class="q-pa-sm">
-    <q-btn flat color="primary" @click="toggleHeatmap">Show Measurement Heatmap</q-btn>
-    <div class="q-pa-sm" v-if="measurementsValuesIndices.length > 1">
-      <p
-        @click="changeCurrentValueIndex(n)"
-        class="text-blue-5 cursor-pointer"
-        v-for="n of measurementsValuesIndices"
-        :key="`index_${n}`">
-        >> {{ `Value ${n}` }}
-      </p>
-    </div>
-    <div v-if="measurementsMetadata && showHeatmap" class="q-ml-md q-mt-sm">
-      <p>
-        <b>Feature</b>
-        : {{ measurementsMetadata.feature }}
-      </p>
-      <p>
-        <b>Abbreviation</b>
-        : {{ measurementsMetadata.abbreviation }}
-      </p>
-      <p>
-        <b>Unit</b>
-        : {{ measurementsMetadata.unit }}
-      </p>
-    </div>
-
-    <div class="q-my-md" v-if="showHeatmap">
-      <q-radio
-        :key="p.label"
-        v-for="p of Object.values(palettes)"
-        v-model="palette"
-        :val="p.val"
-        :label="p.label"></q-radio>
-    </div>
-  </div>
-
   <div>
     <table v-if="props.plate">
       <tr>
@@ -172,10 +132,10 @@ const changeCurrentValueIndex = (n: number) => {
         <td
           :style="{
             backgroundColor: showHeatmap
-              ? paletteToFunction[palette](
+              ? paletteToFunction[palette.value](
                   findMeasurementPercentage(
-                    wells[row][col]?.measurements[currentMeasurementValueIndex]?.value
-                      ? wells[row][col]?.measurements[currentMeasurementValueIndex].value
+                    wells[row][col]?.measurements[selectedMeasurementValueIndex]?.value
+                      ? wells[row][col]?.measurements[selectedMeasurementValueIndex].value
                       : 0
                   ),
                   120,
@@ -209,6 +169,23 @@ const changeCurrentValueIndex = (n: number) => {
       </tr>
     </table>
   </div>
+  <div v-if="measurementsValuesIndices.length > 0" class="q-pa-sm">
+    <q-checkbox v-model="showHeatmap" label="Show Measurement Heatma"></q-checkbox>
+
+    <div class="q-pa-sm" v-if="measurementsValuesIndices.length > 1">
+      <p
+        @click="changeSelectedValueIndex(n)"
+        class="text-blue-5 cursor-pointer"
+        v-for="n of measurementsValuesIndices"
+        :key="`index_${n}`">
+        >> {{ `Value ${n}` }}
+      </p>
+    </div>
+
+    <div class="q-pa-sm" style="max-width: 300px" v-if="showHeatmap">
+      <q-select v-model="palette" :options="Object.values(palettes)" label="Select a palette"></q-select>
+    </div>
+  </div>
 </template>
 
 <style scoped lang="sass">
@@ -239,6 +216,10 @@ td:hover
 ul
   list-style: none
   padding-left: 0
+
+
+select
+  max-width: 300px
 </style>
 
 <!-- :style="
