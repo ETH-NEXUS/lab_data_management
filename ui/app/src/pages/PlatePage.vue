@@ -48,7 +48,7 @@ const copyPlateAmount = ref<number>(0)
 
 const applyTemplateDialog = ref<boolean>(false)
 const selectedTemplatePlateId = ref<number>()
-const templatePlateOptions = ref<Array<PlateLabelValue>>([])
+const templatePlateBarcodeOptions = ref<Array<PlateLabelValue>>([])
 const filteredTemplatePlateOptions = ref<Array<PlateLabelValue>>([])
 
 onMounted(async () => {
@@ -69,8 +69,12 @@ onMounted(async () => {
         plateDimensions.value = resp_dimensions.data.results
       }
     }
-    const resp = await api.get('/api/plates/barcodes/')
-    targetPlateBarcodeOptions.value = resp.data.filter(
+    const resp_target_plates = await api.get('/api/plates/barcodes/?experiment=true&library=true')
+    targetPlateBarcodeOptions.value = resp_target_plates.data.filter(
+      (p: PlateLabelValue) => p.label !== plate.value?.barcode
+    )
+    const resp_template_plates = await api.get('/api/plates/barcodes/?template=true')
+    templatePlateBarcodeOptions.value = resp_template_plates.data.filter(
       (p: PlateLabelValue) => p.label !== plate.value?.barcode
     )
   } catch (err) {
@@ -157,23 +161,16 @@ const filterTargetPlates = (query: string, update: (f: () => void) => void) => {
 }
 
 const filterTemplatePlates = (query: string, update: (f: () => void) => void) => {
-  console.warn('Not implemented')
-  // TODO: Need to be implemened
-  // update(() => {
-  //   if (plate.value?.experiment) {
-  //     filteredTargetPlateBarcodeOptions.value = targetPlateBarcodeOptions.value.filter(m => m.experiment)
-  //   } else {
-  //     filteredTargetPlateBarcodeOptions.value = targetPlateBarcodeOptions.value
-  //   }
-  //   if (query.length > 1) {
-  //     filteredTargetPlateBarcodeOptions.value = targetPlateBarcodeOptions.value.filter(m =>
-  //       m.label.includes(query)
-  //     )
-  //   }
-  //   filteredTargetPlateBarcodeOptions.value = filteredTargetPlateBarcodeOptions.value.sort((a, b) =>
-  //     a.label.localeCompare(b.label)
-  //   )
-  // })
+  update(() => {
+    if (query.length > 1) {
+      filteredTemplatePlateOptions.value = templatePlateBarcodeOptions.value.filter(m =>
+        m.label.includes(query)
+      )
+    }
+    filteredTemplatePlateOptions.value = templatePlateBarcodeOptions.value.sort((a, b) =>
+      a.label.localeCompare(b.label)
+    )
+  })
 }
 
 const mappingFileUploaded = ({files, xhr}: {files: readonly File[]; xhr: {response: string}}) => {
@@ -267,6 +264,25 @@ const copyPlate = async () => {
   }
 }
 
+const applyTemplate = async () => {
+  try {
+    // if (plate.value) {
+    //   await api.post('/api/platemappings/', data)
+    //   const target_plate_barcode = targetPlateBarcodeOptions.value.find(
+    //     lv => lv.value === selectedTargetPlateId.value
+    //   )?.label
+    //   success(
+    //     `${t('message.successfully_copied_plate')} '${plate.value.barcode}' -> '${target_plate_barcode}'`
+    //   )
+    //   router.push(`/plate/${target_plate_barcode}`)
+    // }
+  } catch (err) {
+    handleError(err)
+  } finally {
+    loading.value = false
+  }
+}
+
 const formatBarcode = (barcode: string | undefined) => {
   if (!barcode) {
     return 'N/A'
@@ -303,9 +319,10 @@ const formatBarcode = (barcode: string | undefined) => {
                 color="secondary"
                 @click="() => (copyPlateDialog = true)" />
               <q-btn
+                v-if="!plate.template"
                 class="q-ml-xs"
                 :label="t('action.apply_template')"
-                icon="o_apply"
+                icon="o_layers"
                 color="secondary"
                 @click="() => (applyTemplateDialog = true)" />
             </div>
@@ -515,10 +532,10 @@ const formatBarcode = (barcode: string | undefined) => {
           <q-btn flat :label="t('label.cancel')" v-close-popup />
           <q-btn
             flat
-            :label="t('label.copy')"
-            :disabled="!selectedTargetPlateId || copyPlateAmount <= 0"
+            :label="t('action.apply')"
+            :disabled="!selectedTemplatePlateId"
             v-close-popup
-            @click="copyPlate" />
+            @click="applyTemplate" />
         </q-card-actions>
       </q-card>
     </q-dialog>
