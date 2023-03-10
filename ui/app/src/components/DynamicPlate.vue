@@ -19,6 +19,23 @@ const currentMeasurementValueIndex = ref<number>(0)
 const showHeatmap = ref<boolean>(false)
 const measurementsValuesIndices = ref<number[]>([])
 const measurementsMetadata = ref<{feature: string; abbreviation: string; unit: string} | null>(null)
+const palette = ref<string>('green_red')
+
+const palettes = {
+  green_red: {val: 'green_red', label: 'Palette 1', from: '#00FF00', to: '#FF0000'},
+  green_brown: {val: 'green_brown', label: 'Palette 2', from: '#b8e186', to: '#8c510a'},
+  blue_red: {val: 'blue_red', label: 'Palette 2', from: '#92c5de', to: '#d6604d'},
+  blue: {val: 'blue', label: 'Palette 4', from: '#92c5de', to: '#0b2746'},
+}
+
+const paletteToFunction = {
+  green_red: (percentage: number) =>
+    percentageToHsl(percentage, palettes.green_red.from, palettes.green_red.to),
+  blue_red: (percentage: number) => percentageToHsl(percentage, palettes.blue_red.from, palettes.blue_red.to),
+  green_brown: (percentage: number) =>
+    percentageToHsl(percentage, palettes.green_brown.from, palettes.green_brown.to),
+  blue: (percentage: number) => percentageToHsl(percentage, palettes.blue.from, palettes.blue.to),
+}
 
 const emit = defineEmits(['well-selected'])
 
@@ -56,13 +73,63 @@ const minMeasurement = computed(() => {
   return findMinMeasurement()
 })
 
-const percentageToHsl = (percentage: number, hue0: number, hue1: number) => {
+const percentageToHsl = (percentage: number, fromColor: string, toColor: string) => {
   // if percentage is not given (-1) we return a transparent color
   if (percentage === -1) {
     return 'rgba(255,255,255,0)'
   }
-  let hue = percentage * (hue1 - hue0) + hue0
-  return 'hsl(' + hue + ', 100%, 50%)'
+
+  const fromRgb = hexToRgb(fromColor)
+  const toRgb = hexToRgb(toColor)
+
+  const hue = percentage * (toRgb.h - fromRgb.h) + fromRgb.h
+  const saturation = percentage * (toRgb.s - fromRgb.s) + fromRgb.s
+  const lightness = percentage * (toRgb.l - fromRgb.l) + fromRgb.l
+
+  return `hsl(${hue}, ${saturation}%, ${lightness}%)`
+}
+
+const hexToRgb = (hex: string) => {
+  const r = parseInt(hex.slice(1, 3), 16)
+  const g = parseInt(hex.slice(3, 5), 16)
+  const b = parseInt(hex.slice(5, 7), 16)
+  const {h, s, l} = rgbToHsl(r, g, b)
+  return {r, g, b, h, s, l}
+}
+
+const rgbToHsl = (r: number, g: number, b: number) => {
+  r /= 255
+  g /= 255
+  b /= 255
+
+  const max = Math.max(r, g, b),
+    min = Math.min(r, g, b)
+  let h,
+    s,
+    l = (max + min) / 2
+
+  if (max == min) {
+    h = s = 0
+  } else {
+    const d = max - min
+    s = l > 0.5 ? d / (2 - max - min) : d / (max + min)
+    switch (max) {
+      case r:
+        h = (g - b) / d + (g < b ? 6 : 0)
+        break
+      case g:
+        h = (b - r) / d + 2
+        break
+      case b:
+        h = (r - g) / d + 4
+        break
+    }
+    if (h) {
+      h /= 6
+    }
+  }
+
+  return {h: h * 360, s: s * 100, l: l * 100}
 }
 
 const findNumberOfMeasurements = () => {
@@ -138,6 +205,15 @@ const changeCurrentValueIndex = (n: number) => {
         : {{ measurementsMetadata.unit }}
       </p>
     </div>
+
+    <div class="q-my-md" v-if="showHeatmap">
+      <q-radio
+        :key="p.label"
+        v-for="p of Object.values(palettes)"
+        v-model="palette"
+        :val="p.val"
+        :label="p.label"></q-radio>
+    </div>
   </div>
 
   <div>
@@ -156,7 +232,7 @@ const changeCurrentValueIndex = (n: number) => {
         <td
           :style="{
             backgroundColor: showHeatmap
-              ? percentageToHsl(
+              ? paletteToFunction[palette](
                   findMeasurementPercentage(
                     wells[row][col]?.measurements[currentMeasurementValueIndex]?.value
                       ? wells[row][col]?.measurements[currentMeasurementValueIndex].value
