@@ -2,8 +2,10 @@
 import {computed, defineProps, defineEmits, PropType, ref, onMounted} from 'vue'
 import {Plate, Well} from './models'
 import {positionFromRowCol} from '../helpers/plate'
-import {palettes, Palette} from 'components/data'
+import {palettes, Metadata} from 'components/data'
 import {percentageToHsl} from 'components/helpers'
+import {storeToRefs} from 'pinia'
+import {useSettingsStore} from 'stores/settings'
 
 const props = defineProps({
   plate: {
@@ -14,14 +16,25 @@ const props = defineProps({
 
 onMounted(() => {
   measurementsValuesIndices.value = findNumberOfMeasurements()
-  measurementsMetadata.value = findMeasurementMetadata(selectedMeasurementValueIndex.value)
+  selectedMetadata.value = findMeasurementMetadata(0)
+  if (measurementsValuesIndices.value.length > 0) {
+    for (const n of measurementsValuesIndices.value) {
+      const metadata = findMeasurementMetadata(n)
+      if (metadata) {
+        metadataOptions.value?.push(metadata)
+      }
+    }
+  }
 })
 
 const selectedMeasurementValueIndex = ref<number>(0)
-const showHeatmap = ref<boolean>(false)
+const selectedMetadata = ref<Metadata | null>(null)
+
+const showHeatmap1 = ref<boolean>(false)
 const measurementsValuesIndices = ref<number[]>([])
-const measurementsMetadata = ref<{feature: string; abbreviation: string; unit: string} | null>(null)
-const palette = ref<Palette>({value: 'orange', label: 'Palette 1', from: '#fff7bc', to: '#993404'})
+
+const metadataOptions = ref<Metadata[]>([])
+const {palette, showHeatmap} = storeToRefs(useSettingsStore())
 
 type PaletteToFunction = {
   [key in keyof typeof palettes]: (percentage: number) => string
@@ -103,7 +116,8 @@ const findMeasurementMetadata = (n: number) => {
     const {name, abbrev, unit} = measurement.feature
     return {
       feature: name === null ? 'not specified' : name,
-      abbreviation: abbrev === null ? 'not specified' : abbrev,
+      label: abbrev === null ? 'not specified' : abbrev,
+      value: n,
       unit: unit === null ? 'not specified' : unit,
     }
   }
@@ -112,6 +126,7 @@ const findMeasurementMetadata = (n: number) => {
 
 const changeSelectedValueIndex = (n: number) => {
   selectedMeasurementValueIndex.value = n
+  metadataOptions.value[n].value = n
 }
 </script>
 
@@ -131,17 +146,18 @@ const changeSelectedValueIndex = (n: number) => {
 
         <td
           :style="{
-            backgroundColor: showHeatmap
-              ? paletteToFunction[palette.value](
-                  findMeasurementPercentage(
-                    wells[row][col]?.measurements[selectedMeasurementValueIndex]?.value
-                      ? wells[row][col]?.measurements[selectedMeasurementValueIndex].value
-                      : 0
-                  ),
-                  120,
-                  0
-                )
-              : 'transparent',
+            backgroundColor:
+              showHeatmap && measurementsValuesIndices.length > 0
+                ? paletteToFunction[palette.value](
+                    findMeasurementPercentage(
+                      wells[row][col]?.measurements[selectedMetadata.value]?.value
+                        ? wells[row][col]?.measurements[selectedMetadata.value].value
+                        : 0
+                    ),
+                    120,
+                    0
+                  )
+                : 'transparent',
           }"
           :key="`cols${col}`"
           v-for="(_, col) of props.plate.dimension.cols"
@@ -170,16 +186,10 @@ const changeSelectedValueIndex = (n: number) => {
     </table>
   </div>
   <div v-if="measurementsValuesIndices.length > 0" class="q-pa-sm">
-    <q-checkbox v-model="showHeatmap" label="Show Measurement Heatma"></q-checkbox>
+    <q-checkbox v-model="showHeatmap" label="Show Measurement Heatmap"></q-checkbox>
 
-    <div class="q-pa-sm" v-if="measurementsValuesIndices.length > 1">
-      <p
-        @click="changeSelectedValueIndex(n)"
-        class="text-blue-5 cursor-pointer"
-        v-for="n of measurementsValuesIndices"
-        :key="`index_${n}`">
-        >> {{ `Value ${n}` }}
-      </p>
+    <div class="q-pa-sm" style="max-width: 300px" v-if="measurementsValuesIndices.length > 0 && showHeatmap">
+      <q-select v-model="selectedMetadata" :options="metadataOptions" label="Select a value"></q-select>
     </div>
 
     <div class="q-pa-sm" style="max-width: 300px" v-if="showHeatmap">

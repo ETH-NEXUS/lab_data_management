@@ -41,6 +41,8 @@ export type Palette = {
   to: string
 }
 
+export type Metadata = {feature: string; label: string; value: number; unit: string}
+
 export const palettes: Record<string, Palette> = {
   orange: {value: 'orange', label: 'Palette 1', from: '#fff7bc', to: '#993404'},
   green_red: {value: 'green_red', label: 'Palette 2', from: '#00FF00', to: '#FF0000'},
