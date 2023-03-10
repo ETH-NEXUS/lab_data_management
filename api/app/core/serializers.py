@@ -12,6 +12,7 @@ from .models import (
     WellCompound,
     WellWithdrawal,
     PlateMapping,
+    PlateTemplate,
     MappingError,
     WellType,
     BarcodeSpecification,
@@ -210,6 +211,14 @@ class SimpleExperimentSerializer(serializers.ModelSerializer):
     class Meta:
         model = Experiment
         fields = ("id", "name")
+
+
+class SimplePlateTemplateSerializer(serializers.ModelSerializer):
+    category = serializers.SlugRelatedField(slug_field="name", read_only=True)
+
+    class Meta:
+        model = PlateTemplate
+        fields = ("id", "name", "category")
 
 
 class ProjectSerializer(serializers.ModelSerializer):
