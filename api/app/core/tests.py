@@ -29,7 +29,7 @@ class MappingTest(TestCase):
         self.assertEqual(16, charToAlphaPos("P"))
         self.assertEqual(17, charToAlphaPos("q"))
         self.assertEqual(26, charToAlphaPos("z"))
-        self.assertRaises(Exception, lambda: charToAlphaPos("bla"))
+        self.assertRaises(ValueError, lambda: charToAlphaPos("123"))
 
     def test_positionMapping(self):
         plateDimension = PlateDimension.objects.create(name="bla", rows=2, cols=3)

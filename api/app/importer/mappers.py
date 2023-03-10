@@ -1,6 +1,7 @@
 import csv
 import os
 import re
+import pandas as pd
 from io import TextIOWrapper
 from glob import glob
 from itertools import dropwhile
@@ -238,13 +239,49 @@ class EchoMapper(BaseMapper):
 
 class M1000Mapper(BaseMapper):
     RE_FILENAME = r"(?P<date>[0-9]+)-(?P<time>[0-9]+)_(?P<barcode>[^\.]+)\.asc"
-    RE_POS = r"^(?P<pos>[A-Z]+[0-9]+)\t(?P<rest>.+)\t$"
-    RE_NUM = r"[0-9\.]+"
+
+    RE_POS = r"^[A-Z]+[0-9]+$"
+    RE_ID = r"^[^_]+_[^_]+$"
+    RE_NUM = r"^[0-9\.]+$"
+    RE_TAB = r"[\t\s]+"
+
     RE_DATE_OF_MEASUREMENT = r"^Date of measurement: (?P<date>[^\/]+)\/Time of measurement: (?P<time>[0-9:]+)$"
     RE_PLATE_DESCRIPTION = r"^Plate Description: (?P<description>.+)$"
     RE_META_DATA = r"^    (?P<key>[^:]+): (?P<value>.+)$"
 
+    def determine_indexes(self, file: TextIOWrapper):
+        """
+        Determines the indexes for position and identifier.
+        The rest of the columns are values.
+
+        The strategy is to go through the lines of the file
+        and stop as soon as we find an unambiguous line.
+        """
+        for line in file:
+            parts = re.split(self.RE_TAB, line.strip())
+            unambiguity = []
+            pos_index = None
+            id_index = None
+            for idx, part in enumerate(parts):
+                if match_pos := re.match(self.RE_POS, part):
+                    pos_index = idx
+                if match_id := re.match(self.RE_ID, part):
+                    id_index = idx
+                # if this is an unambiguous value
+                unambiguity.append([match_pos, match_id])
+            # if the line is an unambiguous line
+            df = pd.DataFrame(unambiguity)
+            if df.count().apply(lambda x: x == 1).all():
+                file.seek(0)
+                return pos_index, id_index
+        file.seek(0)
+        raise MappingError(f"File has not the desired format: {file.name}")
+
     def parse(self, file: TextIOWrapper, **kwargs) -> list[dict]:
+        def __debug(msg):
+            if kwargs.get("debug"):
+                log.debug(msg)
+
         match = re.match(self.RE_FILENAME, os.path.basename(file.name))
         if match:
             barcode = match.group("barcode")
@@ -258,23 +295,28 @@ class M1000Mapper(BaseMapper):
         plate_description = None
         meta_data = [{}]
         meta_data_idx = 0
+        pos_index, id_index = self.determine_indexes(file)
         for line in file:
-            if match := re.match(self.RE_POS, line):
-                parts = match.group("rest").split("\t")
-                values = []
-                identifier = None
-                for part in parts:
-                    if re.match(self.RE_NUM, part):
-                        values.append(float(part))
-                    else:
-                        identifier = part
-                results.append(
-                    {
-                        "position": match.group("pos"),
-                        "values": values,
-                        "identifier": identifier,
-                    }
-                )
+            parts = re.split(self.RE_TAB, line)
+            # For a value line we expect at least 3 parts (pos, id, value)
+            # and the position part should match the position regex
+            if len(parts) >= 3 and re.match(self.RE_POS, parts[pos_index]):
+                position = parts[pos_index]
+                identifier = parts[id_index]
+                result = {
+                    "position": position,
+                    "identifier": identifier,
+                    "values": [
+                        part
+                        for idx, part in enumerate(parts)
+                        if idx not in [pos_index, id_index]
+                        and re.match(self.RE_NUM, part)
+                    ],
+                }
+                # If there are no values in this line we ignore it
+                if len(result["values"]) > 0:
+                    __debug(f"result: {result}")
+                    results.append(result)
             elif match := re.match(self.RE_DATE_OF_MEASUREMENT, line):
                 measurement_date = dt.strptime(
                     f"{match.group('date')} {match.group('time')}", "%Y-%m-%d %H:%M:%S"
@@ -300,6 +342,10 @@ class M1000Mapper(BaseMapper):
         return results, kwargs
 
     def map(self, data: list[dict], **kwargs) -> None:
+        def __debug(msg):
+            if kwargs.get("debug"):
+                log.debug(msg)
+
         barcode = kwargs.get("barcode")
         try:
             plate = Plate.objects.get(barcode=barcode)
@@ -312,6 +358,7 @@ class M1000Mapper(BaseMapper):
             total=len(data),
         ) as mbar:
             for entry in data:
+                __debug(f"Entry: {entry}")
                 position = plate.dimension.position(entry.get("position"))
                 well = plate.well_at(position)
                 if not well:
