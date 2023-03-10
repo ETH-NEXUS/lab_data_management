@@ -12,11 +12,13 @@ const props = defineProps({
 
 onMounted(() => {
   measurementsValuesIndices.value = findNumberOfMeasurements()
+  measurementsMetadata.value = findMeasurementMetadata(currentMeasurementValueIndex.value)
 })
 
 const currentMeasurementValueIndex = ref<number>(0)
 const showHeatmap = ref<boolean>(false)
 const measurementsValuesIndices = ref<number[]>([])
+const measurementsMetadata = ref<{feature: string; abbreviation: string; unit: string} | null>(null)
 
 const emit = defineEmits(['well-selected'])
 
@@ -51,7 +53,7 @@ const maxMeasurement = computed(() => {
 })
 
 const minMeasurement = computed(() => {
-  return findMinMesurement()
+  return findMinMeasurement()
 })
 
 const percentageToHsl = (percentage: number, hue0: number, hue1: number) => {
@@ -74,7 +76,7 @@ const findMaxMeasurement = () => {
     return Math.max(max, ...measurements.map(m => m.value))
   }, 0)
 }
-const findMinMesurement = () => {
+const findMinMeasurement = () => {
   return props.plate.wells?.reduce((min, {measurements = []}) => {
     return Math.min(min, ...measurements.map(m => m.value))
   }, 0)
@@ -87,25 +89,56 @@ const findMeasurementPercentage = (value: number) => {
   return 0
 }
 
+const findMeasurementMetadata = (n: number) => {
+  const well = props.plate?.wells?.[0]
+  const measurement = well?.measurements?.[n]
+  if (measurement) {
+    const {name, abbrev, unit} = measurement.feature
+    return {
+      feature: name === null ? 'not specified' : name,
+      abbreviation: abbrev === null ? 'not specified' : abbrev,
+      unit: unit === null ? 'not specified' : unit,
+    }
+  }
+  return null
+}
+
 const toggleHeatmap = () => {
   showHeatmap.value = !showHeatmap.value
 }
 
-const changeCurrentValueIndex= (n: number) => {
+const changeCurrentValueIndex = (n: number) => {
   currentMeasurementValueIndex.value = n
 }
-
 </script>
 
 <template>
-
   <div v-if="measurementsValuesIndices.length > 0" class="q-pa-sm">
-    <q-btn flat color="primary" @click="toggleHeatmap" >Show Heatmap</q-btn>
-        <div class="q-pa-sm" v-if="measurementsValuesIndices.length > 1">
-      <p  @click="changeCurrentValueIndex(n)" class="text-blue-5 cursor-pointer" v-for="n of measurementsValuesIndices" :key="`index_${n}`">>> {{`Value ${n}`}} </p>
+    <q-btn flat color="primary" @click="toggleHeatmap">Show Measurement Heatmap</q-btn>
+    <div class="q-pa-sm" v-if="measurementsValuesIndices.length > 1">
+      <p
+        @click="changeCurrentValueIndex(n)"
+        class="text-blue-5 cursor-pointer"
+        v-for="n of measurementsValuesIndices"
+        :key="`index_${n}`">
+        >> {{ `Value ${n}` }}
+      </p>
+    </div>
+    <div v-if="measurementsMetadata && showHeatmap" class="q-ml-md q-mt-sm">
+      <p>
+        <b>Feature</b>
+        : {{ measurementsMetadata.feature }}
+      </p>
+      <p>
+        <b>Abbreviation</b>
+        : {{ measurementsMetadata.abbreviation }}
+      </p>
+      <p>
+        <b>Unit</b>
+        : {{ measurementsMetadata.unit }}
+      </p>
     </div>
   </div>
-
 
   <div>
     <table v-if="props.plate">
