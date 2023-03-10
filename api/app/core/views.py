@@ -28,6 +28,7 @@ from .serializers import (
     SimpleExperimentSerializer,
     ExperimentSerializer,
     ProjectSerializer,
+    SimplePlateTemplateSerializer,
 )
 
 
@@ -73,7 +74,7 @@ class PlateViewSet(viewsets.ModelViewSet):
             .prefetch_related(measurements),
         )
         return Plate.objects.select_related(
-            "dimension", "experiment", "library"
+            "dimension", "experiment", "library", "template"
         ).prefetch_related(wells)
 
     @action(detail=False, methods=["get"])
@@ -81,11 +82,14 @@ class PlateViewSet(viewsets.ModelViewSet):
         """Returns an array of barcodes"""
         library = request.GET.get("library")
         experiment = request.GET.get("experiment")
+        template = request.GET.get("template")
         predicate = Q()
         if library:
             predicate |= Q(library__isnull=(library.lower() != "true"))
         if experiment:
             predicate |= Q(experiment__isnull=(experiment.lower() != "true"))
+        if template:
+            predicate |= Q(template__isnull=(template.lower() != "true"))
         return Response(
             [
                 {
@@ -96,6 +100,9 @@ class PlateViewSet(viewsets.ModelViewSet):
                     else None,
                     "experiment": SimpleExperimentSerializer(plate.experiment).data
                     if plate.experiment
+                    else None,
+                    "template": SimplePlateTemplateSerializer(plate.template).data
+                    if plate.template
                     else None,
                 }
                 for plate in Plate.objects.filter(predicate)

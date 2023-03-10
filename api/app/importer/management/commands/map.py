@@ -64,7 +64,10 @@ class Command(BaseCommand):
         elif options.get("machine") == "m1000":
             try:
                 mapper = M1000Mapper()
-                mapper.run(join(path, "*.asc"))
+                mapper.run(
+                    join(path, "*.asc"),
+                    debug=options.get("debug", False),
+                )
             except Exception as ex:
                 log.error(ex)
                 traceback.print_exc()
