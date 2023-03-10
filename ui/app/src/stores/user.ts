@@ -32,7 +32,7 @@ export const useUserStore = defineStore('user', () => {
   const user = ref<User | null>(JSON.parse(localStorage.getItem('user') || 'null'))
   const endpoints: Endpoints = {
     obtainToken: '/api/auth/token/',
-    refreshToken: '/api/auth/refresh/',
+    refreshToken: '/api/auth/token/refresh/',
     user: '/api/auth/users/me/',
   }
 
