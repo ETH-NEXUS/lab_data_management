@@ -248,9 +248,11 @@ class Plate(TimeTrackedModel):
             )
         for position in range(template_plate.num_wells):
             template_well = template_plate.well_at(position)
-            well = self.well_at(position)
+            well = self.well_at(position, create_if_not_exist=True)
             # TODO: At the moment we only map the type
             well.type = template_well.type
+            well.save()
+        return self
 
     def map(self, mappingList: MappingList, target: "Plate"):
         """
