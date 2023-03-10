@@ -266,16 +266,12 @@ const copyPlate = async () => {
 
 const applyTemplate = async () => {
   try {
-    // if (plate.value) {
-    //   await api.post('/api/platemappings/', data)
-    //   const target_plate_barcode = targetPlateBarcodeOptions.value.find(
-    //     lv => lv.value === selectedTargetPlateId.value
-    //   )?.label
-    //   success(
-    //     `${t('message.successfully_copied_plate')} '${plate.value.barcode}' -> '${target_plate_barcode}'`
-    //   )
-    //   router.push(`/plate/${target_plate_barcode}`)
-    // }
+    if (plate.value) {
+      const resp = await api.post(`/api/plates/${plate.value.id}/apply_template/`, {
+        template: selectedTemplatePlateId.value,
+      })
+      plate.value = resp.data
+    }
   } catch (err) {
     handleError(err)
   } finally {

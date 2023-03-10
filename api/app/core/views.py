@@ -5,6 +5,7 @@ from compoundlib.serializers import SimpleCompoundLibrarySerializer
 from django.core.exceptions import ValidationError
 from django.db import IntegrityError
 from django.db.models import Prefetch, Q
+from django.http import Http404
 from rest_framework import viewsets, views, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
@@ -93,7 +94,9 @@ class PlateViewSet(viewsets.ModelViewSet):
         return Response(
             [
                 {
-                    "label": plate.barcode,
+                    "label": plate.barcode
+                    if plate.template is None
+                    else " / ".join(plate.barcode.replace("__TEMPL__", "").split("_")),
                     "value": plate.id,
                     "library": SimpleCompoundLibrarySerializer(plate.library).data
                     if plate.library
@@ -108,6 +111,18 @@ class PlateViewSet(viewsets.ModelViewSet):
                 for plate in Plate.objects.filter(predicate)
             ]
         )
+
+    @action(detail=True, methods=["post"])
+    def apply_template(self, request, pk=None):
+        """Applies a template plate"""
+        plate = self.get_object()
+        template_plate_id = request.data.get("template")
+        if template_plate_id:
+            template_plate = Plate.objects.get(pk=template_plate_id)
+            plate = plate.apply_template(template_plate)
+            return Response(PlateSerializer(plate).data, status.HTTP_200_OK)
+        else:
+            raise Http404("Parameter 'template' is required.")
 
     def filter_queryset(self, queryset):
         return super().filter_queryset(queryset)
