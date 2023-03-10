@@ -3,7 +3,8 @@ import traceback
 from friendlylog import colored_logger as log
 from os.path import isfile
 from compoundlib.models import Compound, CompoundLibrary
-from core.models import Plate, Well, PlateDimension, WellCompound
+from core.models import Plate, Well, PlateDimension, WellCompound, WellType
+from platetemplate.models import PlateTemplate, PlateTemplateCategory
 from importer.mapping import SdfMapping
 from importer.helper import row_col_from_wells, normalize_col, normalize_row
 from core.mapping import PositionMapper
@@ -11,6 +12,7 @@ import numpy as np
 from os.path import splitext
 from pathlib import Path
 from tqdm import tqdm
+import csv
 
 from rdkit.Chem import PandasTools
 from rdkit.Chem.rdchem import Mol
@@ -57,6 +59,18 @@ class Command(BaseCommand):
             type=int,
             choices=[96, 384, 1536],
             help="The number of wells each plate. This setting overrides --number-of-rows and --number-of-columns",
+        )
+        parser.add_argument(
+            "--category-name",
+            "--cat",
+            type=str,
+            help="The name of the template category, defaults to 'Default'",
+        )
+        parser.add_argument(
+            "--template-name",
+            "-t",
+            type=str,
+            help="The name of the template, defaults to 'Default'",
         )
         parser.add_argument(
             "--debug", action="store_true", help="Outputs debug messages"
@@ -215,6 +229,60 @@ class Command(BaseCommand):
                             )
                         wbar.update(1)
 
+    def template(
+        self,
+        input_file: str,
+        category_name: str = "Default",
+        template_name: str = "Default",
+    ):
+        if isfile(input_file):
+            well_types = []
+            num_rows = 0
+            num_cols = 0
+            with open(input_file, "r") as file:
+                reader = csv.reader(file, delimiter="\t")
+                for row in reader:
+                    well_types += row
+                    num_rows += 1
+                num_cols = len(row)
+
+            dimension, _ = PlateDimension.objects.get_or_create(
+                rows=num_rows,
+                cols=num_cols,
+                defaults={"name": f"dim_{num_cols*num_rows}_{num_cols}x{num_rows}"},
+            )
+
+            category, _ = PlateTemplateCategory.objects.get_or_create(
+                name=category_name
+            )
+
+            template, _ = PlateTemplate.objects.get_or_create(
+                name=template_name, category=category
+            )
+
+            plate, _ = Plate.objects.get_or_create(
+                barcode=f"__TEMPL__{category_name}_{template_name}",
+                dimension=dimension,
+                template=template,
+            )
+
+            with tqdm(
+                desc="Processing wells",
+                unit="wells",
+                total=len(well_types),
+            ) as pbar:
+                for pos, type in enumerate(well_types):
+                    well = plate.well_at(pos, create_if_not_exist=True)
+                    well_type = WellType.by_name(type[0])
+                    well.type = well_type
+                    well.save()
+                    pbar.update(1)
+
+            log.info("Successfully imported.")
+
+        else:
+            log.error(f"File does not exist: {input_file}")
+
     def handle(self, *args, **options):
         try:
             if options.get("action") == "sdf":
@@ -226,6 +294,12 @@ class Command(BaseCommand):
                     number_of_rows=options.get("number_of_rows"),
                     number_of_columns=options.get("number_of_columns"),
                     number_of_wells=options.get("number_of_wells"),
+                )
+            elif options.get("action") == "template":
+                self.template(
+                    options.get("input_file"),
+                    category_name=options.get("category_name"),
+                    template_name=options.get("template_name"),
                 )
 
         except Exception as ex:

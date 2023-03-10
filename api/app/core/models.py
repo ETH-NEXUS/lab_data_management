@@ -166,12 +166,14 @@ class Plate(TimeTrackedModel):
     def num_wells(self):
         return self.dimension.num_wells
 
-    def well_at(self, position: int) -> "Well":
+    def well_at(self, position: int, create_if_not_exist: bool = False) -> "Well":
         if position > self.num_wells:
             raise ValueError(f"Position must be less than {self.num_wells}.")
         try:
             return self.wells.get(position=position)
         except Well.DoesNotExist:
+            if create_if_not_exist:
+                return Well.objects.create(plate=self, position=position)
             return None
 
     def mean(self, abbrev: str, type: str = "C"):
@@ -327,7 +329,7 @@ class WellType(models.Model):
 
     @classmethod
     def by_name(cls, name: str):
-        return cls.objects.get(name=name)
+        return cls.objects.get(name=name.upper())
 
     def __str__(self):
         return f"{self.name} ({self.description})"
