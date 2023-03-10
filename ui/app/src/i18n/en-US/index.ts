@@ -53,6 +53,7 @@ export default {
     measurement_feature: 'Measurement feature',
     measurement_value: 'Measurement value',
     templates: 'Templates',
+    template_plate: 'Template plate',
   },
   hint: {
     username: 'Enter your ETH username',
@@ -63,6 +64,7 @@ export default {
     target_plate: 'Enter the barcode of the target plate you want to map this plate to',
     measurement_feature: 'Select the mMeasurement feature',
     measurement_value: 'Enter the measurement value',
+    template_plate: 'Select a template plate',
   },
   title: {
     compound: 'Compound',
@@ -119,6 +121,8 @@ export default {
     new_category: 'New Category',
     category_properties: 'Category Properties',
     new_template: 'New Template',
+    apply_template: 'Apply Template',
+    apply: 'Apply',
   },
   error: {
     select_plate_dimension: 'Please select a plate dimension.',
