@@ -1,4 +1,5 @@
 import math
+from django.forms import ValidationError
 import numpy as np
 from compoundlib.models import CompoundLibrary, Compound
 from django.conf import settings
@@ -58,7 +59,7 @@ class BarcodeSpecification(TimeTrackedModel):
     number_of_plates = models.IntegerField()
     sides = ArrayField(models.CharField(max_length=20))
     experiment = models.ForeignKey(
-        Experiment, on_delete=models.RESTRICT, related_name=related_name
+        Experiment, on_delete=models.CASCADE, related_name=related_name
     )
 
     def __str__(self):
@@ -166,6 +167,8 @@ class Plate(TimeTrackedModel):
         return self.dimension.num_wells
 
     def well_at(self, position: int) -> "Well":
+        if position > self.num_wells:
+            raise ValueError(f"Position must be less than {self.num_wells}.")
         try:
             return self.wells.get(position=position)
         except Well.DoesNotExist:
@@ -353,6 +356,15 @@ class Well(TimeTrackedModel):
     )
     status = models.TextField(null=True, blank=True)
 
+    class Meta:
+        unique_together = ("plate", "position")
+
+    def clean(self):
+        if self.position >= self.plate.num_wells:
+            raise ValidationError(
+                _(f"Position must not be less than {self.plate.num_wells}.")
+            )
+
     def __str__(self):
         return f"{self.plate.barcode}: {self.hr_position}"
 
@@ -390,9 +402,6 @@ class Well(TimeTrackedModel):
         return (
             self.measurement(abbrev) - self.plate.mean(abbrev, type)
         ) / self.plate.std(abbrev, type)
-
-    class Meta:
-        unique_together = ("plate", "position")
 
 
 class WellCompound(models.Model):
