@@ -30,7 +30,8 @@ onMounted(() => {
 const selectedMeasurementValueIndex = ref<number>(0)
 const selectedMetadata = ref<Metadata | null>(null)
 
-const showHeatmap1 = ref<boolean>(false)
+const wellContent = ref<string>('Position')
+
 const measurementsValuesIndices = ref<number[]>([])
 
 const metadataOptions = ref<Metadata[]>([])
@@ -131,6 +132,13 @@ const changeSelectedValueIndex = (n: number) => {
 </script>
 
 <template>
+  <div
+    class="q-pa-sm q-py-md"
+    style="max-width: 300px"
+    v-if="measurementsValuesIndices.length > 0 && showHeatmap">
+    <q-select v-model="wellContent" :options="['Position', 'Type']" label="Well display value"></q-select>
+  </div>
+
   <div>
     <table v-if="props.plate">
       <tr>
@@ -168,7 +176,7 @@ const changeSelectedValueIndex = (n: number) => {
             })
           ">
           <a v-if="wells[row][col]" :class="{'bg-warning': wells[row][col]!.status}">
-            {{ wells[row][col]!.hr_position }}
+            {{ wellContent === 'Position' ? wells[row][col]!.hr_position : wells[row][col]!.type }}
           </a>
           <q-tooltip
             v-if="wells[row][col] && wells[row][col]?.compounds"
@@ -178,6 +186,12 @@ const changeSelectedValueIndex = (n: number) => {
             <ul>
               <li v-for="compound in wells[row][col]?.compounds" :key="compound.identifier">
                 {{ compound.name }} ({{ compound.identifier }})
+              </li>
+            </ul>
+            <br />
+            <ul>
+              <li v-for="measurement in wells[row][col]?.measurements" :key="measurement.feature.name">
+                {{ measurement.feature.abbrev }}: {{ measurement.value }} {{ measurement.feature.unit }}
               </li>
             </ul>
           </q-tooltip>
