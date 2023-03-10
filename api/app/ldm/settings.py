@@ -311,4 +311,6 @@ NOTEBOOK_ARGUMENTS = [
     "",
     "--NotebookApp.password",
     "",
+    "--NotebookApp.base_url",
+    "/notebook",
 ]
