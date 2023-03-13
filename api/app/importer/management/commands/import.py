@@ -209,6 +209,8 @@ class Command(BaseCommand):
                             __debug(
                                 f"Using well {well.plate}: {well.hr_position} ({row[mapping.position]})"
                             )
+                        amount = row[mapping.amounts[
+                                mapping_barcode_idx]] if isinstance(row[mapping.amounts[mapping_barcode_idx]], float) or isinstance(row[mapping.amounts[mapping_barcode_idx]], int) else -1
                         (
                             well_compound,
                             created,
@@ -216,7 +218,7 @@ class Command(BaseCommand):
                             well=well,
                             compound=compound,
                             defaults={
-                                "amount": row[mapping.amounts[mapping_barcode_idx]],
+                                "amount": amount,
                             },
                         )
                         if created:
