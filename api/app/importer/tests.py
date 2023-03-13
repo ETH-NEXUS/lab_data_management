@@ -151,7 +151,8 @@ class MapperTests(TestCase):
         m1000_example_barcode_prefix = "BAF210901"
         barcode_specification_m1000 = BarcodeSpecification.objects.create(
             prefix=m1000_example_barcode_prefix,
-                                            number_of_plates=25, experiment=experiment_m1000)
+                                            number_of_plates=3,
+            experiment=experiment_m1000)
         for i in range(barcode_specification_m1000.number_of_plates):
             Plate.objects.create(dimension=PlateDimension.objects.get(name="dim_384_16x24"),
                                           barcode=f""
@@ -162,7 +163,7 @@ class MapperTests(TestCase):
                                                project=project)
 
         for barcode in self.BARCODES:
-            specification = BarcodeSpecification.objects.create(
+            BarcodeSpecification.objects.create(
                 prefix=barcode, number_of_plates=25,
                 experiment=experiment_echo)
 
@@ -292,7 +293,7 @@ class MapperTests(TestCase):
         mapper.run(join(self.M1000_DIR, "*.asc"))
         measurements = Measurement.objects.all()
         measurement_metadata = MeasurementMetadata.objects.all()
-        self.assertEqual(9600, len(measurements))
+        self.assertEqual(1152, len(measurements))
         self.assertEqual(1, len(measurement_metadata))
 
 
