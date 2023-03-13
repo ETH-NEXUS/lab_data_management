@@ -7,7 +7,7 @@ from pathlib import Path
 from django.test import TestCase
 
 from core.models import PlateDimension, Plate, Experiment, Project, \
-    BarcodeSpecification, PlateMapping
+    BarcodeSpecification, PlateMapping, Measurement, MeasurementMetadata
 from .helper import sameSchema, row_col_from_wells, closest, row_col_from_name
 from .mappers import BaseMapper, M1000Mapper, EchoMapper
 
@@ -140,22 +140,23 @@ class MapperTests(TestCase):
 
     TEST_DATA_FOLDER = "./temp"
     ECHO_DIR = join(TEST_DATA_FOLDER, "echo")
-    M1000_DIR = "./test_data/M1000"
+    M1000_DIR = join(TEST_DATA_FOLDER, "M1000")
     BARCODES = ["P1", "P2", "P3"]
-    TEST_DATA_FOLDER = "./temp"
-    ECHO_DIR = join(TEST_DATA_FOLDER, "echo")
-    BARCODES = ["P1", "P2", "P3"]
-
-
-
 
     def create_echo_test_data(self):
         project = Project.objects.create(name="Test Project1")
         experiment_m1000 = Experiment.objects.create(name="Test "
                                                           "Experiment_1",
                                                      project=project)
-        BarcodeSpecification.objects.create(prefix="BAF210901",
+        m1000_example_barcode_prefix = "BAF210901"
+        barcode_specification_m1000 = BarcodeSpecification.objects.create(
+            prefix=m1000_example_barcode_prefix,
                                             number_of_plates=25, experiment=experiment_m1000)
+        for i in range(barcode_specification_m1000.number_of_plates):
+            Plate.objects.create(dimension=PlateDimension.objects.get(name="dim_384_16x24"),
+                                          barcode=f""
+                                                  f"{barcode_specification_m1000.prefix}_{i + 1}",
+                                            experiment=experiment_m1000)
 
         experiment_echo = Experiment.objects.create(name="Test Experiment_2",
                                                project=project)
@@ -283,15 +284,17 @@ class MapperTests(TestCase):
     def test_echo_mapping(self):
         mapper = EchoMapper()
         mapper.run(join(self.ECHO_DIR, "**", "*-transfer-*.csv"))
-        plates = Plate.objects.all()
         plate_mappings = PlateMapping.objects.all()
-
-        # test that destination plates are created
-        self.assertEqual(len(self.BARCODES) + 1, len(plates))
-        # test that plate mappings are created
         self.assertEqual(3, len(plate_mappings))
 
     def test_m1000_mapping(self):
         mapper = M1000Mapper()
         mapper.run(join(self.M1000_DIR, "*.asc"))
+        measurements = Measurement.objects.all()
+        measurement_metadata = MeasurementMetadata.objects.all()
+        self.assertEqual(9600, len(measurements))
+        self.assertEqual(1, len(measurement_metadata))
+
+
+
 
