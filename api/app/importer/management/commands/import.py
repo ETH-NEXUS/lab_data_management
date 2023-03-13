@@ -21,7 +21,7 @@ from rdkit import Chem
 
 class Command(BaseCommand):
     def add_arguments(self, parser):
-        parser.add_argument("action", type=str, help="The action to execute")
+        parser.add_argument("what", type=str, help="What to import: sdf | template")
         parser.add_argument(
             "--input-file",
             "-i",
@@ -65,12 +65,14 @@ class Command(BaseCommand):
             "--cat",
             type=str,
             help="The name of the template category, defaults to 'Default'",
+            default="Default",
         )
         parser.add_argument(
             "--template-name",
             "-t",
             type=str,
             help="The name of the template, defaults to 'Default'",
+            default="Default",
         )
         parser.add_argument(
             "--debug", action="store_true", help="Outputs debug messages"
@@ -234,8 +236,8 @@ class Command(BaseCommand):
     def template(
         self,
         input_file: str,
-        category_name: str = "Default",
-        template_name: str = "Default",
+        category_name: str,
+        template_name: str,
     ):
         if isfile(input_file):
             well_types = []
@@ -287,7 +289,7 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         try:
-            if options.get("action") == "sdf":
+            if options.get("what") == "sdf":
                 mapping = SdfMapping(options.get("mapping_file"))
                 self.sdf(
                     options.get("input_file"),
@@ -297,7 +299,7 @@ class Command(BaseCommand):
                     number_of_columns=options.get("number_of_columns"),
                     number_of_wells=options.get("number_of_wells"),
                 )
-            elif options.get("action") == "template":
+            elif options.get("what") == "template":
                 self.template(
                     options.get("input_file"),
                     category_name=options.get("category_name"),
