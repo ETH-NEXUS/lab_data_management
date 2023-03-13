@@ -132,13 +132,6 @@ const changeSelectedValueIndex = (n: number) => {
 </script>
 
 <template>
-  <div
-    class="q-pa-sm q-py-md"
-    style="max-width: 300px"
-    v-if="measurementsValuesIndices.length > 0 && showHeatmap">
-    <q-select v-model="wellContent" :options="['Position', 'Type']" label="Well display value"></q-select>
-  </div>
-
   <div>
     <table v-if="props.plate">
       <tr>
@@ -198,6 +191,10 @@ const changeSelectedValueIndex = (n: number) => {
         </td>
       </tr>
     </table>
+  </div>
+
+  <div class="q-pa-sm q-py-md" style="max-width: 300px">
+    <q-select v-model="wellContent" :options="['Position', 'Type']" label="Well display value"></q-select>
   </div>
   <div v-if="measurementsValuesIndices.length > 0" class="q-pa-sm">
     <q-checkbox v-model="showHeatmap" label="Show Measurement Heatmap"></q-checkbox>
