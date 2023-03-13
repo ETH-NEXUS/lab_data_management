@@ -58,10 +58,9 @@ class BarcodeSpecification(TimeTrackedModel):
     related_name = "barcode_specifications"
     prefix = models.CharField(max_length=100)
     number_of_plates = models.IntegerField()
-    sides = ArrayField(models.CharField(max_length=20))
+    sides = ArrayField(models.CharField(max_length=20), null=True, blank=True)
     experiment = models.ForeignKey(
-        Experiment, on_delete=models.CASCADE, related_name=related_name
-    )
+        Experiment, on_delete=models.CASCADE, related_name=related_name)
 
     def __str__(self):
         return self.prefix

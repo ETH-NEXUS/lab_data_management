@@ -6,9 +6,10 @@ from pathlib import Path
 
 from django.test import TestCase
 
-from core.models import PlateDimension
+from core.models import PlateDimension, Plate, Experiment, Project, \
+    BarcodeSpecification, PlateMapping
 from .helper import sameSchema, row_col_from_wells, closest, row_col_from_name
-from .mappers import BaseMapper, M1000Mapper
+from .mappers import BaseMapper, M1000Mapper, EchoMapper
 
 from core.helper import posToAlphaChar
 
@@ -136,17 +137,34 @@ class ConvertPositionToIndexTests(TestCase):
 
 class MapperTests(TestCase):
     fixtures = ["plate_dimensions", "well_types", "test/compound_library"]
-    fixtures = ["plate_dimensions", "well_types", "test/compound_library"]
 
     TEST_DATA_FOLDER = "./temp"
     ECHO_DIR = join(TEST_DATA_FOLDER, "echo")
+    M1000_DIR = "./test_data/M1000"
     BARCODES = ["P1", "P2", "P3"]
     TEST_DATA_FOLDER = "./temp"
     ECHO_DIR = join(TEST_DATA_FOLDER, "echo")
     BARCODES = ["P1", "P2", "P3"]
+
+
+
 
     def create_echo_test_data(self):
+        project = Project.objects.create(name="Test Project1")
+        experiment_m1000 = Experiment.objects.create(name="Test "
+                                                          "Experiment_1",
+                                                     project=project)
+        BarcodeSpecification.objects.create(prefix="BAF210901",
+                                            number_of_plates=25, experiment=experiment_m1000)
+
+        experiment_echo = Experiment.objects.create(name="Test Experiment_2",
+                                               project=project)
+
         for barcode in self.BARCODES:
+            specification = BarcodeSpecification.objects.create(
+                prefix=barcode, number_of_plates=25,
+                experiment=experiment_echo)
+
             _dir = join(self.ECHO_DIR, barcode)
             makedirs(_dir, exist_ok=True)
             Path(join(_dir, "something.csv")).touch()
@@ -261,3 +279,19 @@ class MapperTests(TestCase):
         pos, id = mapper.determine_indexes(buffer4)
         self.assertEqual(0, pos)
         self.assertEqual(1, id)
+
+    def test_echo_mapping(self):
+        mapper = EchoMapper()
+        mapper.run(join(self.ECHO_DIR, "**", "*-transfer-*.csv"))
+        plates = Plate.objects.all()
+        plate_mappings = PlateMapping.objects.all()
+
+        # test that destination plates are created
+        self.assertEqual(len(self.BARCODES) + 1, len(plates))
+        # test that plate mappings are created
+        self.assertEqual(3, len(plate_mappings))
+
+    def test_m1000_mapping(self):
+        mapper = M1000Mapper()
+        mapper.run(join(self.M1000_DIR, "*.asc"))
+
