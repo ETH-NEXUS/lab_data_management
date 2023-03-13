@@ -1,17 +1,17 @@
 from copy import deepcopy
+from io import StringIO
 from os import makedirs
 from os.path import join
-from io import StringIO
 from pathlib import Path
 
 from django.test import TestCase
 
+from core.helper import posToAlphaChar
 from core.models import PlateDimension, Plate, Experiment, Project, \
     BarcodeSpecification, PlateMapping, Measurement, MeasurementMetadata
+from importer.m1000_test_file_content import content
 from .helper import sameSchema, row_col_from_wells, closest, row_col_from_name
 from .mappers import BaseMapper, M1000Mapper, EchoMapper
-
-from core.helper import posToAlphaChar
 
 
 class HelperTest(TestCase):
@@ -72,7 +72,7 @@ class HelperTest(TestCase):
 
 class ConvertPositionToIndexTests(TestCase):
     fixtures = ["plate_dimensions"]
-    fixtures = ["plate_dimensions"]
+
 
     def setUp(self):
         self.dimension_96 = PlateDimension.objects.get(name="dim_96_8x12")
@@ -158,6 +158,11 @@ class MapperTests(TestCase):
                                           barcode=f""
                                                   f"{barcode_specification_m1000.prefix}_{i + 1}",
                                             experiment=experiment_m1000)
+        for i in range(barcode_specification_m1000.number_of_plates):
+            with open(join(self.M1000_DIR, f"20210902-131750_{m1000_example_barcode_prefix}_"
+                                           f"{i + 1}.asc"), "w") as ef:
+                ef.write(content)
+
 
         experiment_echo = Experiment.objects.create(name="Test Experiment_2",
                                                project=project)
