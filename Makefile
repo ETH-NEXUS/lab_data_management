@@ -20,6 +20,12 @@ format:
 	@find ./api/app -type f -name '*.py' ! -path '*/migrations/*' -exec autoflake --in-place --remove-unused-variables --remove-all-unused-imports '{}' \;
 	@flake8 ./api/app --exclude */migrations/*
 
+mainton:
+	@docker-compose -f docker-compose.yml -f docker-compose.prod.yml exec ws sh -c 'touch /web_root/.maintenance'
+
+maintoff:
+	@docker-compose -f docker-compose.yml -f docker-compose.prod.yml exec ws sh -c 'rm -f /web_root/.maintenance'
+
 redeploy: env_var
 	@git pull
 	@docker-compose -f docker-compose.yml -f docker-compose.prod.yml up --build -d
