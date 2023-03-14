@@ -1,35 +1,9 @@
 version: "3"
-volumes:
-  pg_data:
-  web_root:
-  smnrp-data:
-  static-data:
-  smnrp_live:
-
 services:
-  ui:
-    command: >
-      bash -c "\
-        yarn install
-        rm -rf /app/dist/*
-        yarn run build
-        mv /app/dist/spa/* /app/dist/.
-        rm -rf /app/dist/spa
-      "
-  api:
-    environment:
-      - DB_HOST=db
-      - DB_NAME=${POSTGRES_DB}
-      - DB_USER=${POSTGRES_USER}
-      - DB_PASS=${POSTGRES_PASSWORD}
-      - SECRET_KEY=${DJANGO_SECRET_KEY}
-      - ALLOWED_HOSTS=${DJANGO_ALLOWED_HOSTS}
-      - DEV=False
-
   ws:
     image: ethnexus/smnrp:1.1.0
     volumes:
-      - "web_root:/web_root"
+      - "web_root:/web_root:z"
       - ./api/static:/vol/web/static:z
       - ./api/media:/vol/web/media:z
       - /etc/pki/tls/certs/DCcerts2023/ldm.nexus.ethz.ch.chain.crt.pem:/etc/letsencrypt/live/ldm.nexus.ethz.ch/fullchain.pem:ro
@@ -43,3 +17,12 @@ services:
     depends_on:
       - api
       - db
+  ui:
+    command: >
+      bash -c "\
+        yarn install
+        rm -rf /app/dist/*
+        yarn run build
+        mv /app/dist/spa/* /app/dist/.
+        rm -rf /app/dist/spa
+      "
