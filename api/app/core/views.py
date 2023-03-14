@@ -33,6 +33,11 @@ from .serializers import (
     SimplePlateTemplateSerializer,
 )
 
+from django.shortcuts import render
+from django.views.generic import View
+from django.conf import settings
+import os
+
 
 class ProjectViewSet(viewsets.ModelViewSet):
     serializer_class = ProjectSerializer
@@ -285,3 +290,12 @@ class ExperimentViewSet(viewsets.ModelViewSet):
 class VersionView(views.APIView):
     def get(self, request, format=None):
         return Response({"version": environ.get("GIT_VERSION", "N/A")})
+
+
+class DocsView(View):
+    def get(self, request, *args, **kwargs):
+        docs_dir = os.path.join(settings.BASE_DIR, 'docs', 'site')
+        index_path = os.path.join(docs_dir, 'index.html')
+        with open(index_path, 'r') as f:
+            content = f.read()
+        return render(request, 'docs.html', {'content': content})

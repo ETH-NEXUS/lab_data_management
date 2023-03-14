@@ -1,0 +1,5 @@
+site_name: Lab Data Management Documentation
+nav:
+  - Home: index.md
+  - About: about.md
+theme: readthedocs
