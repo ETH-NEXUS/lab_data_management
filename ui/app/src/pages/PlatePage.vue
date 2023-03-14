@@ -297,6 +297,7 @@ const formatBarcode = (barcode: string | undefined) => {
       <q-splitter v-model="platePage.splitter" class="full-width">
         <template v-slot:before>
           <div v-if="plate">
+            f
             <h2>{{ formatBarcode(plate.barcode) }}</h2>
             <dynamic-plate
               :plate="plate"
