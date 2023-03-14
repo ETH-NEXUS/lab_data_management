@@ -298,6 +298,7 @@ dist
 data/
 static/
 media/
+docs/site/
 backups/
 temp/
 *.ipynb

@@ -1,0 +1,52 @@
+img.twemoji {
+    height: 1.2em;
+    border: 0px;
+  }
+
+  .rst-content {
+    width: 100%;
+    min-height: 900px;
+  }
+
+  .wy-nav-content {
+    max-width: 100%;
+    min-height: 900px;
+  }
+
+
+table {
+  width: 100%;
+  max-width: 100%;
+  table-layout: fixed; 
+  word-break: break-all;
+  
+}
+
+td:nth-child(n) {
+  width:fit-content;
+  max-width: 300px;
+  word-wrap: break-word;
+  word-break:break-all;
+}
+
+td:nth-child(n + 1) {
+  width: fit-content;
+  max-width: 300px;
+  word-wrap: break-word;
+  word-break:break-all;
+}
+
+ td:nth-child(3n) {
+  width: fit-content;
+  max-width: 800px;
+  word-wrap: break-word;
+  word-break:break-all;
+ }
+
+td:nth-child(3n + 1) {
+  width: fit-content;
+  max-width: 800px;
+  word-wrap: break-word;
+  word-break:break-all;
+}
+ 
