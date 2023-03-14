@@ -1,10 +1,11 @@
 <script setup lang="ts">
-import {ref} from 'vue'
+import {ref, onMounted} from 'vue'
 import NavigationTree from '../components/NavigationTree.vue'
 import {useRoute, useRouter} from 'vue-router'
 import {useUserStore} from 'src/stores/user'
 import {useQuasar} from 'quasar'
 import {useI18n} from 'vue-i18n'
+import {api} from 'src/boot/axios'
 
 const $q = useQuasar()
 const route = useRoute()
@@ -26,6 +27,17 @@ const logout = () => {
   })
   router.push({path: '/login'})
 }
+
+const version = ref<string>('N/A')
+
+onMounted(async () => {
+  try {
+    const resp = await api.get('/api/version/')
+    version.value = resp.data.version
+  } catch (err) {
+    console.error(err)
+  }
+})
 </script>
 
 <template>
@@ -40,6 +52,13 @@ const logout = () => {
         <q-btn v-if="userStore.jwt" flat round dense icon="person">
           <q-menu fit>
             <q-list style="min-width: 100px">
+              <q-item v-ripple>
+                <q-item-section avatar>
+                  <q-icon name="o_pin" />
+                </q-item-section>
+                <q-item-section>{{ version }}</q-item-section>
+              </q-item>
+              <q-separator />
               <q-item v-ripple clickable @click="logout">
                 <q-item-section avatar>
                   <q-icon name="logout" />

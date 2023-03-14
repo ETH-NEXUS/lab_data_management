@@ -17,7 +17,7 @@ from django.contrib import admin
 from django.urls import path, include
 from drf_auto_endpoint.router import router
 from django.conf import settings
-from core.views import MappingPreviewView
+from core.views import MappingPreviewView, VersionView
 from rest_framework_simplejwt.views import (
     TokenObtainPairView,
     TokenRefreshView,
@@ -39,6 +39,7 @@ urlpatterns = [
     path("api/", include(router.urls)),
     path("api/", include(user_router.urls)),
     path("api/mapping_preview/", MappingPreviewView.as_view()),
+    path("api/version/", VersionView.as_view()),
 ]
 
 if not settings.DISABLE_BROWSABLE_API and not settings.DISABLE_AUTH:

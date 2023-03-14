@@ -1,6 +1,7 @@
 import csv
 from uuid import uuid4
 
+from os import environ
 from compoundlib.serializers import SimpleCompoundLibrarySerializer
 from django.core.exceptions import ValidationError
 from django.db import IntegrityError
@@ -279,3 +280,8 @@ class ExperimentViewSet(viewsets.ModelViewSet):
         return Response(
             {"success": "Plates added successfully"}, status=status.HTTP_200_OK
         )
+
+
+class VersionView(views.APIView):
+    def get(self, request, format=None):
+        return Response({"version": environ.get("GIT_VERSION", "N/A")})
