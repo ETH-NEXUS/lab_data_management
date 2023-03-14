@@ -80,6 +80,22 @@ const heatmapColor = (well: Well | undefined) => {
   const {from, to} = platePage.value.heatmapPalette.value
   return percentageToHsl(percentage(well), from, to)
 }
+
+const typeColor_map: {[key: string]: string} = {
+  P: 'rgb(198, 223, 168)',
+  N: 'rgb(253, 204, 134)',
+  C: 'rgb(177, 190, 197)',
+}
+
+const typeColor = (well: Well | undefined) => {
+  if (well) {
+    const type = well.type.substring(0, 1).toLocaleUpperCase()
+    if (type in typeColor_map) {
+      return typeColor_map[type]
+    }
+  }
+  return 'transparent'
+}
 </script>
 
 <template>
@@ -99,7 +115,11 @@ const heatmapColor = (well: Well | undefined) => {
         <td
           :style="{
             backgroundColor:
-              platePage.showHeatmap && selectedMeasurement ? heatmapColor(wells[row][col]) : 'transparent',
+              platePage.showHeatmap && selectedMeasurement
+                ? heatmapColor(wells[row][col])
+                : plate.template || (platePage.wellContent === 'type' && !platePage.showHeatmap)
+                ? typeColor(wells[row][col])
+                : 'transparent',
           }"
           :key="`cols${col}`"
           v-for="(_, col) of props.plate.dimension.cols"
@@ -146,7 +166,7 @@ const heatmapColor = (well: Well | undefined) => {
       </tr>
     </table>
   </div>
-  <div v-if="props.plate.z_primes" class="row q-mt-sm">
+  <div v-if="!plate.template && props.plate.z_primes" class="row q-mt-sm">
     <div class="col-12 q-mr-md">
       <b>{{ t('label.z_prime') }}:</b>
       <span
@@ -164,7 +184,7 @@ const heatmapColor = (well: Well | undefined) => {
       </span>
     </div>
   </div>
-  <div class="row">
+  <div v-if="!plate.template" class="row">
     <div class="col-4 q-mr-md">
       <q-select
         v-model="platePage.wellContent"
