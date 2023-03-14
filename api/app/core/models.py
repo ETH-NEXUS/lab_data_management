@@ -60,7 +60,8 @@ class BarcodeSpecification(TimeTrackedModel):
     number_of_plates = models.IntegerField()
     sides = ArrayField(models.CharField(max_length=20), null=True, blank=True)
     experiment = models.ForeignKey(
-        Experiment, on_delete=models.CASCADE, related_name=related_name)
+        Experiment, on_delete=models.CASCADE, related_name=related_name
+    )
 
     def __str__(self):
         return self.prefix
@@ -167,11 +168,27 @@ class Plate(TimeTrackedModel):
         return self.dimension.num_wells
 
     @property
+    def measurements(self):
+        return self.__measurements()
+
+    @property
     def z_primes(self):
         results = {}
         for measurement in self.__measurements():
             z_prime = self.z_prime(measurement)
             results[measurement] = z_prime if not math.isnan(z_prime) else "N/A"
+        return results
+
+    @property
+    def min_max(self):
+        results = {}
+        for measurement in self.__measurements():
+            min = self.min(measurement)
+            max = self.max(measurement)
+            results[measurement] = {
+                "min": min if not math.isnan(min) else "N/A",
+                "max": max if not math.isnan(max) else "N/A",
+            }
         return results
 
     def well_at(self, position: int, create_if_not_exist: bool = False) -> "Well":
@@ -195,6 +212,18 @@ class Plate(TimeTrackedModel):
             w.measurement(abbrev) for w in self.wells.filter(type__name=type)
         ]
         return np.std(measurements)
+
+    def max(self, abbrev: str, type: str = "C"):
+        measurements = [
+            w.measurement(abbrev) for w in self.wells.filter(type__name=type)
+        ]
+        return np.max(measurements)
+
+    def min(self, abbrev: str, type: str = "C"):
+        measurements = [
+            w.measurement(abbrev) for w in self.wells.filter(type__name=type)
+        ]
+        return np.min(measurements)
 
     def __measurements(self) -> list[str]:
         results = []

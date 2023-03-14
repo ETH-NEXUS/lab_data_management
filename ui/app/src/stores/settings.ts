@@ -1,11 +1,13 @@
-import {WellInfo} from './../components/models'
+import {Well, WellInfo} from './../components/models'
+import {Palette} from '../components/helpers'
 import {defineStore} from 'pinia'
-import {Palette} from 'components/data'
-import {ref} from 'vue'
 
 interface PlatePage {
   splitter: number
   selectedWellInfo: WellInfo | undefined
+  wellContent: keyof Well
+  showHeatmap: boolean
+  heatmapPalette: Palette
 }
 
 interface NavigationTree {
@@ -28,8 +30,6 @@ interface Settings {
   libraryNavigationTree: NavigationTree
   templateNavigationTree: NavigationTree
   wellDetails: WellDetails
-  palette: Palette
-  showHeatmap: boolean
 }
 
 export const useSettingsStore = defineStore('settings', {
@@ -38,6 +38,9 @@ export const useSettingsStore = defineStore('settings', {
       platePage: {
         splitter: 50,
         selectedWellInfo: undefined,
+        wellContent: 'hr_position',
+        showHeatmap: false,
+        heatmapPalette: {label: 'OrangeRed', value: {from: '#fff7bc', to: '#993404'}},
       },
       navigationTree: {
         filter: '',
@@ -57,9 +60,6 @@ export const useSettingsStore = defineStore('settings', {
       wellDetails: {
         showStructure: true,
       },
-      palette: {value: 'orange', label: 'Palette 1', from: '#fff7bc', to: '#993404'},
-
-      showHeatmap: false,
     } as Settings),
   persist: {
     enabled: true,

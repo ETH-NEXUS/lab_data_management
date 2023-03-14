@@ -107,10 +107,18 @@ export interface PlateDimension {
   rows: number
 }
 
+export interface MinMax {
+  min: number
+  max: number
+}
+
 export interface Plate {
   id: number
   barcode: string
   dimension: PlateDimension
+  measurements: Array<string>
+  z_primes: {[key: string]: number}
+  min_max: {[key: string]: MinMax}
   experiment?: Experiment
   library?: CompoundLibrary
   template?: Template

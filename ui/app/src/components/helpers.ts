@@ -39,6 +39,22 @@ export const downloadCSVData = (
   link.click()
 }
 
+export type Palette = {
+  label: string
+  value: {
+    from: string
+    to: string
+  }
+}
+
+export const palettes: Array<Palette> = [
+  {label: 'OrangeRed', value: {from: '#fff7bc', to: '#993404'}},
+  {label: 'GreenRed', value: {from: '#00FF00', to: '#FF0000'}},
+  {label: 'Green', value: {from: '#c7e9c0', to: '#006d2c'}},
+  {label: 'Blue', value: {from: '#92c5de', to: '#0b2746'}},
+  {label: 'GreenBrown', value: {from: '#b8e186', to: '#662506'}},
+]
+
 export const percentageToHsl = (percentage: number, fromColor: string, toColor: string) => {
   // if percentage is not given (-1) we return a transparent color
   if (percentage === -1) {
