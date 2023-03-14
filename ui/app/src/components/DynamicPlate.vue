@@ -1,11 +1,15 @@
 <script setup lang="ts">
-import {computed, defineProps, defineEmits, PropType, ref, onMounted} from 'vue'
+import {computed, defineProps, defineEmits, PropType, ref} from 'vue'
 import {Plate, Well} from './models'
 import {positionFromRowCol} from '../helpers/plate'
-import {palettes, Metadata} from 'components/data'
-import {percentageToHsl} from 'components/helpers'
+import {palettes, percentageToHsl} from 'components/helpers'
 import {storeToRefs} from 'pinia'
 import {useSettingsStore} from 'stores/settings'
+import {useI18n} from 'vue-i18n'
+
+const {t} = useI18n()
+
+const {platePage} = storeToRefs(useSettingsStore())
 
 const props = defineProps({
   plate: {
@@ -14,41 +18,23 @@ const props = defineProps({
   },
 })
 
-onMounted(() => {
-  measurementsValuesIndices.value = findNumberOfMeasurements()
-  selectedMetadata.value = findMeasurementMetadata(0)
-  if (measurementsValuesIndices.value.length > 0) {
-    for (const n of measurementsValuesIndices.value) {
-      const metadata = findMeasurementMetadata(n)
-      if (metadata) {
-        metadataOptions.value?.push(metadata)
-      }
-    }
-  }
-})
+const wellContentOptions = [
+  {
+    label: t('label.hr_position'),
+    value: 'hr_position',
+  },
+  {
+    label: t('label.well_type'),
+    value: 'type',
+  },
+  {
+    label: t('label.index_position'),
+    value: 'position',
+  },
+]
 
-const selectedMeasurementValueIndex = ref<number>(0)
-const selectedMetadata = ref<Metadata | null>(null)
-
-const wellContent = ref<string>('Position')
-
-const measurementsValuesIndices = ref<number[]>([])
-
-const metadataOptions = ref<Metadata[]>([])
-const {palette, showHeatmap} = storeToRefs(useSettingsStore())
-
-type PaletteToFunction = {
-  [key in keyof typeof palettes]: (percentage: number) => string
-}
-
-const paletteToFunction: PaletteToFunction = {} as PaletteToFunction
-
-for (const key in palettes) {
-  if (palettes.hasOwnProperty(key)) {
-    const {from, to} = palettes[key]
-    paletteToFunction[key] = (percentage: number) => percentageToHsl(percentage, from, to)
-  }
-}
+const selectedMeasurement = ref<string | undefined>(props.plate.measurements[0])
+const measurementOptions = ref<Array<string>>(props.plate.measurements)
 
 const emit = defineEmits(['well-selected'])
 
@@ -78,56 +64,21 @@ const wells = computed(() => {
   return _wells
 })
 
-const maxMeasurement = computed(() => {
-  return findMaxMeasurement()
-})
-
-const minMeasurement = computed(() => {
-  return findMinMeasurement()
-})
-
-const findNumberOfMeasurements = () => {
-  const {wells = []} = props.plate
-  const maxMeasurements = Math.max(...wells.map(({measurements = []}) => measurements.length), 0)
-  return Array.from({length: maxMeasurements}, (_, index) => index)
-}
-
-const findMaxMeasurement = () => {
-  return props.plate.wells?.reduce((max, {measurements = []}) => {
-    return Math.max(max, ...measurements.map(m => m.value))
-  }, 0)
-}
-const findMinMeasurement = () => {
-  return props.plate.wells?.reduce((min, {measurements = []}) => {
-    return Math.min(min, ...measurements.map(m => m.value))
-  }, 0)
-}
-
-const findMeasurementPercentage = (value: number) => {
-  if (minMeasurement.value !== undefined && maxMeasurement.value !== undefined && value) {
-    return (value - minMeasurement.value) / (maxMeasurement.value - minMeasurement.value)
+const percentage = (well: Well | undefined) => {
+  if (selectedMeasurement.value && well?.measurements) {
+    const min = props.plate.min_max[selectedMeasurement.value].min
+    const max = props.plate.min_max[selectedMeasurement.value].max
+    const value = well?.measurements.find(m => m.feature.abbrev === selectedMeasurement.value)?.value
+    if (value) {
+      return (value - min) / (max - min)
+    }
   }
   return 0
 }
 
-const findMeasurementMetadata = (n: number) => {
-  const well = props.plate?.wells?.[0]
-  const measurement = well?.measurements?.[n]
-  if (measurement) {
-    const {name, abbrev, unit} = measurement.feature
-    return {
-      feature: name === null ? 'not specified' : name,
-      label: abbrev === null ? 'not specified' : abbrev,
-      value: n,
-      unit: unit === null ? 'not specified' : unit,
-    }
-  }
-  return null
-}
-
-const changeSelectedValueIndex = (n: number) => {
-  selectedMeasurementValueIndex.value = n
-  metadataOptions.value[n].value = n
+const heatmapColor = (well: Well | undefined) => {
+  const {from, to} = platePage.value.heatmapPalette.value
+  return percentageToHsl(percentage(well), from, to)
 }
 </script>
 
@@ -148,17 +99,7 @@ const changeSelectedValueIndex = (n: number) => {
         <td
           :style="{
             backgroundColor:
-              showHeatmap && measurementsValuesIndices.length > 0
-                ? paletteToFunction[palette.value](
-                    findMeasurementPercentage(
-                      wells[row][col]?.measurements[selectedMetadata.value]?.value
-                        ? wells[row][col]?.measurements[selectedMetadata.value].value
-                        : 0
-                    ),
-                    120,
-                    0
-                  )
-                : 'transparent',
+              platePage.showHeatmap && selectedMeasurement ? heatmapColor(wells[row][col]) : 'transparent',
           }"
           :key="`cols${col}`"
           v-for="(_, col) of props.plate.dimension.cols"
@@ -169,42 +110,83 @@ const changeSelectedValueIndex = (n: number) => {
             })
           ">
           <a v-if="wells[row][col]" :class="{'bg-warning': wells[row][col]!.status}">
-            {{ wellContent === 'Position' ? wells[row][col]!.hr_position : wells[row][col]!.type }}
+            {{ wells[row][col]![platePage.wellContent] }}
           </a>
           <q-tooltip
-            v-if="wells[row][col] && wells[row][col]?.compounds"
+            class="tooltip"
+            v-if="wells[row][col]"
             anchor="top middle"
             self="bottom middle"
             :offset="[5, 5]">
-            <ul>
-              <li v-for="compound in wells[row][col]?.compounds" :key="compound.identifier">
-                {{ compound.name }} ({{ compound.identifier }})
-              </li>
-            </ul>
-            <br />
-            <ul>
-              <li v-for="measurement in wells[row][col]?.measurements" :key="measurement.feature.name">
-                {{ measurement.feature.abbrev }}: {{ measurement.value }} {{ measurement.feature.unit }}
-              </li>
-            </ul>
+            <b>{{ wells[row][col]?.hr_position }}</b>
+            ({{ wells[row][col]?.type }})
+            <small>({{ wells[row][col]?.position }})</small>
+            <hr />
+            <b v-if="wells[row][col]?.compounds" class="q-mt-md">{{ t('label.compounds') }}</b>
+            <table v-if="wells[row][col]?.compounds">
+              <tr v-for="compound in wells[row][col]?.compounds" :key="compound.identifier">
+                <td>
+                  <b>{{ compound.name }}</b>
+                </td>
+                <td>{{ compound.identifier }}</td>
+              </tr>
+            </table>
+            <b v-if="wells[row][col]?.measurements" class="q-mt-md">{{ t('label.measurements') }}</b>
+            <table v-if="wells[row][col]?.measurements">
+              <tr v-for="measurement in wells[row][col]?.measurements" :key="measurement.feature.name">
+                <td>
+                  <b>{{ measurement.feature.abbrev }}</b>
+                </td>
+                <td>{{ measurement.value }}</td>
+                <td>{{ measurement.feature.unit }}</td>
+              </tr>
+            </table>
           </q-tooltip>
         </td>
       </tr>
     </table>
   </div>
-
-  <div class="q-pa-sm q-py-md" style="max-width: 300px">
-    <q-select v-model="wellContent" :options="['Position', 'Type']" label="Well display value"></q-select>
-  </div>
-  <div v-if="measurementsValuesIndices.length > 0" class="q-pa-sm">
-    <q-checkbox v-model="showHeatmap" label="Show Measurement Heatmap"></q-checkbox>
-
-    <div class="q-pa-sm" style="max-width: 300px" v-if="measurementsValuesIndices.length > 0 && showHeatmap">
-      <q-select v-model="selectedMetadata" :options="metadataOptions" label="Select a value"></q-select>
+  <div v-if="props.plate.z_primes" class="row q-mt-sm">
+    <div class="col-12 q-mr-md">
+      <b>{{ t('label.z_prime') }}:</b>
+      <span
+        v-for="(z_prime, measurement) in props.plate.z_primes"
+        :key="measurement"
+        :class="{
+          'z-prime': true,
+          'q-mx-xs': true,
+          'q-pa-xs': true,
+          'bg-green-3': z_prime >= 0.5 && z_prime <= 1,
+          'bg-orange-3': z_prime >= 0 && z_prime < 0.5,
+          'bg-red-3': z_prime < 0,
+        }">
+        {{ z_prime }} ({{ measurement }})
+      </span>
     </div>
-
-    <div class="q-pa-sm" style="max-width: 300px" v-if="showHeatmap">
-      <q-select v-model="palette" :options="Object.values(palettes)" label="Select a palette"></q-select>
+  </div>
+  <div class="row">
+    <div class="col-4 q-mr-md">
+      <q-select
+        v-model="platePage.wellContent"
+        :options="wellContentOptions"
+        :label="t('label.well_content')"
+        emit-value
+        map-options />
+    </div>
+    <div v-if="measurementOptions.length > 0" class="col-4">
+      <q-checkbox v-model="platePage.showHeatmap" :label="t('label.show_heatmap')"></q-checkbox>
+      <div class="col-12" v-if="platePage.showHeatmap">
+        <q-select
+          v-model="selectedMeasurement"
+          :options="measurementOptions"
+          :label="t('label.select_measurement')"></q-select>
+      </div>
+      <div class="col-12" v-if="platePage.showHeatmap">
+        <q-select
+          v-model="platePage.heatmapPalette"
+          :options="palettes"
+          :label="t('label.select_color_palette')"></q-select>
+      </div>
     </div>
   </div>
 </template>
@@ -237,10 +219,33 @@ td:hover
 ul
   list-style: none
   padding-left: 0
-
+.tooltip
+  table, tr, td, td:hover
+    font-size: 12px
+    border: unset
+    border-radius: unset
+    border-spacing: 2px
+    padding: 0px
+    margin: 0px
+    overflow: unset
+    text-align: left
+    vertical-align: top
+  td
+    white-space: nowrap
+    width: unset
+    height: unset
+    min-width: unset
+    min-height: unset
+    max-width: unset
+    max-height: unset
+  & > b
+    font-size: 12px
+    margin-top: 10px
 
 select
   max-width: 300px
+.z-prime
+  border-radius: 5px
 </style>
 
 <!-- :style="

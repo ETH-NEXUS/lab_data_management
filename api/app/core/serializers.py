@@ -164,8 +164,10 @@ class PlateListSerializer(serializers.ModelSerializer):
 class PlateSerializer(serializers.ModelSerializer):
     dimension = PlateDimensionSerializer(required=False, allow_null=True)
     # library = CompoundLibrarySerializer(required=False, allow_null=True)
-    wells = WellSerializer(many=True, required=False, allow_null=True)
+    measurements = serializers.ReadOnlyField()
     z_primes = serializers.ReadOnlyField()
+    min_max = serializers.ReadOnlyField()
+    wells = WellSerializer(many=True, required=False, allow_null=True)
 
     # def get_wells(self, instance):
     #     wells = instance.wells.all().order_by('position')
