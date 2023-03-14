@@ -29,7 +29,7 @@ services:
   ws:
     image: ethnexus/smnrp:1.0.9
     volumes:
-      - "web_root:/web_root:ro"
+      - "web_root:/web_root"
       - ./api/static:/vol/web/static:z
       - ./api/media:/vol/web/media:z
       - /etc/pki/tls/certs/DCcerts2023/ldm.nexus.ethz.ch.chain.crt.pem:/etc/letsencrypt/live/ldm.nexus.ethz.ch/fullchain.pem:ro
