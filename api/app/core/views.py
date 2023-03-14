@@ -1,6 +1,6 @@
 import csv
 from uuid import uuid4
-import codecs
+import re
 
 from os import environ
 from compoundlib.serializers import SimpleCompoundLibrarySerializer
@@ -13,6 +13,7 @@ from rest_framework.decorators import action
 from rest_framework.response import Response
 from django.http import HttpResponse
 import mimetypes
+
 
 from .models import (
     Well,
@@ -36,7 +37,7 @@ from .serializers import (
     SimplePlateTemplateSerializer,
 )
 
-from django.shortcuts import render
+
 from django.views.generic import View
 from django.conf import settings
 import os
@@ -297,14 +298,25 @@ class VersionView(views.APIView):
 
 class DocsView(View):
     def get(self, request, uri, **kwargs):
-        url = request.get_full_path()
-        print("URI: ", uri)
         docs_dir = os.path.join(settings.BASE_DIR, 'docs', 'site')
         if uri == '':
             uri = 'index.html'
         file_path = os.path.join(docs_dir, uri)
-        with codecs.open(file_path, 'r', encoding='utf-8') as f:
+
+        # with redirect_stderr(None):
+        #     detector = UniversalDetector()
+        #     with open(file_path, "rb") as file:
+        #         for line in file:
+        #             detector.feed(line)
+        #             if detector.done:
+        #                 break
+        #         detector.close()
+        #     encoding = detector.result.get("encoding")
+        with open(file_path, 'r', encoding='utf8', errors="replace") as f:
             content = f.read()
+
+        # Replace all emojis with an empty string
+        content = re.sub(r'[^\x00-\x7F]+', '', content)
         mime_type = mimetypes.guess_type(file_path)
         return HttpResponse(content, content_type=mime_type[0])
 

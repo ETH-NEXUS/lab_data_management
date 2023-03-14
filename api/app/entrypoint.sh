@@ -9,6 +9,9 @@ python manage.py makemigrations
 python manage.py migrate
 python manage.py initadmin
 python manage.py db init
+
+cat README.md > docs/docs/index.md
+
 cd docs || exit
 mkdocs build --clean
 cd ..
