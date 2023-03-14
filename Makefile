@@ -20,8 +20,9 @@ format:
 	@find ./api/app -type f -name '*.py' ! -path '*/migrations/*' -exec autoflake --in-place --remove-unused-variables --remove-all-unused-imports '{}' \;
 	@flake8 ./api/app --exclude */migrations/*
 
-deploy: env_var
-	@./scripts/deploy.sh
+redeploy: env_var
+	@git pull
+	@docker-compose -f docker-compose.yml -f docker-compose.prod.yml up --build -d
 
 
 ps:
