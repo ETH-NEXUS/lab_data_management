@@ -1,5 +1,6 @@
 import csv
 from uuid import uuid4
+import codecs
 
 from os import environ
 from compoundlib.serializers import SimpleCompoundLibrarySerializer
@@ -10,6 +11,8 @@ from django.http import Http404
 from rest_framework import viewsets, views, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
+from django.http import HttpResponse
+import mimetypes
 
 from .models import (
     Well,
@@ -293,9 +296,16 @@ class VersionView(views.APIView):
 
 
 class DocsView(View):
-    def get(self, request, *args, **kwargs):
+    def get(self, request, uri, **kwargs):
+        url = request.get_full_path()
+        print("URI: ", uri)
         docs_dir = os.path.join(settings.BASE_DIR, 'docs', 'site')
-        index_path = os.path.join(docs_dir, 'index.html')
-        with open(index_path, 'r') as f:
+        if uri == '':
+            uri = 'index.html'
+        file_path = os.path.join(docs_dir, uri)
+        with codecs.open(file_path, 'r', encoding='utf-8') as f:
             content = f.read()
-        return render(request, 'docs.html', {'content': content})
+        mime_type = mimetypes.guess_type(file_path)
+        return HttpResponse(content, content_type=mime_type[0])
+
+

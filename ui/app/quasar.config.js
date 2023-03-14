@@ -96,6 +96,7 @@ module.exports = configure(function (/* ctx */) {
         '/media': 'http://api:5000',
         '/static': 'http://api:5000',
         '/api': 'http://api:5000',
+        '/docs': 'http://api:5000',
         '/notebook': 'http://api:8888',
       },
     },

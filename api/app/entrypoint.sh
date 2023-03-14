@@ -3,11 +3,15 @@
 PORT=5000
 
 python manage.py collectstatic --noinput
+
 python manage.py wait_for_db
 python manage.py makemigrations
 python manage.py migrate
 python manage.py initadmin
 python manage.py db init
+cd docs || exit
+mkdocs build --clean
+cd ..
 
 # if [ "$ENABLE_JUPYTER" == "True" ]; then
 #   jupyter notebook --ip 0.0.0.0 --port 8888 --no-browser --allow-root --config notebook/ipython_config.py &
