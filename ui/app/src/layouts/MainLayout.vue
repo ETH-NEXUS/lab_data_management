@@ -28,6 +28,10 @@ const logout = () => {
   router.push({path: '/login'})
 }
 
+const openNotebook = () => {
+  window.open(`${window.location.protocol}//${window.location.host}/notebook/`, '_blank', 'noreferrer')
+}
+
 const version = ref<string>('N/A')
 
 onMounted(async () => {
@@ -59,6 +63,12 @@ onMounted(async () => {
                 <q-item-section>{{ version }}</q-item-section>
               </q-item>
               <q-separator />
+              <q-item v-ripple clickable @click="openNotebook">
+                <q-item-section avatar>
+                  <q-icon name="o_edit_note" />
+                </q-item-section>
+                <q-item-section>{{ t('label.notebook') }}</q-item-section>
+              </q-item>
               <q-item v-ripple clickable @click="logout">
                 <q-item-section avatar>
                   <q-icon name="logout" />
