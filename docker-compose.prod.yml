@@ -27,7 +27,7 @@ services:
       - DEV=False
 
   ws:
-    image: ethnexus/smnrp:1.0.9
+    image: ethnexus/smnrp:1.1.0
     volumes:
       - "web_root:/web_root"
       - ./api/static:/vol/web/static:z
