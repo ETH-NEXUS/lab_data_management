@@ -65,6 +65,7 @@ export default {
     measurements: 'Measurements',
     z_prime: "z'",
     notebook: 'Notebook',
+    about: 'About',
   },
   hint: {
     username: 'Enter your ETH username',

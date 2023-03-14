@@ -44,15 +44,11 @@
               <ul class="current">
                 <li class="toctree-l1 current"><a class="reference internal current" href=".">Home</a>
     <ul class="current">
-    <li class="toctree-l2"><a class="reference internal" href="#commands">Commands</a>
+    <li class="toctree-l2"><a class="reference internal" href="#getting-started">Getting started</a>
     </li>
-    <li class="toctree-l2"><a class="reference internal" href="#project-layout">Project layout</a>
+    <li class="toctree-l2"><a class="reference internal" href="#import-a-compound-library">Import a compound library</a>
     </li>
     </ul>
-                </li>
-              </ul>
-              <ul>
-                <li class="toctree-l1"><a class="reference internal" href="about/">About</a>
                 </li>
               </ul>
       </div>
@@ -78,27 +74,33 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
             <div class="section" itemprop="articleBody">
               
-                <h1 id="welcome-to-mkdocs">Welcome to MkDocs</h1>
-<p>For full documentation visit <a href="https://www.mkdocs.org">mkdocs.org</a>.</p>
-<h2 id="commands">Commands</h2>
-<ul>
-<li><code>mkdocs new [dir-name]</code> - Create a new project.</li>
-<li><code>mkdocs serve</code> - Start the live-reloading docs server.</li>
-<li><code>mkdocs build</code> - Build the documentation site.</li>
-<li><code>mkdocs -h</code> - Print help message and exit.</li>
-</ul>
-<h2 id="project-layout">Project layout</h2>
-<pre><code>mkdocs.yml    # The configuration file.
-docs/
-    index.md  # The documentation homepage.
-    ...       # Other markdown pages, images and other files.
+                <h1 id="lab-management">Lab Management</h1>
+<h2 id="getting-started">Getting started</h2>
+<ol>
+<li>Clone it from github</li>
+</ol>
+<pre><code class="language-bash">git clone git@github.com:ETH-NEXUS/lab_management.git
+</code></pre>
+<ol>
+<li>Create the <code>.env</code> file</li>
+</ol>
+<pre><code class="language-bash">cd lab_management
+cp .env.TEMPLATE .env
+vi .env
+</code></pre>
+<p>&rarr; Replace all the <code>&lt;&gt;</code>.</p>
+<ol>
+<li>Run it</li>
+</ol>
+<pre><code>make up
+</code></pre>
+<h2 id="import-a-compound-library">Import a compound library</h2>
+<p>In the api container run:</p>
+<pre><code class="language-bash">./manage.py import sdf -i /data/S230470.sdf -m /data/S230470_mapping.yml -r 16 -c 24
 </code></pre>
               
             </div>
           </div><footer>
-    <div class="rst-footer-buttons" role="navigation" aria-label="Footer Navigation">
-        <a href="about/" class="btn btn-neutral float-right" title="About">Next <span class="icon icon-circle-arrow-right"></span></a>
-    </div>
 
   <hr/>
 
@@ -121,8 +123,6 @@ docs/
     
     
     
-      <span><a href="about/" style="color: #fcfcfc">Next &raquo;</a></span>
-    
   </span>
 </div>
     <script>var base_url = '.';</script>
@@ -140,5 +140,5 @@ docs/
 
 <!--
 MkDocs version : 1.4.2
-Build Date UTC : 2023-03-14 13:42:24.056150+00:00
+Build Date UTC : 2023-03-14 15:52:52.380106+00:00
 -->

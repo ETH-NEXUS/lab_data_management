@@ -42,6 +42,10 @@ onMounted(async () => {
     console.error(err)
   }
 })
+
+const openDocsPage = () => {
+  window.open('/docs/', '_blank')
+}
 </script>
 
 <template>
@@ -68,6 +72,12 @@ onMounted(async () => {
                   <q-icon name="o_edit_note" />
                 </q-item-section>
                 <q-item-section>{{ t('label.notebook') }}</q-item-section>
+              </q-item>
+              <q-item v-ripple clickable @click="openDocsPage">
+                <q-item-section avatar>
+                  <q-icon name="help_outline" />
+                </q-item-section>
+                <q-item-section>{{ t('label.about') }}</q-item-section>
               </q-item>
               <q-item v-ripple clickable @click="logout">
                 <q-item-section avatar>

@@ -16,6 +16,8 @@ RUN mkdir -p /vol/backups
 # Update the package cache
 RUN apt-get update
 
+
+
 # Used for jupyter
 COPY ./requirements.jupyter.txt /
 ARG ENABLE_JUPYTER
@@ -88,6 +90,7 @@ RUN apt-get install -y libsasl2-dev python-dev libldap2-dev libssl-dev
 COPY ./requirements.txt /
 RUN pip --disable-pip-version-check install --upgrade pip
 RUN pip install -r /requirements.txt
+
 
 # Set working directory
 WORKDIR /app
