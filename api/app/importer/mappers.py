@@ -11,17 +11,9 @@ from contextlib import redirect_stderr
 
 from chardet.universaldetector import UniversalDetector
 from core.mapping import Mapping, MappingList
-from core.models import (
-    BarcodeSpecification,
-    Measurement,
-    MeasurementFeature,
-    MeasurementMetadata,
-    Plate,
-    PlateDimension,
-    PlateMapping,
-    Well,
-    MappingError,
-)
+from core.models import (BarcodeSpecification, Measurement, MeasurementFeature,
+                         MeasurementMetadata, Plate, PlateDimension,
+                         PlateMapping, Well, MappingError, )
 from core.config import Config
 from django.core.files import File
 from django.utils import timezone
@@ -91,26 +83,15 @@ class EchoMapper(BaseMapper):
             # If there are None values in any of the following keys
             # or if there is a second header column we continue
             must_keys = (
-                "source_plate_barcode",
-                "source_plate_type",
-                "source_well",
-                "destination_plate_name",
-                "destination_plate_barcode",
-                "destination_well",
-                "actual_volume",
-            )
-            if any(
-                [
-                    row[headers.get(key)] is None
-                    or row[headers.get(key)] == headers.get(key)
-                    for key in must_keys
-                ]
-            ):
+                "source_plate_barcode", "source_plate_type", "source_well",
+                "destination_plate_name", "destination_plate_barcode",
+                "destination_well", "actual_volume",)
+            if any([row[headers.get(key)] is None or row[
+                headers.get(key)] == headers.get(key) for key in must_keys]):
                 continue
 
-            results.append(
-                {new_key: row[old_key] for new_key, old_key in headers.items()}
-            )
+            results.append({new_key: row[old_key] for new_key, old_key in
+                headers.items()})
         return results
 
     def map(self, data: list[dict], **kwargs) -> None:
@@ -125,11 +106,8 @@ class EchoMapper(BaseMapper):
         # Process later queue
         queue = []
 
-        with tqdm(
-            desc="Processing mappings",
-            unit="mappings",
-            total=len(data),
-        ) as mbar:
+        with tqdm(desc="Processing mappings", unit="mappings",
+                total=len(data), ) as mbar:
             for entry in data:
                 source_plate_barcode = entry["source_plate_barcode"]
                 destination_plate_name = entry["destination_plate_name"]
@@ -139,13 +117,13 @@ class EchoMapper(BaseMapper):
                     source_plate = plates.get(source_plate_barcode)
                 else:
                     try:
-                        source_plate = Plate.objects.get(barcode=source_plate_barcode)
+                        source_plate = Plate.objects.get(
+                            barcode=source_plate_barcode)
                         plates[source_plate_barcode] = source_plate
                     except Plate.DoesNotExist:
                         log.warning(
                             f"""Source plate with barcode {entry['source_plate_barcode']} does not exist.
-                            I try again later..."""
-                        )
+                            I try again later...""")
                         queue.append(entry)
                         continue
 
@@ -154,12 +132,10 @@ class EchoMapper(BaseMapper):
                 else:
                     try:
                         destination_plate = Plate.objects.get(
-                            barcode=destination_plate_barcode
-                        )
+                            barcode=destination_plate_barcode)
                     except Plate.DoesNotExist:
                         destination_plate = self.__create_plate_by_name_and_barcode(
-                            destination_plate_name, destination_plate_barcode
-                        )
+                            destination_plate_name, destination_plate_barcode)
 
                 if source_plate_barcode in mapping_lists:
                     mapping_list = mapping_lists.get(source_plate_barcode)
@@ -170,17 +146,13 @@ class EchoMapper(BaseMapper):
                 source_well = entry["source_well"]
                 destination_well = entry["destination_well"]
                 __debug(
-                    f"Mapping {source_plate.barcode}:{source_well} -> {destination_plate.barcode}:{destination_well}"
-                )
+                    f"Mapping {source_plate.barcode}:{source_well} -> {destination_plate.barcode}:{destination_well}")
                 from_pos = source_plate.dimension.position(source_well)
                 to_pos = destination_plate.dimension.position(destination_well)
 
-                mapping = Mapping(
-                    from_pos=from_pos,
-                    to_pos=to_pos,
+                mapping = Mapping(from_pos=from_pos, to_pos=to_pos,
                     amount=float(entry["actual_volume"]),
-                    status=entry["transfer_status"],
-                )
+                    status=entry["transfer_status"], )
                 mapping_list.add(mapping)
 
                 mbar.update(1)
@@ -189,18 +161,14 @@ class EchoMapper(BaseMapper):
             source_plate = plates.get(source_plate_barcode)
             if source_plate.map(mapping_list, mapping_list.target):
                 with open(kwargs["filename"], "rb") as file:
-                    PlateMapping.objects.create(
-                        source_plate=source_plate,
+                    PlateMapping.objects.create(source_plate=source_plate,
                         target_plate=mapping_list.target,
-                        mapping_file=File(file, os.path.basename(file.name)),
-                    )
+                        mapping_file=File(file, os.path.basename(file.name)), )
                 log.info(
-                    f"Mapped {source_plate.barcode} -> {mapping_list.target.barcode}"
-                )
+                    f"Mapped {source_plate.barcode} -> {mapping_list.target.barcode}")
             else:
                 log.error(
-                    f"Error mapping {source_plate.barcode} -> {mapping_list.target.barcode}"
-                )
+                    f"Error mapping {source_plate.barcode} -> {mapping_list.target.barcode}")
 
         # If there are entries queued because the source plate did not yet exist
         # we try map those again but only once.
@@ -210,21 +178,19 @@ class EchoMapper(BaseMapper):
             kwargs.update({"try_queue": try_queue + 1})
             self.map(queue, **kwargs)
 
-    def __create_plate_by_name_and_barcode(self, plate_name: str, barcode: str):
+    def __create_plate_by_name_and_barcode(self, plate_name: str,
+                                           barcode: str):
         try:
             barcode_prefix = barcode.split("_")[0]
             barcode_prefix = barcode.split("_")[0]
             barcode_specification = BarcodeSpecification.objects.get(
-                prefix=barcode_prefix
-            )
+                prefix=barcode_prefix)
         except BarcodeSpecification.DoesNotExist:
             raise ValueError(f"No barcode specification found for {barcode}.")
 
-        return Plate.objects.create(
-            barcode=barcode,
+        return Plate.objects.create(barcode=barcode,
             experiment=barcode_specification.experiment,
-            dimension=self.__get_plate_dimension(plate_name),
-        )
+            dimension=self.__get_plate_dimension(plate_name), )
 
     def __get_plate_dimension(self, plate_name: str):
         try:
@@ -287,8 +253,7 @@ class M1000Mapper(BaseMapper):
             barcode = match.group("barcode")
         else:
             raise MappingError(
-                f"File name {os.path.basename(file.name)} does not much conventions."
-            )
+                f"File name {os.path.basename(file.name)} does not much conventions.")
 
         results = []
         measurement_date = timezone.now()
@@ -304,14 +269,10 @@ class M1000Mapper(BaseMapper):
                 position = parts[pos_index]
                 identifier = parts[id_index]
                 result = {
-                    "position": position,
-                    "identifier": identifier,
-                    "values": [
-                        part
-                        for idx, part in enumerate(parts)
-                        if idx not in [pos_index, id_index]
-                        and re.match(self.RE_NUM, part)
-                    ],
+                    "position": position, "identifier": identifier,
+                    "values": [part for idx, part in enumerate(parts) if
+                        idx not in [pos_index, id_index] and re.match(
+                            self.RE_NUM, part)],
                 }
                 # If there are no values in this line we ignore it
                 if len(result["values"]) > 0:
@@ -319,27 +280,41 @@ class M1000Mapper(BaseMapper):
                     results.append(result)
             elif match := re.match(self.RE_DATE_OF_MEASUREMENT, line):
                 measurement_date = dt.strptime(
-                    f"{match.group('date')} {match.group('time')}", "%Y-%m-%d %H:%M:%S"
-                )
+                    f"{match.group('date')} {match.group('time')}",
+                    "%Y-%m-%d %H:%M:%S")
             elif match := re.match(self.RE_PLATE_DESCRIPTION, line):
                 plate_description = match.group("description")
             elif match := re.match(self.RE_META_DATA, line):
                 if match.group("key") in meta_data[meta_data_idx]:
                     meta_data_idx += 1
                     meta_data.append({})
-                meta_data[meta_data_idx][match.group("key")] = match.group("value")
+                meta_data[meta_data_idx][match.group("key")] = match.group(
+                    "value")
             else:
                 pass
 
-        kwargs.update(
-            {
-                "barcode": barcode,
-                "measurement_date": measurement_date,
-                "plate_description": plate_description,
-                "meta_data": meta_data,
-            }
-        )
+        kwargs.update({
+            "barcode": barcode, "measurement_date": measurement_date,
+            "plate_description": plate_description, "meta_data": meta_data,
+        })
         return results, kwargs
+
+    def apply_evaluation_formula(self, plate, well, entry, **kwargs):
+        result = 0
+        formula = kwargs.get("evaluation")
+        for idx, value in enumerate(entry.get("values")):
+            abbrev = kwargs.get("meta_data")[idx].get("Label")
+            formula = formula.replace(abbrev, value)
+        try:
+            result = eval(formula)
+        except ZeroDivisionError:
+            log.warning(
+                f"Formula {formula} for {plate.barcode}{well.hr_position} resulted in a ZeroDivisionError. Setting result to zero.")
+            result = 0
+        except Exception as e:
+            log.error(
+                f"Error while evaluating formula {formula} for {plate.barcode}{well.hr_position}: {e} ")
+        return result
 
     def map(self, data: list[dict], **kwargs) -> None:
         def __debug(msg):
@@ -352,11 +327,8 @@ class M1000Mapper(BaseMapper):
         except Plate.DoesNotExist:
             raise ValueError(f"Plate with barcode {barcode} does not exist.")
 
-        with tqdm(
-            desc="Processing measurements",
-            unit="measurement",
-            total=len(data),
-        ) as mbar:
+        with tqdm(desc="Processing measurements", unit="measurement",
+                total=len(data), ) as mbar:
             for entry in data:
                 __debug(f"Entry: {entry}")
                 position = plate.dimension.position(entry.get("position"))
@@ -364,22 +336,43 @@ class M1000Mapper(BaseMapper):
                 if not well:
                     well = Well.objects.create(plate=plate, position=position)
 
-                for idx, value in enumerate(entry.get("values")):
-                    feature, _ = MeasurementFeature.objects.get_or_create(
-                        abbrev=kwargs.get("meta_data")[idx].get("Label")
-                    )
-                    # TODO: Prove senseless duplication
-                    metadata, _ = MeasurementMetadata.objects.get_or_create(
-                        data=kwargs.get("meta_data")[idx]
-                    )
-                    # log.debug(f"Add measurement {plate.barcode}{well.hr_position}: {value}")
-                    Measurement.objects.update_or_create(
-                        well=well,
-                        feature=feature,
-                        defaults={
-                            "value": value,
-                            "identifier": entry.get("identifier"),
-                            "meta": metadata,
-                        },
-                    )
+                if not kwargs.get("evaluation"):
+                    for idx, value in enumerate(entry.get("values")):
+                        feature, _ = MeasurementFeature.objects.get_or_create(
+                            abbrev=kwargs.get("meta_data")[idx].get("Label"))
+                        # TODO: Prove senseless duplication
+                        metadata, _ = MeasurementMetadata.objects.get_or_create(
+                            data=kwargs.get("meta_data")[idx])
+
+                        Measurement.objects.update_or_create(well=well,
+                            feature=feature, defaults={
+                                "value": value,
+                                "identifier": entry.get("identifier"),
+                                "meta": metadata,
+                            }, )
+                else:
+                    # plate_mapping = PlateMapping.objects.get(
+                    #    target_plate=plate)
+                    # TODO save the evaluation formula to the plate mapping
+                    #  (i'll do it as a last step before merging to develop,
+                    #  in order
+                    #  not to make changes to the DB in a separate branch (
+                    #  because
+                    #  it could result in a mess again)
+
+                    result = self.apply_evaluation_formula(plate, well, entry, **kwargs)
+                feature, _ = MeasurementFeature.objects.get_or_create(
+                    abbrev=kwargs.get("name"))
+                metadata, _ = MeasurementMetadata.objects.get_or_create(
+                    data=kwargs.get("meta_data")[0])
+
+                Measurement.objects.update_or_create(well=well,
+                                                     feature=feature,
+                                                     defaults={
+                                                         "value": result,
+                                                         "identifier": entry.get(
+                                                             "identifier"),
+                                                         "meta": metadata,
+                                                     }, )
+
                 mbar.update(1)
