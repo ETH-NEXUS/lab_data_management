@@ -139,6 +139,8 @@ venv.bak/
 /site/
 /docs/site/
 /app/docs/site
+api/app/docs/site/index.html
+api/app/docs/site/sitemap.xml
 
 # mypy
 .mypy_cache/
