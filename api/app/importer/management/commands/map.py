@@ -23,7 +23,7 @@ class Command(BaseCommand):
                             help="A formula which has to be applied to the "
                                  "measurement "
                                  "values, e. g. --evaluate 'Acceptor/Donor'", )
-        parser.add_argument("--name", "-n",
+        parser.add_argument("--measurement_name", "-n",
                             help="If an evaluation formula is provided, "
                                  "you need to provide a measurement name "
                                  "as well'", )
@@ -58,13 +58,13 @@ class Command(BaseCommand):
         elif options.get("machine") == "m1000":
             try:
                 evaluation = options.get("evaluate", None)
-                name = options.get("name", None)
-                if evaluation and not name:
+                measurement_name = options.get("measurement_name", None)
+                if evaluation and not measurement_name:
                     raise ValueError("No measurement name provided")
                 mapper = M1000Mapper()
                 mapper.run(join(path, "*.asc"),
                            debug=options.get("debug", False),
-                           evaluation=evaluation, name=name)
+                           evaluation=evaluation, measurement_name=measurement_name)
 
             except Exception as ex:
                 log.error(ex)

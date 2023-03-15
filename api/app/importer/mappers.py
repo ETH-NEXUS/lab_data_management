@@ -358,7 +358,7 @@ class M1000Mapper(BaseMapper):
 
                     result = self.apply_evaluation_formula(plate, well, entry, **kwargs)
                 feature, _ = MeasurementFeature.objects.get_or_create(
-                    abbrev=kwargs.get("name"))
+                    abbrev=kwargs.get("measurement_name"))
                 metadata, _ = MeasurementMetadata.objects.get_or_create(
                     data=kwargs.get("meta_data")[0])
 
