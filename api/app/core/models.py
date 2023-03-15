@@ -550,3 +550,4 @@ class PlateMapping(TimeTrackedModel):
     amount = models.FloatField(
         default=None, validators=[MinValueValidator(0)], null=True
     )
+    evaluation = models.TextField(null=True, blank=True)
