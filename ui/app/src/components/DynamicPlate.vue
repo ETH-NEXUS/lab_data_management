@@ -195,7 +195,7 @@ const typeColor = (well: Well | undefined) => {
     </div>
     <div v-if="measurementOptions.length > 0" class="col-4">
       <q-checkbox v-model="platePage.showHeatmap" :label="t('label.show_heatmap')"></q-checkbox>
-      <div class="col-12" v-if="platePage.showHeatmap">
+      <div class="col-12" v-if="platePage.showHeatmap && measurementOptions.length > 1">
         <q-select
           v-model="selectedMeasurement"
           :options="measurementOptions"
