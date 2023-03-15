@@ -98,6 +98,7 @@ export const useProjectStore = defineStore('project', () => {
 
   const updateExperiment = async (experimentId: number, payload: ExperimentPayload) => {
     await api.patch(`/api/experiments/${experimentId}`, payload)
+    initialize()
   }
 
   return {

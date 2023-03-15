@@ -12,6 +12,9 @@ export default {
     add_plates: 'Add plates to the experiment using these specifications',
     add_plates_to_experiment: 'Add plates to the experiment',
     choose_dimensions: 'Choose the dimensions of the plate',
+    plates_added:
+      'You have added the plates with these barcode specifications to this\n' +
+      '                        experiment',
   },
   failed: 'Action failed',
   success: 'Action was successful',
@@ -112,8 +115,11 @@ export default {
     successfully_copied_plate: 'Successfully copied plate',
     no_dimension: 'No dimension',
     template_name: 'Please enter the template name:',
+    select_dimension: 'Please select a dimension',
   },
   action: {
+    add_plates: 'Add paltes',
+    add_barcode_specification: 'Add barcode specification',
     new_project: 'New project',
     project_properties: 'Project properties',
     new_experiment: 'New Experiment',
@@ -138,6 +144,9 @@ export default {
     new_template: 'New Template',
     apply_template: 'Apply Template',
     apply: 'Apply',
+    delete_specification: 'Delete specification',
+    edit_specification: 'Edit specification',
+    download_csv: 'Download CSV',
   },
   error: {
     select_plate_dimension: 'Please select a plate dimension.',
@@ -145,5 +154,9 @@ export default {
   },
   unit: {
     amount: 'µl',
+  },
+  info: {
+    no_description: 'No description provided',
+    applying_in_progress: 'Applying template in progress. Hang on...',
   },
 }
