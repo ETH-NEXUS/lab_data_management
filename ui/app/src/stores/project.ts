@@ -1,5 +1,5 @@
 import {defineStore} from 'pinia'
-import {Project, Experiment, PlateDimension} from 'src/components/models'
+import {Experiment, PlateDimension, Project, ExperimentPayload} from 'src/components/models'
 import {api} from 'src/boot/axios'
 import {ref} from 'vue'
 
@@ -63,7 +63,6 @@ export const useProjectStore = defineStore('project', () => {
   }
 
   const updateBarcode = async (id: number, prefix: string, numberOfPlates: number, sides: Array<string>) => {
-    console.log(id, prefix, numberOfPlates, sides)
     await api.patch(`/api/barcodespecifications/${id}/`, {
       number_of_plates: numberOfPlates,
       id: id,
@@ -97,11 +96,16 @@ export const useProjectStore = defineStore('project', () => {
     })
   }
 
+  const updateExperiment = async (experimentId: number, payload: ExperimentPayload) => {
+    await api.patch(`/api/experiments/${experimentId}`, payload)
+  }
+
   return {
     projects,
     initialize,
     add,
     addExperiment,
+    updateExperiment,
     addPlate,
     generateBarcodes,
     updateBarcode,
