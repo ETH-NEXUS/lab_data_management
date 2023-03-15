@@ -351,14 +351,10 @@ class M1000Mapper(BaseMapper):
                                 "meta": metadata,
                             }, )
                 else:
-                    # plate_mapping = PlateMapping.objects.get(
-                    #    target_plate=plate)
-                    # TODO save the evaluation formula to the plate mapping
-                    #  (i'll do it as a last step before merging to develop,
-                    #  in order
-                    #  not to make changes to the DB in a separate branch (
-                    #  because
-                    #  it could result in a mess again)
+                    plate_mapping = PlateMapping.objects.get(
+                        target_plate=plate)
+                    plate_mapping.evaluation = kwargs.get("evaluation")
+                    plate_mapping.save()
 
                     result = self.apply_evaluation_formula(plate, well, entry, **kwargs)
                 feature, _ = MeasurementFeature.objects.get_or_create(
