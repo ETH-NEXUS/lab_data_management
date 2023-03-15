@@ -147,7 +147,8 @@ class PlateViewSet(viewsets.ModelViewSet):
                 plate.apply_template(template_plate)
             return Response(status.HTTP_200_OK)
         else:
-            raise Http404("Parameter 'template' is required.")
+            raise Http404("Parameters 'template' and 'experiment_id' are "
+                          "required.")
 
     def filter_queryset(self, queryset):
         return super().filter_queryset(queryset)
