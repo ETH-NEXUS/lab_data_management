@@ -134,6 +134,21 @@ class PlateViewSet(viewsets.ModelViewSet):
         else:
             raise Http404("Parameter 'template' is required.")
 
+    @action(detail=False, methods=["post"])
+    def bulk_apply_template(self, request, pk=None):
+        """Applies a template plate to all the plate of the experiment"""
+        experiment = Experiment.objects.get(pk=request.data.get(
+            "experiment_id"))
+        template_plate_id = request.data.get("template")
+        if template_plate_id:
+            template_plate = Plate.objects.get(pk=template_plate_id)
+            plates = Plate.objects.filter(experiment=experiment)
+            for plate in plates:
+                plate.apply_template(template_plate)
+            return Response(status.HTTP_200_OK)
+        else:
+            raise Http404("Parameter 'template' is required.")
+
     def filter_queryset(self, queryset):
         return super().filter_queryset(queryset)
 
