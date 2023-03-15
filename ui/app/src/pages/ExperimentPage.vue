@@ -4,12 +4,18 @@ import {onMounted, ref} from 'vue'
 import {useI18n} from 'vue-i18n'
 import {handleError} from 'src/helpers/errorHandling'
 import {useProjectStore} from 'stores/project'
-import {Project, Experiment, DimensionsOption, Barcode} from 'src/components/models'
+import {
+  Barcode,
+  DimensionsOption,
+  Experiment,
+  PlateDimension,
+  Project,
+  ExperimentPayload,
+} from 'src/components/models'
 import {formatDate} from 'src/helpers/dateTime'
 import GenerateBarcodeForm from '../components/GenerateBarcodeForm.vue'
 import {downloadCSVData, generateBarcodes} from 'components/helpers'
 import {csvColumnsNames} from 'components/data'
-import {PlateDimension} from 'src/components/models'
 import {useQuasar} from 'quasar'
 
 const route = useRoute()
@@ -105,45 +111,72 @@ const download = (): void => {
 
   downloadCSVData(csvColumnsNames, barcodes, 'barcodes.csv')
 }
+
+const editExperiment = async (field: string) => {
+  $q.dialog({
+    title: field === 'name' ? t('title.edit_experiment_name') : t('title.edit_experiment_description'),
+    message: field === 'name' ? t('message.experiment_name') : t('message.experiment_description'),
+    prompt: {
+      model: '',
+      type: field === 'name' ? 'text' : 'textarea',
+    },
+    cancel: true,
+    persistent: true,
+  }).onOk(async newValue => {
+    if (experiment.value) {
+      try {
+        const payload = {
+          [field]: newValue,
+        } as ExperimentPayload
+        await projectStore.updateExperiment(experiment.value.id, payload)
+        await initialize()
+      } catch (err) {
+        handleError(err, false)
+      }
+    }
+  })
+}
 </script>
 
 <template>
   <q-page v-if="project" class="q-px-md">
-    <div v-if="experiment" class="text-h5 q-mt-lg q-mb-md text-primary">
+    <div v-if="experiment" class="text-h5 q-mt-lg q-mb-md q-pl-xl text-primary">
       {{ project.name }}: {{ getExperiment(Number(route.params.experiment)).name }}
+      <q-btn flat icon="edit" @click="editExperiment((field = 'name'))" />
     </div>
     <div class="q-pa-md row items-start q-gutter-md">
       <q-card class="my-card" flat>
         <q-card-section class="q-pt-xs">
-          <div class="text-overline">{{ t('experiment.description') }}:</div>
-          <div class="text-body1 text-grey-8">
-            {{ experiment.description || 'No description provided' }}
-          </div>
-          <div class="text-overline">{{ t('experiment.number_plates') }}:</div>
-          <div class="text-body1 text-grey-8">
-            {{ experiment.plates.length }}
-          </div>
-          <div class="text-overline">{{ t('experiment.created_at') }}:</div>
-          <div class="text-body1 text-grey-8">
-            {{ formatDate(experiment.created_at) }}
+          <div class="text-body1 q-pl-md">
+            {{ t('experiment.description') }}:
+            <p class="text-body1 text-grey-8">
+              {{ experiment.description || 'No description provided' }}
+              <q-btn flat icon="edit" @click="editExperiment((field = 'description'))" />
+            </p>
           </div>
 
-          <div class="text-overline">{{ t('experiment.barcode_sets') }}:</div>
+          <div class="text-body1 q-pl-md">
+            {{ t('experiment.number_plates') }}:
+            <p class="text-body1 text-grey-8">
+              {{ experiment.plates.length }}
+            </p>
+          </div>
 
-          <q-btn
-            v-if="experiment.barcode_specifications.length > 0"
-            label="Download csv"
-            type="submit"
-            color="secondary"
-            class="q-mt-md"
-            @click="download"></q-btn>
+          <div class="text-body1 q-pl-md">
+            {{ t('experiment.created_at') }}:
+            <p class="text-body1 text-grey-8">
+              {{ formatDate(experiment.created_at) }}
+            </p>
+          </div>
+
+          <div class="text-body1 q-pl-md">{{ t('experiment.barcode_sets') }}:</div>
 
           <div class="text-body1 text-grey-8" v-if="experiment.barcode_specifications">
             <q-list>
               <div v-for="(s, i) in experiment.barcode_specifications" :key="`${s.prefix}-${s.id}`">
                 <q-item>
                   <q-item-section>
-                    <q-item-label class="text-body1 q-mt-lg">Barcode set #{{ i + 1 }}</q-item-label>
+                    <!--                    <q-item-label class="text-body1 q-mt-lg">Barcode set #{{ i + 1 }}</q-item-label>-->
                     <div
                       class="text-primary cursor-pointer q-mt-lg q-mb-sm"
                       @click="openDimensionsOptions(i)">
@@ -198,7 +231,16 @@ const download = (): void => {
                   class="q-mt-md"
                   @click="openEditField(i)"></q-btn>
 
-                <div :id="`edit-${i}`" :class="`hidden q-mt-lg`">
+                <q-btn
+                  flat
+                  v-if="experiment.barcode_specifications.length > 0"
+                  label="Download csv"
+                  type="submit"
+                  color="secondary"
+                  class="q-mt-md"
+                  @click="download"></q-btn>
+
+                <div :id="`edit-${i}`" :class="`hidden q-mt-lg q-ml-md`">
                   <GenerateBarcodeForm
                     :edit="true"
                     @update="update"
@@ -217,7 +259,7 @@ const download = (): void => {
         </q-card-section>
 
         <q-card-actions>
-          <q-btn color="secondary" class="q-mt-lg" @click="generateBarcodeDialogToggle = true">
+          <q-btn color="primary" class="q-mt-lg q-ml-lg" @click="generateBarcodeDialogToggle = true">
             Add barcode specifications
           </q-btn>
         </q-card-actions>
