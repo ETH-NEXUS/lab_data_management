@@ -42,7 +42,7 @@ const nodeHandler = (node: QTreeNode) => {
   if ('plate' in node) {
     router.push(`/plate/${node.plate.barcode}`)
   } else if ('project' in node) {
-    router.push(`/project/${node.project.name}`)
+    router.push(`/project/${node.project.id}`)
   } else if ('experiment' in node) {
     router.push(`/project/${node.experiment.project}/experiment/${node.experiment.id}`)
   }
