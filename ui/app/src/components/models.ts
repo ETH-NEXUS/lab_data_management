@@ -110,6 +110,8 @@ export interface PlateDimension {
 export interface MinMax {
   min: number
   max: number
+  min_all_types: number
+  max_all_types: number
 }
 
 export interface Plate {
@@ -178,7 +180,13 @@ export interface DimensionsOption {
   value: number
 }
 
+
 export interface ProjectPayload {
   name?: string
   description?: string
+  
+export interface LegendColor {
+  value: number
+  color: string
+
 }
