@@ -177,3 +177,8 @@ export interface DimensionsOption {
   label: string
   value: number
 }
+
+export interface LegendColor {
+  value: number
+  color: string
+}
