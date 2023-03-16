@@ -180,13 +180,12 @@ export interface DimensionsOption {
   value: number
 }
 
-
 export interface ProjectPayload {
   name?: string
   description?: string
-  
+}
+
 export interface LegendColor {
   value: number
   color: string
-
 }
