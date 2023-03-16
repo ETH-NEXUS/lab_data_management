@@ -163,7 +163,7 @@ const applyTemplate = async () => {
       $q.loading.show({
         message: t('info.applying_in_progress'),
       })
-      await api.post(`/api/plates/bulk_apply_template/`, {
+      await api.post(`/api/experiments/bulk_apply_template/`, {
         template: selectedTemplatePlateId.value,
         experiment_id: experiment.value.id,
       })
