@@ -39,9 +39,11 @@ watchEffect(() => {
 })
 
 const nodeHandler = (node: QTreeNode) => {
+  console.log(node)
   if ('plate' in node) {
     router.push(`/plate/${node.plate.barcode}`)
   } else if ('project' in node) {
+    // TODO: the handler doesn't work for the 'project' node for some reason
     router.push(`/project/${node.project.id}`)
   } else if ('experiment' in node) {
     router.push(`/project/${node.experiment.project}/experiment/${node.experiment.id}`)
@@ -237,7 +239,8 @@ const newPlate = async (experiment: Experiment) => {
           </q-item>
         </q-list>
       </q-menu>
-      {{ prop.node.label }}
+      <!--      TODO: node handler doesn't work for 'project' nodes for some reason that is why the @click is here-->
+      <span @click="router.push(`/project/${prop.node.project.id}`)">{{ prop.node.label }}</span>
     </template>
 
     <template v-slot:header-experiment="prop">
