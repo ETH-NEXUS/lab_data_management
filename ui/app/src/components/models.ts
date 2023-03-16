@@ -177,3 +177,8 @@ export interface DimensionsOption {
   label: string
   value: number
 }
+
+export interface ProjectPayload {
+  name?: string
+  description?: string
+}
