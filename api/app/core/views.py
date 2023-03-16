@@ -134,22 +134,6 @@ class PlateViewSet(viewsets.ModelViewSet):
         else:
             raise Http404("Parameter 'template' is required.")
 
-    @action(detail=False, methods=["post"])
-    def bulk_apply_template(self, request, pk=None):
-        """Applies a template plate to all the plate of the experiment"""
-        experiment = Experiment.objects.get(pk=request.data.get(
-            "experiment_id"))
-        template_plate_id = request.data.get("template")
-        if template_plate_id:
-            template_plate = Plate.objects.get(pk=template_plate_id)
-            plates = Plate.objects.filter(experiment=experiment)
-            for plate in plates:
-                plate.apply_template(template_plate)
-            return Response(status.HTTP_200_OK)
-        else:
-            raise Http404("Parameters 'template' and 'experiment_id' are "
-                          "required.")
-
     def filter_queryset(self, queryset):
         return super().filter_queryset(queryset)
 
@@ -250,6 +234,20 @@ class ExperimentViewSet(viewsets.ModelViewSet):
         return Response(status=status.HTTP_200_OK)
 
     @action(detail=False, methods=["post"])
+    def bulk_apply_template(self, request, pk=None):
+        """Applies a template plate to all the plate of the experiment"""
+        experiment = Experiment.objects.get(pk=request.data.get("experiment_id"))
+        template_plate_id = request.data.get("template")
+        if template_plate_id:
+            template_plate = Plate.objects.get(pk=template_plate_id)
+            plates = Plate.objects.filter(experiment=experiment)
+            for plate in plates:
+                plate.apply_template(template_plate)
+            return Response(status.HTTP_200_OK)
+        else:
+            raise Http404("Parameters 'template' and 'experiment_id' are " "required.")
+
+    @action(detail=False, methods=["post"])
     def bulk_add_plates(self, request):
         try:
             experiment_id = int(request.data["experiment_id"])
@@ -314,9 +312,9 @@ class VersionView(views.APIView):
 
 class DocsView(View):
     def get(self, request, uri, **kwargs):
-        docs_dir = os.path.join(settings.BASE_DIR, 'docs', 'site')
-        if uri == '':
-            uri = 'index.html'
+        docs_dir = os.path.join(settings.BASE_DIR, "docs", "site")
+        if uri == "":
+            uri = "index.html"
         file_path = os.path.join(docs_dir, uri)
 
         # with redirect_stderr(None):
@@ -328,12 +326,10 @@ class DocsView(View):
         #                 break
         #         detector.close()
         #     encoding = detector.result.get("encoding")
-        with open(file_path, 'r', encoding='utf8', errors="replace") as f:
+        with open(file_path, "r", encoding="utf8", errors="replace") as f:
             content = f.read()
 
         # Replace all emojis with an empty string
-        content = re.sub(r'[^\x00-\x7F]+', '', content)
+        content = re.sub(r"[^\x00-\x7F]+", "", content)
         mime_type = mimetypes.guess_type(file_path)
         return HttpResponse(content, content_type=mime_type[0])
-
-
