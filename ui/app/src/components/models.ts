@@ -110,6 +110,8 @@ export interface PlateDimension {
 export interface MinMax {
   min: number
   max: number
+  min_all_types: number
+  max_all_types: number
 }
 
 export interface Plate {
