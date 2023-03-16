@@ -4,13 +4,21 @@ import {onMounted, ref} from 'vue'
 import {useI18n} from 'vue-i18n'
 import {handleError} from 'src/helpers/errorHandling'
 import {useProjectStore} from 'stores/project'
-import {Project, Experiment, DimensionsOption, Barcode} from 'src/components/models'
+import {
+  Barcode,
+  DimensionsOption,
+  Experiment,
+  PlateDimension,
+  Project,
+  ExperimentPayload,
+  PlateLabelValue,
+} from 'src/components/models'
 import {formatDate} from 'src/helpers/dateTime'
 import GenerateBarcodeForm from '../components/GenerateBarcodeForm.vue'
 import {downloadCSVData, generateBarcodes} from 'components/helpers'
 import {csvColumnsNames} from 'components/data'
-import {PlateDimension} from 'src/components/models'
 import {useQuasar} from 'quasar'
+import {api} from 'boot/axios'
 
 const route = useRoute()
 const projectStore = useProjectStore()
@@ -22,6 +30,11 @@ const loading = ref<boolean>(true)
 const project = ref<Project | null>(null)
 const experiment = ref<Experiment | null>(null)
 const generateBarcodeDialogToggle = ref<boolean>(false)
+
+const applyTemplateDialog = ref<boolean>(false)
+const selectedTemplatePlateId = ref<number>()
+const templatePlateBarcodeOptions = ref<Array<PlateLabelValue>>([])
+const filteredTemplatePlateOptions = ref<Array<PlateLabelValue>>([])
 
 const {t} = useI18n()
 
@@ -40,6 +53,8 @@ const initialize = async () => {
 }
 
 onMounted(async () => {
+  const resp_template_plates = await api.get('/api/plates/barcodes/?template=true')
+  templatePlateBarcodeOptions.value = resp_template_plates.data
   await initialize()
 })
 
@@ -86,7 +101,7 @@ const addPlatesToExperiment = async (experimentId: number, barcodeSpecifications
     } else {
       $q.notify({
         type: 'negative',
-        message: 'Please select a dimension',
+        message: t('message.select_dimension'),
       })
     }
   } catch (err) {
@@ -97,53 +112,110 @@ const addPlatesToExperiment = async (experimentId: number, barcodeSpecifications
 const download = (): void => {
   let barcodes: Barcode[] = []
   const barcodeSpecifications = experiment.value?.barcode_specifications || []
-
   for (const spec of barcodeSpecifications) {
     const generatedBarcodes = generateBarcodes(spec.prefix, spec.number_of_plates, spec.sides)
     barcodes = [...barcodes, ...generatedBarcodes]
   }
-
   downloadCSVData(csvColumnsNames, barcodes, 'barcodes.csv')
+}
+
+const editExperiment = async (field: string) => {
+  $q.dialog({
+    title: field === 'name' ? t('title.edit_experiment_name') : t('title.edit_experiment_description'),
+    message: field === 'name' ? t('message.experiment_name') : t('message.experiment_description'),
+    prompt: {
+      model: '',
+      type: field === 'name' ? 'text' : 'textarea',
+    },
+    cancel: true,
+    persistent: true,
+  }).onOk(async newValue => {
+    if (experiment.value) {
+      try {
+        const payload = {
+          [field]: newValue,
+        } as ExperimentPayload
+        await projectStore.updateExperiment(experiment.value.id, payload)
+        await initialize()
+      } catch (err) {
+        handleError(err, false)
+      }
+    }
+  })
+}
+
+const filterTemplatePlates = (query: string, update: (f: () => void) => void) => {
+  update(() => {
+    if (query.length > 1) {
+      filteredTemplatePlateOptions.value = templatePlateBarcodeOptions.value.filter(m =>
+        m.label.includes(query)
+      )
+    }
+    filteredTemplatePlateOptions.value = templatePlateBarcodeOptions.value.sort((a, b) =>
+      a.label.localeCompare(b.label)
+    )
+  })
+}
+
+const applyTemplate = async () => {
+  try {
+    if (experiment.value) {
+      $q.loading.show({
+        message: t('info.applying_in_progress'),
+      })
+      await api.post(`/api/experiments/bulk_apply_template/`, {
+        template: selectedTemplatePlateId.value,
+        experiment_id: experiment.value.id,
+      })
+      $q.loading.hide()
+    }
+  } catch (err) {
+    handleError(err)
+  } finally {
+    loading.value = false
+  }
 }
 </script>
 
 <template>
   <q-page v-if="project" class="q-px-md">
-    <div v-if="experiment" class="text-h5 q-mt-lg q-mb-md text-primary">
+    <div v-if="experiment" class="text-h5 q-mt-lg q-mb-md q-pl-xl text-primary">
       {{ project.name }}: {{ getExperiment(Number(route.params.experiment)).name }}
+      <q-btn flat icon="edit" @click="editExperiment((field = 'name'))" />
     </div>
     <div class="q-pa-md row items-start q-gutter-md">
       <q-card class="my-card" flat>
         <q-card-section class="q-pt-xs">
-          <div class="text-overline">{{ t('experiment.description') }}:</div>
-          <div class="text-body1 text-grey-8">
-            {{ experiment.description || 'No description provided' }}
-          </div>
-          <div class="text-overline">{{ t('experiment.number_plates') }}:</div>
-          <div class="text-body1 text-grey-8">
-            {{ experiment.plates.length }}
-          </div>
-          <div class="text-overline">{{ t('experiment.created_at') }}:</div>
-          <div class="text-body1 text-grey-8">
-            {{ formatDate(experiment.created_at) }}
+          <div class="text-body1 q-pl-md">
+            {{ t('experiment.description') }}:
+            <p class="text-body1 text-grey-8">
+              {{ experiment.description || t('info.no_description') }}
+              <q-btn flat icon="edit" @click="editExperiment((field = 'description'))" />
+            </p>
           </div>
 
-          <div class="text-overline">{{ t('experiment.barcode_sets') }}:</div>
+          <div class="text-body1 q-pl-md">
+            {{ t('experiment.number_plates') }}:
+            <p class="text-body1 text-grey-8">
+              {{ experiment.plates.length }}
+            </p>
+          </div>
 
-          <q-btn
-            v-if="experiment.barcode_specifications.length > 0"
-            label="Download csv"
-            type="submit"
-            color="secondary"
-            class="q-mt-md"
-            @click="download"></q-btn>
+          <div class="text-body1 q-pl-md">
+            {{ t('experiment.created_at') }}:
+            <p class="text-body1 text-grey-8">
+              {{ formatDate(experiment.created_at) }}
+            </p>
+          </div>
+
+          <div class="text-body1 q-pl-md">{{ t('experiment.barcode_sets') }}:</div>
 
           <div class="text-body1 text-grey-8" v-if="experiment.barcode_specifications">
             <q-list>
               <div v-for="(s, i) in experiment.barcode_specifications" :key="`${s.prefix}-${s.id}`">
                 <q-item>
                   <q-item-section>
-                    <q-item-label class="text-body1 q-mt-lg">Barcode set #{{ i + 1 }}</q-item-label>
+                    <!--                    <q-item-label class="text-body1 q-mt-lg">Barcode set #{{ i + 1 }}</q-item-label>-->
                     <div
                       class="text-primary cursor-pointer q-mt-lg q-mb-sm"
                       @click="openDimensionsOptions(i)">
@@ -163,16 +235,13 @@ const download = (): void => {
                         <q-option-group :options="options" type="radio" v-model="dimension"></q-option-group>
 
                         <q-btn
-                          label="Add plates"
+                          :label="t('action.add_plates')"
                           type="submit"
                           color="secondary"
                           class="q-mt-md"
                           @click="addPlatesToExperiment(experiment.id, s.id)"></q-btn>
                       </div>
-                      <div v-else class="text-subtitle2 text-red-3">
-                        *You have already added the plates with these barcode specifications to this
-                        experiment
-                      </div>
+                      <div v-else class="text-subtitle2 text-red-3">* {{ t('experiment.plates_added') }}</div>
                     </div>
 
                     <q-item-label caption lines="2">
@@ -186,19 +255,28 @@ const download = (): void => {
 
                 <q-btn
                   flat
-                  label="Delete specifications"
+                  :label="t('action.delete_specification')"
                   color="red"
                   class="q-mt-md"
-                  @click="deleteBarcode(s.id)"></q-btn>
+                  @click="deleteBarcode(s.id)" />
 
                 <q-btn
                   flat
-                  label="Edit specifications"
+                  :label="t('action.edit_specification')"
                   color="warning"
                   class="q-mt-md"
-                  @click="openEditField(i)"></q-btn>
+                  @click="openEditField(i)" />
 
-                <div :id="`edit-${i}`" :class="`hidden q-mt-lg`">
+                <q-btn
+                  flat
+                  v-if="experiment.barcode_specifications.length > 0"
+                  :label="t('action.download_csv')"
+                  type="submit"
+                  color="secondary"
+                  class="q-mt-md"
+                  @click="download" />
+
+                <div :id="`edit-${i}`" :class="`hidden q-mt-lg q-ml-md`">
                   <GenerateBarcodeForm
                     :edit="true"
                     @update="update"
@@ -216,15 +294,59 @@ const download = (): void => {
           </div>
         </q-card-section>
 
-        <q-card-actions>
-          <q-btn color="secondary" class="q-mt-lg" @click="generateBarcodeDialogToggle = true">
-            Add barcode specifications
-          </q-btn>
+        <q-card-actions class="q-ml-md">
+          <q-btn
+            class="q-ml-xs"
+            :label="t('action.add_barcode_specification')"
+            icon="qr_code_2"
+            color="secondary"
+            @click="generateBarcodeDialogToggle = true" />
+          <q-btn
+            class="q-ml-xs"
+            :label="t('action.apply_template')"
+            icon="o_layers"
+            color="secondary"
+            @click="applyTemplateDialog = true" />
         </q-card-actions>
       </q-card>
     </div>
     <q-dialog v-model="generateBarcodeDialogToggle">
       <GenerateBarcodeForm :experiment-id="experiment.id" @update="update" />
+    </q-dialog>
+    <q-dialog v-model="applyTemplateDialog" persistent>
+      <q-card style="width: 700px; max-width: 80vw" class="q-px-sm">
+        <q-card-body class="q-gutter-y-sm">
+          <q-select
+            filled
+            v-model="selectedTemplatePlateId"
+            emit-value
+            map-options
+            use-input
+            input-debounce="0"
+            :label="t('label.template_plate')"
+            :options="filteredTemplatePlateOptions"
+            @filter="filterTemplatePlates"
+            behavior="menu"
+            :hint="t('hint.template_plate')">
+            <template v-slot:no-option>
+              <q-item>
+                <q-item-section class="text-grey">
+                  {{ t('message.no_plates_found') }}
+                </q-item-section>
+              </q-item>
+            </template>
+          </q-select>
+        </q-card-body>
+        <q-card-actions align="right" class="bg-white text-teal">
+          <q-btn flat :label="t('label.cancel')" v-close-popup />
+          <q-btn
+            flat
+            :label="t('action.apply')"
+            :disabled="!selectedTemplatePlateId"
+            v-close-popup
+            @click="applyTemplate" />
+        </q-card-actions>
+      </q-card>
     </q-dialog>
   </q-page>
 </template>

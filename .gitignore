@@ -303,6 +303,7 @@ backups/
 temp/
 *.ipynb
 *.csv
+sitemap.xml.gz
 
 Pipfile
 .sass-cache
