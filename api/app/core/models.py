@@ -1,18 +1,19 @@
-import math
 import random
-from django.forms import ValidationError
+from typing import List
+
+import math
 import numpy as np
-from compoundlib.models import CompoundLibrary, Compound
 from django.conf import settings
 from django.contrib.postgres.fields import ArrayField
 from django.core.exceptions import ObjectDoesNotExist
 from django.core.validators import MinValueValidator
 from django.db import models, transaction
 from django.db.models import F, Sum, CheckConstraint, Q
+from django.forms import ValidationError
 from django.utils.translation import gettext_lazy as _
-from platetemplate.models import PlateTemplate
-from typing import List
 
+from compoundlib.models import CompoundLibrary, Compound
+from platetemplate.models import PlateTemplate
 from .basemodels import TimeTrackedModel
 from .mapping import MappingList
 from .mapping import PositionMapper
@@ -185,9 +186,17 @@ class Plate(TimeTrackedModel):
         for measurement in self.__measurements():
             min = self.min(measurement)
             max = self.max(measurement)
+            min_all_types = self.min(measurement, type="All")
+            max_all_types = self.max(measurement, type="All")
             results[measurement] = {
                 "min": min if not math.isnan(min) else "N/A",
                 "max": max if not math.isnan(max) else "N/A",
+                "min_all_types": min_all_types
+                if not math.isnan(min_all_types)
+                else "N/A",
+                "max_all_types": max_all_types
+                if not math.isnan(max_all_types)
+                else "N/A",
             }
         return results
 
@@ -214,15 +223,29 @@ class Plate(TimeTrackedModel):
         return np.std(measurements)
 
     def max(self, abbrev: str, type: str = "C"):
-        measurements = [
-            w.measurement(abbrev) for w in self.wells.filter(type__name=type)
-        ]
+        if type == "All":
+            measurements = [
+                w.measurement(abbrev)
+                for w in self.wells.all()
+                if w.measurement(abbrev) is not None
+            ]
+        else:
+            measurements = [
+                w.measurement(abbrev) for w in self.wells.filter(type__name=type)
+            ]
         return np.max(measurements)
 
     def min(self, abbrev: str, type: str = "C"):
-        measurements = [
-            w.measurement(abbrev) for w in self.wells.filter(type__name=type)
-        ]
+        if type == "All":
+            measurements = [
+                w.measurement(abbrev)
+                for w in self.wells.all()
+                if w.measurement(abbrev) is not None
+            ]
+        else:
+            measurements = [
+                w.measurement(abbrev) for w in self.wells.filter(type__name=type)
+            ]
         return np.min(measurements)
 
     def __measurements(self) -> list[str]:

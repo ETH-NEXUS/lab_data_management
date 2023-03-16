@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import {computed, defineProps, defineEmits, PropType, ref} from 'vue'
-import {Plate, Well} from './models'
+import {Plate, Well, LegendColor} from './models'
 import {positionFromRowCol} from '../helpers/plate'
 import {palettes, percentageToHsl} from 'components/helpers'
 import {storeToRefs} from 'pinia'
@@ -36,6 +36,10 @@ const wellContentOptions = [
 const selectedMeasurement = ref<string | undefined>(props.plate.measurements[0])
 const measurementOptions = ref<Array<string>>(props.plate.measurements)
 
+const legendColors = computed(() => {
+  return createColorLegend()
+})
+
 const emit = defineEmits(['well-selected'])
 
 const alpha = Array.from(Array(26))
@@ -66,8 +70,9 @@ const wells = computed(() => {
 
 const percentage = (well: Well | undefined) => {
   if (selectedMeasurement.value && well?.measurements) {
-    const min = props.plate.min_max[selectedMeasurement.value].min
-    const max = props.plate.min_max[selectedMeasurement.value].max
+    const min = props.plate.min_max[selectedMeasurement.value].min_all_types
+    const max = props.plate.min_max[selectedMeasurement.value].max_all_types
+    console.log('max', max)
     const value = well?.measurements.find(m => m.feature.abbrev === selectedMeasurement.value)?.value
     if (value) {
       return (value - min) / (max - min)
@@ -96,10 +101,31 @@ const typeColor = (well: Well | undefined) => {
   }
   return 'transparent'
 }
+
+const createColorLegend = () => {
+  const legend: LegendColor[] = []
+  if (selectedMeasurement.value) {
+    const min = props.plate.min_max[selectedMeasurement.value].min_all_types
+    const max = props.plate.min_max[selectedMeasurement.value].max_all_types
+    const numberOfSteps = 10
+    console.log(max)
+    const step: number = (max - min) / numberOfSteps
+    for (let i = 0; i <= numberOfSteps; i++) {
+      const value: number = min + i * step
+      const color = percentageToHsl(
+        (value - min) / (max - min),
+        platePage.value.heatmapPalette.value.from,
+        platePage.value.heatmapPalette.value.to
+      )
+      legend.push({value, color})
+    }
+    return legend
+  }
+}
 </script>
 
 <template>
-  <div>
+  <div class="row">
     <table v-if="props.plate">
       <tr>
         <th />
@@ -165,6 +191,15 @@ const typeColor = (well: Well | undefined) => {
         </td>
       </tr>
     </table>
+    <div v-if="platePage.showHeatmap" class="q-my-md q-ml-md">
+      <div
+        class="legendItem"
+        v-for="(color, idx) in legendColors.reverse()"
+        :key="color.value + idx"
+        :style="{backgroundColor: color.color}">
+        <span class="legendLabel">{{ [0, 5, 10].includes(idx) ? color.value.toFixed(0) : ' ' }}</span>
+      </div>
+    </div>
   </div>
   <div v-if="!plate.template && props.plate.z_primes" class="row q-mt-sm">
     <div class="col-12 q-mr-md">
@@ -184,6 +219,7 @@ const typeColor = (well: Well | undefined) => {
       </span>
     </div>
   </div>
+
   <div v-if="!plate.template" class="row">
     <div class="col-4 q-mr-md">
       <q-select
@@ -266,6 +302,15 @@ select
   max-width: 300px
 .z-prime
   border-radius: 5px
+
+.legendItem
+  position: relative
+  width: 50px
+  height: 20px
+
+.legendLabel
+  position: absolute
+  left: 53px
 </style>
 
 <!-- :style="
