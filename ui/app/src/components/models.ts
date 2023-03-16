@@ -180,6 +180,11 @@ export interface DimensionsOption {
   value: number
 }
 
+export interface ExperimentPayload {
+  name?: string
+  description?: string
+}
+
 export interface ProjectPayload {
   name?: string
   description?: string
