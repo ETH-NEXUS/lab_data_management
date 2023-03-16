@@ -341,6 +341,25 @@ class M1000Mapper(BaseMapper):
         )
         return results, kwargs
 
+    def apply_evaluation_formula(self, plate, well, entry, **kwargs):
+        result = 0
+        formula = kwargs.get("evaluation")
+        for idx, value in enumerate(entry.get("values")):
+            abbrev = kwargs.get("meta_data")[idx].get("Label")
+            formula = formula.replace(abbrev, value)
+        try:
+            result = eval(formula)
+        except ZeroDivisionError:
+            log.warning(
+                f"Formula {formula} for {plate.barcode}{well.hr_position} resulted in a ZeroDivisionError. Setting result to zero."
+            )
+            result = 0
+        except Exception as e:
+            log.error(
+                f"Error while evaluating formula {formula} for {plate.barcode}{well.hr_position}: {e} "
+            )
+        return result
+
     def map(self, data: list[dict], **kwargs) -> None:
         def __debug(msg):
             if kwargs.get("debug"):
@@ -364,22 +383,46 @@ class M1000Mapper(BaseMapper):
                 if not well:
                     well = Well.objects.create(plate=plate, position=position)
 
-                for idx, value in enumerate(entry.get("values")):
-                    feature, _ = MeasurementFeature.objects.get_or_create(
-                        abbrev=kwargs.get("meta_data")[idx].get("Label")
-                    )
-                    # TODO: Prove senseless duplication
-                    metadata, _ = MeasurementMetadata.objects.get_or_create(
-                        data=kwargs.get("meta_data")[idx]
-                    )
-                    # log.debug(f"Add measurement {plate.barcode}{well.hr_position}: {value}")
-                    Measurement.objects.update_or_create(
-                        well=well,
-                        feature=feature,
-                        defaults={
-                            "value": value,
-                            "identifier": entry.get("identifier"),
-                            "meta": metadata,
-                        },
-                    )
+                if not kwargs.get("evaluation"):
+                    for idx, value in enumerate(entry.get("values")):
+                        feature, _ = MeasurementFeature.objects.get_or_create(
+                            abbrev=kwargs.get("meta_data")[idx].get("Label")
+                        )
+                        # TODO: Prove senseless duplication
+                        metadata, _ = MeasurementMetadata.objects.get_or_create(
+                            data=kwargs.get("meta_data")[idx]
+                        )
+
+                        Measurement.objects.update_or_create(
+                            well=well,
+                            feature=feature,
+                            defaults={
+                                "value": value,
+                                "identifier": entry.get("identifier"),
+                                "meta": metadata,
+                            },
+                        )
+                else:
+                    plate_mapping = PlateMapping.objects.get(target_plate=plate)
+                    plate_mapping.evaluation = kwargs.get("evaluation")
+                    plate_mapping.save()
+
+                    result = self.apply_evaluation_formula(plate, well, entry, **kwargs)
+                feature, _ = MeasurementFeature.objects.get_or_create(
+                    abbrev=kwargs.get("measurement_name")
+                )
+                metadata, _ = MeasurementMetadata.objects.get_or_create(
+                    data=kwargs.get("meta_data")[0]
+                )
+
+                Measurement.objects.update_or_create(
+                    well=well,
+                    feature=feature,
+                    defaults={
+                        "value": result,
+                        "identifier": entry.get("identifier"),
+                        "meta": metadata,
+                    },
+                )
+
                 mbar.update(1)

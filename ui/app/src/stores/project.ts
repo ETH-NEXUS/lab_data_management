@@ -1,5 +1,7 @@
 import {defineStore} from 'pinia'
-import {Experiment, PlateDimension, Project, ExperimentPayload} from 'src/components/models'
+
+import {Experiment, PlateDimension, Project, ExperimentPayload, ProjectPayload} from 'src/components/models'
+
 import {api} from 'src/boot/axios'
 import {ref} from 'vue'
 
@@ -26,6 +28,11 @@ export const useProjectStore = defineStore('project', () => {
     const project = resp.data
     projects.value.push(project)
     return project
+  }
+
+  const updateProject = async (projectId: number, payload: ProjectPayload) => {
+    await api.patch(`/api/projects/${projectId}`, payload)
+    initialize()
   }
 
   const addExperiment = async (project: Project, experimentName: string) => {
@@ -114,5 +121,6 @@ export const useProjectStore = defineStore('project', () => {
     plateDimensions,
     addPlatesToExperiment,
     experiments,
+    updateProject,
   }
 })

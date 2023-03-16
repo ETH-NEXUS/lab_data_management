@@ -1,7 +1,20 @@
 // This is just an example,
 // so you can safely delete all default props below
 
+// title: field === 'name' ? t('project.edit_project_name') : t('project.edit_project_description'),
+// message: field === 'name' ? t('project.project_name') : t('project.project_description'),
+
 export default {
+  project: {
+    project_description: 'Project description',
+    number_of_experiments: 'Number of experiments',
+    project_name: 'Project name',
+    created_at: 'Created at',
+    no_description: 'No description provided',
+    edit_project_name: 'Edit project name',
+    edit_project_description: 'Edit project description',
+  },
+
   experiment: {
     description: 'Description',
     number_plates: 'Number of plates',
