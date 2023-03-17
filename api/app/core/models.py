@@ -542,6 +542,7 @@ class Measurement(TimeTrackedModel):
     )
     value = models.FloatField()
     identifier = models.CharField(max_length=20, null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
         if self.feature.abbrev and self.feature.unit:
@@ -551,6 +552,20 @@ class Measurement(TimeTrackedModel):
 
     class Meta:
         unique_together = ("well", "feature")
+
+
+class MeasurementAssignment(models.Model):
+    related_name = "assignments"
+    assignment_timestamp = models.DateTimeField(auto_now_add=True)
+    status = models.CharField(max_length=50, default="pending")
+    plate = models.ForeignKey(
+        Plate, on_delete=models.CASCADE, related_name=related_name
+    )
+    filename = models.TextField()
+    measurement_file = models.FileField(null=True)
+    metadata = models.ForeignKey(
+        MeasurementMetadata, on_delete=models.CASCADE, related_name=related_name
+    )
 
 
 class PlateMapping(TimeTrackedModel):

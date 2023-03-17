@@ -21,6 +21,7 @@ from core.models import (
     PlateMapping,
     Well,
     MappingError,
+    MeasurementAssignment,
 )
 from core.config import Config
 from django.core.files import File
@@ -402,6 +403,7 @@ class M1000Mapper(BaseMapper):
                                 "meta": metadata,
                             },
                         )
+
                 else:
                     plate_mapping = PlateMapping.objects.get(target_plate=plate)
                     plate_mapping.evaluation = kwargs.get("evaluation")
@@ -426,3 +428,18 @@ class M1000Mapper(BaseMapper):
                 )
 
                 mbar.update(1)
+        self.create_measurement_assignment(
+            plate=plate,
+            filename=kwargs.get("filename"),
+            metadata=metadata,
+        )
+
+    def create_measurement_assignment(self, **kwargs):
+        with open(kwargs["filename"], "rb") as file:
+            MeasurementAssignment.objects.update_or_create(
+                status="success",
+                plate=kwargs.get("plate"),
+                filename=kwargs.get("filename"),
+                measurement_file=File(file, os.path.basename(file.name)),
+                metadata=kwargs.get("metadata"),
+            )
