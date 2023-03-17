@@ -14,6 +14,7 @@ from .models import (
     BarcodeSpecification,
     PlateMapping,
     MeasurementMetadata,
+    MeasurementAssignment,
 )
 
 
@@ -123,3 +124,12 @@ class PlateMappingAdmin(admin.ModelAdmin):
 @admin.register(MeasurementMetadata)
 class MeasurementMetadataAdmin(admin.ModelAdmin):
     list_display = ("data",)
+
+
+@admin.register(MeasurementAssignment)
+class MeasurementAssignmentAdmin(admin.ModelAdmin):
+    list_display = (
+        "filename",
+        "status",
+        "assignment_timestamp",
+    )
