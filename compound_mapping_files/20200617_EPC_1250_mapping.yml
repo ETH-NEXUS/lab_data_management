@@ -1,0 +1,16 @@
+compound:
+  identifier: CatalogNumber
+  name: CompoundName
+  structure: Structure
+plate:
+  barcode:
+    - CompoundPlateBarcode_Copy1
+    - CompoundPlateBarcode_Copy2
+    - CompoundPlateBarcode_Copy3
+
+  position: WellCoordinate
+  amount:
+    - Vol_Copy1
+    - Vol_Copy2
+    - Vol_Copy3
+
