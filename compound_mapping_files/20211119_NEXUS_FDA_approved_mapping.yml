@@ -1,0 +1,27 @@
+compound:
+  identifier: CatalogNumber
+  name: CompoundName
+  structure: Structure
+plate:
+  barcode:
+    - CompoundPlateBarcode_Copy1
+    - CompoundPlateBarcode_Copy2
+    - CompoundPlateBarcode_Copy3
+    - CompoundPlateBarcode_Copy4
+    - CompoundPlateBarcode_Copy5
+    - CompoundPlateBarcode_Copy6
+    - CompoundPlateBarcode_Copy7
+    - CompoundPlateBarcode_Copy8
+    - CompoundPlateBarcode_Copy9
+
+  position: WelCoordinate
+  amount:
+    - Vol_Copy1
+    - Vol_Copy2
+    - Vol_Copy3
+    - Vol_Copy4
+    - Vol_Copy5
+    - Vol_Copy6
+    - Vol_Copy7
+    - Vol_Copy8
+    - Vol_Copy9

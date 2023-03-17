@@ -1,0 +1,8 @@
+compound:
+  identifier: IDNUMBER
+  name: NAME
+  structure: Structure
+plate:
+  barcode: PLATE_NUMBER1
+  position: POS_IN_PLATE
+  amount: PLATE_AMOUNT1
