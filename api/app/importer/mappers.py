@@ -377,6 +377,14 @@ class M1000Mapper(BaseMapper):
             unit="measurement",
             total=len(data),
         ) as mbar:
+            metadata_obj = {}
+            for entry in kwargs.get("meta_data"):
+                metadata_obj[entry["Label"]] = entry
+
+            metadata, _ = MeasurementMetadata.objects.update_or_create(
+                data=metadata_obj
+            )
+
             for entry in data:
                 __debug(f"Entry: {entry}")
                 position = plate.dimension.position(entry.get("position"))
@@ -390,9 +398,6 @@ class M1000Mapper(BaseMapper):
                             abbrev=kwargs.get("meta_data")[idx].get("Label")
                         )
                         # TODO: Prove senseless duplication
-                        metadata, _ = MeasurementMetadata.objects.get_or_create(
-                            data=kwargs.get("meta_data")[idx]
-                        )
 
                         Measurement.objects.update_or_create(
                             well=well,
@@ -413,9 +418,6 @@ class M1000Mapper(BaseMapper):
                     feature, _ = MeasurementFeature.objects.get_or_create(
                         abbrev=kwargs.get("measurement_name")
                     )
-                    metadata, _ = MeasurementMetadata.objects.get_or_create(
-                        data=kwargs.get("meta_data")[0]
-                    )
 
                     Measurement.objects.update_or_create(
                         well=well,
@@ -428,11 +430,11 @@ class M1000Mapper(BaseMapper):
                     )
 
                 mbar.update(1)
-        self.create_measurement_assignment(
-            plate=plate,
-            filename=kwargs.get("filename"),
-            metadata=metadata,
-        )
+            self.create_measurement_assignment(
+                plate=plate,
+                filename=kwargs.get("filename"),
+                metadata=metadata,
+            )
 
     def create_measurement_assignment(self, **kwargs):
         with open(kwargs["filename"], "rb") as file:

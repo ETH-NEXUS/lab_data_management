@@ -564,7 +564,11 @@ class MeasurementAssignment(models.Model):
     filename = models.TextField()
     measurement_file = models.FileField(null=True)
     metadata = models.ForeignKey(
-        MeasurementMetadata, on_delete=models.CASCADE, related_name=related_name
+        MeasurementMetadata,
+        on_delete=models.CASCADE,
+        related_name=related_name,
+        null=True,
+        blank=True,
     )
 
 
