@@ -15,7 +15,6 @@ from core.models import (
     BarcodeSpecification,
     Measurement,
     MeasurementFeature,
-    MeasurementMetadata,
     Plate,
     PlateDimension,
     PlateMapping,
@@ -381,8 +380,10 @@ class M1000Mapper(BaseMapper):
             for entry in kwargs.get("meta_data"):
                 metadata_obj[entry["Label"]] = entry
 
-            metadata, _ = MeasurementMetadata.objects.update_or_create(
-                data=metadata_obj
+            assignment = self.create_measurement_assignment(
+                plate,
+                kwargs.get("filename"),
+                kwargs.get("measurement_date"),
             )
 
             for entry in data:
@@ -402,10 +403,10 @@ class M1000Mapper(BaseMapper):
                         Measurement.objects.update_or_create(
                             well=well,
                             feature=feature,
+                            measurement_assignment=assignment,
                             defaults={
                                 "value": value,
                                 "identifier": entry.get("identifier"),
-                                "meta": metadata,
                             },
                         )
 
@@ -422,26 +423,22 @@ class M1000Mapper(BaseMapper):
                     Measurement.objects.update_or_create(
                         well=well,
                         feature=feature,
+                        measurement_assignment=assignment,
                         defaults={
                             "value": result,
                             "identifier": entry.get("identifier"),
-                            "meta": metadata,
                         },
                     )
 
                 mbar.update(1)
-            self.create_measurement_assignment(
-                plate=plate,
-                filename=kwargs.get("filename"),
-                metadata=metadata,
-            )
 
-    def create_measurement_assignment(self, **kwargs):
-        with open(kwargs["filename"], "rb") as file:
-            MeasurementAssignment.objects.update_or_create(
+    def create_measurement_assignment(self, plate, filename, measurement_timestamp):
+        with open(filename, "rb") as file:
+            assignment, _ = MeasurementAssignment.objects.update_or_create(
                 status="success",
-                plate=kwargs.get("plate"),
-                filename=kwargs.get("filename"),
+                plate=plate,
+                filename=filename,
                 measurement_file=File(file, os.path.basename(file.name)),
-                metadata=kwargs.get("metadata"),
+                measurement_timestamp=measurement_timestamp,
             )
+            return assignment
