@@ -125,6 +125,7 @@ const createColorLegend = () => {
 </script>
 
 <template>
+
   <div class="row">
     <table v-if="props.plate">
       <tr>
@@ -191,7 +192,7 @@ const createColorLegend = () => {
         </td>
       </tr>
     </table>
-    <div v-if="platePage.showHeatmap" class="q-my-md q-ml-md">
+    <div v-if="platePage.showHeatmap && measurementOptions.length > 0" class="q-my-md q-ml-md">
       <div
         class="legendItem"
         v-for="(color, idx) in legendColors.reverse()"
@@ -237,7 +238,7 @@ const createColorLegend = () => {
           :options="measurementOptions"
           :label="t('label.select_measurement')"></q-select>
       </div>
-      <div class="col-12" v-if="platePage.showHeatmap">
+      <div class="col-12" v-if="platePage.showHeatmap && measurementOptions.length > 0">
         <q-select
           v-model="platePage.heatmapPalette"
           :options="palettes"

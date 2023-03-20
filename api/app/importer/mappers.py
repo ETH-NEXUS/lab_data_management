@@ -410,22 +410,22 @@ class M1000Mapper(BaseMapper):
                     plate_mapping.save()
 
                     result = self.apply_evaluation_formula(plate, well, entry, **kwargs)
-                feature, _ = MeasurementFeature.objects.get_or_create(
-                    abbrev=kwargs.get("measurement_name")
-                )
-                metadata, _ = MeasurementMetadata.objects.get_or_create(
-                    data=kwargs.get("meta_data")[0]
-                )
+                    feature, _ = MeasurementFeature.objects.get_or_create(
+                        abbrev=kwargs.get("measurement_name")
+                    )
+                    metadata, _ = MeasurementMetadata.objects.get_or_create(
+                        data=kwargs.get("meta_data")[0]
+                    )
 
-                Measurement.objects.update_or_create(
-                    well=well,
-                    feature=feature,
-                    defaults={
-                        "value": result,
-                        "identifier": entry.get("identifier"),
-                        "meta": metadata,
-                    },
-                )
+                    Measurement.objects.update_or_create(
+                        well=well,
+                        feature=feature,
+                        defaults={
+                            "value": result,
+                            "identifier": entry.get("identifier"),
+                            "meta": metadata,
+                        },
+                    )
 
                 mbar.update(1)
         self.create_measurement_assignment(
