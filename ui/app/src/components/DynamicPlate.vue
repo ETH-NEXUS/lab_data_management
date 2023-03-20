@@ -72,7 +72,7 @@ const percentage = (well: Well | undefined) => {
   if (selectedMeasurement.value && well?.measurements) {
     const min = props.plate.min_max[selectedMeasurement.value].min_all_types
     const max = props.plate.min_max[selectedMeasurement.value].max_all_types
-    console.log('max', max)
+
     const value = well?.measurements.find(m => m.feature.abbrev === selectedMeasurement.value)?.value
     if (value) {
       return (value - min) / (max - min)
@@ -108,7 +108,7 @@ const createColorLegend = () => {
     const min = props.plate.min_max[selectedMeasurement.value].min_all_types
     const max = props.plate.min_max[selectedMeasurement.value].max_all_types
     const numberOfSteps = 10
-    console.log(max)
+
     const step: number = (max - min) / numberOfSteps
     for (let i = 0; i <= numberOfSteps; i++) {
       const value: number = min + i * step
