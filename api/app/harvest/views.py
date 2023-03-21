@@ -5,10 +5,13 @@ from django.views.decorators.csrf import csrf_exempt
 
 from .harvest_client import HarvestClient
 from django.conf import settings
-from core.models import Project, HarvestProjectMapping
+from core.models import Project
 from django.shortcuts import get_object_or_404
+from os import environ
 
 client = HarvestClient(settings.HARVEST_ACCESS_TOKEN, settings.HARVEST_ACCOUNT_ID)
+
+HARVEST_FILTER = environ.get("HARVEST_FILTER")
 
 
 def harvest_projects(request):
@@ -18,21 +21,15 @@ def harvest_projects(request):
 
 @csrf_exempt
 def update_harvest_info(request, project_id):
-    available_harvest_projects = client.get("projects")["projects"]
     project = get_object_or_404(Project, id=project_id)
-    harvest_project_mapping = get_object_or_404(HarvestProjectMapping, project=project)
-    harvest_project = list(
-        filter(
-            lambda x: x["id"] == harvest_project_mapping.harvest_id,
-            available_harvest_projects,
-        )
-    )[0]
+    available_harvest_projects = client.get("projects")["projects"]
 
-    if not harvest_project:
-        return JsonResponse({"success": False, "error": "Harvest project not found."})
-
-    harvest_project_mapping.name = project.name = harvest_project["name"]
-    harvest_project_mapping.save()
-    project.save()
+    if project.harvest_id:
+        harvest_project = list(
+            filter(lambda x: x["id"] == project.harvest_id, available_harvest_projects)
+        )[0]
+        print("HARVEST PROJECT", harvest_project)
+        project.name = harvest_project["name"]
+        project.save()
 
     return JsonResponse({"success": True})
