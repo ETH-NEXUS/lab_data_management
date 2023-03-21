@@ -303,6 +303,7 @@ temp/
 *.ipynb
 *.csv
 sitemap.xml.gz
+api/app/docs/docs/index.md
 
 Pipfile
 .sass-cache
