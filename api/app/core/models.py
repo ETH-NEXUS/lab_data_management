@@ -540,7 +540,6 @@ class Measurement(TimeTrackedModel):
         on_delete=models.RESTRICT,
         related_name=related_name,
     )
-
     value = models.FloatField()
     identifier = models.CharField(max_length=20, null=True, blank=True)
     measurement_assignment = models.ForeignKey(
@@ -554,7 +553,7 @@ class Measurement(TimeTrackedModel):
         if self.feature.abbrev and self.feature.unit:
             return f"{self.feature.abbrev}: {self.value}{self.feature.unit}"
         else:
-            return f"{self.feature.name}: {self.value}"
+            return f"{self.feature.abbrev}: {self.value}"
 
     class Meta:
         unique_together = ("well", "feature")

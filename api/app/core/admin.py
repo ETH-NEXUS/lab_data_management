@@ -69,7 +69,8 @@ class WellAdmin(admin.ModelAdmin):
 
 @admin.register(Measurement)
 class MeasurementAdmin(admin.ModelAdmin):
-    list_display = ("value", "identifier", "well")
+    raw_id_fields = ("well",)
+    list_display = ("value", "identifier")
 
 
 @admin.register(MeasurementFeature)
