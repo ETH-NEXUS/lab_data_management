@@ -12,6 +12,23 @@ import {
 import {api} from 'src/boot/axios'
 import {ref} from 'vue'
 
+function sortHarvestProjects(harvestProjects: harvestProject[]) {
+  const currentYear = new Date().getFullYear().toString()
+  harvestProjects.sort((a: harvestProject, b: harvestProject) => {
+    const aContainsYear = a.name.includes(currentYear)
+    const bContainsYear = b.name.includes(currentYear)
+    if (aContainsYear && !bContainsYear) {
+      return -1
+    } else if (!aContainsYear && bContainsYear) {
+      return 1
+    } else {
+      return a.name.localeCompare(b.name)
+    }
+  })
+
+  return harvestProjects
+}
+
 export const useProjectStore = defineStore('project', () => {
   const projects = ref<Array<Project>>([])
   const plateDimensions = ref<Array<PlateDimension>>([])
@@ -34,11 +51,13 @@ export const useProjectStore = defineStore('project', () => {
       harvestDataCopy[i].value = harvestDataCopy[i].name
       harvestDataCopy[i].label = harvestDataCopy[i].name
     }
-    harvestProjects.value = harvestDataCopy.filter((item: harvestProject) => item.is_active)
-    console.log(harvestProjects.value)
+
+    harvestProjects.value = sortHarvestProjects(
+      harvestDataCopy.filter((item: harvestProject) => item.is_active)
+    )
   }
 
-  const add = async (payload: {projectName: string; harvest_id: number | null}) => {
+  const add = async (payload: {name: string; harvest_id: number | null}) => {
     const resp = await api.post('/api/projects/', payload)
     const project = resp.data
     projects.value.push(project)
