@@ -17,6 +17,7 @@ from .models import (
     WellType,
     BarcodeSpecification,
     MappingList,
+    HarvestProjectMapping,
 )
 
 
@@ -230,6 +231,18 @@ class ProjectSerializer(serializers.ModelSerializer):
     class Meta:
         model = Project
         fields = "__all__"
+
+    def create(self, validated_data):
+        instance = super().create(validated_data)
+        instance.save()
+        if validated_data.get("harvest_id"):
+            HarvestProjectMapping.objects.create(
+                name=validated_data.get("name"),
+                harvest_id=validated_data.get("harvest_id"),
+                project=instance,
+            )
+
+        return instance
 
 
 class PlateMappingSerializer(UndefinedAffineModelSerializer):

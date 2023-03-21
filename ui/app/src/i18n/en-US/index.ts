@@ -129,6 +129,11 @@ export default {
     no_dimension: 'No dimension',
     template_name: 'Please enter the template name:',
     select_dimension: 'Please select a dimension',
+    project_name_harvest: 'Select project name from Harvest',
+    update_harvest: 'Update Harvest information',
+    harvest_info_updated: 'Harvest information updated',
+
+    custom_name: 'Custom name',
   },
   action: {
     add_plates: 'Add paltes',

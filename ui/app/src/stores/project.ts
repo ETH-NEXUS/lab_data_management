@@ -1,6 +1,13 @@
 import {defineStore} from 'pinia'
 
-import {Experiment, PlateDimension, Project, ExperimentPayload, ProjectPayload} from 'src/components/models'
+import {
+  Experiment,
+  PlateDimension,
+  Project,
+  ExperimentPayload,
+  ProjectPayload,
+  harvestProject,
+} from 'src/components/models'
 
 import {api} from 'src/boot/axios'
 import {ref} from 'vue'
@@ -9,6 +16,7 @@ export const useProjectStore = defineStore('project', () => {
   const projects = ref<Array<Project>>([])
   const plateDimensions = ref<Array<PlateDimension>>([])
   const experiments = ref<Array<Experiment>>([])
+  const harvestProjects = ref<harvestProject[]>([])
 
   const initialize = async () => {
     const resp_p = await api.get('/api/projects/')
@@ -19,20 +27,32 @@ export const useProjectStore = defineStore('project', () => {
 
     const res_d = await api.get('/api/platedimensions/')
     plateDimensions.value = res_d.data.results
+
+    const resp_harvest = await api.get('/api/harvest/harvest_projects/')
+    const harvestDataCopy = JSON.parse(JSON.stringify(resp_harvest.data.projects))
+    for (let i = 0; i < harvestDataCopy.length; i++) {
+      harvestDataCopy[i].value = harvestDataCopy[i].name
+      harvestDataCopy[i].label = harvestDataCopy[i].name
+    }
+    harvestProjects.value = harvestDataCopy.filter((item: harvestProject) => item.is_active)
+    console.log(harvestProjects.value)
   }
 
-  const add = async (projectName: string) => {
-    const resp = await api.post('/api/projects/', {
-      name: projectName,
-    })
+  const add = async (payload: {projectName: string; harvest_id: number | null}) => {
+    const resp = await api.post('/api/projects/', payload)
     const project = resp.data
     projects.value.push(project)
     return project
   }
+  const updateHarvestInfo = async (projectId: number) => {
+    const resp = await api.get(`/api/harvest/update_harvest_info/${projectId}/`)
+    await initialize()
+    return resp
+  }
 
   const updateProject = async (projectId: number, payload: ProjectPayload) => {
     await api.patch(`/api/projects/${projectId}`, payload)
-    initialize()
+    await initialize()
   }
 
   const addExperiment = async (project: Project, experimentName: string) => {
@@ -122,5 +142,7 @@ export const useProjectStore = defineStore('project', () => {
     addPlatesToExperiment,
     experiments,
     updateProject,
+    harvestProjects,
+    updateHarvestInfo,
   }
 })

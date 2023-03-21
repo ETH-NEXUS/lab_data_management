@@ -26,6 +26,19 @@ class MappingError(Exception):
 class Project(TimeTrackedModel):
     name = models.CharField(max_length=50, unique=True)
     description = models.TextField(blank=True, null=True)
+    harvest_id = models.IntegerField(blank=True, null=True)
+
+    def __str__(self):
+        return self.name
+
+
+class HarvestProjectMapping(models.Model):
+    related_name = "harvest_project_mappings"
+    name = models.CharField(max_length=50, unique=True)
+    harvest_id = models.IntegerField(blank=True, null=True)
+    project = models.ForeignKey(
+        Project, on_delete=models.CASCADE, related_name=related_name
+    )
 
     def __str__(self):
         return self.name
