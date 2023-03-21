@@ -14,6 +14,7 @@ from .models import (
     BarcodeSpecification,
     PlateMapping,
     MeasurementAssignment,
+    HarvestProjectMapping,
 )
 
 
@@ -92,6 +93,11 @@ class LocationAdmin(admin.ModelAdmin):
 @admin.register(Project)
 class ProjectAdmin(admin.ModelAdmin):
     list_display = ("name",)
+
+
+@admin.register(HarvestProjectMapping)
+class HarvestProjectMappingAdmin(admin.ModelAdmin):
+    list_display = ("name", "harvest_id")
 
 
 @admin.register(Experiment)

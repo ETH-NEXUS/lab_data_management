@@ -58,6 +58,23 @@ const editProject = async (field: string) => {
     }
   })
 }
+
+const updateHarvestInfo = async () => {
+  if (project.value) {
+    try {
+      const resp = await projectStore.updateHarvestInfo(project.value.id)
+      if (resp.data.success) {
+        await initialize()
+        $q.notify({
+          type: 'positive',
+          message: t('message.harvest_info_updated'),
+        })
+      }
+    } catch (err) {
+      handleError(err, false)
+    }
+  }
+}
 </script>
 
 <template>
@@ -66,6 +83,7 @@ const editProject = async (field: string) => {
       {{ t('project.project_name') }}: {{ project.name }}
       <q-btn flat icon="edit" @click="editProject((field = 'name'))" />
     </div>
+
     <div class="q-pa-md row items-start q-gutter-md">
       <q-card class="my-card" flat>
         <q-card-section class="q-pt-xs">
@@ -90,6 +108,13 @@ const editProject = async (field: string) => {
               {{ formatDate(project.created_at) }}
             </p>
           </div>
+
+          <q-btn
+            class="q-ml-md q-mt-md"
+            :label="t('message.update_harvest')"
+            icon="update"
+            color="secondary"
+            @click="updateHarvestInfo" />
         </q-card-section>
       </q-card>
     </div>
