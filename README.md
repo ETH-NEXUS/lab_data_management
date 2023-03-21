@@ -59,3 +59,7 @@ If you need to apply a custom formula to the result values, e. g. to find the Ac
 ./manage.py map m1000 -p /data/m1000 -e Acceptor/Donor -n result_value
 ```
 
+You can apply several formulas separating them with commas (in this case, you need to provide the same number of names for the result measurement values):
+```bash
+./manage.py map m1000 -p /data/m1000 -e Acceptor/Donor,Acceptor*Donor -n ratio,product
+```
