@@ -341,9 +341,8 @@ class M1000Mapper(BaseMapper):
         )
         return results, kwargs
 
-    def apply_evaluation_formula(self, plate, well, entry, **kwargs):
+    def apply_evaluation_formula(self, formula, plate, well, entry, **kwargs):
         result = 0
-        formula = kwargs.get("evaluation")
         for idx, value in enumerate(entry.get("values")):
             abbrev = kwargs.get("meta_data")[idx].get("Label")
             formula = formula.replace(abbrev, value)
@@ -398,7 +397,6 @@ class M1000Mapper(BaseMapper):
                         feature, _ = MeasurementFeature.objects.get_or_create(
                             abbrev=kwargs.get("meta_data")[idx].get("Label")
                         )
-                        # TODO: Prove senseless duplication
 
                         Measurement.objects.update_or_create(
                             well=well,
@@ -411,24 +409,27 @@ class M1000Mapper(BaseMapper):
                         )
 
                 else:
-                    plate_mapping = PlateMapping.objects.get(target_plate=plate)
-                    plate_mapping.evaluation = kwargs.get("evaluation")
-                    plate_mapping.save()
-
-                    result = self.apply_evaluation_formula(plate, well, entry, **kwargs)
-                    feature, _ = MeasurementFeature.objects.get_or_create(
-                        abbrev=kwargs.get("measurement_name")
-                    )
-
-                    Measurement.objects.update_or_create(
-                        well=well,
-                        feature=feature,
-                        measurement_assignment=assignment,
-                        defaults={
-                            "value": result,
-                            "identifier": entry.get("identifier"),
-                        },
-                    )
+                    evaluation_formulas = kwargs.get("evaluation").split(",")
+                    measurement_names = kwargs.get("measurement_name").split(",")
+                    for idx, evaluation_formula in enumerate(evaluation_formulas):
+                        feature, _ = MeasurementFeature.objects.get_or_create(
+                            abbrev=measurement_names[idx]
+                        )
+                        result = self.apply_evaluation_formula(
+                            evaluation_formula, plate, well, entry, **kwargs
+                        )
+                        Measurement.objects.update_or_create(
+                            well=well,
+                            feature=feature,
+                            measurement_assignment=assignment,
+                            defaults={
+                                "value": result,
+                                "identifier": entry.get("identifier"),
+                            },
+                        )
+                        plate_mapping = PlateMapping.objects.get(target_plate=plate)
+                        plate_mapping.evaluation = evaluation_formula
+                        plate_mapping.save()
 
                 mbar.update(1)
 
