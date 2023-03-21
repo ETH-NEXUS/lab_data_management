@@ -72,7 +72,7 @@ const percentage = (well: Well | undefined) => {
   if (selectedMeasurement.value && well?.measurements) {
     const min = props.plate.min_max[selectedMeasurement.value].min_all_types
     const max = props.plate.min_max[selectedMeasurement.value].max_all_types
-    console.log('max', max)
+
     const value = well?.measurements.find(m => m.feature.abbrev === selectedMeasurement.value)?.value
     if (value) {
       return (value - min) / (max - min)
@@ -108,7 +108,7 @@ const createColorLegend = () => {
     const min = props.plate.min_max[selectedMeasurement.value].min_all_types
     const max = props.plate.min_max[selectedMeasurement.value].max_all_types
     const numberOfSteps = 10
-    console.log(max)
+
     const step: number = (max - min) / numberOfSteps
     for (let i = 0; i <= numberOfSteps; i++) {
       const value: number = min + i * step
@@ -125,6 +125,7 @@ const createColorLegend = () => {
 </script>
 
 <template>
+
   <div class="row">
     <table v-if="props.plate">
       <tr>
@@ -191,7 +192,7 @@ const createColorLegend = () => {
         </td>
       </tr>
     </table>
-    <div v-if="platePage.showHeatmap" class="q-my-md q-ml-md">
+    <div v-if="platePage.showHeatmap && measurementOptions.length > 0" class="q-my-md q-ml-md">
       <div
         class="legendItem"
         v-for="(color, idx) in legendColors.reverse()"
@@ -237,7 +238,7 @@ const createColorLegend = () => {
           :options="measurementOptions"
           :label="t('label.select_measurement')"></q-select>
       </div>
-      <div class="col-12" v-if="platePage.showHeatmap">
+      <div class="col-12" v-if="platePage.showHeatmap && measurementOptions.length > 0">
         <q-select
           v-model="platePage.heatmapPalette"
           :options="palettes"

@@ -520,9 +520,16 @@ class MeasurementFeature(models.Model):
     unit = models.CharField(max_length=10, null=True, blank=True)
 
 
-class MeasurementMetadata(models.Model):
-    # TODO: Add a hashing feature to only keep same measurement once
-    data = models.JSONField()
+class MeasurementAssignment(models.Model):
+    related_name = "assignments"
+    assignment_timestamp = models.DateTimeField(auto_now_add=True)
+    status = models.CharField(max_length=50, default="pending")
+    plate = models.ForeignKey(
+        Plate, on_delete=models.CASCADE, related_name=related_name
+    )
+    filename = models.TextField()
+    measurement_file = models.FileField(null=True)
+    measurement_timestamp = models.DateTimeField(null=True, blank=True)
 
 
 class Measurement(TimeTrackedModel):
@@ -533,21 +540,20 @@ class Measurement(TimeTrackedModel):
         on_delete=models.RESTRICT,
         related_name=related_name,
     )
-    meta = models.ForeignKey(
-        MeasurementMetadata,
-        on_delete=models.RESTRICT,
-        related_name=related_name,
-        null=True,
-        blank=True,
-    )
     value = models.FloatField()
     identifier = models.CharField(max_length=20, null=True, blank=True)
+    measurement_assignment = models.ForeignKey(
+        MeasurementAssignment,
+        on_delete=models.CASCADE,
+        related_name=related_name,
+        null=True,
+    )
 
     def __str__(self):
         if self.feature.abbrev and self.feature.unit:
             return f"{self.feature.abbrev}: {self.value}{self.feature.unit}"
         else:
-            return f"{self.feature.name}: {self.value}"
+            return f"{self.feature.abbrev}: {self.value}"
 
     class Meta:
         unique_together = ("well", "feature")

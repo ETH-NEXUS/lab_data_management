@@ -56,6 +56,10 @@ In the api container run:
 
 If you need to apply a custom formula to the result values, e. g. to find the Acceptor/Donor ratio, you can specify the formula and provide the name of the result measurement value in the command as follows:
 ```bash
-./manage.py map m1000 -p /data/m1000 -e Acceptor/Donor -f -n result_value
+./manage.py map m1000 -p /data/m1000 -e Acceptor/Donor -n result_value
 ```
 
+You can apply several formulas separating them with commas (in this case, you need to provide the same number of names for the result measurement values):
+```bash
+./manage.py map m1000 -p /data/m1000 -e Acceptor/Donor,Acceptor*Donor -n ratio,product
+```

@@ -13,7 +13,7 @@ from .models import (
     Experiment,
     BarcodeSpecification,
     PlateMapping,
-    MeasurementMetadata,
+    MeasurementAssignment,
 )
 
 
@@ -69,7 +69,8 @@ class WellAdmin(admin.ModelAdmin):
 
 @admin.register(Measurement)
 class MeasurementAdmin(admin.ModelAdmin):
-    list_display = ("value", "identifier", "well", "meta")
+    raw_id_fields = ("well",)
+    list_display = ("value", "identifier")
 
 
 @admin.register(MeasurementFeature)
@@ -120,6 +121,11 @@ class PlateMappingAdmin(admin.ModelAdmin):
     )
 
 
-@admin.register(MeasurementMetadata)
-class MeasurementMetadataAdmin(admin.ModelAdmin):
-    list_display = ("data",)
+@admin.register(MeasurementAssignment)
+class MeasurementAssignmentAdmin(admin.ModelAdmin):
+    list_display = (
+        "filename",
+        "status",
+        "assignment_timestamp",
+        "measurement_timestamp",
+    )
