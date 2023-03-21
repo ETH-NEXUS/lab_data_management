@@ -13,9 +13,17 @@ client = HarvestClient(settings.HARVEST_ACCESS_TOKEN, settings.HARVEST_ACCOUNT_I
 
 HARVEST_FILTER = environ.get("HARVEST_FILTER")
 
+print("HARVEST_FILTER", HARVEST_FILTER)
 
-def harvest_projects(request):
+
+def harvest_projects(request, filter_string=HARVEST_FILTER):
     projects = client.get("projects")
+    if filter_string:
+        projects = {
+            "projects": list(
+                filter(lambda x: filter_string in x["name"], projects["projects"])
+            )
+        }
     return JsonResponse(projects)
 
 
