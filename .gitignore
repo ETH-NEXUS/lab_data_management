@@ -298,7 +298,7 @@ dist
 data/
 static/
 media/
-docs/site/
+site/
 backups/
 temp/
 *.ipynb
