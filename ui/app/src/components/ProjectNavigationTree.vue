@@ -144,7 +144,7 @@ const nodes = computed<Array<QTreeNode>>(() => {
 
 const newProject = async () => {
   const payload = {
-    projectName:
+    name:
       newProjectName.value !== ''
         ? newProjectName.value
         : harvestProject.value
