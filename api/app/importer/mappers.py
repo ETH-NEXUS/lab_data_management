@@ -15,12 +15,12 @@ from core.models import (
     BarcodeSpecification,
     Measurement,
     MeasurementFeature,
-    MeasurementMetadata,
     Plate,
     PlateDimension,
     PlateMapping,
     Well,
     MappingError,
+    MeasurementAssignment,
 )
 from core.config import Config
 from django.core.files import File
@@ -341,9 +341,8 @@ class M1000Mapper(BaseMapper):
         )
         return results, kwargs
 
-    def apply_evaluation_formula(self, plate, well, entry, **kwargs):
+    def apply_evaluation_formula(self, formula, plate, well, entry, **kwargs):
         result = 0
-        formula = kwargs.get("evaluation")
         for idx, value in enumerate(entry.get("values")):
             abbrev = kwargs.get("meta_data")[idx].get("Label")
             formula = formula.replace(abbrev, value)
@@ -376,6 +375,16 @@ class M1000Mapper(BaseMapper):
             unit="measurement",
             total=len(data),
         ) as mbar:
+            metadata_obj = {}
+            for entry in kwargs.get("meta_data"):
+                metadata_obj[entry["Label"]] = entry
+
+            assignment = self.create_measurement_assignment(
+                plate,
+                kwargs.get("filename"),
+                kwargs.get("measurement_date"),
+            )
+
             for entry in data:
                 __debug(f"Entry: {entry}")
                 position = plate.dimension.position(entry.get("position"))
@@ -388,41 +397,49 @@ class M1000Mapper(BaseMapper):
                         feature, _ = MeasurementFeature.objects.get_or_create(
                             abbrev=kwargs.get("meta_data")[idx].get("Label")
                         )
-                        # TODO: Prove senseless duplication
-                        metadata, _ = MeasurementMetadata.objects.get_or_create(
-                            data=kwargs.get("meta_data")[idx]
-                        )
 
                         Measurement.objects.update_or_create(
                             well=well,
                             feature=feature,
+                            measurement_assignment=assignment,
                             defaults={
                                 "value": value,
                                 "identifier": entry.get("identifier"),
-                                "meta": metadata,
                             },
                         )
+
                 else:
-                    plate_mapping = PlateMapping.objects.get(target_plate=plate)
-                    plate_mapping.evaluation = kwargs.get("evaluation")
-                    plate_mapping.save()
-
-                    result = self.apply_evaluation_formula(plate, well, entry, **kwargs)
-                feature, _ = MeasurementFeature.objects.get_or_create(
-                    abbrev=kwargs.get("measurement_name")
-                )
-                metadata, _ = MeasurementMetadata.objects.get_or_create(
-                    data=kwargs.get("meta_data")[0]
-                )
-
-                Measurement.objects.update_or_create(
-                    well=well,
-                    feature=feature,
-                    defaults={
-                        "value": result,
-                        "identifier": entry.get("identifier"),
-                        "meta": metadata,
-                    },
-                )
+                    evaluation_formulas = kwargs.get("evaluation").split(",")
+                    measurement_names = kwargs.get("measurement_name").split(",")
+                    for idx, evaluation_formula in enumerate(evaluation_formulas):
+                        feature, _ = MeasurementFeature.objects.get_or_create(
+                            abbrev=measurement_names[idx]
+                        )
+                        result = self.apply_evaluation_formula(
+                            evaluation_formula, plate, well, entry, **kwargs
+                        )
+                        Measurement.objects.update_or_create(
+                            well=well,
+                            feature=feature,
+                            measurement_assignment=assignment,
+                            defaults={
+                                "value": result,
+                                "identifier": entry.get("identifier"),
+                            },
+                        )
+                        plate_mapping = PlateMapping.objects.get(target_plate=plate)
+                        plate_mapping.evaluation = evaluation_formula
+                        plate_mapping.save()
 
                 mbar.update(1)
+
+    def create_measurement_assignment(self, plate, filename, measurement_timestamp):
+        with open(filename, "rb") as file:
+            assignment, _ = MeasurementAssignment.objects.update_or_create(
+                status="success",
+                plate=plate,
+                filename=filename,
+                measurement_file=File(file, os.path.basename(file.name)),
+                measurement_timestamp=measurement_timestamp,
+            )
+            return assignment
