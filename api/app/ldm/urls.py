@@ -40,7 +40,8 @@ urlpatterns = [
     path("api/", include(user_router.urls)),
     path("api/mapping_preview/", MappingPreviewView.as_view()),
     path("api/version/", VersionView.as_view()),
-    re_path(r'^docs/(?P<uri>.*)$', DocsView.as_view(), name='docs'),
+    re_path(r"^docs/(?P<uri>.*)$", DocsView.as_view(), name="docs"),
+    path("api/harvest/", include("harvest.urls")),
 ]
 
 if not settings.DISABLE_BROWSABLE_API and not settings.DISABLE_AUTH:
