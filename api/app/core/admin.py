@@ -71,6 +71,7 @@ class WellAdmin(admin.ModelAdmin):
 class MeasurementAdmin(admin.ModelAdmin):
     raw_id_fields = ("well",)
     list_display = ("value", "identifier")
+    list_per_page = 1000
 
 
 @admin.register(MeasurementFeature)
