@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import {ref, onMounted, computed, watchEffect} from 'vue'
 import {handleError} from '../helpers/errorHandling'
-import {Project, Experiment, Plate} from './models'
+import {Project, Experiment, Plate, harvestProject} from './models'
 import {QTreeNode} from 'quasar'
 import {useI18n} from 'vue-i18n'
 import {useRouter} from 'vue-router'
@@ -26,10 +26,15 @@ const initialize = async () => {
 }
 
 onMounted(async () => {
-  initialize()
+  await initialize()
 })
 
 const {navigationTree, projectNavigationTree} = storeToRefs(useSettingsStore())
+const {harvestProjects} = storeToRefs(projectStore)
+const newProjectDialog = ref<boolean>(false)
+const newProjectName = ref<string>('')
+const harvestProject = ref<harvestProject | null>(null)
+const ownName = ref<boolean>(false)
 
 watchEffect(() => {
   if (projectNavigationTree.value.needsUpdate) {
@@ -39,7 +44,6 @@ watchEffect(() => {
 })
 
 const nodeHandler = (node: QTreeNode) => {
-  console.log(node)
   if ('plate' in node) {
     router.push(`/plate/${node.plate.barcode}`)
   } else if ('project' in node) {
@@ -139,25 +143,25 @@ const nodes = computed<Array<QTreeNode>>(() => {
 })
 
 const newProject = async () => {
-  $q.dialog({
-    title: t('title.project_name'),
-    message: t('message.project_name'),
-    prompt: {
-      model: '',
-      type: 'text',
-    },
-    cancel: true,
-    persistent: true,
-  }).onOk(async projectName => {
-    if (projectNodes.value.children) {
-      try {
-        const project = await projectStore.add(projectName)
-        addProjectNode(project)
-      } catch (err) {
-        handleError(err)
-      }
+  const payload = {
+    name:
+      newProjectName.value !== ''
+        ? newProjectName.value
+        : harvestProject.value
+        ? harvestProject.value.name
+        : '',
+    harvest_id: harvestProject.value ? harvestProject.value.id : null,
+    harvest_notes: harvestProject.value ? harvestProject.value.notes : null,
+  }
+
+  if (projectNodes.value.children) {
+    try {
+      const project = await projectStore.add(payload)
+      addProjectNode(project)
+    } catch (err) {
+      handleError(err)
     }
-  })
+  }
 }
 
 const newExperiment = async (project: Project) => {
@@ -218,7 +222,7 @@ const newPlate = async (experiment: Experiment) => {
       <q-menu touch-position context-menu>
         <q-list dense style="min-width: 100px">
           <q-item clickable v-close-popup>
-            <q-item-section @click="newProject">{{ t('action.new_project') }}</q-item-section>
+            <q-item-section @click="newProjectDialog = true">{{ t('action.new_project') }}</q-item-section>
           </q-item>
         </q-list>
       </q-menu>
@@ -265,6 +269,35 @@ const newPlate = async (experiment: Experiment) => {
       {{ prop.node.label }}
     </template>
   </q-tree>
+  <q-dialog v-model="newProjectDialog" style="width: 700px; max-width: 80vw">
+    <q-card>
+      <div :style="{display: !ownName ? 'block' : 'None'}">
+        <q-card-section>
+          <div class="text-body1">{{ t('message.project_name_harvest') }}:</div>
+        </q-card-section>
+
+        <q-card-section class="q-pt-none">
+          <q-select behavior="dialog" v-model="harvestProject" :options="harvestProjects"></q-select>
+        </q-card-section>
+      </div>
+
+      <div :style="{display: ownName ? 'block' : 'None'}">
+        <q-card-section>
+          <div class="text-body1">{{ t('message.project_name') }}</div>
+        </q-card-section>
+
+        <q-card-section class="q-pt-none">
+          <q-input dense v-model="newProjectName" autofocus></q-input>
+        </q-card-section>
+      </div>
+
+      <q-toggle v-model="ownName" :label="t('message.custom_name')" right-label></q-toggle>
+
+      <q-card-actions align="right">
+        <q-btn flat label="OK" color="primary" v-close-popup @click="newProject"></q-btn>
+      </q-card-actions>
+    </q-card>
+  </q-dialog>
 </template>
 
 <style lang="sass">

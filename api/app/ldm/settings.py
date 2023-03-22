@@ -53,6 +53,7 @@ INSTALLED_APPS = [
     "importer",
     "compoundlib",
     "platetemplate",
+    "harvest",
 ]
 
 MIDDLEWARE = [
@@ -323,3 +324,6 @@ NOTEBOOK_ARGUMENTS = [
     "--NotebookApp.base_url",
     "/notebook",
 ]
+
+HARVEST_ACCESS_TOKEN = environ.get("HARVEST_ACCESS_TOKEN")
+HARVEST_ACCOUNT_ID = environ.get("HARVEST_ACCOUNT_ID")

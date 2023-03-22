@@ -34,6 +34,8 @@ export interface Project {
   name: string
   experiments: Array<Experiment>
   description?: string
+  harvest_id?: number
+  harvest_notes?: string
 }
 
 export interface Template {
@@ -193,4 +195,37 @@ export interface ProjectPayload {
 export interface LegendColor {
   value: number
   color: string
+}
+
+export interface harvestProject {
+  id: number
+  value: string
+  label: string
+  name: string
+  code: string
+  is_active: boolean
+  is_billable: boolean
+  is_fixed_fee: boolean
+  bill_by: string
+  budget: null | number
+  budget_by: string
+  budget_is_monthly: boolean
+  notify_when_over_budget: boolean
+  over_budget_notification_percentage: null | number
+  show_budget_to_all: boolean
+  created_at: string
+  updated_at: string
+  starts_on: null | string
+  ends_on: null | string
+  over_budget_notification_date: null | string
+  notes: string
+  cost_budget: null | number
+  cost_budget_include_expenses: null | boolean
+  hourly_rate: null | number
+  fee: null | number
+  client: {
+    id: number
+    name: string
+    currency: string
+  }
 }
