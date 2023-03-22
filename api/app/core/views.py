@@ -3,6 +3,7 @@ from uuid import uuid4
 import re
 
 from os import environ
+import os
 
 from django.shortcuts import get_object_or_404
 
@@ -321,15 +322,11 @@ class DocsView(View):
             uri = "index.html"
         file_path = os.path.join(docs_dir, uri)
 
-        # with redirect_stderr(None):
-        #     detector = UniversalDetector()
-        #     with open(file_path, "rb") as file:
-        #         for line in file:
-        #             detector.feed(line)
-        #             if detector.done:
-        #                 break
-        #         detector.close()
-        #     encoding = detector.result.get("encoding")
+        if os.path.isdir(file_path):
+            file_path = os.path.join(file_path, "index.html")
+        if not os.path.isfile(file_path):
+            raise Http404("File not found")
+
         with open(file_path, "r", encoding="utf8", errors="replace") as f:
             content = f.read()
 

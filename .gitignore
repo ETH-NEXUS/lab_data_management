@@ -296,7 +296,8 @@ data/
 static/
 media/
 site/
-index.mb
+index.md
+CHANGELOG.md
 backups/
 temp/
 *.ipynb
