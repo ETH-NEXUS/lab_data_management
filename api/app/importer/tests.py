@@ -7,9 +7,17 @@ from pathlib import Path
 from django.test import TestCase
 
 from core.helper import posToAlphaChar
-from core.models import PlateDimension, Plate, Experiment, Project, \
-    BarcodeSpecification, PlateMapping, Measurement, MeasurementMetadata
-from importer.m1000_test_file_content import content
+from core.models import (
+    PlateDimension,
+    Plate,
+    Experiment,
+    Project,
+    BarcodeSpecification,
+    PlateMapping,
+    Measurement,
+    MeasurementAssignment,
+)
+from importer.m1000_test_file_content import content, content_evaluation
 from .helper import sameSchema, row_col_from_wells, closest, row_col_from_name
 from .mappers import BaseMapper, M1000Mapper, EchoMapper
 
@@ -72,7 +80,6 @@ class HelperTest(TestCase):
 
 class ConvertPositionToIndexTests(TestCase):
     fixtures = ["plate_dimensions"]
-
 
     def setUp(self):
         self.dimension_96 = PlateDimension.objects.get(name="dim_96_8x12")
@@ -141,36 +148,81 @@ class MapperTests(TestCase):
     TEST_DATA_FOLDER = "./temp"
     ECHO_DIR = join(TEST_DATA_FOLDER, "echo")
     M1000_DIR = join(TEST_DATA_FOLDER, "M1000")
+    M1000_DIR_EVALUATION = join(TEST_DATA_FOLDER, "evaluation")
     BARCODES = ["P1", "P2", "P3"]
 
     def create_echo_test_data(self):
         project = Project.objects.create(name="Test Project1")
-        experiment_m1000 = Experiment.objects.create(name="Test "
-                                                          "Experiment_1",
-                                                     project=project)
+        experiment_m1000 = Experiment.objects.create(
+            name="Test " "Experiment_1", project=project
+        )
         m1000_example_barcode_prefix = "BAF210901"
         barcode_specification_m1000 = BarcodeSpecification.objects.create(
             prefix=m1000_example_barcode_prefix,
-                                            number_of_plates=3,
-            experiment=experiment_m1000)
+            number_of_plates=3,
+            experiment=experiment_m1000,
+        )
         for i in range(barcode_specification_m1000.number_of_plates):
-            Plate.objects.create(dimension=PlateDimension.objects.get(name="dim_384_16x24"),
-                                          barcode=f""
-                                                  f"{barcode_specification_m1000.prefix}_{i + 1}",
-                                            experiment=experiment_m1000)
+            Plate.objects.create(
+                dimension=PlateDimension.objects.get(name="dim_384_16x24"),
+                barcode=f"" f"{barcode_specification_m1000.prefix}_{i + 1}",
+                experiment=experiment_m1000,
+            )
         for i in range(barcode_specification_m1000.number_of_plates):
-            with open(join(self.M1000_DIR, f"20210902-131750_{m1000_example_barcode_prefix}_"
-                                           f"{i + 1}.asc"), "w") as ef:
+            with open(
+                join(
+                    self.M1000_DIR,
+                    f"20210902-131750_{m1000_example_barcode_prefix}_" f"{i + 1}.asc",
+                ),
+                "w",
+            ) as ef:
                 ef.write(content)
 
+        # create data for testing measurement mapping  with evaluation
+        fake_source_plate = Plate.objects.create(
+            barcode="source_1",
+            dimension=PlateDimension.objects.get(name="dim_384_16x24"),
+        )
 
-        experiment_echo = Experiment.objects.create(name="Test Experiment_2",
-                                               project=project)
+        experiment_m1000_evaluation = Experiment.objects.create(
+            name="Test " "Experiment_evaluation", project=project
+        )
+        m1000_example_barcode_prefix_evaluation = "221212AK"
+        barcode_specification_m1000_evaluation = BarcodeSpecification.objects.create(
+            prefix=m1000_example_barcode_prefix_evaluation,
+            number_of_plates=3,
+            experiment=experiment_m1000_evaluation,
+        )
+        for i in range(barcode_specification_m1000_evaluation.number_of_plates):
+            plate = Plate.objects.create(
+                dimension=PlateDimension.objects.get(name="dim_384_16x24"),
+                barcode=f"{m1000_example_barcode_prefix_evaluation}_{i + 1}",
+                experiment=experiment_m1000_evaluation,
+            )
+            PlateMapping.objects.create(
+                target_plate=plate, source_plate=fake_source_plate
+            )
+
+        for i in range(barcode_specification_m1000_evaluation.number_of_plates):
+            with open(
+                join(
+                    self.M1000_DIR_EVALUATION,
+                    f"20191205-101721"
+                    f"_{m1000_example_barcode_prefix_evaluation}_"
+                    f"{i + 1}.asc",
+                ),
+                "w",
+            ) as ef:
+                ef.write(content_evaluation)
+
+        experiment_echo = Experiment.objects.create(
+            name="Test Experiment_2", project=project
+        )
 
         for barcode in self.BARCODES:
             BarcodeSpecification.objects.create(
-                prefix=barcode, number_of_plates=25,
-                experiment=experiment_echo)
+                prefix=barcode, number_of_plates=25, experiment=experiment_echo
+            )
 
             _dir = join(self.ECHO_DIR, barcode)
             makedirs(_dir, exist_ok=True)
@@ -290,17 +342,30 @@ class MapperTests(TestCase):
     def test_echo_mapping(self):
         mapper = EchoMapper()
         mapper.run(join(self.ECHO_DIR, "**", "*-transfer-*.csv"))
-        plate_mappings = PlateMapping.objects.all()
-        self.assertEqual(3, len(plate_mappings))
+        plate_mappings = PlateMapping.objects.filter(evaluation=None)
+        # 3 actual plate mappings + 3 fake plateMappings we created for testing m100
+        self.assertEqual(6, len(plate_mappings))
 
     def test_m1000_mapping(self):
         mapper = M1000Mapper()
         mapper.run(join(self.M1000_DIR, "*.asc"))
         measurements = Measurement.objects.all()
-        measurement_metadata = MeasurementMetadata.objects.all()
+        measurement_assignments = MeasurementAssignment.objects.all()
         self.assertEqual(1152, len(measurements))
-        self.assertEqual(1, len(measurement_metadata))
+        self.assertEqual(3, len(measurement_assignments))
 
+    def test_evaluation(self):
+        mapper = M1000Mapper()
+        mapper.run(
+            join(self.M1000_DIR_EVALUATION, "*.asc"),
+            evaluation="Acceptor/Donor",
+            measurement_name="ratio",
+        )
 
+        measurements_filtered = Measurement.objects.filter(feature__abbrev="ratio")
+        plate_mappings = PlateMapping.objects.filter(evaluation="Acceptor/Donor")
+        measurement = Measurement.objects.filter(identifier="SM1_1").first()
 
-
+        self.assertEqual(3, len(plate_mappings))
+        self.assertEqual(1152, len(measurements_filtered))
+        self.assertEqual(3.336, round(measurement.value, 3))
