@@ -225,6 +225,19 @@ class SimplePlateTemplateSerializer(serializers.ModelSerializer):
 
 
 class ProjectSerializer(serializers.ModelSerializer):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        if self.instance:
+            if isinstance(self.instance, list):
+                for instance in self.instance:
+                    if instance.harvest_id is not None:
+                        self.fields["name"].read_only = True
+                        break
+            else:
+                if self.instance.harvest_id is not None:
+                    self.fields["name"].read_only = True
+
     experiments = ExperimentSerializer(many=True, required=False, allow_null=True)
 
     class Meta:
