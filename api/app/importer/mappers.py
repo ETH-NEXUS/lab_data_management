@@ -336,7 +336,8 @@ class M1000Mapper(BaseMapper):
                 "barcode": barcode,
                 "measurement_date": measurement_date,
                 "plate_description": plate_description,
-                "meta_data": meta_data,
+                "meta_data": list(reversed(meta_data)),  # the order of the
+                # metadata in the file is reversed compared to the order of the values
             }
         )
         return results, kwargs
