@@ -13,8 +13,6 @@ client = HarvestClient(settings.HARVEST_ACCESS_TOKEN, settings.HARVEST_ACCOUNT_I
 
 HARVEST_FILTER = environ.get("HARVEST_FILTER")
 
-print("HARVEST_FILTER", HARVEST_FILTER)
-
 
 def harvest_projects(request, filter_string=HARVEST_FILTER):
     projects = client.get("projects")
@@ -36,8 +34,8 @@ def update_harvest_info(request, project_id):
         harvest_project = list(
             filter(lambda x: x["id"] == project.harvest_id, available_harvest_projects)
         )[0]
-        print("HARVEST PROJECT", harvest_project)
         project.name = harvest_project["name"]
+        project.harvest_notes = harvest_project["notes"]
         project.save()
 
     return JsonResponse({"success": True})

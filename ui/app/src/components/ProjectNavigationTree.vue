@@ -151,6 +151,7 @@ const newProject = async () => {
         ? harvestProject.value.name
         : '',
     harvest_id: harvestProject.value ? harvestProject.value.id : null,
+    harvest_notes: harvestProject.value ? harvestProject.value.notes : null,
   }
 
   if (projectNodes.value.children) {

@@ -35,6 +35,7 @@ export interface Project {
   experiments: Array<Experiment>
   description?: string
   harvest_id?: number
+  harvest_notes?: string
 }
 
 export interface Template {

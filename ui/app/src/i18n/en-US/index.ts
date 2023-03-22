@@ -13,6 +13,7 @@ export default {
     no_description: 'No description provided',
     edit_project_name: 'Edit project name',
     edit_project_description: 'Edit project description',
+    harvest_notes: 'Harvest notes',
   },
 
   experiment: {

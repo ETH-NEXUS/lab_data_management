@@ -81,17 +81,23 @@ const updateHarvestInfo = async () => {
   <q-page v-if="project" class="q-px-md">
     <div class="text-h5 q-mt-lg q-mb-md q-pl-xl text-primary">
       {{ t('project.project_name') }}: {{ project.name }}
-      <q-btn flat icon="edit" @click="editProject((field = 'name'))" />
+      <q-btn flat icon="edit" @click="editProject('name')" v-if="!project.harvest_id" />
     </div>
 
     <div class="q-pa-md row items-start q-gutter-md">
       <q-card class="my-card" flat>
         <q-card-section class="q-pt-xs">
-          <div class="text-body1 q-pl-md">
+          <div class="text-body1 q-pl-md text-container">
             {{ t('project.project_description') }}:
             <p class="text-body1 text-grey-8">
               {{ project.description || t('project.no_description') }}
-              <q-btn flat icon="edit" @click="editProject((field = 'description'))" />
+              <q-btn flat icon="edit" @click="editProject('description')" />
+            </p>
+          </div>
+          <div class="text-body1 q-pl-md text-container" v-if="project.harvest_notes">
+            {{ t('project.harvest_notes') }}:
+            <p class="text-body1 text-grey-8">
+              {{ project.harvest_notes }}
             </p>
           </div>
 
@@ -120,3 +126,10 @@ const updateHarvestInfo = async () => {
     </div>
   </q-page>
 </template>
+
+<style scoped lang="sass">
+
+.text-container
+  max-width: 600px
+  overflow-wrap: anywhere
+</style>
