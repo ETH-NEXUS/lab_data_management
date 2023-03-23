@@ -6,7 +6,7 @@ import numpy as np
 from django.conf import settings
 from django.contrib.postgres.fields import ArrayField
 from django.core.exceptions import ObjectDoesNotExist
-from django.core.validators import MinValueValidator
+from django.core.validators import MinValueValidator, RegexValidator
 from django.db import models, transaction
 from django.db.models import F, Sum, CheckConstraint, Q
 from django.forms import ValidationError
@@ -111,7 +111,14 @@ class PlateDimension(models.Model):
 
 class Plate(TimeTrackedModel):
     related_name = "plates"
-    barcode = models.CharField(max_length=50, unique=True, db_index=True)
+    barcode = models.CharField(
+        max_length=50,
+        unique=True,
+        db_index=True,
+        validators=[
+            RegexValidator(r"[^\s]+", _("Plate barcode must not contain strings!"))
+        ],
+    )
     dimension = models.ForeignKey(
         PlateDimension, on_delete=models.RESTRICT, default=None, null=True
     )
