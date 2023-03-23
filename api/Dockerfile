@@ -92,5 +92,12 @@ RUN pip --disable-pip-version-check install --upgrade pip
 RUN pip install -r /requirements.txt
 
 
+# Install Node.js and Yarn
+RUN curl -sL https://deb.nodesource.com/setup_14.x | bash -
+RUN apt-get install -y nodejs
+RUN apt-get install jq -y
+RUN npm install -g yarn
+
+
 # Set working directory
 WORKDIR /app

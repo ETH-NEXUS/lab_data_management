@@ -30,6 +30,7 @@ services:
       - ./api/media:/vol/web/media:z
       - ./data:/data
       - ./README.md:/app/README.md
+      - ./.git:/app/docs/.git
     env_file: .env
     environment:
       - GIT_VERSION=${GIT_VERSION}
