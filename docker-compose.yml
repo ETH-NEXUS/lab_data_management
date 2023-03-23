@@ -31,6 +31,7 @@ services:
       - ./data:/data
       - ./README.md:/app/README.md
       - ./.git:/app/docs/.git
+      - ./.git:/app/docs/scripts/.git
     env_file: .env
     environment:
       - GIT_VERSION=${GIT_VERSION}
