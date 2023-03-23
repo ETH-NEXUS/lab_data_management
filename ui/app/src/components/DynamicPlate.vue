@@ -319,12 +319,3 @@ select
   position: absolute
   left: 53px
 </style>
-
-<!-- :style="
-            'background-color: ' + percentageToHsl(wells[row][col]?.measurements?[0]?.value || -1, 120, 0)
-          " -->
-
-<!--            emit('well-selected', {-->
-<!--              well: wells[row][col],-->
-<!--              position: positionFromRowCol(row, col, props.plate.dimension),-->
-<!--            })-->
