@@ -1,0 +1,15 @@
+
+## Commits
+
+<div style="color:grey;font-size:12px;">
+<% for (let i = 0; i < commits.length; i++) { %>
+  ### <%= commits[i].title %>
+  <ul>
+    <li><strong>SHA1:</strong> <%= commits[i].sha1 %></li>
+    <li><strong>Committer:</strong> <%= commits[i].committerName %> &lt;<%= commits[i].committerEmail %>&gt;</li>
+    <li><strong>Committer date:</strong> <%= commits[i].committerDate %></li>
+
+  </ul>
+<% } %>
+
+  </div>
