@@ -58,7 +58,7 @@ const wells = computed(() => {
   for (const row of Array(props.plate.dimension.rows).keys()) {
     for (const col of Array(props.plate.dimension.cols).keys()) {
       _wells[row][col] = byPosition(row * props.plate.dimension.cols + col)
-      console.log(_wells[row][col])
+
       // _wells[row][col]?.measurements.push({
       //   value: (row * props.plate.dimension.cols + col) / 352,
       //   name: '',
@@ -67,7 +67,7 @@ const wells = computed(() => {
       // })
     }
   }
-  console.log(_wells)
+
   return _wells
 })
 
