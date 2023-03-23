@@ -11,10 +11,10 @@ from os import environ
 
 client = HarvestClient(settings.HARVEST_ACCESS_TOKEN, settings.HARVEST_ACCOUNT_ID)
 
-HARVEST_FILTER = environ.get("HARVEST_FILTER")
+HARVEST_PROJECT_FILTER = environ.get("HARVEST_PROJECT_FILTER")
 
 
-def harvest_projects(request, filter_string=HARVEST_FILTER):
+def harvest_projects(request, filter_string=HARVEST_PROJECT_FILTER):
     projects = client.get("projects")
     if filter_string:
         projects = {
