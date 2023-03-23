@@ -144,7 +144,7 @@ api/app/docs/site/index.html
 api/app/docs/site/sitemap.xml
 
 docs/site/*
-
+index.md
 
 # mypy
 .mypy_cache/

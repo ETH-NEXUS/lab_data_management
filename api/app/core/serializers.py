@@ -125,6 +125,52 @@ class WellSerializer(serializers.ModelSerializer):
         fields = "__all__"
 
 
+class SimpleWellSerializer(serializers.ModelSerializer):
+    hr_position = serializers.ReadOnlyField()
+    type = serializers.SlugRelatedField(slug_field="name", read_only=True)
+    measurements = serializers.SerializerMethodField()
+    compounds = serializers.SerializerMethodField()
+
+    def get_measurements(self, obj):
+        simplified_measurements = []
+        measurements = obj.measurements.all().select_related("feature")
+        for measurement in measurements:
+            simplified_measurements.append(
+                {
+                    "value": measurement.value,
+                    "feature": {
+                        "unit": measurement.feature.unit,
+                        "abbrev": measurement.feature.abbrev,
+                    },
+                }
+            )
+        return simplified_measurements
+
+    def get_compounds(self, obj):
+        simplified_compounds = []
+        for compound in obj.compounds.all():
+            simplified_compounds.append(
+                {
+                    "name": compound.name,
+                    "identifier": compound.identifier,
+                }
+            )
+        return simplified_compounds
+
+    class Meta:
+        model = Well
+        fields = (
+            "id",
+            "hr_position",
+            "amount",
+            "type",
+            "position",
+            "measurements",
+            "compounds",
+        )
+        prefetch_related = ("compounds",)
+
+
 class PlateDimensionSerializer(serializers.ModelSerializer):
     class Meta:
         model = PlateDimension
@@ -167,7 +213,7 @@ class PlateSerializer(serializers.ModelSerializer):
     measurements = serializers.ReadOnlyField()
     z_primes = serializers.ReadOnlyField()
     min_max = serializers.ReadOnlyField()
-    wells = WellSerializer(many=True, required=False, allow_null=True)
+    wells = SimpleWellSerializer(many=True, required=False, allow_null=True)
 
     # def get_wells(self, instance):
     #     wells = instance.wells.all().order_by('position')
@@ -191,6 +237,8 @@ class PlateSerializer(serializers.ModelSerializer):
     class Meta:
         model = Plate
         fields = "__all__"
+        select_related = "dimension"
+        prefetch_related = ("wells",)
 
 
 class BarcodeSpecificationSerializer(serializers.ModelSerializer):

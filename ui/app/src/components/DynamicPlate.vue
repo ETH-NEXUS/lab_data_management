@@ -6,6 +6,7 @@ import {palettes, percentageToHsl} from 'components/helpers'
 import {storeToRefs} from 'pinia'
 import {useSettingsStore} from 'stores/settings'
 import {useI18n} from 'vue-i18n'
+import {api} from 'boot/axios'
 
 const {t} = useI18n()
 
@@ -57,6 +58,7 @@ const wells = computed(() => {
   for (const row of Array(props.plate.dimension.rows).keys()) {
     for (const col of Array(props.plate.dimension.cols).keys()) {
       _wells[row][col] = byPosition(row * props.plate.dimension.cols + col)
+      console.log(_wells[row][col])
       // _wells[row][col]?.measurements.push({
       //   value: (row * props.plate.dimension.cols + col) / 352,
       //   name: '',
@@ -65,6 +67,7 @@ const wells = computed(() => {
       // })
     }
   }
+  console.log(_wells)
   return _wells
 })
 
@@ -122,10 +125,18 @@ const createColorLegend = () => {
     return legend
   }
 }
+
+const selectWell = async (row: number, col: number, wellId: number) => {
+  const res = await api.get(`/api/wells/${wellId}`)
+
+  emit('well-selected', {
+    well: res.data,
+    position: positionFromRowCol(row, col, props.plate.dimension),
+  })
+}
 </script>
 
 <template>
-
   <div class="row">
     <table v-if="props.plate">
       <tr>
@@ -150,12 +161,7 @@ const createColorLegend = () => {
           }"
           :key="`cols${col}`"
           v-for="(_, col) of props.plate.dimension.cols"
-          @click="
-            emit('well-selected', {
-              well: wells[row][col],
-              position: positionFromRowCol(row, col, props.plate.dimension),
-            })
-          ">
+          @click="selectWell(row, col, wells[row][col].id)">
           <a v-if="wells[row][col]" :class="{'bg-warning': wells[row][col]!.status}">
             {{ wells[row][col]![platePage.wellContent] }}
           </a>
@@ -317,3 +323,8 @@ select
 <!-- :style="
             'background-color: ' + percentageToHsl(wells[row][col]?.measurements?[0]?.value || -1, 120, 0)
           " -->
+
+<!--            emit('well-selected', {-->
+<!--              well: wells[row][col],-->
+<!--              position: positionFromRowCol(row, col, props.plate.dimension),-->
+<!--            })-->
