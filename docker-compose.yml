@@ -12,6 +12,7 @@ services:
     hostname: ui
     restart: "no"
     env_file: .env
+
   api:
     build:
       context: api
