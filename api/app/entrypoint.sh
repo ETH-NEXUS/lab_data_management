@@ -15,6 +15,7 @@ cat README.md > docs/docs/index.md
 cd docs || exit
 [ -x ./scripts/generate_changelog.sh ] || chmod +x ./scripts/generate_changelog.sh
 ./scripts/generate_changelog.sh
+git config --global --add safe.directory /app/docs
 mkdocs build --clean
 cd ..
 
