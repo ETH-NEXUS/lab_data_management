@@ -120,28 +120,35 @@ const download = (): void => {
 }
 
 const editExperiment = async (field: string) => {
-  $q.dialog({
-    title: field === 'name' ? t('title.edit_experiment_name') : t('title.edit_experiment_description'),
-    message: field === 'name' ? t('message.experiment_name') : t('message.experiment_description'),
-    prompt: {
-      model: '',
-      type: field === 'name' ? 'text' : 'textarea',
-    },
-    cancel: true,
-    persistent: true,
-  }).onOk(async newValue => {
-    if (experiment.value) {
-      try {
-        const payload = {
-          [field]: newValue,
-        } as ExperimentPayload
-        await projectStore.updateExperiment(experiment.value.id, payload)
-        await initialize()
-      } catch (err) {
-        handleError(err, false)
+  if (experiment.value) {
+    $q.dialog({
+      title: field === 'name' ? t('title.edit_experiment_name') : t('title.edit_experiment_description'),
+      message: field === 'name' ? t('message.experiment_name') : t('message.experiment_description'),
+      prompt: {
+        model:
+          field === 'name' && experiment.value.name
+            ? experiment.value.name
+            : field === 'description' && experiment.value.description
+            ? experiment.value.description
+            : '',
+        type: field === 'name' ? 'text' : 'textarea',
+      },
+      cancel: true,
+      persistent: true,
+    }).onOk(async newValue => {
+      if (experiment.value) {
+        try {
+          const payload = {
+            [field]: newValue,
+          } as ExperimentPayload
+          await projectStore.updateExperiment(experiment.value.id, payload)
+          await initialize()
+        } catch (err) {
+          handleError(err, false)
+        }
       }
-    }
-  })
+    })
+  }
 }
 
 const filterTemplatePlates = (query: string, update: (f: () => void) => void) => {

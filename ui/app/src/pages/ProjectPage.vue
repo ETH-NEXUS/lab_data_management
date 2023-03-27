@@ -35,28 +35,35 @@ onMounted(async () => {
 })
 
 const editProject = async (field: string) => {
-  $q.dialog({
-    title: field === 'name' ? t('project.edit_project_name') : t('project.edit_project_description'),
-    message: field === 'name' ? t('project.project_name') : t('project.project_description'),
-    prompt: {
-      model: '',
-      type: field === 'name' ? 'text' : 'textarea',
-    },
-    cancel: true,
-    persistent: true,
-  }).onOk(async newValue => {
-    if (project.value) {
-      try {
-        const payload = {
-          [field]: newValue,
-        } as ProjectPayload
-        await projectStore.updateProject(project.value.id, payload)
-        await initialize()
-      } catch (err) {
-        handleError(err, false)
+  if (project.value) {
+    $q.dialog({
+      title: field === 'name' ? t('project.edit_project_name') : t('project.edit_project_description'),
+      message: field === 'name' ? t('project.project_name') : t('project.project_description'),
+      prompt: {
+        model:
+          field === 'name' && project.value.name
+            ? project.value.name
+            : field === 'description' && project.value.description
+            ? project.value.description
+            : '',
+        type: field === 'name' ? 'text' : 'textarea',
+      },
+      cancel: true,
+      persistent: true,
+    }).onOk(async newValue => {
+      if (project.value) {
+        try {
+          const payload = {
+            [field]: newValue,
+          } as ProjectPayload
+          await projectStore.updateProject(project.value.id, payload)
+          await initialize()
+        } catch (err) {
+          handleError(err, false)
+        }
       }
-    }
-  })
+    })
+  }
 }
 
 const updateHarvestInfo = async () => {
