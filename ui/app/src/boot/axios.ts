@@ -59,7 +59,7 @@ api.interceptors.response.use(
     if (
       error.response.status === 401 &&
       !originalConfig._retry &&
-      originalConfig.url !== '/auth/refresh/' &&
+      originalConfig.url !== '/auth/token/refresh/' &&
       userStore.refreshJwt
     ) {
       // In case the token has expired we try to refresh the token
