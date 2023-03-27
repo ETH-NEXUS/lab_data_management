@@ -63,3 +63,11 @@ You can apply several formulas separating them with commas (in this case, you ne
 ```bash
 ./manage.py map m1000 -p /data/m1000 -e Acceptor/Donor,Acceptor*Donor -n ratio,product
 ```
+
+If you know that for some reason some destination plates were not creaed by the echo mapping, you can create them during the measurement mapping. 
+For this, you need to add two parameters to the command: 
+
+```bash
+./manage.py map m1000 -p /data/ex3/M1000 --create_missing_plates --experiment_name exp3
+
+```

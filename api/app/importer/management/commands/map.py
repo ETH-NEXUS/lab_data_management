@@ -52,6 +52,20 @@ class Command(BaseCommand):
             "as well'",
         )
 
+        parser.add_argument(
+            "--create_missing_plates",
+            "-c",
+            action="store_true",
+            help="Create missing plates by measurement mapping",
+        )
+
+        parser.add_argument(
+            "--experiment_name",
+            "-x",
+            help="If you would like to create missing plates by measurement mapping, you need to "
+            "provide the experiment name.",
+        )
+
     def handle(self, *args, **options):
         path = options.get("path")
 
@@ -81,6 +95,12 @@ class Command(BaseCommand):
 
         elif options.get("machine") == "m1000":
             try:
+                if options.get("create_missing_plates", False):
+                    if not options.get("experiment_name", None):
+                        raise ValueError(
+                            "No experiment name provided. If you would like to add "
+                            "missing plates, you need to provide the experiment name."
+                        )
                 evaluation = options.get("evaluate", None)
                 measurement_name = options.get("measurement_name", None)
                 if evaluation and not measurement_name:
@@ -91,6 +111,8 @@ class Command(BaseCommand):
                     debug=options.get("debug", False),
                     evaluation=evaluation,
                     measurement_name=measurement_name,
+                    create_missing_plates=options.get("create_missing_plates", False),
+                    experiment_name=options.get("experiment_name", None),
                 )
 
             except Exception as ex:
