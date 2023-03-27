@@ -21,6 +21,7 @@ from core.models import (
     Well,
     MappingError,
     MeasurementAssignment,
+    Experiment,
 )
 from core.config import Config
 from django.core.files import File
@@ -213,7 +214,6 @@ class EchoMapper(BaseMapper):
     def __create_plate_by_name_and_barcode(self, plate_name: str, barcode: str):
         try:
             barcode_prefix = barcode.split("_")[0]
-            barcode_prefix = barcode.split("_")[0]
             barcode_specification = BarcodeSpecification.objects.get(
                 prefix=barcode_prefix
             )
@@ -369,17 +369,29 @@ class M1000Mapper(BaseMapper):
         try:
             plate = Plate.objects.get(barcode=barcode)
         except Plate.DoesNotExist:
-            raise ValueError(f"Plate with barcode {barcode} does not exist.")
+            if kwargs.get("create_missing_plates"):
+                log.warning(
+                    f"Plate with barcode {barcode} does not exist. Creating it."
+                )
+                barcode_specification, _ = BarcodeSpecification.objects.get_or_create(
+                    prefix=barcode,
+                    experiment=Experiment.objects.get(
+                        name=kwargs.get("experiment_name")
+                    ),
+                )
+                plate = Plate.objects.create(
+                    barcode=barcode,
+                    dimension=self.__get_plate_dimension(data),
+                    experiment=barcode_specification.experiment,
+                )
+            else:
+                raise ValueError(f"Plate with barcode {barcode} does not exist.")
 
         with tqdm(
             desc="Processing measurements",
             unit="measurement",
             total=len(data),
         ) as mbar:
-            metadata_obj = {}
-            for entry in kwargs.get("meta_data"):
-                metadata_obj[entry["Label"]] = entry
-
             assignment = self.create_measurement_assignment(
                 plate,
                 kwargs.get("filename"),
@@ -444,3 +456,11 @@ class M1000Mapper(BaseMapper):
                 measurement_timestamp=measurement_timestamp,
             )
             return assignment
+
+    def __get_plate_dimension(self, data):
+        if len(data) <= 96:
+            return PlateDimension.objects.get(name="dim_96_8x12")
+        elif len(data) <= 384:
+            return PlateDimension.objects.get(name="dim_384_16x24")
+        elif len(data) <= 1536:
+            return PlateDimension.objects.get(name="dim_1536_32x48")
