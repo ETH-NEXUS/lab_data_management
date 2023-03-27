@@ -6,6 +6,7 @@ import {handleError} from 'src/helpers/errorHandling'
 import {useProjectStore} from 'stores/project'
 import {Project, ProjectPayload} from 'src/components/models'
 import {formatDate} from 'src/helpers/dateTime'
+import bus from 'src/eventBus'
 
 import {useQuasar} from 'quasar'
 
@@ -58,6 +59,7 @@ const editProject = async (field: string) => {
           } as ProjectPayload
           await projectStore.updateProject(project.value.id, payload)
           await initialize()
+          bus.emit('project-updated')
         } catch (err) {
           handleError(err, false)
         }
