@@ -15,6 +15,8 @@ HARVEST_PROJECT_FILTER = environ.get("HARVEST_PROJECT_FILTER")
 
 
 def harvest_projects(request, filter_string=HARVEST_PROJECT_FILTER):
+    if settings.HARVEST_ACCESS_TOKEN is None:
+        return JsonResponse({"projects": []})
     projects = client.get("projects")
     if filter_string:
         projects = {

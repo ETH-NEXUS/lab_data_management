@@ -153,6 +153,13 @@ const newProject = async () => {
     harvest_id: harvestProject.value ? harvestProject.value.id : null,
     harvest_notes: harvestProject.value ? harvestProject.value.notes : null,
   }
+  if (payload.name === '') {
+    $q.notify({
+      type: 'negative',
+      message: t('message.project_name_required'),
+    })
+    return
+  }
 
   if (projectNodes.value.children) {
     try {
@@ -271,7 +278,7 @@ const newPlate = async (experiment: Experiment) => {
   </q-tree>
   <q-dialog v-model="newProjectDialog" style="width: 700px; max-width: 80vw">
     <q-card>
-      <div :style="{display: !ownName ? 'block' : 'None'}">
+      <div :style="{display: !ownName && harvestProjects.length > 0 ? 'block' : 'None'}">
         <q-card-section>
           <div class="text-body1">{{ t('message.project_name_harvest') }}:</div>
         </q-card-section>
@@ -281,17 +288,25 @@ const newPlate = async (experiment: Experiment) => {
         </q-card-section>
       </div>
 
-      <div :style="{display: ownName ? 'block' : 'None'}">
+      <div :style="{display: ownName || harvestProjects.length === 0 ? 'block' : 'None'}">
         <q-card-section>
           <div class="text-body1">{{ t('message.project_name') }}</div>
         </q-card-section>
 
         <q-card-section class="q-pt-none">
-          <q-input dense v-model="newProjectName" autofocus></q-input>
+          <q-input
+            dense
+            v-model="newProjectName"
+            autofocus
+            :rules="[val => val.length > 0 || 'Please enter something']"></q-input>
         </q-card-section>
       </div>
 
-      <q-toggle v-model="ownName" :label="t('message.custom_name')" right-label></q-toggle>
+      <q-toggle
+        v-model="ownName"
+        :label="t('message.custom_name')"
+        right-label
+        v-if="harvestProjects.length > 0"></q-toggle>
 
       <q-card-actions align="right">
         <q-btn flat label="OK" color="primary" v-close-popup @click="newProject"></q-btn>

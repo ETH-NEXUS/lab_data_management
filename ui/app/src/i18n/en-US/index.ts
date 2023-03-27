@@ -133,6 +133,7 @@ export default {
     project_name_harvest: 'Select project name from Harvest',
     update_harvest: 'Update Harvest information',
     harvest_info_updated: 'Harvest information updated',
+    project_name_required: 'Project name is required. Please enter something.',
 
     custom_name: 'Custom name',
   },
