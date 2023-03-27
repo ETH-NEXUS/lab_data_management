@@ -19,6 +19,7 @@ import {downloadCSVData, generateBarcodes} from 'components/helpers'
 import {csvColumnsNames} from 'components/data'
 import {useQuasar} from 'quasar'
 import {api} from 'boot/axios'
+import bus from 'src/eventBus'
 
 const route = useRoute()
 const projectStore = useProjectStore()
@@ -143,6 +144,7 @@ const editExperiment = async (field: string) => {
           } as ExperimentPayload
           await projectStore.updateExperiment(experiment.value.id, payload)
           await initialize()
+          bus.emit('experiment-updated')
         } catch (err) {
           handleError(err, false)
         }

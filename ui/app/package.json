@@ -17,6 +17,7 @@
         "@types/dagre": "^0.7.48",
         "axios": "^0.21.1",
         "dagre": "^0.8.5",
+        "mitt": "^3.0.0",
         "pinia": "^2.0.11",
         "pinia-plugin-persist": "^1.0.0",
         "quasar": "^2.6.0",

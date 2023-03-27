@@ -9,6 +9,7 @@ import {useQuasar} from 'quasar'
 import {useSettingsStore} from '../stores/settings'
 import {storeToRefs} from 'pinia'
 import {useProjectStore} from '../stores/project'
+import bus from 'src/eventBus'
 
 const router = useRouter()
 const {t} = useI18n()
@@ -27,6 +28,12 @@ const initialize = async () => {
 
 onMounted(async () => {
   await initialize()
+  bus.on('experiment-updated', () => {
+    initialize()
+  })
+  bus.on('project-updated', () => {
+    initialize()
+  })
 })
 
 const {navigationTree, projectNavigationTree} = storeToRefs(useSettingsStore())
