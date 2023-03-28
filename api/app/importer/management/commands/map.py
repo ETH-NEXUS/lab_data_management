@@ -8,6 +8,10 @@ from friendlylog import colored_logger as log
 from importer.mappers import EchoMapper, M1000Mapper
 
 
+def die(message):
+    raise Exception(message)
+
+
 class Command(BaseCommand):
     def add_arguments(self, parser):
         parser.add_argument(
@@ -62,7 +66,8 @@ class Command(BaseCommand):
         parser.add_argument(
             "--experiment_name",
             "-x",
-            help="If you would like to create missing plates by measurement mapping, you need to "
+            help="If you would like to create missing plates by measurement "
+            "mapping, you need to"
             "provide the experiment name.",
         )
 
@@ -97,9 +102,9 @@ class Command(BaseCommand):
             try:
                 if options.get("create_missing_plates", False):
                     if not options.get("experiment_name", None):
-                        raise ValueError(
-                            "No experiment name provided. If you would like to add "
-                            "missing plates, you need to provide the experiment name."
+                        die(
+                            "No experiment name provided. If you would like to add missing "
+                            "plates, you need to provide the experiment name."
                         )
                 evaluation = options.get("evaluate", None)
                 measurement_name = options.get("measurement_name", None)
