@@ -17,7 +17,7 @@ from rest_framework.decorators import action
 from rest_framework.response import Response
 from django.http import HttpResponse
 import mimetypes
-
+from django.utils.translation import gettext as _
 
 from .models import (
     Well,
@@ -40,7 +40,6 @@ from .serializers import (
     ProjectSerializer,
     SimplePlateTemplateSerializer,
 )
-
 
 from django.views.generic import View
 from django.conf import settings
@@ -250,7 +249,9 @@ class ExperimentViewSet(viewsets.ModelViewSet):
                 plate.apply_template(template_plate)
             return Response(status.HTTP_200_OK)
         else:
-            raise Http404("Parameters 'template' and 'experiment_id' are " "required.")
+            raise Http404(
+                _("Parameters 'template' and 'experiment_id' are " "required.")
+            )
 
     @action(detail=False, methods=["post"])
     def bulk_add_plates(self, request):
@@ -266,17 +267,17 @@ class ExperimentViewSet(viewsets.ModelViewSet):
             number_of_plates = barcode_specification.number_of_plates
         except Experiment.DoesNotExist:
             return Response(
-                {"error": "Experiment not found"},
+                {"error": _("Experiment not found")},
                 status=status.HTTP_404_NOT_FOUND,
             )
         except BarcodeSpecification.DoesNotExist:
             return Response(
-                {"error": "Barcode specification not found"},
+                {"error": _("Barcode specification not found")},
                 status=status.HTTP_404_NOT_FOUND,
             )
         except PlateDimension.DoesNotExist:
             return Response(
-                {"error": "Plate dimension not found"},
+                {"error": _("Plate dimension not found")},
                 status=status.HTTP_404_NOT_FOUND,
             )
 
@@ -294,19 +295,21 @@ class ExperimentViewSet(viewsets.ModelViewSet):
         except IntegrityError:
             return Response(
                 {
-                    "error": "Could not save plates to database. Probably you have already added the plates "
-                    "with these barcode prefix to the current experiment"
+                    "error": _(
+                        "Could not save plates to database. Probably you have already added the plates "
+                        "with these barcode prefix to the current experiment"
+                    )
                 },
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR,
             )
         except ValidationError:
             return Response(
-                {"error": "Invalid plate data"},
+                {"error": _("Invalid plate data")},
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
         return Response(
-            {"success": "Plates added successfully"}, status=status.HTTP_200_OK
+            {"success": _("Plates added successfully")}, status=status.HTTP_200_OK
         )
 
 
