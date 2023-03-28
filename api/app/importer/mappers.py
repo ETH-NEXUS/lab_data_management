@@ -381,7 +381,7 @@ class M1000Mapper(BaseMapper):
                 )
                 plate = Plate.objects.create(
                     barcode=barcode,
-                    dimension=self.__get_plate_dimension(data),
+                    dimension=PlateDimension.by_num_wells(len(data)),
                     experiment=barcode_specification.experiment,
                 )
             else:
@@ -456,11 +456,3 @@ class M1000Mapper(BaseMapper):
                 measurement_timestamp=measurement_timestamp,
             )
             return assignment
-
-    def __get_plate_dimension(self, data):
-        if len(data) <= 96:
-            return PlateDimension.objects.get(name="dim_96_8x12")
-        elif len(data) <= 384:
-            return PlateDimension.objects.get(name="dim_384_16x24")
-        elif len(data) <= 1536:
-            return PlateDimension.objects.get(name="dim_1536_32x48")

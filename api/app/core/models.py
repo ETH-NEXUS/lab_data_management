@@ -105,6 +105,15 @@ class PlateDimension(models.Model):
         row, col = self.row_col(position)
         return PositionMapper.unmap(row, col)
 
+    @classmethod
+    def by_num_wells(cls, num_wells: int) -> "PlateDimension":
+        if num_wells <= 96:
+            return cls.objects.get(name="dim_96_8x12")
+        elif num_wells <= 384:
+            return cls.objects.get(name="dim_384_16x24")
+        elif num_wells <= 1536:
+            return cls.objects.get(name="dim_1536_32x48")
+
     def __str__(self):
         return f"{self.name} ({self.cols}x{self.rows})"
 
