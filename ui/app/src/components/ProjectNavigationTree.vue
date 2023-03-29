@@ -43,6 +43,8 @@ const newProjectName = ref<string>('')
 const harvestProject = ref<harvestProject | null>(null)
 const ownName = ref<boolean>(false)
 
+const options = ref(harvestProjects.value)
+
 watchEffect(() => {
   if (projectNavigationTree.value.needsUpdate) {
     initialize()
@@ -224,6 +226,20 @@ const newPlate = async (experiment: Experiment) => {
     }
   })
 }
+
+const filterFn = (val: string, update: (arg0: {(): void; (): void}) => void) => {
+  if (val === '') {
+    update(() => {
+      options.value = harvestProjects.value
+    })
+    return
+  }
+
+  update(() => {
+    const needle = val.toLowerCase()
+    options.value = harvestProjects.value.filter(v => v.name.toLowerCase().indexOf(needle) > -1)
+  })
+}
 </script>
 
 <template>
@@ -293,7 +309,13 @@ const newPlate = async (experiment: Experiment) => {
         </q-card-section>
 
         <q-card-section class="q-pt-none">
-          <q-select behavior="dialog" v-model="harvestProject" :options="harvestProjects"></q-select>
+          <q-select
+            use-input
+            input-debounce="0"
+            behavior="dialog"
+            v-model="harvestProject"
+            :options="options"
+            @filter="filterFn"></q-select>
         </q-card-section>
       </div>
 
