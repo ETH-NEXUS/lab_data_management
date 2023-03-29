@@ -5,13 +5,11 @@ import re
 from os import environ
 import os
 
-from django.shortcuts import get_object_or_404
-
 from compoundlib.serializers import SimpleCompoundLibrarySerializer
 from django.core.exceptions import ValidationError
 from django.db import IntegrityError
 from django.db.models import Prefetch, Q
-from django.http import Http404, JsonResponse
+from django.http import Http404
 from rest_framework import viewsets, views, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
@@ -43,8 +41,6 @@ from .serializers import (
 
 from django.views.generic import View
 from django.conf import settings
-import os
-from harvest.views import client
 
 
 class ProjectViewSet(viewsets.ModelViewSet):
@@ -77,7 +73,9 @@ class PlateViewSet(viewsets.ModelViewSet):
         )
         well_compounds = Prefetch(
             "well_compounds",
-            queryset=WellCompound.objects.select_related("compound").all(),
+            queryset=WellCompound.objects.select_related(
+                "compound", "compound__library"
+            ).all(),
         )
         wells = Prefetch(
             "wells",
