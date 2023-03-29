@@ -278,9 +278,18 @@ class Plate(TimeTrackedModel):
     def __z_factor(measurement1: List[float], measurement2: List[float]):
         mean1 = np.mean(measurement1)
         mean2 = np.mean(measurement2)
+        # mean -> median
         std1 = np.std(measurement1)
         std2 = np.std(measurement2)
+        # std -> median_abs_deviation
         return 1 - (3 * (std1 + std2)) / abs(mean1 - mean2)
+
+    def ssmd():
+        pass
+        # Delta / Sigma
+        # kleiner 6 rot
+        # kleiner 12 orange
+        # grösser 12 grün
 
     def z_prime(self, abbrev: str) -> float:
         """
@@ -348,6 +357,7 @@ class Plate(TimeTrackedModel):
             for mapping in mappingList:
                 from_well = self.well_at(mapping.from_pos)
                 # We only need to map wells that are not empty
+                # TODO: If no from_well a destination well could probably be generated anyway..?..
                 if from_well:
                     if not target.dimension:
                         raise MappingError(_("Target plate has no dimension assigned"))
