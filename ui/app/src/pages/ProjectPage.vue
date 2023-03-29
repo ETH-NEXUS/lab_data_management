@@ -125,6 +125,7 @@ const updateHarvestInfo = async () => {
           </div>
 
           <q-btn
+            v-if="project.harvest_id"
             class="q-ml-md q-mt-md"
             :label="t('message.update_harvest')"
             icon="update"
