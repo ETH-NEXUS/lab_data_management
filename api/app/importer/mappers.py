@@ -39,10 +39,11 @@ class BaseMapper:
     @staticmethod
     def get_files(_glob: str) -> list[str]:
         """Get all files in the given path that match the glob pattern"""
-        return glob(_glob)
+        return glob(_glob, recursive=True)
 
     def run(self, _glob, **kwargs):
         """Run the mapper"""
+
         for filename in self.get_files(_glob):
             log.info(f"Processing file {filename}...")
             with redirect_stderr(None):
@@ -218,6 +219,7 @@ class EchoMapper(BaseMapper):
                 prefix=barcode_prefix
             )
         except BarcodeSpecification.DoesNotExist:
+            log.error(f"No barcode specification found for {barcode}.")
             raise ValueError(f"No barcode specification found for {barcode}.")
 
         return Plate.objects.create(
@@ -234,6 +236,7 @@ class EchoMapper(BaseMapper):
         except ValueError:
             raise
         except PlateDimension.DoesNotExist:
+            log.error(f"No plate dimension found: {rows}x{cols}")
             raise ValueError(f"No plate dimension found: {rows}x{cols}")
 
 

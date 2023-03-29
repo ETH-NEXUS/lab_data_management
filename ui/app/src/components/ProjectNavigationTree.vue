@@ -152,7 +152,7 @@ const nodes = computed<Array<QTreeNode>>(() => {
 const newProject = async () => {
   const payload = {
     name:
-      newProjectName.value !== ''
+      newProjectName.value !== '' && ownName.value
         ? newProjectName.value
         : harvestProject.value
         ? harvestProject.value.name
@@ -172,6 +172,8 @@ const newProject = async () => {
     try {
       const project = await projectStore.add(payload)
       addProjectNode(project)
+      newProjectName.value = ''
+      harvestProject.value = null
     } catch (err) {
       handleError(err)
     }
