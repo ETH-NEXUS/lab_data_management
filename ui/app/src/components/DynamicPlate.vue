@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import {computed, defineProps, defineEmits, PropType, ref} from 'vue'
+import {computed, defineProps, defineEmits, PropType, ref, onMounted} from 'vue'
 import {Plate, Well, LegendColor} from './models'
 import {positionFromRowCol} from '../helpers/plate'
 import {palettes, percentageToHsl} from 'components/helpers'
@@ -33,8 +33,8 @@ const wellContentOptions = [
   },
 ]
 
-const selectedMeasurement = ref<string | undefined>(props.plate.measurements[0])
-const measurementOptions = ref<Array<string>>(props.plate.measurements)
+const selectedMeasurement = ref<string | undefined>()
+const measurementOptions = ref<Array<string>>([])
 
 const legendColors = computed(() => {
   return createColorLegend()
@@ -122,10 +122,16 @@ const createColorLegend = () => {
     return legend
   }
 }
+
+onMounted(() => {
+  if (props.plate.measurements && props.plate.measurements.length > 0) {
+    selectedMeasurement.value = props.plate.measurements[0]
+    measurementOptions.value = props.plate.measurements
+  }
+})
 </script>
 
 <template>
-
   <div class="row">
     <table v-if="props.plate">
       <tr>
@@ -195,7 +201,7 @@ const createColorLegend = () => {
     <div v-if="platePage.showHeatmap && measurementOptions.length > 0" class="q-my-md q-ml-md">
       <div
         class="legendItem"
-        v-for="(color, idx) in legendColors.reverse()"
+        v-for="(color, idx) in legendColors!.reverse()"
         :key="color.value + idx"
         :style="{backgroundColor: color.color}">
         <span class="legendLabel">{{ [0, 5, 10].includes(idx) ? color.value.toFixed(0) : ' ' }}</span>
