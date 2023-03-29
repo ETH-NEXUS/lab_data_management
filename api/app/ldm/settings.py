@@ -291,11 +291,13 @@ if LOG_SQL:
     LOGGING["loggers"]["django.db.backends"] = {
         "level": "DEBUG",
         "handlers": ["console"],
+        "propagate": False,
     }
 if LOG_LDAP:
     LOGGING["loggers"]["django_auth_ldap"] = {
         "level": "DEBUG",
         "handlers": ["console"],
+        "propagate": False,
     }
 
 FLOAT_PRECISION = 6
