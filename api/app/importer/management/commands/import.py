@@ -211,8 +211,16 @@ class Command(BaseCommand):
                             __debug(
                                 f"Using well {well.plate}: {well.hr_position} ({row[mapping.position]})"
                             )
-                        amount = row[mapping.amounts[
-                                mapping_barcode_idx]] if isinstance(row[mapping.amounts[mapping_barcode_idx]], float) or isinstance(row[mapping.amounts[mapping_barcode_idx]], int) else -1
+                        amount = (
+                            row[mapping.amounts[mapping_barcode_idx]]
+                            if isinstance(
+                                row[mapping.amounts[mapping_barcode_idx]], float
+                            )
+                            or isinstance(
+                                row[mapping.amounts[mapping_barcode_idx]], int
+                            )
+                            else 0
+                        )
                         (
                             well_compound,
                             created,
