@@ -398,7 +398,6 @@ class M1000Mapper(BaseMapper):
             assignment = self.create_measurement_assignment(
                 plate,
                 kwargs.get("filename"),
-                kwargs.get("measurement_date"),
             )
 
             for entry in data:
@@ -410,13 +409,15 @@ class M1000Mapper(BaseMapper):
 
                 if not kwargs.get("evaluation"):
                     for idx, value in enumerate(entry.get("values")):
+                        abbrev = kwargs.get("meta_data")[idx].get("Label")
                         feature, _ = MeasurementFeature.objects.get_or_create(
-                            abbrev=kwargs.get("meta_data")[idx].get("Label")
+                            abbrev=abbrev
                         )
 
                         Measurement.objects.update_or_create(
                             well=well,
                             feature=feature,
+                            measurement_timestamp=kwargs.get("measurement_date"),
                             measurement_assignment=assignment,
                             defaults={
                                 "value": value,
@@ -428,8 +429,9 @@ class M1000Mapper(BaseMapper):
                     evaluation_formulas = kwargs.get("evaluation").split(",")
                     measurement_names = kwargs.get("measurement_name").split(",")
                     for idx, evaluation_formula in enumerate(evaluation_formulas):
+                        abbrev = measurement_names[idx]
                         feature, _ = MeasurementFeature.objects.get_or_create(
-                            abbrev=measurement_names[idx]
+                            abbrev=abbrev
                         )
                         result = self.apply_evaluation_formula(
                             evaluation_formula, plate, well, entry, **kwargs
@@ -438,6 +440,7 @@ class M1000Mapper(BaseMapper):
                             well=well,
                             feature=feature,
                             measurement_assignment=assignment,
+                            measurement_timestamp=kwargs.get("measurement_date"),
                             defaults={
                                 "value": result,
                                 "identifier": entry.get("identifier"),
@@ -449,13 +452,12 @@ class M1000Mapper(BaseMapper):
 
                 mbar.update(1)
 
-    def create_measurement_assignment(self, plate, filename, measurement_timestamp):
+    def create_measurement_assignment(self, plate, filename):
         with open(filename, "rb") as file:
             assignment, _ = MeasurementAssignment.objects.update_or_create(
                 status="success",
                 plate=plate,
                 filename=filename,
                 measurement_file=File(file, os.path.basename(file.name)),
-                measurement_timestamp=measurement_timestamp,
             )
             return assignment

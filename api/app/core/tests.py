@@ -1,4 +1,5 @@
 import csv
+from datetime import datetime
 
 from django.db import IntegrityError, transaction
 from django.test import TestCase
@@ -338,7 +339,10 @@ class StatisticsTest(TestCase):
             )
             WellCompound.objects.create(well=well, compound=comp, amount=1)
             Measurement.objects.create(
-                well=well, feature=self.measurement_feature, value=i
+                well=well,
+                feature=self.measurement_feature,
+                value=i,
+                measurement_timestamp=datetime(2012, 12, 12, 12, 0, 0),
             )
 
     def test_z_prime_calculation(self):
@@ -357,7 +361,10 @@ class StatisticsTest(TestCase):
             * (np.std([0, 4, 8]) + np.std([1, 2, 5, 6, 9, 10]))
             / abs(np.mean([0, 4, 8]) - np.mean([1, 2, 5, 6, 9, 10]))
         )
-        self.assertEqual(expected_z_prime, self.plate.z_factor("TST"))
+        self.assertEqual(
+            expected_z_prime,
+            self.plate.z_factor("TST", datetime(2012, 12, 12, 12, 0, 0)),
+        )
 
     def test_z_score_calculation(self):
         """Test the calculation of the z score per well"""

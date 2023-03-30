@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import {computed, defineProps, defineEmits, PropType, ref, onMounted} from 'vue'
-import {Plate, Well, LegendColor} from './models'
+import {Plate, Well, LegendColor, MeasurementInfo, MinMax, Measurement} from './models'
 import {positionFromRowCol} from '../helpers/plate'
 import {palettes, percentageToHsl} from 'components/helpers'
 import {storeToRefs} from 'pinia'
@@ -18,6 +18,20 @@ const props = defineProps({
   },
 })
 
+//computed message saying that the combination of label and timestamp was not found
+
+const notFoundMessage = computed(() => {
+  const measurement = props.plate.wells![0].measurements?.find(
+    (m: Measurement) =>
+      m.feature.abbrev === selectedLabel.value && m.measurement_timestamp === selectedTimestamp.value
+  )
+
+  if (!measurement) {
+    return `No data found for ${selectedLabel.value} at ${selectedTimestamp.value}`
+  }
+  return ''
+})
+
 const wellContentOptions = [
   {
     label: t('label.hr_position'),
@@ -33,8 +47,11 @@ const wellContentOptions = [
   },
 ]
 
-const selectedMeasurement = ref<string | undefined>()
-const measurementOptions = ref<Array<string>>([])
+const labels = ref<Array<string>>([])
+const timestamps = ref<Array<string>>([])
+const measurementOptions = ref<Array<MeasurementInfo>>([])
+const selectedLabel = ref<string>('')
+const selectedTimestamp = ref<string>('')
 
 const legendColors = computed(() => {
   return createColorLegend()
@@ -69,12 +86,20 @@ const wells = computed(() => {
 })
 
 const percentage = (well: Well | undefined) => {
-  if (selectedMeasurement.value && well?.measurements) {
-    const min = props.plate.min_max[selectedMeasurement.value].min_all_types
-    const max = props.plate.min_max[selectedMeasurement.value].max_all_types
+  if (selectedLabel.value && selectedTimestamp.value && well?.measurements) {
+    const min = props.plate.min_max.find(
+      (item: MinMax) => item.feature === selectedLabel.value && item.timestamp === selectedTimestamp.value
+    )?.min_all_types
 
-    const value = well?.measurements.find(m => m.feature.abbrev === selectedMeasurement.value)?.value
-    if (value) {
+    const max = props.plate.min_max.find(
+      (item: MinMax) => item.feature === selectedLabel.value && item.timestamp === selectedTimestamp.value
+    )?.max_all_types
+
+    const value = well?.measurements.filter(
+      m => m.feature.abbrev === selectedLabel.value && m.measurement_timestamp === selectedTimestamp.value
+    )[0]?.value
+
+    if (value && min && max) {
       return (value - min) / (max - min)
     }
   }
@@ -104,29 +129,51 @@ const typeColor = (well: Well | undefined) => {
 
 const createColorLegend = () => {
   const legend: LegendColor[] = []
-  if (selectedMeasurement.value) {
-    const min = props.plate.min_max[selectedMeasurement.value].min_all_types
-    const max = props.plate.min_max[selectedMeasurement.value].max_all_types
-    const numberOfSteps = 10
+  if (selectedLabel.value && selectedTimestamp.value) {
+    const min = props.plate.min_max.find(
+      (item: MinMax) => item.feature === selectedLabel.value && item.timestamp === selectedTimestamp.value
+    )?.min_all_types
 
-    const step: number = (max - min) / numberOfSteps
-    for (let i = 0; i <= numberOfSteps; i++) {
-      const value: number = min + i * step
-      const color = percentageToHsl(
-        (value - min) / (max - min),
-        platePage.value.heatmapPalette.value.from,
-        platePage.value.heatmapPalette.value.to
-      )
-      legend.push({value, color})
+    const max = props.plate.min_max.find(
+      (item: MinMax) => item.feature === selectedLabel.value && item.timestamp === selectedTimestamp.value
+    )?.max_all_types
+
+    const numberOfSteps = 10
+    if (min && max) {
+      const step: number = (max - min) / numberOfSteps
+      for (let i = 0; i <= numberOfSteps; i++) {
+        const value: number = min + i * step
+        const color = percentageToHsl(
+          (value - min) / (max - min),
+          platePage.value.heatmapPalette.value.from,
+          platePage.value.heatmapPalette.value.to
+        )
+        legend.push({value, color})
+      }
     }
-    return legend
+
+    return legend.reverse()
   }
 }
 
 onMounted(() => {
   if (props.plate.measurements && props.plate.measurements.length > 0) {
-    selectedMeasurement.value = props.plate.measurements[0]
-    measurementOptions.value = props.plate.measurements
+    const _labels = props.plate?.measurements.map(m => m.feature)
+    labels.value = [...new Set(_labels)]
+    selectedLabel.value = props.plate.measurements[0].feature
+
+    const _timestamps = props.plate?.measurements.map(m => m.measurement_timestamp)
+    timestamps.value = [...new Set(_timestamps)]
+    selectedTimestamp.value = props.plate.measurements[0].measurement_timestamp
+
+    measurementOptions.value = props.plate.measurements.map(m => {
+      return {
+        feature: m.feature,
+        label: m.feature,
+        value: m.feature,
+        measurement_timestamp: m.measurement_timestamp,
+      }
+    })
   }
 })
 </script>
@@ -148,7 +195,7 @@ onMounted(() => {
         <td
           :style="{
             backgroundColor:
-              platePage.showHeatmap && selectedMeasurement
+              platePage.showHeatmap && selectedLabel
                 ? heatmapColor(wells[row][col])
                 : plate.template || (platePage.wellContent === 'type' && !platePage.showHeatmap)
                 ? typeColor(wells[row][col])
@@ -198,10 +245,10 @@ onMounted(() => {
         </td>
       </tr>
     </table>
-    <div v-if="platePage.showHeatmap && measurementOptions.length > 0" class="q-my-md q-ml-md">
+    <div v-if="platePage.showHeatmap && labels.length > 0 && legendColors" class="q-my-md q-ml-md">
       <div
         class="legendItem"
-        v-for="(color, idx) in legendColors!.reverse()"
+        v-for="(color, idx) in legendColors"
         :key="color.value + idx"
         :style="{backgroundColor: color.color}">
         <span class="legendLabel">{{ [0, 5, 10].includes(idx) ? color.value.toFixed(0) : ' ' }}</span>
@@ -212,17 +259,17 @@ onMounted(() => {
     <div class="col-12 q-mr-md">
       <b>{{ t('label.z_prime') }}:</b>
       <span
-        v-for="(z_prime, measurement) in props.plate.z_primes"
-        :key="measurement"
+        v-for="item in props.plate.z_primes"
+        :key="item.feature"
         :class="{
           'z-prime': true,
           'q-mx-xs': true,
           'q-pa-xs': true,
-          'bg-green-3': z_prime >= 0.5 && z_prime <= 1,
-          'bg-orange-3': z_prime >= 0 && z_prime < 0.5,
-          'bg-red-3': z_prime < 0,
+          'bg-green-3': item.z_prime >= 0.5 && item.z_prime <= 1,
+          'bg-orange-3': item.z_prime >= 0 && item.z_prime < 0.5,
+          'bg-red-3': item.z_prime < 0,
         }">
-        {{ z_prime }} ({{ measurement }})
+        {{ item.z_prime }} ({{ item.feature }}, {{ item.timestamp }})
       </span>
     </div>
   </div>
@@ -238,12 +285,22 @@ onMounted(() => {
     </div>
     <div v-if="measurementOptions.length > 0" class="col-4">
       <q-checkbox v-model="platePage.showHeatmap" :label="t('label.show_heatmap')"></q-checkbox>
-      <div class="col-12" v-if="platePage.showHeatmap && measurementOptions.length > 1">
+      <div class="col-12" v-if="platePage.showHeatmap && measurementOptions.length">
         <q-select
-          v-model="selectedMeasurement"
-          :options="measurementOptions"
-          :label="t('label.select_measurement')"></q-select>
+          v-model="selectedLabel"
+          :options="labels"
+          :label="t('message.select_label')"
+          v-if="labels.length > 1"></q-select>
+        <q-select
+          v-if="timestamps.length > 1"
+          v-model="selectedTimestamp"
+          :options="timestamps"
+          :label="t('message.select_timestamp')"></q-select>
       </div>
+      <q-banner inline-actions class="text-white bg-red" v-if="notFoundMessage && platePage.showHeatmap">
+        {{ notFoundMessage }}
+      </q-banner>
+
       <div class="col-12" v-if="platePage.showHeatmap && measurementOptions.length > 0">
         <q-select
           v-model="platePage.heatmapPalette"
