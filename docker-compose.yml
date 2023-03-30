@@ -40,7 +40,8 @@ services:
     depends_on:
       - db
   db:
-    image: postgres:15-bullseye
+    build:
+      context: db
     hostname: db
     restart: unless-stopped
     env_file: .env
