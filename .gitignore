@@ -308,3 +308,4 @@ api/app/docs/docs/index.md
 Pipfile
 .sass-cache
 .quasar
+perf.sql
