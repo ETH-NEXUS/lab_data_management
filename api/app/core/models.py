@@ -294,7 +294,7 @@ class Plate(TimeTrackedModel):
         for measurement in well.measurements.all():
             results.append(
                 {
-                    "feature": measurement.feature.abbrev,
+                    "feature": measurement.label,
                     "measurement_timestamp": measurement.measurement_timestamp,
                 }
             )
@@ -523,7 +523,7 @@ class Well(TimeTrackedModel):
 
         for measurement in self.measurements.all():
             if (
-                measurement.feature.abbrev == abbrev
+                measurement.label == abbrev
                 and measurement.measurement_timestamp == timestamp
             ):
                 return measurement.value
@@ -572,7 +572,7 @@ class WellWithdrawal(TimeTrackedModel):
 
 class MeasurementFeature(models.Model):
     # TODO: is 20 chars too much for an abbrev
-    abbrev = models.CharField(max_length=255, unique=True)
+    abbrev = models.CharField(max_length=50, unique=True)
     name = models.CharField(
         max_length=50, null=True, blank=True, verbose_name="measurement"
     )
@@ -597,8 +597,11 @@ class Measurement(TimeTrackedModel):
         MeasurementFeature,
         on_delete=models.RESTRICT,
         related_name=related_name,
+        null=True,
+        blank=True,
     )
     value = models.FloatField()
+    label = models.CharField(max_length=50, null=True, blank=True)
     identifier = models.CharField(max_length=20, null=True, blank=True)
     measurement_timestamp = models.DateTimeField(null=True, blank=True)
     measurement_assignment = models.ForeignKey(
@@ -612,7 +615,7 @@ class Measurement(TimeTrackedModel):
         if self.feature.abbrev and self.feature.unit:
             return f"{self.feature.abbrev}: {self.value}{self.feature.unit}"
         else:
-            return f"{self.feature.abbrev}: {self.value}"
+            return f"{self.label}: {self.value}"
 
     class Meta:
         unique_together = ("well", "feature", "measurement_timestamp")

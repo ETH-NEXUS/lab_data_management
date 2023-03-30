@@ -416,6 +416,7 @@ class M1000Mapper(BaseMapper):
 
                         Measurement.objects.update_or_create(
                             well=well,
+                            label=abbrev,
                             feature=feature,
                             measurement_timestamp=kwargs.get("measurement_date"),
                             measurement_assignment=assignment,
@@ -438,6 +439,7 @@ class M1000Mapper(BaseMapper):
                         )
                         Measurement.objects.update_or_create(
                             well=well,
+                            label=abbrev,
                             feature=feature,
                             measurement_assignment=assignment,
                             measurement_timestamp=kwargs.get("measurement_date"),

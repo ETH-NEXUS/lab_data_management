@@ -309,8 +309,8 @@ The maximum number of parameters that may be received via GET or POST before a S
 You can set this to None to disable the check. 
 Applications that are expected to receive an unusually large number of form fields should tune this setting.
 """
-DATA_UPLOAD_MAX_NUMBER_FIELDS = 20000
-
+DATA_UPLOAD_MAX_NUMBER_FIELDS = 30000
+USE_TZ = False
 
 NOTEBOOK_ARGUMENTS = [
     "--ip",
