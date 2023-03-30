@@ -47,7 +47,6 @@ const wellContentOptions = [
   },
 ]
 
-const selectedMeasurement = ref<MeasurementInfo | undefined>()
 const labels = ref<Array<string>>([])
 const timestamps = ref<Array<string>>([])
 const measurementOptions = ref<Array<MeasurementInfo>>([])
@@ -159,8 +158,6 @@ const createColorLegend = () => {
 
 onMounted(() => {
   if (props.plate.measurements && props.plate.measurements.length > 0) {
-    selectedMeasurement.value = props.plate.measurements[0]
-
     const _labels = props.plate?.measurements.map(m => m.feature)
     labels.value = [...new Set(_labels)]
     selectedLabel.value = props.plate.measurements[0].feature
