@@ -69,6 +69,14 @@ class MeasurementSerializer(serializers.ModelSerializer):
         model = Measurement
         fields = "__all__"
 
+    def to_representation(self, instance):
+        representation = super().to_representation(instance)
+        representation[
+            "measurement_timestamp"
+        ] = instance.measurement_timestamp.isoformat().split("+")[0]
+
+        return representation
+
 
 class SimplePlateSerializer(serializers.ModelSerializer):
     dimension = serializers.SlugRelatedField(read_only=True, slug_field="name")
@@ -187,6 +195,17 @@ class PlateSerializer(serializers.ModelSerializer):
         plate.save()
 
         return plate
+
+    def to_representation(self, instance):
+        representation = super().to_representation(instance)
+        measurements_iso = instance.measurements
+
+        for measurement in measurements_iso:
+            measurement["measurement_timestamp"] = (
+                measurement["measurement_timestamp"].isoformat().split("+")[0]
+            )
+        representation["measurements"] = measurements_iso
+        return representation
 
     class Meta:
         model = Plate
