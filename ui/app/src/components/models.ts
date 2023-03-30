@@ -110,19 +110,26 @@ export interface PlateDimension {
 }
 
 export interface MinMax {
+  feature: string
+  timestamp: string
   min: number
   max: number
   min_all_types: number
   max_all_types: number
 }
 
+export interface MeasurementInfo {
+  feature: string
+  measurement_timestamp: string
+}
+
 export interface Plate {
   id: number
   barcode: string
   dimension: PlateDimension
-  measurements: Array<string>
+  measurements: Array<MeasurementInfo>
   z_primes: {[key: string]: number}
-  min_max: {[key: string]: MinMax}
+  min_max: Array<MinMax>
   experiment?: Experiment
   library?: CompoundLibrary
   template?: Template
@@ -139,6 +146,7 @@ export interface Measurement {
   id: number
   value: number
   feature: MeasurementFeature
+  measurement_timestamp: Date | string
   well?: Well
 }
 
