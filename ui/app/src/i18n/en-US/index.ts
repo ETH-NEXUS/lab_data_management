@@ -114,6 +114,8 @@ export default {
     status: 'Status',
   },
   message: {
+    select_label: 'Select label',
+    select_timestamp: 'Select measurement time',
     successfully_logged_in: 'Successfully logged in',
     logged_out: 'You are logged out - see you soon again',
     project_name: 'Please enter the project name:',
