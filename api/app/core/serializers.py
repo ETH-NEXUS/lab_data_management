@@ -17,6 +17,8 @@ from .models import (
     WellType,
     BarcodeSpecification,
     MappingList,
+    WellDetail,
+    PlateDetail,
 )
 
 
@@ -119,13 +121,13 @@ class WellTypeSerializer(serializers.ModelSerializer):
 
 class WellSerializer(serializers.ModelSerializer):
     measurements = MeasurementSerializer(many=True, required=False, allow_null=True)
-    hr_position = serializers.ReadOnlyField()
-    amount = serializers.ReadOnlyField()
+    # hr_position = serializers.ReadOnlyField()
+    # amount = serializers.ReadOnlyField()
     compounds = WellCompoundSerializer(
         many=True, required=False, allow_null=True, source="well_compounds"
     )
-    withdrawals = WellWithdrawalSerializer(many=True, required=False, allow_null=True)
-    donors = WellWithdrawalSerializer(many=True, required=False, allow_null=True)
+    # withdrawals = WellWithdrawalSerializer(many=True, required=False, allow_null=True)
+    # donors = WellWithdrawalSerializer(many=True, required=False, allow_null=True)
     type = serializers.SlugRelatedField(slug_field="name", read_only=True)
 
     class Meta:
@@ -172,9 +174,9 @@ class PlateListSerializer(serializers.ModelSerializer):
 class PlateSerializer(serializers.ModelSerializer):
     dimension = PlateDimensionSerializer(required=False, allow_null=True)
     # library = CompoundLibrarySerializer(required=False, allow_null=True)
-    measurements = serializers.ReadOnlyField()
-    z_primes = serializers.ReadOnlyField()
-    min_max = serializers.ReadOnlyField()
+    # measurements = serializers.ReadOnlyField()
+    # z_primes = serializers.ReadOnlyField()
+    # min_max = serializers.ReadOnlyField()
     wells = WellSerializer(many=True, required=False, allow_null=True)
 
     # def get_wells(self, instance):
@@ -298,4 +300,16 @@ class PlateMappingSerializer(UndefinedAffineModelSerializer):
 
     class Meta:
         model = PlateMapping
+        fields = "__all__"
+
+
+class WellDetailSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = WellDetail
+        fields = "__all__"
+
+
+class PlateDetailSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = PlateDetail
         fields = "__all__"
