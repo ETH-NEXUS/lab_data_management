@@ -52,6 +52,10 @@ const templatePlateBarcodeOptions = ref<Array<PlateLabelValue>>([])
 const filteredTemplatePlateOptions = ref<Array<PlateLabelValue>>([])
 
 onMounted(async () => {
+  await initialize()
+})
+
+const initialize = async () => {
   loading.value = true
   try {
     const resp_plates = await api.get(`/api/plates/?barcode=${route.params.barcode}`)
@@ -82,7 +86,7 @@ onMounted(async () => {
   } finally {
     loading.value = false
   }
-})
+}
 
 const selectedPlateDimension = ref<PlateDimension>()
 
@@ -288,6 +292,10 @@ const formatBarcode = (barcode: string | undefined) => {
   }
   return barcode
 }
+
+const refresh = async () => {
+  await initialize()
+}
 </script>
 
 <template>
@@ -299,6 +307,7 @@ const formatBarcode = (barcode: string | undefined) => {
           <div v-if="plate">
             <h2>{{ formatBarcode(plate.barcode) }}</h2>
             <dynamic-plate
+              @refresh="refresh"
               :plate="plate"
               @well-selected="(well_info: WellInfo) => (platePage.selectedWellInfo = well_info)" />
             <div class="q-mt-md">
