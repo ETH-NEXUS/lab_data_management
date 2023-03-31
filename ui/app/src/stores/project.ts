@@ -147,6 +147,21 @@ export const useProjectStore = defineStore('project', () => {
     initialize()
   }
 
+  //   const add_new_measurement = (expression: string, newLabel:string) => {
+  //   projectStore.calculateNewMeasurement(props.plate.id, expression, newLabel)
+  // }
+  const addNewMeasurement = async (plateId: number, expression: string, newLabel: string) => {
+    const res = await api.post(`/api/plates/${plateId}/add_new_measurement/`, {
+      plate_id: plateId,
+      expression: expression,
+      new_label: newLabel,
+    })
+    if (res.status === 200) {
+      await initialize()
+    }
+    return res.status
+  }
+
   return {
     projects,
     initialize,
@@ -163,5 +178,6 @@ export const useProjectStore = defineStore('project', () => {
     updateProject,
     harvestProjects,
     updateHarvestInfo,
+    addNewMeasurement,
   }
 })
