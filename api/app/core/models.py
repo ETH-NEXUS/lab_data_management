@@ -250,13 +250,17 @@ class Plate(TimeTrackedModel):
 
     def mean(self, abbrev: str, timestamp: str, type: str = "C"):
         measurements = [
-            w.measurement(abbrev, timestamp) for w in self.wells.filter(type__name=type)
+            w.measurement(abbrev, timestamp)
+            for w in self.wells.filter(type__name=type)
+            if w.measurement(abbrev, timestamp) is not None
         ]
         return np.mean(measurements)
 
     def std(self, abbrev: str, timestamp: str, type: str = "C"):
         measurements = [
-            w.measurement(abbrev, timestamp) for w in self.wells.filter(type__name=type)
+            w.measurement(abbrev, timestamp)
+            for w in self.wells.filter(type__name=type)
+            if w.measurement(abbrev, timestamp) is not None
         ]
         return np.std(measurements)
 
@@ -271,6 +275,7 @@ class Plate(TimeTrackedModel):
             measurements = [
                 w.measurement(abbrev, timestamp)
                 for w in self.wells.filter(type__name=type)
+                if w.measurement(abbrev, timestamp) is not None
             ]
         return np.max(measurements)
 
@@ -285,6 +290,7 @@ class Plate(TimeTrackedModel):
             measurements = [
                 w.measurement(abbrev, timestamp)
                 for w in self.wells.filter(type__name=type)
+                if w.measurement(abbrev, timestamp) is not None
             ]
         return np.min(measurements)
 
@@ -612,13 +618,13 @@ class Measurement(TimeTrackedModel):
     )
 
     def __str__(self):
-        if self.feature.abbrev and self.feature.unit:
-            return f"{self.feature.abbrev}: {self.value}{self.feature.unit}"
-        else:
-            return f"{self.label}: {self.value}"
+        # if self.feature.abbrev and self.feature.unit:
+        #     return f"{self.feature.abbrev}: {self.value}{self.feature.unit}"
+        # else:
+        return f"{self.label}: {self.value}"
 
     class Meta:
-        unique_together = ("well", "feature", "measurement_timestamp")
+        unique_together = ("well", "label", "measurement_timestamp")
 
 
 class PlateMapping(TimeTrackedModel):

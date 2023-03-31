@@ -1,6 +1,9 @@
 import csv
+from datetime import datetime
 from uuid import uuid4
 import re
+import math
+from friendlylog import colored_logger as log
 
 from os import environ
 import os
@@ -28,6 +31,7 @@ from .models import (
     BarcodeSpecification,
     PlateDimension,
     Project,
+    MeasurementFeature,
 )
 from .serializers import (
     PlateSerializer,
@@ -135,6 +139,76 @@ class PlateViewSet(viewsets.ModelViewSet):
             return Response(PlateSerializer(plate).data, status.HTTP_200_OK)
         else:
             raise Http404("Parameter 'template' is required.")
+
+    @action(detail=True, methods=["post"])
+    def add_new_measurement(self, request, pk=None):
+        expression = request.data.get("expression")
+        new_label = request.data.get("new_label")
+        now = datetime.now().replace(microsecond=0)
+
+        current_plate = self.get_object()
+
+        # find indices of corresponding measurements in the first well of the current plate
+        # we need that because the timestamps are not the same across the experiment plate
+        # so that we will apply the formula to other plates according to the order of the
+        # measurements passed in the formula from the ui
+        current_plate_first_well = current_plate.wells.first()
+        first_well_measurements_indices = {}
+        for index, measurement in enumerate(
+            current_plate_first_well.measurements.all()
+        ):
+            measurement_combined_label = (
+                f""
+                f"{measurement.label}"
+                f"_{measurement.measurement_timestamp.isoformat().split('+')[0]}"
+            )
+            first_well_measurements_indices[measurement_combined_label] = index
+
+        experiment = current_plate.experiment
+        experiment_plates = experiment.plates.all()
+        measurement_feature, _ = MeasurementFeature.objects.get_or_create(
+            abbrev=new_label
+        )
+
+        try:
+            for plate in experiment_plates:
+                wells = plate.wells.all()
+                for well in wells:
+                    well_measurements = []
+                    for measurement in well.measurements.all():
+                        well_measurements.append(measurement.value)
+                    new_formula = expression.replace("ln(", "math.log(")
+
+                    for key, value in first_well_measurements_indices.items():
+                        new_formula = new_formula.replace(
+                            key, str(well_measurements[value])
+                        )
+
+                    try:
+                        result = eval(new_formula)
+                        if not result:
+                            # if the result is None or 0, we will set it to 0, for example if the
+                            # value = 0, it's log can be -inf, so we will set it to 0
+                            log.error(
+                                f"Result is None or 0. Setting result to 0. Formula: {new_formula}"
+                            )
+                            result = 0
+                    except ZeroDivisionError:
+                        log.error("Division by zero occurred. Setting result to 0")
+                        result = 0
+
+                    Measurement.objects.create(
+                        well=well,
+                        label=new_label,
+                        value=result,
+                        measurement_timestamp=now,
+                        identifier="",
+                        feature=measurement_feature,
+                    )
+        except (ValueError, TypeError, NameError) as e:
+            return Response({"error": str(e)}, status.HTTP_400_BAD_REQUEST)
+        else:
+            return Response(status.HTTP_200_OK)
 
     def filter_queryset(self, queryset):
         return super().filter_queryset(queryset)
