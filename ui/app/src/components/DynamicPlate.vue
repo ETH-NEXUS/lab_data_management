@@ -6,10 +6,13 @@ import {palettes, percentageToHsl} from 'components/helpers'
 import {storeToRefs} from 'pinia'
 import {useSettingsStore} from 'stores/settings'
 import {useI18n} from 'vue-i18n'
+import MeasurementCalculator from 'components/MeasurementCalculator.vue'
+import {useProjectStore} from 'stores/project'
 
 const {t} = useI18n()
 
 const {platePage} = storeToRefs(useSettingsStore())
+const projectStore = useProjectStore()
 
 const props = defineProps({
   plate: {
@@ -52,12 +55,19 @@ const timestamps = ref<Array<string>>([])
 const measurementOptions = ref<Array<MeasurementInfo>>([])
 const selectedLabel = ref<string>('')
 const selectedTimestamp = ref<string>('')
+const openCalculator = ref<boolean>(false)
+
+const combinedLabels = computed(() => {
+  return props.plate.measurements?.map((m: MeasurementInfo) => {
+    return `${m.feature}_${m.measurement_timestamp}`
+  })
+})
 
 const legendColors = computed(() => {
   return createColorLegend()
 })
 
-const emit = defineEmits(['well-selected'])
+const emit = defineEmits(['well-selected', 'refresh'])
 
 const alpha = Array.from(Array(26))
   .map((e, i) => i + 65)
@@ -176,6 +186,13 @@ onMounted(() => {
     })
   }
 })
+
+const calculateNewMeasuremet = async (expression: string, newLabel: string) => {
+  await projectStore.addNewMeasurement(props.plate.id, expression, newLabel)
+  openCalculator.value = false
+
+  emit('refresh')
+}
 </script>
 
 <template>
@@ -251,7 +268,7 @@ onMounted(() => {
         v-for="(color, idx) in legendColors"
         :key="color.value + idx"
         :style="{backgroundColor: color.color}">
-        <span class="legendLabel">{{ [0, 5, 10].includes(idx) ? color.value.toFixed(0) : ' ' }}</span>
+        <span class="legendLabel">{{ [0, 5, 10].includes(idx) ? color.value.toFixed(3) : ' ' }}</span>
       </div>
     </div>
   </div>
@@ -284,7 +301,19 @@ onMounted(() => {
         map-options />
     </div>
     <div v-if="measurementOptions.length > 0" class="col-4">
-      <q-checkbox v-model="platePage.showHeatmap" :label="t('label.show_heatmap')"></q-checkbox>
+      <q-checkbox
+        v-model="platePage.showHeatmap"
+        :label="t('label.show_heatmap')"
+        class="q-mr-md"></q-checkbox>
+
+      <q-btn
+        v-if="platePage.showHeatmap"
+        class="q-my-md"
+        :label="t('action.calculate_measurement')"
+        icon="calculate"
+        color="primary"
+        @click="openCalculator = true" />
+
       <div class="col-12" v-if="platePage.showHeatmap && measurementOptions.length">
         <q-select
           v-model="selectedLabel"
@@ -309,6 +338,13 @@ onMounted(() => {
       </div>
     </div>
   </div>
+  <q-dialog v-model="openCalculator">
+    <q-card class="calculator_dialog">
+      <q-card-section>
+        <MeasurementCalculator :labels="combinedLabels" @calculate="calculateNewMeasuremet" />
+      </q-card-section>
+    </q-card>
+  </q-dialog>
 </template>
 
 <style scoped lang="sass">
@@ -375,6 +411,9 @@ select
 .legendLabel
   position: absolute
   left: 53px
+
+.calculator_dialog
+  min-width: 800px
 </style>
 
 <!-- :style="

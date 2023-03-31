@@ -140,6 +140,7 @@ export default {
     custom_name: 'Custom name',
   },
   action: {
+    calculate_measurement: 'New measurement',
     add_plates: 'Add paltes',
     add_barcode_specification: 'Add barcode specification',
     new_project: 'New project',
