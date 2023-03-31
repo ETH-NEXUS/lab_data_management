@@ -3,6 +3,7 @@ from typing import List
 
 import math
 import numpy as np
+from scipy.stats import median_abs_deviation as mad
 from django.conf import settings
 from django.contrib.postgres.fields import ArrayField
 from django.core.exceptions import ObjectDoesNotExist
@@ -309,13 +310,11 @@ class Plate(TimeTrackedModel):
 
     @staticmethod
     def __z_factor(measurement1: List[float], measurement2: List[float]):
-        mean1 = np.mean(measurement1)
-        mean2 = np.mean(measurement2)
-        # mean -> median
-        std1 = np.std(measurement1)
-        std2 = np.std(measurement2)
-        # std -> median_abs_deviation
-        return 1 - (3 * (std1 + std2)) / abs(mean1 - mean2)
+        median1 = np.median(measurement1)
+        median2 = np.median(measurement2)
+        mad1 = mad(measurement1)
+        mad2 = mad(measurement2)
+        return 1 - (3 * (mad1 + mad2)) / abs(median1 - median2)
 
     def ssmd(self):
         pass  # Delta / Sigma  # kleiner 6 rot  # kleiner 12 orange  # grösser 12 grün
@@ -524,21 +523,21 @@ class Well(TimeTrackedModel):
         amount = self.well_compounds.all().aggregate(Sum("amount"))["amount__sum"] or 0
         return amount
 
-    def measurement(self, abbrev: str, timestamp: str) -> float:
-        """Returns the value of a measurements given by its abbrev"""
+    # def measurement(self, abbrev: str, timestamp: str) -> float:
+    #     """Returns the value of a measurements given by its abbrev"""
 
-        for measurement in self.measurements.all():
-            if (
-                measurement.label == abbrev
-                and measurement.measurement_timestamp == timestamp
-            ):
-                return measurement.value
+    #     for measurement in self.measurements.all():
+    #         if (
+    #             measurement.label == abbrev
+    #             and measurement.measurement_timestamp == timestamp
+    #         ):
+    #             return measurement.value
 
-    def z_score(self, abbrev: str, type: str = "C"):
-        """Returns the z score for this well"""
-        return (
-            self.measurement(abbrev) - self.plate.mean(abbrev, type)
-        ) / self.plate.std(abbrev, type)
+    # def z_score(self, abbrev: str, type: str = "C"):
+    #     """Returns the z score for this well"""
+    #     return (
+    #         self.measurement(abbrev) - self.plate.mean(abbrev, type)
+    #     ) / self.plate.std(abbrev, type)
 
 
 class WellCompound(models.Model):
@@ -577,8 +576,7 @@ class WellWithdrawal(TimeTrackedModel):
 
 
 class MeasurementFeature(models.Model):
-    # TODO: is 20 chars too much for an abbrev
-    abbrev = models.CharField(max_length=50, unique=True)
+    abbrev = models.CharField(max_length=20, unique=True)
     name = models.CharField(
         max_length=50, null=True, blank=True, verbose_name="measurement"
     )
@@ -648,3 +646,42 @@ class PlateMapping(TimeTrackedModel):
         default=None, validators=[MinValueValidator(0)], null=True
     )
     evaluation = models.TextField(null=True, blank=True)
+
+
+class DictField(models.JSONField):
+    def from_db_value(self, value, expression, connection):
+        if isinstance(value, dict):
+            return value
+        return super().from_db_value(value, expression, connection)
+
+
+class WellDetail(models.Model):
+    id = models.BigIntegerField(primary_key=True)
+    position = models.IntegerField()
+    well_type = models.CharField(max_length=50)
+    hr_position = models.TextField()
+    plate_id = models.BigIntegerField()
+    barcode = models.CharField(max_length=50)
+    sample = DictField()
+    initial_amount = models.FloatField(blank=True, null=True)
+    withdrawal = models.FloatField(blank=True, null=True)
+    measurements = DictField()
+    compounds = ArrayField(models.TextField(blank=True, null=True))
+    amount = models.FloatField(blank=True, null=True)
+
+    class Meta:
+        managed = False  # Created from a view. Don't remove.
+        db_table = "core_welldetail"
+
+
+class PlateDetail(models.Model):
+    id = models.BigIntegerField(primary_key=True)
+    barcode = models.CharField(max_length=50)
+    dimension = DictField()
+    measurement_labels = ArrayField(models.TextField(blank=True, null=True))
+    min_max = DictField()
+    stats = DictField()
+
+    class Meta:
+        managed = False  # Created from a view. Don't remove.
+        db_table = "core_platedetail"

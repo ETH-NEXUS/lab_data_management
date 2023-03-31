@@ -31,6 +31,8 @@ from .models import (
     BarcodeSpecification,
     PlateDimension,
     Project,
+    WellDetail,
+    PlateDetail,
     MeasurementFeature,
 )
 from .serializers import (
@@ -41,6 +43,8 @@ from .serializers import (
     ExperimentSerializer,
     ProjectSerializer,
     SimplePlateTemplateSerializer,
+    WellDetailSerializer,
+    PlateDetailSerializer,
 )
 
 from django.views.generic import View
@@ -409,3 +413,13 @@ class DocsView(View):
         content = re.sub(r"[^\x00-\x7F]+", "", content)
         mime_type = mimetypes.guess_type(file_path)
         return HttpResponse(content, content_type=mime_type[0])
+
+
+class WellDetailViewSet(viewsets.ModelViewSet):
+    serializer_class = WellDetailSerializer
+    queryset = WellDetail.objects.all()
+
+
+class PlateDetailViewSet(viewsets.ModelViewSet):
+    serializer_class = PlateDetailSerializer
+    queryset = PlateDetail.objects.all()

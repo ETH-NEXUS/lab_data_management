@@ -4,27 +4,26 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('core', '0022_alter_barcodespecification_number_of_plates'),
+        ("core", "0022_alter_barcodespecification_number_of_plates"),
     ]
 
     operations = [
         migrations.AlterUniqueTogether(
-            name='measurement',
+            name="measurement",
             unique_together=set(),
         ),
         migrations.RemoveField(
-            model_name='measurementassignment',
-            name='measurement_timestamp',
+            model_name="measurementassignment",
+            name="measurement_timestamp",
         ),
         migrations.AddField(
-            model_name='measurement',
-            name='measurement_timestamp',
+            model_name="measurement",
+            name="measurement_timestamp",
             field=models.DateTimeField(blank=True, null=True),
         ),
         migrations.AlterUniqueTogether(
-            name='measurement',
-            unique_together={('well', 'feature', 'measurement_timestamp')},
+            name="measurement",
+            unique_together={("well", "feature", "measurement_timestamp")},
         ),
     ]
