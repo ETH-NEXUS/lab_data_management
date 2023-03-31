@@ -301,11 +301,14 @@ const calculateNewMeasuremet = async (expression: string, newLabel: string) => {
         map-options />
     </div>
     <div v-if="measurementOptions.length > 0" class="col-4">
-      <q-checkbox v-model="platePage.showHeatmap" :label="t('label.show_heatmap')"></q-checkbox>
+      <q-checkbox
+        v-model="platePage.showHeatmap"
+        :label="t('label.show_heatmap')"
+        class="q-mr-md"></q-checkbox>
 
       <q-btn
         v-if="platePage.showHeatmap"
-        class="q-ml-md q-my-md"
+        class="q-my-md"
         :label="t('action.calculate_measurement')"
         icon="calculate"
         color="primary"
