@@ -83,6 +83,7 @@ export default {
     z_prime: "z'",
     notebook: 'Notebook',
     about: 'About',
+    smaller_map_view: 'Smaller map view',
   },
   hint: {
     username: 'Enter your ETH username',

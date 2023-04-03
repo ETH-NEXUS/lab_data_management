@@ -197,7 +197,7 @@ const calculateNewMeasuremet = async (expression: string, newLabel: string) => {
 
 <template>
   <div class="row">
-    <table v-if="props.plate">
+    <table v-if="props.plate" :style="{borderCollapse: platePage.smallerMapView ? 'collapse' : 'separate'}">
       <tr>
         <th />
         <th :key="`cols${col}`" v-for="(_, col) of props.plate.dimension.cols">
@@ -210,6 +210,7 @@ const calculateNewMeasuremet = async (expression: string, newLabel: string) => {
         </th>
 
         <td
+          :class="platePage.smallerMapView ? 'smaller' : ''"
           :style="{
             backgroundColor:
               platePage.showHeatmap && selectedLabel
@@ -299,7 +300,12 @@ const calculateNewMeasuremet = async (expression: string, newLabel: string) => {
         :label="t('label.well_content')"
         emit-value
         map-options />
+      <q-checkbox
+        v-model="platePage.smallerMapView"
+        :label="t('label.smaller_map_view')"
+        class="q-mt-md"></q-checkbox>
     </div>
+
     <div v-if="measurementOptions.length > 0" class="col-4">
       <q-checkbox
         v-model="platePage.showHeatmap"
@@ -414,6 +420,21 @@ select
 
 .calculator_dialog
   min-width: 800px
+
+
+.smaller
+  width: 22px
+  height: 22px
+  min-width: 22px
+  min-height: 22px
+  max-width: 22px
+  max-height: 22px
+  border: transparent
+  border-radius: 0
+  text-align: center
+  vertical-align: middle
+  font-size: 8px
+  padding: 0
 </style>
 
 <!-- :style="
