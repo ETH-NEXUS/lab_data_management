@@ -93,9 +93,19 @@ const wells = computed(() => {
   return _wells
 })
 
-const alpha = Array.from(Array(26))
-  .map((e, i) => i + 65)
-  .map(x => String.fromCharCode(x))
+const ascii_uppercase = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'
+
+const posToAlphaChar = (pos: number) => {
+  let letter = ''
+  while (pos > 0) {
+    console.log('POS', pos)
+    let remainder = (pos - 1) % 26
+    pos = Math.floor((pos - 1) / 26)
+    letter = ascii_uppercase[remainder] + letter
+    console.debug(pos, remainder, letter)
+  }
+  return letter
+}
 
 const min = computed<number>(() => {
   if (!selectedMeasurement.value) return 0
@@ -201,7 +211,7 @@ const calculateNewMeasurement = async (expression: string, newLabel: string) => 
       </tr>
       <tr :key="`row${row}`" v-for="(_, row) of props.plate.dimension.rows">
         <th>
-          {{ alpha[row] }}
+          {{ posToAlphaChar(row + 1) }}
         </th>
 
         <td
