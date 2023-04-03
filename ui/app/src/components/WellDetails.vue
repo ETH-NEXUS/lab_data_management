@@ -255,15 +255,15 @@ const filterMeasurementFeatures = (query: string, update: (f: () => void) => voi
           <table>
             <thead>
               <tr>
-                <th>{{ t('label.name') }}</th>
-                <th>{{ t('label.abbrev') }}</th>
+                <th>{{ t('label.label') }}</th>
+                <th>{{ t('label.timestamp') }}</th>
                 <th>{{ t('label.value') }}</th>
-                <th>{{ t('label.unit') }}</th>
               </tr>
             </thead>
             <tbody>
               <tr v-for="measurement in well.measurements" :key="measurement.label">
                 <td>{{ measurement.label }}</td>
+                <td>{{ measurement.measured_at }}</td>
                 <td>{{ measurement.value }}</td>
               </tr>
             </tbody>
