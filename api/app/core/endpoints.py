@@ -13,8 +13,6 @@ from .models import (
     PlateMapping,
     Experiment,
     BarcodeSpecification,
-    WellDetail,
-    PlateDetail,
 )
 from .serializers import (
     PlateSerializer,
@@ -22,16 +20,12 @@ from .serializers import (
     ProjectSerializer,
     PlateMappingSerializer,
     BarcodeSpecificationSerializer,
-    WellDetailSerializer,
-    PlateDetailSerializer,
 )
 from .views import (
     PlateViewSet,
     WellViewSet,
     PlateMappingViewSet,
     ExperimentViewSet,
-    WellDetailViewSet,
-    PlateDetailViewSet,
 )
 
 
@@ -114,19 +108,3 @@ class PlateMappingEndpoint(DefaultEndpoint):
     base_serializer = PlateMappingSerializer
     base_viewset = PlateMappingViewSet
     model = PlateMapping
-
-
-@register
-class WellDetailEndpoint(DefaultEndpoint):
-    base_serializer = WellDetailSerializer
-    base_viewset = WellDetailViewSet
-    model = WellDetail
-    filter_fields = ("barcode",)
-
-
-@register
-class PlateDetailEndpoint(DefaultEndpoint):
-    base_serializer = PlateDetailSerializer
-    base_viewset = PlateDetailViewSet
-    model = PlateDetail
-    filter_fields = ("barcode",)
