@@ -47,16 +47,21 @@ const props = defineProps({
 const emit = defineEmits(['well-created', 'compound-added', 'measurement-added'])
 
 const well = ref<Well>()
+const loading = ref<boolean>(true)
 
 onMounted(async () => {
+  loading.value = true
   try {
-    const respWell = await api.get(`/api/wells/${props.wellInfo.well.id}/`)
-    well.value = respWell.data
-
+    if (props.wellInfo.well) {
+      const respWell = await api.get(`/api/wells/${props.wellInfo.well.id}/`)
+      well.value = respWell.data
+    }
     const respMeasurementFeatures = await api.get('/api/measurementfeatures/')
     measurementFeatureOptions.value = respMeasurementFeatures.data.results
   } catch (err) {
     handleError(err, false)
+  } finally {
+    loading.value = false
   }
 })
 
@@ -156,7 +161,7 @@ const filterMeasurementFeatures = (query: string, update: (f: () => void) => voi
 </script>
 
 <template>
-  <template v-if="well && props.wellInfo.well">
+  <template v-if="!loading && well && props.wellInfo.well">
     <div class="container full-width">
       <div class="row">
         <div class="col-12">
@@ -342,7 +347,7 @@ const filterMeasurementFeatures = (query: string, update: (f: () => void) => voi
       </div>
     </div>
   </template>
-  <template v-else>
+  <template v-if="!props.wellInfo.well">
     <q-banner inline-actions rounded class="bg-orange text-white q-mt-lg">
       <span class="text-h6">
         {{ t('label.position') }}
