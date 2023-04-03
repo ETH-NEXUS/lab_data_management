@@ -7,6 +7,7 @@ interface PlatePage {
   selectedWellInfo: WellInfo | undefined
   wellContent: keyof Well
   showHeatmap: boolean
+  smallerMapView: boolean
   heatmapPalette: Palette
 }
 
@@ -40,6 +41,7 @@ export const useSettingsStore = defineStore('settings', {
         selectedWellInfo: undefined,
         wellContent: 'hr_position',
         showHeatmap: false,
+        smallerMapView: false,
         heatmapPalette: {label: 'OrangeRed', value: {from: '#fff7bc', to: '#993404'}},
       },
       navigationTree: {
