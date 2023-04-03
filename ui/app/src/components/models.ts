@@ -175,7 +175,7 @@ export interface Measurement {
 }
 
 export interface WellInfo {
-  well: Well
+  well: WellDetails
   position: number
 }
 
