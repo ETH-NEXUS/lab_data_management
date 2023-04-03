@@ -342,7 +342,7 @@ class StatisticsTest(TestCase):
                 well=well,
                 feature=self.measurement_feature,
                 value=i,
-                measurement_timestamp=datetime(2012, 12, 12, 12, 0, 0),
+                measured_at=datetime(2012, 12, 12, 12, 0, 0),
             )
 
     def test_z_prime_calculation(self):

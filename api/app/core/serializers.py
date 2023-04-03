@@ -73,9 +73,7 @@ class MeasurementSerializer(serializers.ModelSerializer):
 
     def to_representation(self, instance):
         representation = super().to_representation(instance)
-        representation[
-            "measurement_timestamp"
-        ] = instance.measurement_timestamp.isoformat().split("+")[0]
+        representation["measured_at"] = instance.measured_at.isoformat().split("+")[0]
 
         return representation
 
@@ -216,8 +214,8 @@ class PlateSerializer(serializers.ModelSerializer):
     #     measurements_iso = instance.measurements
 
     #     for measurement in measurements_iso:
-    #         measurement["measurement_timestamp"] = (
-    #             measurement["measurement_timestamp"].isoformat().split("+")[0]
+    #         measurement["measured_at"] = (
+    #             measurement["measured_at"].isoformat().split("+")[0]
     #         )
     #     representation["measurements"] = measurements_iso
     #     return representation
