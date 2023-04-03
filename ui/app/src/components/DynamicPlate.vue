@@ -34,7 +34,7 @@ const combinedLabels = computed<string[]>(() => {
   const combined_labels: string[] = []
 
   for (let i = 0; i < props.plate.details.measurement_labels.length; ++i) {
-    if (props.plate.details.measurement_timestamps.length > 1) {
+    if (props.plate.details.measurement_timestamps && props.plate.details.measurement_timestamps.length > 1) {
       for (let j = 0; j < props.plate.details.measurement_timestamps.length; ++j) {
         combined_labels.push(
           `${props.plate.details.measurement_labels[i]} (${props.plate.details.measurement_timestamps[j]})`
@@ -170,7 +170,7 @@ onMounted(() => {
     measurementOptions.value = props.plate.details.measurement_labels
     selectedMeasurement.value = measurementOptions.value[0]
   }
-  if (props.plate.details.measurement_timestamps.length > 0) {
+  if (props.plate.details.measurement_timestamps && props.plate.details.measurement_timestamps.length > 0) {
     timestampOptions.value = props.plate.details.measurement_timestamps.map((ts, idx) => {
       return {label: ts, value: idx}
     })
