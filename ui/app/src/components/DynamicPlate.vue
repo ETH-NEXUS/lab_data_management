@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import {computed, defineProps, defineEmits, PropType, ref, onMounted} from 'vue'
-import {Plate, Well, LegendColor, MeasurementInfo, MinMax, Measurement} from './models'
+import {Plate, WellDetails, LegendColor, SelectOption} from './models'
 import {positionFromRowCol} from '../helpers/plate'
 import {palettes, percentageToHsl} from 'components/helpers'
 import {storeToRefs} from 'pinia'
@@ -23,16 +23,29 @@ const props = defineProps({
 
 //computed message saying that the combination of label and timestamp was not found
 
-const notFoundMessage = computed(() => {
-  const measurement = props.plate.wells![0].measurements?.find(
-    (m: Measurement) =>
-      m.feature.abbrev === selectedLabel.value && m.measurement_timestamp === selectedTimestamp.value
-  )
+// const notFoundMessage = computed(() => {
+//   if (!props.plate.wells || !(selectedMeasurement.value in props.plate.wells[0].measurements)) {
+//     return `No data found for ${selectedMeasurement.value} at ${selectedTimestampIdx.value}`
+//   }
+//   return ''
+// })
 
-  if (!measurement) {
-    return `No data found for ${selectedLabel.value} at ${selectedTimestamp.value}`
+const combinedLabels = computed<string[]>(() => {
+  const combined_labels: string[] = []
+
+  for (let i = 0; i < props.plate.details.measurement_labels.length; ++i) {
+    if (props.plate.details.measurement_timestamps.length > 1) {
+      for (let j = 0; j < props.plate.details.measurement_timestamps.length; ++j) {
+        combined_labels.push(
+          `${props.plate.details.measurement_labels[i]} (${props.plate.details.measurement_timestamps[j]})`
+        )
+      }
+    } else {
+      combined_labels.push(props.plate.details.measurement_labels[i])
+    }
   }
-  return ''
+
+  return combined_labels
 })
 
 const wellContentOptions = [
@@ -50,18 +63,13 @@ const wellContentOptions = [
   },
 ]
 
-const labels = ref<Array<string>>([])
-const timestamps = ref<Array<string>>([])
-const measurementOptions = ref<Array<MeasurementInfo>>([])
-const selectedLabel = ref<string>('')
-const selectedTimestamp = ref<string>('')
-const openCalculator = ref<boolean>(false)
+const selectedMeasurement = ref<string | null>(null)
+const measurementOptions = ref<string[]>([])
 
-const combinedLabels = computed(() => {
-  return props.plate.measurements?.map((m: MeasurementInfo) => {
-    return `${m.feature}_${m.measurement_timestamp}`
-  })
-})
+const selectedTimestampIdx = ref<number>(0)
+const timestampOptions = ref<Array<SelectOption<number>>>([])
+
+const openCalculator = ref<boolean>(false)
 
 const legendColors = computed(() => {
   return createColorLegend()
@@ -69,54 +77,54 @@ const legendColors = computed(() => {
 
 const emit = defineEmits(['well-selected', 'refresh'])
 
-const alpha = Array.from(Array(26))
-  .map((e, i) => i + 65)
-  .map(x => String.fromCharCode(x))
-
-const byPosition = (position: number) => {
-  return props.plate.wells?.find(w => w.position === position)
-}
-
 const wells = computed(() => {
-  const _wells: Array<Array<Well | undefined>> = Array.from(Array(props.plate.dimension.rows), () =>
+  const _wells: Array<Array<WellDetails | undefined>> = Array.from(Array(props.plate.dimension.rows), () =>
     new Array(props.plate.dimension.cols).fill(undefined)
   )
   for (const row of Array(props.plate.dimension.rows).keys()) {
     for (const col of Array(props.plate.dimension.cols).keys()) {
-      _wells[row][col] = byPosition(row * props.plate.dimension.cols + col)
-      // _wells[row][col]?.measurements.push({
-      //   value: (row * props.plate.dimension.cols + col) / 352,
-      //   name: '',
-      //   abbrev: '',
-      //   unit: '',
-      // })
+      _wells[row][col] = props.plate.wells[row * props.plate.dimension.cols + col]
     }
   }
   return _wells
 })
 
-const percentage = (well: Well | undefined) => {
-  if (selectedLabel.value && selectedTimestamp.value && well?.measurements) {
-    const min = props.plate.min_max.find(
-      (item: MinMax) => item.feature === selectedLabel.value && item.timestamp === selectedTimestamp.value
-    )?.min_all_types
+const alpha = Array.from(Array(26))
+  .map((e, i) => i + 65)
+  .map(x => String.fromCharCode(x))
 
-    const max = props.plate.min_max.find(
-      (item: MinMax) => item.feature === selectedLabel.value && item.timestamp === selectedTimestamp.value
-    )?.max_all_types
+const min = computed<number>(() => {
+  if (!selectedMeasurement.value) return 0
+  return props.plate.details.overall_stats[selectedMeasurement.value].min[selectedTimestampIdx.value]
+})
 
-    const value = well?.measurements.filter(
-      m => m.feature.abbrev === selectedLabel.value && m.measurement_timestamp === selectedTimestamp.value
-    )[0]?.value
+const max = computed<number>(() => {
+  if (!selectedMeasurement.value) return 0
+  return props.plate.details.overall_stats[selectedMeasurement.value].max[selectedTimestampIdx.value]
+})
 
-    if (value && min && max) {
-      return (value - min) / (max - min)
+const measurement = (well: WellDetails) => {
+  if (selectedMeasurement.value) {
+    if (selectedMeasurement.value in well.measurements) {
+      if (well.measurements[selectedMeasurement.value].length > selectedTimestampIdx.value) {
+        return well.measurements[selectedMeasurement.value][selectedTimestampIdx.value]
+      }
+    }
+  }
+  return null
+}
+
+const percentage = (well: WellDetails | undefined) => {
+  if (well) {
+    const value = measurement(well)
+    if (value) {
+      return (value - min.value) / (max.value - min.value)
     }
   }
   return 0
 }
 
-const heatmapColor = (well: Well | undefined) => {
+const heatmapColor = (well: WellDetails | undefined) => {
   const {from, to} = platePage.value.heatmapPalette.value
   return percentageToHsl(percentage(well), from, to)
 }
@@ -127,7 +135,7 @@ const typeColor_map: {[key: string]: string} = {
   C: 'rgb(177, 190, 197)',
 }
 
-const typeColor = (well: Well | undefined) => {
+const typeColor = (well: WellDetails | undefined) => {
   if (well) {
     const type = well.type.substring(0, 1).toLocaleUpperCase()
     if (type in typeColor_map) {
@@ -139,27 +147,18 @@ const typeColor = (well: Well | undefined) => {
 
 const createColorLegend = () => {
   const legend: LegendColor[] = []
-  if (selectedLabel.value && selectedTimestamp.value) {
-    const min = props.plate.min_max.find(
-      (item: MinMax) => item.feature === selectedLabel.value && item.timestamp === selectedTimestamp.value
-    )?.min_all_types
-
-    const max = props.plate.min_max.find(
-      (item: MinMax) => item.feature === selectedLabel.value && item.timestamp === selectedTimestamp.value
-    )?.max_all_types
-
+  if (selectedMeasurement.value) {
     const numberOfSteps = 10
-    if (min && max) {
-      const step: number = (max - min) / numberOfSteps
-      for (let i = 0; i <= numberOfSteps; i++) {
-        const value: number = min + i * step
-        const color = percentageToHsl(
-          (value - min) / (max - min),
-          platePage.value.heatmapPalette.value.from,
-          platePage.value.heatmapPalette.value.to
-        )
-        legend.push({value, color})
-      }
+
+    const step: number = (max.value - min.value) / numberOfSteps
+    for (let i = 0; i <= numberOfSteps; i++) {
+      const value: number = min.value + i * step
+      const color = percentageToHsl(
+        (value - min.value) / (max.value - min.value),
+        platePage.value.heatmapPalette.value.from,
+        platePage.value.heatmapPalette.value.to
+      )
+      legend.push({value, color})
     }
 
     return legend.reverse()
@@ -167,27 +166,19 @@ const createColorLegend = () => {
 }
 
 onMounted(() => {
-  if (props.plate.measurements && props.plate.measurements.length > 0) {
-    const _labels = props.plate?.measurements.map(m => m.feature)
-    labels.value = [...new Set(_labels)]
-    selectedLabel.value = props.plate.measurements[0].feature
-
-    const _timestamps = props.plate?.measurements.map(m => m.measurement_timestamp)
-    timestamps.value = [...new Set(_timestamps)]
-    selectedTimestamp.value = props.plate.measurements[0].measurement_timestamp
-
-    measurementOptions.value = props.plate.measurements.map(m => {
-      return {
-        feature: m.feature,
-        label: m.feature,
-        value: m.feature,
-        measurement_timestamp: m.measurement_timestamp,
-      }
+  if (props.plate.details.measurement_labels.length > 0) {
+    measurementOptions.value = props.plate.details.measurement_labels
+    selectedMeasurement.value = measurementOptions.value[0]
+  }
+  if (props.plate.details.measurement_timestamps.length > 0) {
+    timestampOptions.value = props.plate.details.measurement_timestamps.map((ts, idx) => {
+      return {label: ts, value: idx}
     })
+    selectedTimestampIdx.value = 0
   }
 })
 
-const calculateNewMeasuremet = async (expression: string, newLabel: string) => {
+const calculateNewMeasurement = async (expression: string, newLabel: string) => {
   await projectStore.addNewMeasurement(props.plate.id, expression, newLabel)
   openCalculator.value = false
 
@@ -213,7 +204,7 @@ const calculateNewMeasuremet = async (expression: string, newLabel: string) => {
           :class="platePage.smallerMapView ? 'smaller' : ''"
           :style="{
             backgroundColor:
-              platePage.showHeatmap && selectedLabel
+              platePage.showHeatmap && selectedMeasurement
                 ? heatmapColor(wells[row][col])
                 : plate.template || (platePage.wellContent === 'type' && !platePage.showHeatmap)
                 ? typeColor(wells[row][col])
@@ -242,28 +233,17 @@ const calculateNewMeasuremet = async (expression: string, newLabel: string) => {
             <hr />
             <b v-if="wells[row][col]?.compounds" class="q-mt-md">{{ t('label.compounds') }}</b>
             <table v-if="wells[row][col]?.compounds">
-              <tr v-for="compound in wells[row][col]?.compounds" :key="compound.identifier">
-                <td>
-                  <b>{{ compound.name }}</b>
-                </td>
-                <td>{{ compound.identifier }}</td>
+              <tr v-for="compound in wells[row][col]?.compounds" :key="compound">
+                <b>{{ compound }}</b>
               </tr>
             </table>
-            <b v-if="wells[row][col]?.measurements" class="q-mt-md">{{ t('label.measurements') }}</b>
-            <table v-if="wells[row][col]?.measurements">
-              <tr v-for="measurement in wells[row][col]?.measurements" :key="measurement.feature.name">
-                <td>
-                  <b>{{ measurement.feature.abbrev }}</b>
-                </td>
-                <td>{{ measurement.value }}</td>
-                <td>{{ measurement.feature.unit }}</td>
-              </tr>
-            </table>
+            <b v-if="selectedMeasurement" class="q-mt-md">{{ t('label.measurements') }}</b>
+            <span v-if="selectedMeasurement" class="q-mt-md">{{ measurement(wells[row][col]!) }}</span>
           </q-tooltip>
         </td>
       </tr>
     </table>
-    <div v-if="platePage.showHeatmap && labels.length > 0 && legendColors" class="q-my-md q-ml-md">
+    <div v-if="platePage.showHeatmap && selectedMeasurement && legendColors" class="q-my-md q-ml-md">
       <div
         class="legendItem"
         v-for="(color, idx) in legendColors"
@@ -273,7 +253,7 @@ const calculateNewMeasuremet = async (expression: string, newLabel: string) => {
       </div>
     </div>
   </div>
-  <div v-if="!plate.template && props.plate.z_primes" class="row q-mt-sm">
+  <!-- <div v-if="!plate.template && props.plate.z_primes" class="row q-mt-sm">
     <div class="col-12 q-mr-md">
       <b>{{ t('label.z_prime') }}:</b>
       <span
@@ -290,7 +270,7 @@ const calculateNewMeasuremet = async (expression: string, newLabel: string) => {
         {{ item.z_prime }} ({{ item.feature }}, {{ item.timestamp }})
       </span>
     </div>
-  </div>
+  </div> -->
 
   <div v-if="!plate.template" class="row">
     <div class="col-4 q-mr-md">
@@ -322,19 +302,21 @@ const calculateNewMeasuremet = async (expression: string, newLabel: string) => {
 
       <div class="col-12" v-if="platePage.showHeatmap && measurementOptions.length">
         <q-select
-          v-model="selectedLabel"
-          :options="labels"
+          v-model="selectedMeasurement"
+          :options="measurementOptions"
           :label="t('message.select_label')"
-          v-if="labels.length > 1"></q-select>
+          v-if="measurementOptions.length > 1"></q-select>
         <q-select
-          v-if="timestamps.length > 1"
-          v-model="selectedTimestamp"
-          :options="timestamps"
-          :label="t('message.select_timestamp')"></q-select>
+          v-if="timestampOptions.length > 1"
+          v-model="selectedTimestampIdx"
+          :options="timestampOptions"
+          :label="t('message.select_timestamp')"
+          emit-value
+          map-options></q-select>
       </div>
-      <q-banner inline-actions class="text-white bg-red" v-if="notFoundMessage && platePage.showHeatmap">
+      <!-- <q-banner inline-actions class="text-white bg-red" v-if="notFoundMessage && platePage.showHeatmap">
         {{ notFoundMessage }}
-      </q-banner>
+      </q-banner> -->
 
       <div class="col-12" v-if="platePage.showHeatmap && measurementOptions.length > 0">
         <q-select
@@ -347,7 +329,7 @@ const calculateNewMeasuremet = async (expression: string, newLabel: string) => {
   <q-dialog v-model="openCalculator">
     <q-card class="calculator_dialog">
       <q-card-section>
-        <MeasurementCalculator :labels="combinedLabels" @calculate="calculateNewMeasuremet" />
+        <MeasurementCalculator :labels="combinedLabels" @calculate="calculateNewMeasurement" />
       </q-card-section>
     </q-card>
   </q-dialog>

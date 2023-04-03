@@ -672,6 +672,9 @@ class MaterializedViewModel(models.Model):
 class WellDetail(MaterializedViewModel):
     id = models.BigIntegerField(primary_key=True)
     plate_id = models.BigIntegerField()
+    type = models.CharField(max_length=50)
+    status = models.TextField()
+    position = models.IntegerField()
     hr_position = models.CharField(max_length=10)
     initial_amount = models.FloatField(blank=True, null=True)
     withdrawal = models.FloatField(blank=True, null=True)
