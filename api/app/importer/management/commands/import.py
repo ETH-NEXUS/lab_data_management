@@ -8,6 +8,7 @@ from platetemplate.models import PlateTemplate, PlateTemplateCategory
 from importer.mapping import SdfMapping
 from importer.helper import row_col_from_wells, normalize_col, normalize_row
 from core.mapping import PositionMapper
+from core.models import WellDetail, PlateDetail
 import numpy as np
 from os.path import splitext
 from pathlib import Path
@@ -297,6 +298,7 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         try:
+            imported = False
             if options.get("what") == "sdf":
                 mapping = SdfMapping(options.get("mapping_file"))
                 self.sdf(
@@ -307,12 +309,19 @@ class Command(BaseCommand):
                     number_of_columns=options.get("number_of_columns"),
                     number_of_wells=options.get("number_of_wells"),
                 )
+                imported = True
             elif options.get("what") == "template":
                 self.template(
                     options.get("input_file"),
                     category_name=options.get("category_name"),
                     template_name=options.get("template_name"),
                 )
+                imported = True
+
+            if imported:
+                log.info("Refreshing materialized views...")
+                PlateDetail.refresh(concurrently=True)
+                WellDetail.refresh(concurrently=True)
 
         except Exception as ex:
             log.error(ex)
