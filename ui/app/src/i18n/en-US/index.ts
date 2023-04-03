@@ -84,6 +84,7 @@ export default {
     notebook: 'Notebook',
     about: 'About',
     smaller_map_view: 'Smaller map view',
+    label: 'Label',
   },
   hint: {
     username: 'Enter your ETH username',
