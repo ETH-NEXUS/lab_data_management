@@ -45,6 +45,12 @@ export const useProjectStore = defineStore('project', () => {
     const res_d = await api.get('/api/platedimensions/')
     plateDimensions.value = res_d.data.results
 
+    if (harvestProjects.value.length === 0) {
+      await getHarvestProjects()
+    }
+  }
+
+  const getHarvestProjects = async () => {
     const resp_harvest = await api.get('/api/harvest/harvest_projects/')
     const harvestDataCopy = JSON.parse(JSON.stringify(resp_harvest.data.projects))
     for (let i = 0; i < harvestDataCopy.length; i++) {
@@ -179,5 +185,6 @@ export const useProjectStore = defineStore('project', () => {
     harvestProjects,
     updateHarvestInfo,
     addNewMeasurement,
+    getHarvestProjects,
   }
 })
