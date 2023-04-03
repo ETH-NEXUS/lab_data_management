@@ -113,6 +113,26 @@ const z_prime = computed(() => {
   return null
 })
 
+const ssmd = computed(() => {
+  if (selectedMeasurement.value) {
+    if (
+      'P' in props.plate.details.stats[selectedMeasurement.value] &&
+      'N' in props.plate.details.stats[selectedMeasurement.value]
+    ) {
+      const mad_pos =
+        props.plate.details.stats[selectedMeasurement.value]['P'].mad[selectedTimestampIdx.value]
+      const mad_neg =
+        props.plate.details.stats[selectedMeasurement.value]['N'].mad[selectedTimestampIdx.value]
+      const median_pos =
+        props.plate.details.stats[selectedMeasurement.value]['P'].median[selectedTimestampIdx.value]
+      const median_neg =
+        props.plate.details.stats[selectedMeasurement.value]['N'].median[selectedTimestampIdx.value]
+      return Math.abs(median_pos - median_neg) / (0.5 * (mad_pos + mad_neg))
+    }
+  }
+  return null
+})
+
 const ascii_uppercase = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'
 
 const posToAlphaChar = (pos: number) => {
@@ -287,21 +307,46 @@ const calculateNewMeasurement = async (expression: string, newLabel: string) => 
       </div>
     </div>
   </div>
-  <div v-if="z_prime" class="row q-mt-sm">
-    <div class="col-12 q-mr-md">
-      <b>{{ t('label.z_prime') }}:</b>
-      <span
-        :class="{
-          'z-prime': true,
-          'q-mx-xs': true,
-          'q-pa-xs': true,
-          'bg-green-3': z_prime >= 0.5 && z_prime <= 1,
-          'bg-orange-3': z_prime >= 0 && z_prime < 0.5,
-          'bg-red-3': z_prime < 0,
-        }">
-        {{ z_prime }} ({{ selectedMeasurement }},
-        {{ timestampOptions.find(tso => tso.value === selectedTimestampIdx)?.label }})
-      </span>
+  <div class="row">
+    <div v-if="z_prime" class="col-4 q-mt-sm">
+      <div class="col-12 q-mr-md">
+        <b>{{ t('label.z_prime') }}:</b>
+        <span
+          :class="{
+            'measurement': true,
+            'q-mx-xs': true,
+            'q-pa-xs': true,
+            'bg-green-3': z_prime >= 0.5 && z_prime <= 1,
+            'bg-orange-3': z_prime >= 0 && z_prime < 0.5,
+            'bg-red-3': z_prime < 0,
+          }">
+          {{ z_prime.toFixed(2) }}
+          <i>
+            ({{ selectedMeasurement }},
+            {{ timestampOptions.find(tso => tso.value === selectedTimestampIdx)?.label }})
+          </i>
+        </span>
+      </div>
+    </div>
+    <div v-if="ssmd" class="col-4 q-mt-sm">
+      <div class="col-12 q-mr-md">
+        <b>{{ t('label.ssmd') }}:</b>
+        <span
+          :class="{
+            'measurement': true,
+            'q-mx-xs': true,
+            'q-pa-xs': true,
+            'bg-green-3': ssmd >= 12,
+            'bg-orange-3': ssmd >= 6 && ssmd < 12,
+            'bg-red-3': ssmd < 6,
+          }">
+          {{ ssmd.toFixed(2) }}
+          <i>
+            ({{ selectedMeasurement }},
+            {{ timestampOptions.find(tso => tso.value === selectedTimestampIdx)?.label }})
+          </i>
+        </span>
+      </div>
     </div>
   </div>
 
@@ -421,7 +466,7 @@ ul
 
 select
   max-width: 300px
-.z-prime
+.measurement
   border-radius: 5px
 
 .legendItem
