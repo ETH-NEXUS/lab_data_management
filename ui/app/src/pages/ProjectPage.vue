@@ -7,11 +7,13 @@ import {useProjectStore} from 'stores/project'
 import {Project, ProjectPayload} from 'src/components/models'
 import {formatDate} from 'src/helpers/dateTime'
 import bus from 'src/eventBus'
+import {useHarvestStore} from 'stores/harvest-store'
 
 import {useQuasar} from 'quasar'
 
 const route = useRoute()
 const projectStore = useProjectStore()
+const harvestStore = useHarvestStore()
 
 const $q = useQuasar()
 const loading = ref<boolean>(true)
@@ -71,7 +73,7 @@ const editProject = async (field: string) => {
 const updateHarvestInfo = async () => {
   if (project.value) {
     try {
-      const resp = await projectStore.updateHarvestInfo(project.value.id)
+      const resp = await harvestStore.updateHarvestInfo(project.value.id)
       if (resp.data.success) {
         await initialize()
         $q.notify({

@@ -1,39 +1,14 @@
 import {defineStore} from 'pinia'
 
-import {
-  Experiment,
-  PlateDimension,
-  Project,
-  ExperimentPayload,
-  ProjectPayload,
-  harvestProject,
-} from 'src/components/models'
+import {Experiment, PlateDimension, Project, ExperimentPayload, ProjectPayload} from 'src/components/models'
 
 import {api} from 'src/boot/axios'
 import {ref} from 'vue'
-
-function sortHarvestProjects(harvestProjects: harvestProject[]) {
-  const currentYear = new Date().getFullYear().toString()
-  harvestProjects.sort((a: harvestProject, b: harvestProject) => {
-    const aContainsYear = a.name.includes(currentYear)
-    const bContainsYear = b.name.includes(currentYear)
-    if (aContainsYear && !bContainsYear) {
-      return -1
-    } else if (!aContainsYear && bContainsYear) {
-      return 1
-    } else {
-      return a.name.localeCompare(b.name)
-    }
-  })
-
-  return harvestProjects
-}
 
 export const useProjectStore = defineStore('project', () => {
   const projects = ref<Array<Project>>([])
   const plateDimensions = ref<Array<PlateDimension>>([])
   const experiments = ref<Array<Experiment>>([])
-  const harvestProjects = ref<harvestProject[]>([])
 
   const initialize = async () => {
     const resp_p = await api.get('/api/projects/')
@@ -44,23 +19,6 @@ export const useProjectStore = defineStore('project', () => {
 
     const res_d = await api.get('/api/platedimensions/')
     plateDimensions.value = res_d.data.results
-
-    if (harvestProjects.value.length === 0) {
-      await getHarvestProjects()
-    }
-  }
-
-  const getHarvestProjects = async () => {
-    const resp_harvest = await api.get('/api/harvest/harvest_projects/')
-    const harvestDataCopy = JSON.parse(JSON.stringify(resp_harvest.data.projects))
-    for (let i = 0; i < harvestDataCopy.length; i++) {
-      harvestDataCopy[i].value = harvestDataCopy[i].name
-      harvestDataCopy[i].label = harvestDataCopy[i].name
-    }
-
-    harvestProjects.value = sortHarvestProjects(
-      harvestDataCopy.filter((item: harvestProject) => item.is_active)
-    )
   }
 
   const add = async (payload: {name: string; harvest_id: number | null}) => {
@@ -68,11 +26,6 @@ export const useProjectStore = defineStore('project', () => {
     const project = resp.data
     projects.value.push(project)
     return project
-  }
-  const updateHarvestInfo = async (projectId: number) => {
-    const resp = await api.get(`/api/harvest/update_harvest_info/${projectId}/`)
-    await initialize()
-    return resp
   }
 
   const updateProject = async (projectId: number, payload: ProjectPayload) => {
@@ -182,9 +135,6 @@ export const useProjectStore = defineStore('project', () => {
     addPlatesToExperiment,
     experiments,
     updateProject,
-    harvestProjects,
-    updateHarvestInfo,
     addNewMeasurement,
-    getHarvestProjects,
   }
 })

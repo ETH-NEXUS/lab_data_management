@@ -6,10 +6,11 @@ import {QTreeNode} from 'quasar'
 import {useI18n} from 'vue-i18n'
 import {useRouter} from 'vue-router'
 import {useQuasar} from 'quasar'
-import {useSettingsStore} from '../stores/settings'
+import {useSettingsStore} from 'stores/settings'
 import {storeToRefs} from 'pinia'
-import {useProjectStore} from '../stores/project'
+import {useProjectStore} from 'stores/project'
 import bus from 'src/eventBus'
+import {useHarvestStore} from 'stores/harvest-store'
 
 const router = useRouter()
 const {t} = useI18n()
@@ -28,6 +29,7 @@ const initialize = async () => {
 
 onMounted(async () => {
   await initialize()
+  await harvestStore.initialize()
   bus.on('experiment-updated', () => {
     initialize()
   })
@@ -36,8 +38,9 @@ onMounted(async () => {
   })
 })
 
+const harvestStore = useHarvestStore()
 const {navigationTree, projectNavigationTree} = storeToRefs(useSettingsStore())
-const {harvestProjects} = storeToRefs(projectStore)
+const {harvestProjects} = storeToRefs(harvestStore)
 const newProjectDialog = ref<boolean>(false)
 const newProjectName = ref<string>('')
 const harvestProject = ref<harvestProject | null>(null)
@@ -243,7 +246,7 @@ const filterFn = (val: string, update: (arg0: {(): void; (): void}) => void) => 
 
 const updateHarvestProjects = async () => {
   try {
-    await projectStore.getHarvestProjects()
+    await harvestStore.getHarvestProjects()
     await initialize()
   } catch (err) {
     handleError(err)
