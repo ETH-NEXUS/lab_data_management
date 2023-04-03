@@ -141,6 +141,7 @@ export default {
     custom_name: 'Custom name',
   },
   action: {
+    update_harvest_projects: 'Update Harvest projects',
     calculate_measurement: 'New measurement',
     add_plates: 'Add paltes',
     add_barcode_specification: 'Add barcode specification',

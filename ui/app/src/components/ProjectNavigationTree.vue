@@ -240,6 +240,15 @@ const filterFn = (val: string, update: (arg0: {(): void; (): void}) => void) => 
     options.value = harvestProjects.value.filter(v => v.name.toLowerCase().indexOf(needle) > -1)
   })
 }
+
+const updateHarvestProjects = async () => {
+  try {
+    await projectStore.getHarvestProjects()
+    await initialize()
+  } catch (err) {
+    handleError(err)
+  }
+}
 </script>
 
 <template>
@@ -316,6 +325,13 @@ const filterFn = (val: string, update: (arg0: {(): void; (): void}) => void) => 
             v-model="harvestProject"
             :options="options"
             @filter="filterFn"></q-select>
+
+          <q-btn
+            class="q-my-lg"
+            :label="t('action.update_harvest_projects')"
+            icon="update"
+            color="secondary"
+            @click="updateHarvestProjects" />
         </q-card-section>
       </div>
 
