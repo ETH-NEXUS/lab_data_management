@@ -98,11 +98,9 @@ const ascii_uppercase = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'
 const posToAlphaChar = (pos: number) => {
   let letter = ''
   while (pos > 0) {
-    console.log('POS', pos)
     let remainder = (pos - 1) % 26
     pos = Math.floor((pos - 1) / 26)
     letter = ascii_uppercase[remainder] + letter
-    console.debug(pos, remainder, letter)
   }
   return letter
 }
@@ -202,7 +200,7 @@ const calculateNewMeasurement = async (expression: string, newLabel: string) => 
 
 <template>
   <div class="row">
-    <table v-if="props.plate" :style="{borderCollapse: platePage.smallerMapView ? 'collapse' : 'separate'}">
+    <table v-if="props.plate" :class="platePage.smallerMapView ? 'smaller' : ''">
       <tr>
         <th />
         <th :key="`cols${col}`" v-for="(_, col) of props.plate.dimension.cols">
@@ -215,7 +213,6 @@ const calculateNewMeasurement = async (expression: string, newLabel: string) => 
         </th>
 
         <td
-          :class="platePage.smallerMapView ? 'smaller' : ''"
           :style="{
             backgroundColor:
               platePage.showHeatmap && selectedMeasurement
@@ -233,7 +230,7 @@ const calculateNewMeasurement = async (expression: string, newLabel: string) => 
             })
           ">
           <a v-if="wells[row][col]" :class="{'bg-warning': wells[row][col]!.status}">
-            {{ wells[row][col]![platePage.wellContent] }}
+            {{ platePage.smallerMapView ? '&nbsp;&nbsp;&nbsp;' : wells[row][col]![platePage.wellContent] }}
           </a>
           <q-tooltip
             class="tooltip"
@@ -252,7 +249,10 @@ const calculateNewMeasurement = async (expression: string, newLabel: string) => 
               </tr>
             </table>
             <b v-if="selectedMeasurement" class="q-mt-md">{{ t('label.measurements') }}</b>
-            <span v-if="selectedMeasurement" class="q-mt-md">{{ measurement(wells[row][col]!) }}</span>
+            <br />
+            <span v-if="selectedMeasurement" class="q-mt-md">
+              {{ selectedMeasurement }}: {{ measurement(wells[row][col]!) }}
+            </span>
           </q-tooltip>
         </td>
       </tr>
@@ -407,30 +407,42 @@ select
 
 .legendItem
   position: relative
-  width: 50px
-  height: 20px
+  width: 30px
+  height: 15px
 
 .legendLabel
   position: absolute
-  left: 53px
+  left: 33px
+  font-size: 10px
+
 
 .calculator_dialog
   min-width: 800px
 
-
-.smaller
-  width: 22px
-  height: 22px
-  min-width: 22px
-  min-height: 22px
-  max-width: 22px
-  max-height: 22px
-  border: transparent
+table.smaller
+  border-spacing: 0px
+  border-collapse: collapse
+  border: 0px solid #eee
+  border-radius: unset
+  padding: unset
+  overflow: hidden
+.smaller td
+  width: 15px
+  height: 15px
+  min-width: 15px
+  min-height: 15px
+  max-width: 15px
+  max-height: 15px
+  border-width: 1px
+  border-color: #eee
   border-radius: 0
   text-align: center
   vertical-align: middle
   font-size: 8px
   padding: 0
+
+.smaller th
+  font-size: 8px
 </style>
 
 <!-- :style="

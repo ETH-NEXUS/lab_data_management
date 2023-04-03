@@ -169,6 +169,7 @@ export interface MeasurementFeature {
 export interface Measurement {
   id: number
   value: number
+  label: string
   feature: MeasurementFeature
   measured_at: Date | string
   well?: Well
