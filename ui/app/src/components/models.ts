@@ -140,7 +140,7 @@ export interface WellDetails {
   plate_id: number
   type: string
   status: string
-  position: string
+  position: number
   hr_position: string
   initial_amount: number
   withdrawal: number

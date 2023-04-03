@@ -77,13 +77,17 @@ const legendColors = computed(() => {
 
 const emit = defineEmits(['well-selected', 'refresh'])
 
+const byPosition = (position: number) => {
+  return props.plate.wells?.find(w => w.position === position)
+}
+
 const wells = computed(() => {
   const _wells: Array<Array<WellDetails | undefined>> = Array.from(Array(props.plate.dimension.rows), () =>
     new Array(props.plate.dimension.cols).fill(undefined)
   )
   for (const row of Array(props.plate.dimension.rows).keys()) {
     for (const col of Array(props.plate.dimension.cols).keys()) {
-      _wells[row][col] = props.plate.wells[row * props.plate.dimension.cols + col]
+      _wells[row][col] = byPosition(row * props.plate.dimension.cols + col)
     }
   }
   return _wells
