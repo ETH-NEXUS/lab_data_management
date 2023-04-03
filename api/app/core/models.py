@@ -8,6 +8,7 @@ from django.db.models import F, CheckConstraint, Q, Sum
 from django.forms import ValidationError
 from django.utils.translation import gettext_lazy as _
 from django.db import connection
+from rest_framework.exceptions import APIException
 
 from compoundlib.models import CompoundLibrary, Compound
 from platetemplate.models import PlateTemplate
@@ -16,7 +17,7 @@ from .mapping import MappingList
 from .mapping import PositionMapper
 
 
-class MappingError(Exception):
+class MappingError(APIException):
     pass
 
 
@@ -375,6 +376,8 @@ class Plate(TimeTrackedModel):
             # TODO: At the moment we only map the type
             well.type = template_well.type
             well.save()
+        PlateDetail.refresh(concurrently=True)
+        WellDetail.refresh(concurrently=True)
         return self
 
     def map(self, mappingList: MappingList, target: "Plate"):
