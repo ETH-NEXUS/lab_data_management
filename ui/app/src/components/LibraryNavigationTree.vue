@@ -61,7 +61,7 @@ const addCompoundLibraryNode = (library: CompoundLibrary) => {
   }
   for (const plate of library.plates) {
     node.children?.push({
-      label: `${plate.barcode} (${plate.dimension || t('message.no_dimension')}})`,
+      label: `${plate.barcode} (${plate.dimension || t('message.no_dimension')})`,
       icon: 'o_view_module',
       header: 'plate',
       handler: nodeHandler,

@@ -4,6 +4,9 @@ CREATE MATERIALIZED VIEW core_welldetail AS
         SELECT 
                 id,
                 plate_id,
+                type,
+                status,
+                position,
                 hr_position,
                 initial_amount,
                 withdrawal,
@@ -14,6 +17,8 @@ CREATE MATERIALIZED VIEW core_welldetail AS
                 SELECT 
                         w.id,
                         p.id as plate_id,
+                        wt.name as type,
+                        w.status,
                         w.position,
                         hr_position(d.cols, w.position) AS hr_position,
                         COALESCE(( SELECT SUM(amount) FROM core_wellcompound WHERE well_id = w.id GROUP BY well_id ), 0) AS initial_amount,
@@ -22,12 +27,13 @@ CREATE MATERIALIZED VIEW core_welldetail AS
                 FROM core_well AS w
                 INNER JOIN core_plate p ON w.plate_id = p.id
                 INNER JOIN core_platedimension d ON p.dimension_id = d.id
+                INNER JOIN core_welltype wt ON w.type_id = wt.id
                 ORDER BY w.position
         ) s1
         LEFT JOIN (
                 SELECT 
                         well_id,
-                        JSON_OBJECT_AGG(label, JSON_BUILD_OBJECT('value', value)) AS measurements
+                        JSON_OBJECT_AGG(label, value) AS measurements
                 FROM (
                         SELECT 
                                 well_id, 

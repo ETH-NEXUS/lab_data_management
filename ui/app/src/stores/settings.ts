@@ -1,11 +1,11 @@
-import {Well, WellInfo} from './../components/models'
+import {WellDetails as WellDetailsType, WellInfo} from './../components/models'
 import {Palette} from '../components/helpers'
 import {defineStore} from 'pinia'
 
 interface PlatePage {
   splitter: number
   selectedWellInfo: WellInfo | undefined
-  wellContent: keyof Well
+  wellContent: keyof WellDetailsType
   showHeatmap: boolean
   smallerMapView: boolean
   heatmapPalette: Palette

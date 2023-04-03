@@ -191,7 +191,7 @@ class PlateSerializer(serializers.ModelSerializer):
         return PlateDetailSerializer(plate_details).data
 
     def get_wells(self, plate: Plate):
-        wells = WellDetail.objects.filter(plate_id=plate.id)
+        wells = WellDetail.objects.filter(plate_id=plate.id).order_by("position")
         return WellDetailSerializer(wells, many=True).data
 
     def update(self, plate: Plate, validated_data):
