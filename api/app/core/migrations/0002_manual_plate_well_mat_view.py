@@ -4,9 +4,7 @@ from django.db import migrations
 
 
 class Migration(migrations.Migration):
-    dependencies = [
-        ("core", "0028_alter_platedetail_options_alter_welldetail_options"),
-    ]
+    dependencies = [("pg_ext", "0001_manual_add_functions"), ("core", "0001_initial")]
 
     def readFromFile(file: str) -> str:
         with open(file, "r") as f:

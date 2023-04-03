@@ -179,9 +179,9 @@ class Plate(TimeTrackedModel):
     def __str__(self):
         return f"{self.barcode}"
 
-    # @property
-    # def num_wells(self):
-    #     return self.dimension.num_wells
+    @property
+    def num_wells(self):
+        return self.dimension.num_wells
 
     # @property
     # def measurements(self):
@@ -192,12 +192,12 @@ class Plate(TimeTrackedModel):
     #     results = []
     #     for measurement in self.__measurements():
     #         z_prime = self.z_prime(
-    #             measurement["feature"], measurement["measurement_timestamp"]
+    #             measurement["feature"], measurement["measured_at"]
     #         )
 
     #         obj = {
     #             "feature": measurement["feature"],
-    #             "timestamp": measurement["measurement_timestamp"],
+    #             "timestamp": measurement["measured_at"],
     #             "z_prime": z_prime if not math.isnan(z_prime) else "N/A",
     #         }
     #         results.append(obj)
@@ -208,18 +208,18 @@ class Plate(TimeTrackedModel):
     #     results = []
 
     #     for measurement in self.__measurements():
-    #         min = self.min(measurement["feature"], measurement["measurement_timestamp"])
-    #         max = self.max(measurement["feature"], measurement["measurement_timestamp"])
+    #         min = self.min(measurement["feature"], measurement["measured_at"])
+    #         max = self.max(measurement["feature"], measurement["measured_at"])
     #         min_all_types = self.min(
-    #             measurement["feature"], measurement["measurement_timestamp"], type="All"
+    #             measurement["feature"], measurement["measured_at"], type="All"
     #         )
     #         max_all_types = self.max(
-    #             measurement["feature"], measurement["measurement_timestamp"], type="All"
+    #             measurement["feature"], measurement["measured_at"], type="All"
     #         )
     #         results.append(
     #             {
     #                 "feature": measurement["feature"],
-    #                 "timestamp": measurement["measurement_timestamp"]
+    #                 "timestamp": measurement["measured_at"]
     #                 .isoformat()
     #                 .split("+")[0],
     #                 "min": min if not math.isnan(min) else "N/A",
@@ -298,7 +298,7 @@ class Plate(TimeTrackedModel):
     #         results.append(
     #             {
     #                 "feature": measurement.label,
-    #                 "measurement_timestamp": measurement.measurement_timestamp,
+    #                 "measured_at": measurement.measured_at,
     #             }
     #         )
 
@@ -510,14 +510,14 @@ class Well(TimeTrackedModel):
         withdrawal = self.withdrawals.all().aggregate(Sum("amount"))["amount__sum"] or 0
         return round(amount - withdrawal, settings.FLOAT_PRECISION)
 
-    # @property
-    # def initial_amount(self) -> float:
-    #     """
-    #     Summarizes the compound amounts, subtracts the withdrawals and
-    #     returns the total amount of compound in this well.
-    #     """
-    #     amount = self.well_compounds.all().aggregate(Sum("amount"))["amount__sum"] or 0
-    #     return amount
+    @property
+    def initial_amount(self) -> float:
+        """
+        Summarizes the compound amounts, subtracts the withdrawals and
+        returns the total amount of compound in this well.
+        """
+        amount = self.well_compounds.all().aggregate(Sum("amount"))["amount__sum"] or 0
+        return amount
 
     # def measurement(self, abbrev: str, timestamp: str) -> float:
     #     """Returns the value of a measurements given by its abbrev"""
@@ -525,7 +525,7 @@ class Well(TimeTrackedModel):
     #     for measurement in self.measurements.all():
     #         if (
     #             measurement.label == abbrev
-    #             and measurement.measurement_timestamp == timestamp
+    #             and measurement.measured_at == timestamp
     #         ):
     #             return measurement.value
 
@@ -579,9 +579,8 @@ class MeasurementFeature(models.Model):
     unit = models.CharField(max_length=10, null=True, blank=True)
 
 
-class MeasurementAssignment(models.Model):
+class MeasurementAssignment(TimeTrackedModel):
     related_name = "assignments"
-    assignment_timestamp = models.DateTimeField(auto_now_add=True)
     status = models.CharField(max_length=50, default="pending")
     plate = models.ForeignKey(
         Plate, on_delete=models.CASCADE, related_name=related_name
@@ -603,7 +602,7 @@ class Measurement(TimeTrackedModel):
     value = models.FloatField()
     label = models.CharField(max_length=50, null=True, blank=True)
     identifier = models.CharField(max_length=20, null=True, blank=True)
-    measurement_timestamp = models.DateTimeField(null=True, blank=True)
+    measured_at = models.DateTimeField(null=True, blank=True)
     measurement_assignment = models.ForeignKey(
         MeasurementAssignment,
         on_delete=models.CASCADE,
@@ -618,7 +617,7 @@ class Measurement(TimeTrackedModel):
         return f"{self.label}: {self.value}"
 
     class Meta:
-        unique_together = ("well", "label", "measurement_timestamp")
+        unique_together = ("well", "label", "measured_at")
 
 
 class PlateMapping(TimeTrackedModel):
@@ -658,21 +657,12 @@ class MaterializedViewModel(models.Model):
     @classmethod
     def refresh(self, concurrently=False):
         """Refresh the materialized view"""
-        cursor_wrapper = connection.cursor()
-        cursor = cursor_wrapper.cursor
-        try:
-            if self._concurrent_index is not None and concurrently:
-                cursor.execute(
-                    "REFRESH MATERIALIZED VIEW CONCURRENTLY {0}".format(
-                        self._meta.db_table
-                    )
+        with connection.cursor() as cursor:
+            cursor.execute(
+                f"REFRESH MATERIALIZED VIEW {'CONCURRENTLY' if concurrently else ''} {{0}}".format(
+                    self._meta.db_table
                 )
-            else:
-                cursor.execute(
-                    "REFRESH MATERIALIZED VIEW {0}".format(self._meta.db_table)
-                )
-        finally:
-            cursor_wrapper.close()
+            )
 
     class Meta:
         abstract = True
@@ -698,6 +688,7 @@ class PlateDetail(MaterializedViewModel):
     id = models.BigIntegerField(primary_key=True)
     num_wells = models.IntegerField()
     measurement_labels = ArrayField(models.TextField(blank=True, null=True))
+    measurement_timestamps = ArrayField(models.TextField(blank=True, null=True))
     stats = DictField()
     overall_stats = DictField()
 
