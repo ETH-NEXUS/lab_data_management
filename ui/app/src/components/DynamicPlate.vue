@@ -93,6 +93,26 @@ const wells = computed(() => {
   return _wells
 })
 
+const z_prime = computed(() => {
+  if (selectedMeasurement.value) {
+    if (
+      'P' in props.plate.details.stats[selectedMeasurement.value] &&
+      'N' in props.plate.details.stats[selectedMeasurement.value]
+    ) {
+      const mad_pos =
+        props.plate.details.stats[selectedMeasurement.value]['P'].mad[selectedTimestampIdx.value]
+      const mad_neg =
+        props.plate.details.stats[selectedMeasurement.value]['N'].mad[selectedTimestampIdx.value]
+      const median_pos =
+        props.plate.details.stats[selectedMeasurement.value]['P'].median[selectedTimestampIdx.value]
+      const median_neg =
+        props.plate.details.stats[selectedMeasurement.value]['N'].median[selectedTimestampIdx.value]
+      return 1 - (3 * (mad_pos + mad_neg)) / Math.abs(median_pos - median_neg)
+    }
+  }
+  return null
+})
+
 const ascii_uppercase = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'
 
 const posToAlphaChar = (pos: number) => {
@@ -267,24 +287,23 @@ const calculateNewMeasurement = async (expression: string, newLabel: string) => 
       </div>
     </div>
   </div>
-  <!-- <div v-if="!plate.template && props.plate.z_primes" class="row q-mt-sm">
+  <div v-if="z_prime" class="row q-mt-sm">
     <div class="col-12 q-mr-md">
       <b>{{ t('label.z_prime') }}:</b>
       <span
-        v-for="item in props.plate.z_primes"
-        :key="item.feature"
         :class="{
           'z-prime': true,
           'q-mx-xs': true,
           'q-pa-xs': true,
-          'bg-green-3': item.z_prime >= 0.5 && item.z_prime <= 1,
-          'bg-orange-3': item.z_prime >= 0 && item.z_prime < 0.5,
-          'bg-red-3': item.z_prime < 0,
+          'bg-green-3': z_prime >= 0.5 && z_prime <= 1,
+          'bg-orange-3': z_prime >= 0 && z_prime < 0.5,
+          'bg-red-3': z_prime < 0,
         }">
-        {{ item.z_prime }} ({{ item.feature }}, {{ item.timestamp }})
+        {{ z_prime }} ({{ selectedMeasurement }},
+        {{ timestampOptions.find(tso => tso.value === selectedTimestampIdx)?.label }})
       </span>
     </div>
-  </div> -->
+  </div>
 
   <div v-if="!plate.template" class="row">
     <div class="col-4 q-mr-md">
