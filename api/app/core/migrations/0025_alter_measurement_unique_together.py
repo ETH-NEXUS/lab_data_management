@@ -4,14 +4,13 @@ from django.db import migrations
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('core', '0025_measurement_label_alter_measurement_feature_and_more'),
+        ("core", "0024_measurement_label_alter_measurement_feature_and_more"),
     ]
 
     operations = [
         migrations.AlterUniqueTogether(
-            name='measurement',
-            unique_together={('well', 'label', 'measurement_timestamp')},
+            name="measurement",
+            unique_together={("well", "label", "measurement_timestamp")},
         ),
     ]

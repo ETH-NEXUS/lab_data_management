@@ -4,12 +4,10 @@ from django.db import migrations
 
 
 class Migration(migrations.Migration):
-    dependencies = [
-        ("core", "0024_measurement_label_alter_measurement_feature_and_more"),
-    ]
+    initial = True
 
     def readFromFile(file: str) -> str:
         with open(file, "r") as f:
             return f.read()
 
-    operations = [migrations.RunSQL(readFromFile("./core/db_scripts/perf.sql"))]
+    operations = [migrations.RunSQL(readFromFile("./pg_ext/db_scripts/functions.sql"))]

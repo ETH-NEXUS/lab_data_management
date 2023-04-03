@@ -49,6 +49,7 @@ INSTALLED_APPS = [
     "rest_framework",
     "rest_framework_simplejwt",
     "drf_auto_endpoint",
+    "pg_ext",
     "core",
     "importer",
     "compoundlib",
