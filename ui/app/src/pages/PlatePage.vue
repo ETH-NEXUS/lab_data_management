@@ -17,8 +17,9 @@ const {t} = useI18n()
 
 const loading = ref<boolean>(true)
 const plate = ref<Plate | null>(null)
-const {platePage, navigationTree, projectNavigationTree, libraryNavigationTree, templateNavigationTree} =
-  storeToRefs(useSettingsStore())
+const {platePage, projectNavigationTree, libraryNavigationTree, templateNavigationTree} = storeToRefs(
+  useSettingsStore()
+)
 const plateDimensions = ref<Array<PlateDimension>>()
 
 const mapPlateDialog = ref<boolean>(false)
