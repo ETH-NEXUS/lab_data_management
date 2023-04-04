@@ -31,6 +31,8 @@ from .models import (
     PlateDimension,
     Project,
     MeasurementFeature,
+    PlateDetail,
+    WellDetail,
 )
 from .serializers import (
     PlateSerializer,
@@ -141,76 +143,85 @@ class PlateViewSet(viewsets.ModelViewSet):
 
     @action(detail=True, methods=["post"])
     def add_new_measurement(self, request, pk=None):
+        import math
+
+        plate_id = self.get_object().id
         expression = request.data.get("expression")
         new_label = request.data.get("new_label")
         now = datetime.now().replace(microsecond=0)
-
         current_plate = self.get_object()
+        current_plate_details = PlateDetail.objects.get(id=plate_id)
 
-        # find indices of corresponding measurements in the first well of the current plate
-        # we need that because the timestamps are not the same across the experiment plate
-        # so that we will apply the formula to other plates according to the order of the
-        # measurements passed in the formula from the ui
-        current_plate_first_well = current_plate.wells.first()
-        first_well_measurements_indices = {}
-        for index, measurement in enumerate(
-            current_plate_first_well.measurements.all()
-        ):
-            measurement_combined_label = (
-                f""
-                f"{measurement.label}"
-                f"_{measurement.measured_at.isoformat().split('+')[0]}"
-            )
-            first_well_measurements_indices[measurement_combined_label] = index
+        time_series_support = False
+        new_measurement_timestamp = now
+        if len(current_plate_details.measurement_labels) == 1:
+            measurement_label = current_plate_details.measurement_labels[0]
+            if len(current_plate_details.measurement_timestamps[measurement_label]) > 1:
+                time_series_support = True
+            else:
+                new_measurement_timestamp = (
+                    current_plate_details.measurement_timestamps[measurement_label][0]
+                )
 
-        experiment = current_plate.experiment
-        experiment_plates = experiment.plates.all()
+        wells = current_plate.wells.all()
         measurement_feature, _ = MeasurementFeature.objects.get_or_create(
             abbrev=new_label
         )
 
-        try:
-            for plate in experiment_plates:
-                wells = plate.wells.all()
-                for well in wells:
-                    well_measurements = []
-                    for measurement in well.measurements.all():
-                        well_measurements.append(measurement.value)
-                    new_formula = expression.replace("ln(", "math.log(")
+        for well in wells:
+            new_expression = expression.replace("ln(", "math.log(")
+            well_measurements = well.measurements.all()
 
-                    for key, value in first_well_measurements_indices.items():
-                        new_formula = new_formula.replace(
-                            key, str(well_measurements[value])
-                        )
-
-                    try:
-                        result = eval(new_formula)
-                        if not result:
-                            # if the result is None or 0, we will set it to 0, for example if the
-                            # value = 0, it's log can be -inf, so we will set it to 0
-                            log.error(
-                                f"Result is None or 0. Setting result to 0. Formula: {new_formula}"
-                            )
-                            result = 0
-                    except ZeroDivisionError:
-                        log.error("Division by zero occurred. Setting result to 0")
-                        result = 0
-
+            if time_series_support:
+                for measurement in well_measurements:
+                    new_expression = new_expression.replace(
+                        measurement.label, str(measurement.value)
+                    )
+                    result = self.__evaluate_expression(new_expression)
                     Measurement.objects.create(
                         well=well,
                         label=new_label,
                         value=result,
-                        measured_at=now,
+                        measured_at=measurement.measured_at,
                         identifier="",
                         feature=measurement_feature,
                     )
-        except (ValueError, TypeError, NameError) as e:
-            return Response({"error": str(e)}, status.HTTP_400_BAD_REQUEST)
-        else:
-            return Response(status.HTTP_200_OK)
+
+            else:
+                for measurement in well_measurements:
+                    new_expression = new_expression.replace(
+                        measurement.label, str(measurement.value)
+                    )
+                result = self.__evaluate_expression(new_expression)
+                Measurement.objects.create(
+                    well=well,
+                    label=new_label,
+                    value=result,
+                    measured_at=new_measurement_timestamp,
+                    identifier="",
+                    feature=measurement_feature,
+                )
+
+        PlateDetail.refresh(concurrently=True)
+        WellDetail.refresh(concurrently=True)
+        return Response(status.HTTP_200_OK)
 
     def filter_queryset(self, queryset):
         return super().filter_queryset(queryset)
+
+    def __evaluate_expression(self, new_expression):
+        try:
+            result = eval(new_expression)
+            if not result:
+                log.warning(
+                    f"Result is None or 0. Setting result to 0. Formula: "
+                    f"{new_expression}"
+                )
+                result = 0
+        except ZeroDivisionError:
+            log.error("Division by zero occurred. Setting result to 0")
+            result = 0
+        return result
 
 
 class WellViewSet(viewsets.ModelViewSet):

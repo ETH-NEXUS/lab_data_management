@@ -8,6 +8,7 @@ import {useSettingsStore} from 'stores/settings'
 import {useI18n} from 'vue-i18n'
 import MeasurementCalculator from 'components/MeasurementCalculator.vue'
 import {useProjectStore} from 'stores/project'
+import bus from 'src/eventBus'
 
 const {t} = useI18n()
 
@@ -233,6 +234,9 @@ onMounted(() => {
     measurementOptions.value = props.plate.details.measurement_labels
     selectedMeasurement.value = measurementOptions.value[0]
   }
+  bus.on('openCalculator', () => {
+    openCalculator.value = true
+  })
 })
 
 const calculateNewMeasurement = async (expression: string, newLabel: string) => {
@@ -368,7 +372,7 @@ const calculateNewMeasurement = async (expression: string, newLabel: string) => 
         class="q-my-md"
         :label="t('action.calculate_measurement')"
         icon="calculate"
-        color="primary"
+        color="secondary"
         @click="openCalculator = true" />
 
       <div class="col-12" v-if="platePage.showHeatmap && measurementOptions.length">

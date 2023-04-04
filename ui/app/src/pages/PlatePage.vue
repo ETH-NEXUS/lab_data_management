@@ -10,6 +10,7 @@ import {useI18n} from 'vue-i18n'
 import {storeToRefs} from 'pinia'
 import {useSettingsStore} from '../stores/settings'
 import {PlateLabelValue, PlateMapping} from '../components/models'
+import bus from 'src/eventBus'
 
 const route = useRoute()
 const router = useRouter()
@@ -332,6 +333,13 @@ const refresh = async () => {
                 icon="o_layers"
                 color="secondary"
                 @click="() => (applyTemplateDialog = true)" />
+              <q-btn
+                v-if="platePage.showHeatmap"
+                class="q-my-md q-ml-xs"
+                :label="t('action.calculate_measurement')"
+                icon="calculate"
+                color="secondary"
+                @click="bus.emit('openCalculator')" />
             </div>
           </div>
         </template>
