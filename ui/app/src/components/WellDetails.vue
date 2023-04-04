@@ -46,12 +46,22 @@ const props = defineProps({
 
 const emit = defineEmits(['well-created', 'compound-added', 'measurement-added'])
 
+const well = ref<Well>()
+const loading = ref<boolean>(true)
+
 onMounted(async () => {
+  loading.value = true
   try {
-    const resp = await api.get('/api/measurementfeatures/')
-    measurementFeatureOptions.value = resp.data.results
+    if (props.wellInfo.well) {
+      const respWell = await api.get(`/api/wells/${props.wellInfo.well.id}/`)
+      well.value = respWell.data
+    }
+    const respMeasurementFeatures = await api.get('/api/measurementfeatures/')
+    measurementFeatureOptions.value = respMeasurementFeatures.data.results
   } catch (err) {
     handleError(err, false)
+  } finally {
+    loading.value = false
   }
 })
 
@@ -151,7 +161,7 @@ const filterMeasurementFeatures = (query: string, update: (f: () => void) => voi
 </script>
 
 <template>
-  <template v-if="props.wellInfo?.well">
+  <template v-if="!loading && well && props.wellInfo.well">
     <div class="container full-width">
       <div class="row">
         <div class="col-12">
@@ -218,7 +228,7 @@ const filterMeasurementFeatures = (query: string, update: (f: () => void) => voi
                   @update:model-value="blurCompound = !blurCompound" />
               </th>
             </tr>
-            <tr v-for="compound in props.wellInfo.well.compounds" :key="compound.identifier">
+            <tr v-for="compound in well.compounds" :key="compound.identifier">
               <th class="vertical-top">{{ compound.name }}</th>
               <td class="vertical-top">{{ compound.identifier }}</td>
               <td class="vertical-top">{{ compound.amount }}{{ t('unit.amount') }}</td>
@@ -245,18 +255,16 @@ const filterMeasurementFeatures = (query: string, update: (f: () => void) => voi
           <table>
             <thead>
               <tr>
-                <th>{{ t('label.name') }}</th>
-                <th>{{ t('label.abbrev') }}</th>
+                <th>{{ t('label.label') }}</th>
+                <th>{{ t('label.timestamp') }}</th>
                 <th>{{ t('label.value') }}</th>
-                <th>{{ t('label.unit') }}</th>
               </tr>
             </thead>
             <tbody>
-              <tr v-for="measurement in props.wellInfo.well.measurements" :key="measurement.feature.name">
-                <td>{{ measurement.feature.name }}</td>
-                <td>{{ measurement.feature.abbrev }}</td>
+              <tr v-for="measurement in well.measurements" :key="measurement.label">
+                <td>{{ measurement.label }}</td>
+                <td>{{ measurement.measured_at }}</td>
                 <td>{{ measurement.value }}</td>
-                <td>{{ measurement.feature.unit }}</td>
               </tr>
             </tbody>
           </table>
@@ -280,7 +288,7 @@ const filterMeasurementFeatures = (query: string, update: (f: () => void) => voi
               </tr>
             </thead>
             <tbody>
-              <tr v-for="withdrawal in props.wellInfo.well.withdrawals" :key="withdrawal.id">
+              <tr v-for="withdrawal in well.withdrawals" :key="withdrawal.id">
                 <td>{{ date.formatDate(withdrawal.created_at, 'YYYY-MM-DD hh:mm:ss') }}</td>
                 <td>{{ withdrawal.amount }}{{ t('unit.amount') }}</td>
                 <td v-if="withdrawal.target_well">
@@ -310,7 +318,7 @@ const filterMeasurementFeatures = (query: string, update: (f: () => void) => voi
               </tr>
             </thead>
             <tbody>
-              <tr v-for="donor in props.wellInfo.well.donors" :key="donor.id">
+              <tr v-for="donor in well.donors" :key="donor.id">
                 <td>{{ date.formatDate(donor.created_at, 'YYYY-MM-DD hh:mm:ss') }}</td>
                 <td>{{ donor.amount }}{{ t('unit.amount') }}</td>
                 <td v-if="donor.well">{{ donor.well.plate.barcode }}: {{ donor.well.hr_position }}</td>
@@ -329,7 +337,7 @@ const filterMeasurementFeatures = (query: string, update: (f: () => void) => voi
           </h4>
         </div>
         <div class="col-12">
-          <well-chain :well="props.wellInfo.well" />
+          <well-chain :well="well" />
         </div>
         <div class="col-12">
           <hr />
@@ -337,7 +345,7 @@ const filterMeasurementFeatures = (query: string, update: (f: () => void) => voi
       </div>
     </div>
   </template>
-  <template v-else>
+  <template v-if="!props.wellInfo.well">
     <q-banner inline-actions rounded class="bg-orange text-white q-mt-lg">
       <span class="text-h6">
         {{ t('label.position') }}

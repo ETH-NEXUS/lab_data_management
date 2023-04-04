@@ -1,16 +1,14 @@
-import random
-from typing import List
-
 import math
-import numpy as np
 from django.conf import settings
 from django.contrib.postgres.fields import ArrayField
 from django.core.exceptions import ObjectDoesNotExist
 from django.core.validators import MinValueValidator, RegexValidator
 from django.db import models, transaction
-from django.db.models import F, Sum, CheckConstraint, Q
+from django.db.models import F, CheckConstraint, Q, Sum
 from django.forms import ValidationError
 from django.utils.translation import gettext_lazy as _
+from django.db import connection
+from rest_framework.exceptions import APIException
 
 from compoundlib.models import CompoundLibrary, Compound
 from platetemplate.models import PlateTemplate
@@ -19,7 +17,7 @@ from .mapping import MappingList
 from .mapping import PositionMapper
 
 
-class MappingError(Exception):
+class MappingError(APIException):
     pass
 
 
@@ -186,57 +184,57 @@ class Plate(TimeTrackedModel):
     def num_wells(self):
         return self.dimension.num_wells
 
-    @property
-    def measurements(self):
-        return self.__measurements()
+    # @property
+    # def measurements(self):
+    #     return self.__measurements()
 
-    @property
-    def z_primes(self):
-        results = []
-        for measurement in self.__measurements():
-            z_prime = self.z_prime(
-                measurement["feature"], measurement["measurement_timestamp"]
-            )
+    # @property
+    # def z_primes(self):
+    #     results = []
+    #     for measurement in self.__measurements():
+    #         z_prime = self.z_prime(
+    #             measurement["feature"], measurement["measured_at"]
+    #         )
 
-            obj = {
-                "feature": measurement["feature"],
-                "timestamp": measurement["measurement_timestamp"],
-                "z_prime": z_prime if not math.isnan(z_prime) else "N/A",
-            }
-            results.append(obj)
-        return results
+    #         obj = {
+    #             "feature": measurement["feature"],
+    #             "timestamp": measurement["measured_at"],
+    #             "z_prime": z_prime if not math.isnan(z_prime) else "N/A",
+    #         }
+    #         results.append(obj)
+    #     return results
 
-    @property
-    def min_max(self):
-        results = []
+    # @property
+    # def min_max(self):
+    #     results = []
 
-        for measurement in self.__measurements():
-            min = self.min(measurement["feature"], measurement["measurement_timestamp"])
-            max = self.max(measurement["feature"], measurement["measurement_timestamp"])
-            min_all_types = self.min(
-                measurement["feature"], measurement["measurement_timestamp"], type="All"
-            )
-            max_all_types = self.max(
-                measurement["feature"], measurement["measurement_timestamp"], type="All"
-            )
-            results.append(
-                {
-                    "feature": measurement["feature"],
-                    "timestamp": measurement["measurement_timestamp"]
-                    .isoformat()
-                    .split("+")[0],
-                    "min": min if not math.isnan(min) else "N/A",
-                    "max": max if not math.isnan(max) else "N/A",
-                    "min_all_types": min_all_types
-                    if not math.isnan(min_all_types)
-                    else "N/A",
-                    "max_all_types": max_all_types
-                    if not math.isnan(max_all_types)
-                    else "N/A",
-                }
-            )
+    #     for measurement in self.__measurements():
+    #         min = self.min(measurement["feature"], measurement["measured_at"])
+    #         max = self.max(measurement["feature"], measurement["measured_at"])
+    #         min_all_types = self.min(
+    #             measurement["feature"], measurement["measured_at"], type="All"
+    #         )
+    #         max_all_types = self.max(
+    #             measurement["feature"], measurement["measured_at"], type="All"
+    #         )
+    #         results.append(
+    #             {
+    #                 "feature": measurement["feature"],
+    #                 "timestamp": measurement["measured_at"]
+    #                 .isoformat()
+    #                 .split("+")[0],
+    #                 "min": min if not math.isnan(min) else "N/A",
+    #                 "max": max if not math.isnan(max) else "N/A",
+    #                 "min_all_types": min_all_types
+    #                 if not math.isnan(min_all_types)
+    #                 else "N/A",
+    #                 "max_all_types": max_all_types
+    #                 if not math.isnan(max_all_types)
+    #                 else "N/A",
+    #             }
+    #         )
 
-        return results
+    #     return results
 
     def well_at(self, position: int, create_if_not_exist: bool = False) -> "Well":
         if position > self.num_wells:
@@ -248,119 +246,117 @@ class Plate(TimeTrackedModel):
                 return Well.objects.create(plate=self, position=position)
             return None
 
-    def mean(self, abbrev: str, timestamp: str, type: str = "C"):
-        measurements = [
-            w.measurement(abbrev, timestamp)
-            for w in self.wells.filter(type__name=type)
-            if w.measurement(abbrev, timestamp) is not None
-        ]
-        return np.mean(measurements)
+    # def mean(self, abbrev: str, timestamp: str, type: str = "C"):
+    #     measurements = [
+    #         w.measurement(abbrev, timestamp)
+    #         for w in self.wells.filter(type__name=type)
+    #         if w.measurement(abbrev, timestamp) is not None
+    #     ]
+    #     return np.mean(measurements)
 
-    def std(self, abbrev: str, timestamp: str, type: str = "C"):
-        measurements = [
-            w.measurement(abbrev, timestamp)
-            for w in self.wells.filter(type__name=type)
-            if w.measurement(abbrev, timestamp) is not None
-        ]
-        return np.std(measurements)
+    # def std(self, abbrev: str, timestamp: str, type: str = "C"):
+    #     measurements = [
+    #         w.measurement(abbrev, timestamp)
+    #         for w in self.wells.filter(type__name=type)
+    #         if w.measurement(abbrev, timestamp) is not None
+    #     ]
+    #     return np.std(measurements)
 
-    def max(self, abbrev: str, timestamp: str, type: str = "C"):
-        if type == "All":
-            measurements = [
-                w.measurement(abbrev, timestamp)
-                for w in self.wells.all()
-                if w.measurement(abbrev, timestamp) is not None
-            ]
-        else:
-            measurements = [
-                w.measurement(abbrev, timestamp)
-                for w in self.wells.filter(type__name=type)
-                if w.measurement(abbrev, timestamp) is not None
-            ]
-        return np.max(measurements)
+    # def max(self, abbrev: str, timestamp: str, type: str = "C"):
+    #     if type == "All":
+    #         measurements = [
+    #             w.measurement(abbrev, timestamp)
+    #             for w in self.wells.all()
+    #             if w.measurement(abbrev, timestamp) is not None
+    #         ]
+    #     else:
+    #         measurements = [
+    #             w.measurement(abbrev, timestamp)
+    #             for w in self.wells.filter(type__name=type)
+    #             if w.measurement(abbrev, timestamp) is not None
+    #         ]
+    #     return np.max(measurements)
 
-    def min(self, abbrev: str, timestamp: str, type: str = "C"):
-        if type == "All":
-            measurements = [
-                w.measurement(abbrev, timestamp)
-                for w in self.wells.all()
-                if w.measurement(abbrev, timestamp) is not None
-            ]
-        else:
-            measurements = [
-                w.measurement(abbrev, timestamp)
-                for w in self.wells.filter(type__name=type)
-                if w.measurement(abbrev, timestamp) is not None
-            ]
-        return np.min(measurements)
+    # def min(self, abbrev: str, timestamp: str, type: str = "C"):
+    #     if type == "All":
+    #         measurements = [
+    #             w.measurement(abbrev, timestamp)
+    #             for w in self.wells.all()
+    #             if w.measurement(abbrev, timestamp) is not None
+    #         ]
+    #     else:
+    #         measurements = [
+    #             w.measurement(abbrev, timestamp)
+    #             for w in self.wells.filter(type__name=type)
+    #             if w.measurement(abbrev, timestamp) is not None
+    #         ]
+    #     return np.min(measurements)
 
-    def __measurements(self):
-        results = []
-        well = self.well_at(random.randrange(self.num_wells))
-        for measurement in well.measurements.all():
-            results.append(
-                {
-                    "feature": measurement.label,
-                    "measurement_timestamp": measurement.measurement_timestamp,
-                }
-            )
+    # def __measurements(self):
+    #     results = []
+    #     well = self.well_at(random.randrange(self.num_wells))
+    #     for measurement in well.measurements.all():
+    #         results.append(
+    #             {
+    #                 "feature": measurement.label,
+    #                 "measured_at": measurement.measured_at,
+    #             }
+    #         )
 
-        return results
+    #     return results
 
-    @staticmethod
-    def __z_factor(measurement1: List[float], measurement2: List[float]):
-        mean1 = np.mean(measurement1)
-        mean2 = np.mean(measurement2)
-        # mean -> median
-        std1 = np.std(measurement1)
-        std2 = np.std(measurement2)
-        # std -> median_abs_deviation
-        return 1 - (3 * (std1 + std2)) / abs(mean1 - mean2)
+    # @staticmethod
+    # def __z_factor(measurement1: List[float], measurement2: List[float]):
+    #     median1 = np.median(measurement1)
+    #     median2 = np.median(measurement2)
+    #     mad1 = mad(measurement1)
+    #     mad2 = mad(measurement2)
+    #     return 1 - (3 * (mad1 + mad2)) / abs(median1 - median2)
 
-    def ssmd(self):
-        pass  # Delta / Sigma  # kleiner 6 rot  # kleiner 12 orange  # grösser 12 grün
+    # def ssmd(self):
+    #     pass  # Delta / Sigma  # kleiner 6 rot  # kleiner 12 orange  # grösser 12 grün
 
-    def z_prime(self, abbrev: str, timestamp: str) -> float:
-        """
-        Calculates the z' (prime) factor of the plate given by a barcode
-        """
-        measurement_positive = [
-            w.measurement(abbrev, timestamp) for w in self.wells.filter(type__name="P")
-        ]
-        measurement_negative = [
-            w.measurement(abbrev, timestamp) for w in self.wells.filter(type__name="N")
-        ]
-        return self.__z_factor(measurement_positive, measurement_negative)
+    # def z_prime(self, abbrev: str, timestamp: str) -> float:
+    #     """
+    #     Calculates the z' (prime) factor of the plate given by a barcode
+    #     """
+    #     measurement_positive = [
+    #         w.measurement(abbrev, timestamp) for w in self.wells.filter(type__name="P")
+    #     ]
+    #     measurement_negative = [
+    #         w.measurement(abbrev, timestamp) for w in self.wells.filter(type__name="N")
+    #     ]
+    #     return self.__z_factor(measurement_positive, measurement_negative)
 
-    def z_factor(
-        self,
-        abbrev: str,
-        timestamp: str,
-    ) -> float:
-        """
-        Calculates the z factor of the plate given by a barcode
-        """
-        measurement_positive = [
-            w.measurement(abbrev, timestamp) for w in self.wells.filter(type__name="P")
-        ]
-        measurement_samples = [
-            w.measurement(abbrev, timestamp) for w in self.wells.filter(type__name="C")
-        ]
-        return self.__z_factor(measurement_positive, measurement_samples)
+    # def z_factor(
+    #     self,
+    #     abbrev: str,
+    #     timestamp: str,
+    # ) -> float:
+    #     """
+    #     Calculates the z factor of the plate given by a barcode
+    #     """
+    #     measurement_positive = [
+    #         w.measurement(abbrev, timestamp) for w in self.wells.filter(type__name="P")
+    #     ]
+    #     measurement_samples = [
+    #         w.measurement(abbrev, timestamp) for w in self.wells.filter(type__name="C")
+    #     ]
+    #     return self.__z_factor(measurement_positive, measurement_samples)
 
-    def z_scores(self, abbrev: str, timestamp: str, type: str = "C") -> List[float]:
-        """Returns the z scores of all wells in a list where the index is the position"""
-        scores = []
-        mean = self.mean(abbrev, timestamp, type)
-        std = self.std(abbrev, timestamp, type)
-        for pos in range(self.num_wells):
-            well = self.well_at(pos)
-            if well:
-                value = (well.measurement(abbrev, timestamp) - mean) / std
-            else:
-                value = None
-            scores.append(value)
-        return scores
+    # def z_scores(self, abbrev: str, timestamp: str, type: str = "C") -> List[float]:
+    #     """Returns the z scores of all wells in a list where the index is the position"""
+    #     scores = []
+    #     mean = self.mean(abbrev, timestamp, type)
+    #     std = self.std(abbrev, timestamp, type)
+    #     for pos in range(self.num_wells):
+    #         well = self.well_at(pos)
+    #         if well:
+    #             value = (well.measurement(abbrev, timestamp) - mean) / std
+    #         else:
+    #             value = None
+    #         scores.append(value)
+    #     return scores
 
     def copy(self, target: "Plate", amount: float = 0):
         """Copy a plate. Same as map but 1-to-1"""
@@ -380,6 +376,8 @@ class Plate(TimeTrackedModel):
             # TODO: At the moment we only map the type
             well.type = template_well.type
             well.save()
+        PlateDetail.refresh(concurrently=True)
+        WellDetail.refresh(concurrently=True)
         return self
 
     def map(self, mappingList: MappingList, target: "Plate"):
@@ -524,21 +522,21 @@ class Well(TimeTrackedModel):
         amount = self.well_compounds.all().aggregate(Sum("amount"))["amount__sum"] or 0
         return amount
 
-    def measurement(self, abbrev: str, timestamp: str) -> float:
-        """Returns the value of a measurements given by its abbrev"""
+    # def measurement(self, abbrev: str, timestamp: str) -> float:
+    #     """Returns the value of a measurements given by its abbrev"""
 
-        for measurement in self.measurements.all():
-            if (
-                measurement.label == abbrev
-                and measurement.measurement_timestamp == timestamp
-            ):
-                return measurement.value
+    #     for measurement in self.measurements.all():
+    #         if (
+    #             measurement.label == abbrev
+    #             and measurement.measured_at == timestamp
+    #         ):
+    #             return measurement.value
 
-    def z_score(self, abbrev: str, type: str = "C"):
-        """Returns the z score for this well"""
-        return (
-            self.measurement(abbrev) - self.plate.mean(abbrev, type)
-        ) / self.plate.std(abbrev, type)
+    # def z_score(self, abbrev: str, type: str = "C"):
+    #     """Returns the z score for this well"""
+    #     return (
+    #         self.measurement(abbrev) - self.plate.mean(abbrev, type)
+    #     ) / self.plate.std(abbrev, type)
 
 
 class WellCompound(models.Model):
@@ -577,17 +575,15 @@ class WellWithdrawal(TimeTrackedModel):
 
 
 class MeasurementFeature(models.Model):
-    # TODO: is 20 chars too much for an abbrev
-    abbrev = models.CharField(max_length=50, unique=True)
+    abbrev = models.CharField(max_length=20, unique=True)
     name = models.CharField(
         max_length=50, null=True, blank=True, verbose_name="measurement"
     )
     unit = models.CharField(max_length=10, null=True, blank=True)
 
 
-class MeasurementAssignment(models.Model):
+class MeasurementAssignment(TimeTrackedModel):
     related_name = "assignments"
-    assignment_timestamp = models.DateTimeField(auto_now_add=True)
     status = models.CharField(max_length=50, default="pending")
     plate = models.ForeignKey(
         Plate, on_delete=models.CASCADE, related_name=related_name
@@ -609,7 +605,7 @@ class Measurement(TimeTrackedModel):
     value = models.FloatField()
     label = models.CharField(max_length=50, null=True, blank=True)
     identifier = models.CharField(max_length=20, null=True, blank=True)
-    measurement_timestamp = models.DateTimeField(null=True, blank=True)
+    measured_at = models.DateTimeField(null=True, blank=True)
     measurement_assignment = models.ForeignKey(
         MeasurementAssignment,
         on_delete=models.CASCADE,
@@ -624,7 +620,7 @@ class Measurement(TimeTrackedModel):
         return f"{self.label}: {self.value}"
 
     class Meta:
-        unique_together = ("well", "label", "measurement_timestamp")
+        unique_together = ("well", "label", "measured_at")
 
 
 class PlateMapping(TimeTrackedModel):
@@ -648,3 +644,60 @@ class PlateMapping(TimeTrackedModel):
         default=None, validators=[MinValueValidator(0)], null=True
     )
     evaluation = models.TextField(null=True, blank=True)
+
+
+class DictField(models.JSONField):
+    def from_db_value(self, value, expression, connection):
+        if isinstance(value, dict):
+            return value
+        return super().from_db_value(value, expression, connection)
+
+
+# MATERIALIZED VIEWS
+
+
+class MaterializedViewModel(models.Model):
+    @classmethod
+    def refresh(self, concurrently=False):
+        """Refresh the materialized view"""
+        with connection.cursor() as cursor:
+            cursor.execute(
+                f"REFRESH MATERIALIZED VIEW {'CONCURRENTLY' if concurrently else ''} {{0}}".format(
+                    self._meta.db_table
+                )
+            )
+
+    class Meta:
+        abstract = True
+        managed = False
+
+
+class WellDetail(MaterializedViewModel):
+    id = models.BigIntegerField(primary_key=True)
+    plate_id = models.BigIntegerField()
+    type = models.CharField(max_length=50)
+    status = models.TextField()
+    position = models.IntegerField()
+    hr_position = models.CharField(max_length=10)
+    initial_amount = models.FloatField(blank=True, null=True)
+    withdrawal = models.FloatField(blank=True, null=True)
+    amount = models.FloatField(blank=True, null=True)
+    compounds = ArrayField(models.TextField(blank=True, null=True))
+    measurements = DictField()
+
+    class Meta:
+        db_table = "core_welldetail"
+        managed = False
+
+
+class PlateDetail(MaterializedViewModel):
+    id = models.BigIntegerField(primary_key=True)
+    num_wells = models.IntegerField()
+    measurement_labels = ArrayField(models.TextField(blank=True, null=True))
+    measurement_timestamps = DictField()
+    stats = DictField()
+    overall_stats = DictField()
+
+    class Meta:
+        db_table = "core_platedetail"
+        managed = False

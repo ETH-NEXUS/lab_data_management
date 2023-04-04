@@ -118,22 +118,46 @@ export interface MinMax {
   max_all_types: number
 }
 
-export interface MeasurementInfo {
-  feature: string
-  measurement_timestamp: string
+export interface PlateStats {
+  min: number[]
+  max: number[]
+  mean: number[]
+  median: number[]
+  std: number[]
+  mad: number[]
+}
+export interface PlateDetails {
+  id: number
+  num_wells: number
+  measurement_labels: Array<string>
+  measurement_timestamps: {[key: string]: Array<string>}
+  stats: {[key: string]: {[key: string]: PlateStats}}
+  overall_stats: {[key: string]: PlateStats}
+}
+
+export interface WellDetails {
+  id: number
+  plate_id: number
+  type: string
+  status: string
+  position: number
+  hr_position: string
+  initial_amount: number
+  withdrawal: number
+  amount: number
+  compounds: Array<string>
+  measurements: {[key: string]: number[]}
 }
 
 export interface Plate {
   id: number
   barcode: string
   dimension: PlateDimension
-  measurements: Array<MeasurementInfo>
-  z_primes: {[key: string]: number}
-  min_max: Array<MinMax>
-  experiment?: Experiment
-  library?: CompoundLibrary
-  template?: Template
-  wells?: Array<Well>
+  details: PlateDetails
+  wells: Array<WellDetails>
+  experiment?: number
+  library?: number
+  template?: number
 }
 
 export interface MeasurementFeature {
@@ -145,13 +169,14 @@ export interface MeasurementFeature {
 export interface Measurement {
   id: number
   value: number
+  label: string
   feature: MeasurementFeature
-  measurement_timestamp: Date | string
+  measured_at: Date | string
   well?: Well
 }
 
 export interface WellInfo {
-  well: Well
+  well: WellDetails
   position: number
 }
 
@@ -236,4 +261,9 @@ export interface harvestProject {
     name: string
     currency: string
   }
+}
+
+export interface SelectOption<T> {
+  label: string
+  value: T
 }

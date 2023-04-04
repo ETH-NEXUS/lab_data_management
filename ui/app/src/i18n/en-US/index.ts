@@ -81,9 +81,11 @@ export default {
     compounds: 'Compounds',
     measurements: 'Measurements',
     z_prime: "z'",
+    ssmd: 'ssmd',
     notebook: 'Notebook',
     about: 'About',
     smaller_map_view: 'Smaller map view',
+    label: 'Label',
   },
   hint: {
     username: 'Enter your ETH username',

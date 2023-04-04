@@ -17,8 +17,9 @@ const {t} = useI18n()
 
 const loading = ref<boolean>(true)
 const plate = ref<Plate | null>(null)
-const {platePage, navigationTree, projectNavigationTree, libraryNavigationTree, templateNavigationTree} =
-  storeToRefs(useSettingsStore())
+const {platePage, projectNavigationTree, libraryNavigationTree, templateNavigationTree} = storeToRefs(
+  useSettingsStore()
+)
 const plateDimensions = ref<Array<PlateDimension>>()
 
 const mapPlateDialog = ref<boolean>(false)
@@ -115,11 +116,12 @@ const setPlateDimension = async () => {
 }
 
 const wellCreated = (well: Well) => {
-  plate.value?.wells?.push(well)
-  platePage.value.selectedWellInfo = {
-    well: well,
-    position: well.position,
-  }
+  console.warn('wellCreated not implemented correctly yet!')
+  // plate.value?.wells?.push(well)
+  // platePage.value.selectedWellInfo = {
+  //   well: well,
+  //   position: well.position,
+  // }
 }
 
 const compoundAdded = async (well: Well) => {

@@ -22,6 +22,8 @@ from core.models import (
     MappingError,
     MeasurementAssignment,
     Experiment,
+    PlateDetail,
+    WellDetail,
 )
 from core.config import Config
 from django.core.files import File
@@ -64,6 +66,10 @@ class BaseMapper:
                     data = ret
             kwargs.update({"filename": filename})
             self.map(data, **kwargs)
+
+        log.info("Refreshing materialized views...")
+        PlateDetail.refresh(concurrently=True)
+        WellDetail.refresh(concurrently=True)
 
     def parse(self, file: TextIOWrapper, **kwargs):
         raise NotImplementedError
@@ -409,20 +415,16 @@ class M1000Mapper(BaseMapper):
 
                 if not kwargs.get("evaluation"):
                     for idx, value in enumerate(entry.get("values")):
-                        abbrev = kwargs.get("meta_data")[idx].get("Label")
-                        feature, _ = MeasurementFeature.objects.get_or_create(
-                            abbrev=abbrev
-                        )
+                        label = kwargs.get("meta_data")[idx].get("Label")
 
                         Measurement.objects.update_or_create(
                             well=well,
-                            label=abbrev,
-                            feature=feature,
-                            measurement_timestamp=kwargs.get("measurement_date"),
-                            measurement_assignment=assignment,
+                            label=label,
+                            measured_at=kwargs.get("measurement_date"),
                             defaults={
                                 "value": value,
                                 "identifier": entry.get("identifier"),
+                                "measurement_assignment": assignment,
                             },
                         )
 
@@ -430,22 +432,18 @@ class M1000Mapper(BaseMapper):
                     evaluation_formulas = kwargs.get("evaluation").split(",")
                     measurement_names = kwargs.get("measurement_name").split(",")
                     for idx, evaluation_formula in enumerate(evaluation_formulas):
-                        abbrev = measurement_names[idx]
-                        feature, _ = MeasurementFeature.objects.get_or_create(
-                            abbrev=abbrev
-                        )
+                        label = measurement_names[idx]
                         result = self.apply_evaluation_formula(
                             evaluation_formula, plate, well, entry, **kwargs
                         )
                         Measurement.objects.update_or_create(
                             well=well,
-                            label=abbrev,
-                            feature=feature,
-                            measurement_assignment=assignment,
-                            measurement_timestamp=kwargs.get("measurement_date"),
+                            label=label,
+                            measured_at=kwargs.get("measurement_date"),
                             defaults={
                                 "value": result,
                                 "identifier": entry.get("identifier"),
+                                "measurement_assignment": assignment,
                             },
                         )
                         plate_mapping = PlateMapping.objects.get(target_plate=plate)
