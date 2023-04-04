@@ -65,6 +65,14 @@ const addMeasurement = () => {
 
     return
   }
+  if (props.labels?.includes(newLabel.value)) {
+    $q.notify({
+      type: 'negative',
+      message: 'Please use a different name for the new measurement',
+    })
+
+    return
+  }
 
   // check if used labels contain any of the values in labels
   const usedLabelsSet = new Set(usedLabels.value)
