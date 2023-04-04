@@ -367,14 +367,6 @@ const calculateNewMeasurement = async (expression: string, newLabel: string) => 
         :label="t('label.show_heatmap')"
         class="q-mr-md"></q-checkbox>
 
-      <q-btn
-        v-if="platePage.showHeatmap"
-        class="q-my-md"
-        :label="t('action.calculate_measurement')"
-        icon="calculate"
-        color="secondary"
-        @click="openCalculator = true" />
-
       <div class="col-12" v-if="platePage.showHeatmap && measurementOptions.length">
         <q-select
           v-if="measurementOptions.length > 0"

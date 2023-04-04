@@ -1,5 +1,6 @@
 import csv
 from datetime import datetime
+
 from uuid import uuid4
 import re
 from friendlylog import colored_logger as log
@@ -46,6 +47,14 @@ from .serializers import (
 
 from django.views.generic import View
 from django.conf import settings
+
+
+def mean_time_point(dt_strings):
+    dt_array = [datetime.fromisoformat(dt_str) for dt_str in dt_strings]
+    timestamps = [dt.timestamp() for dt in dt_array]
+    avg_timestamp = sum(timestamps) / len(timestamps)
+    avg_datetime = datetime.fromtimestamp(avg_timestamp)
+    return avg_datetime
 
 
 class ProjectViewSet(viewsets.ModelViewSet):
@@ -154,6 +163,7 @@ class PlateViewSet(viewsets.ModelViewSet):
 
         time_series_support = False
         new_measurement_timestamp = now
+
         if len(current_plate_details.measurement_labels) == 1:
             measurement_label = current_plate_details.measurement_labels[0]
             if len(current_plate_details.measurement_timestamps[measurement_label]) > 1:
@@ -162,6 +172,19 @@ class PlateViewSet(viewsets.ModelViewSet):
                 new_measurement_timestamp = (
                     current_plate_details.measurement_timestamps[measurement_label][0]
                 )
+        else:
+            measurement_label = list(
+                current_plate_details.measurement_timestamps.keys()
+            )[0]
+            if len(current_plate_details.measurement_timestamps[measurement_label]) > 1:
+                time_series_support = True
+            else:
+                timestamps = []
+                for key in current_plate_details.measurement_timestamps.keys():
+                    timestamps.append(
+                        current_plate_details.measurement_timestamps[key][0]
+                    )
+                new_measurement_timestamp = mean_time_point(timestamps)
 
         wells = current_plate.wells.all()
         measurement_feature, _ = MeasurementFeature.objects.get_or_create(
@@ -210,6 +233,8 @@ class PlateViewSet(viewsets.ModelViewSet):
         return super().filter_queryset(queryset)
 
     def __evaluate_expression(self, new_expression):
+        import math
+
         try:
             result = eval(new_expression)
             if not result:
