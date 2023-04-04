@@ -694,7 +694,7 @@ class PlateDetail(MaterializedViewModel):
     id = models.BigIntegerField(primary_key=True)
     num_wells = models.IntegerField()
     measurement_labels = ArrayField(models.TextField(blank=True, null=True))
-    measurement_timestamps = ArrayField(models.TextField(blank=True, null=True))
+    measurement_timestamps = DictField()
     stats = DictField()
     overall_stats = DictField()
 

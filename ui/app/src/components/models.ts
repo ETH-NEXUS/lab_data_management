@@ -130,7 +130,7 @@ export interface PlateDetails {
   id: number
   num_wells: number
   measurement_labels: Array<string>
-  measurement_timestamps?: Array<string>
+  measurement_timestamps: {[key: string]: Array<string>}
   stats: {[key: string]: {[key: string]: PlateStats}}
   overall_stats: {[key: string]: PlateStats}
 }

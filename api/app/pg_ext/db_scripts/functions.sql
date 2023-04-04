@@ -29,19 +29,17 @@ def merge_on_duplicate_keys(ordered_pairs):
         d = {}
         for k, v in ordered_pairs:
                 if k in d:
-                        d[k].update(v)
+                        if isinstance(d[k], dict):
+                                d[k].update(v)
+                        elif isinstance(d[k], list):
+                                d[k] = list(set(d[k] + v))
+                        else:
+                                d[k] += f", {v}"
                 else:
                         d[k] = v
         return d
 
-d = json.loads(jdata, object_pairs_hook=merge_on_duplicate_keys)
-
-ret = {}
-for key, value in d.items():
-        if key not in ret:
-                ret[key] = {} 
-        ret[key].update(value)
-return json.dumps(ret)
+return json.dumps(json.loads(jdata, object_pairs_hook=merge_on_duplicate_keys))
 $$ LANGUAGE plpython3u;
 
 -- Caclulation of Median Absolute Deviation

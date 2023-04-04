@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import {computed, defineProps, defineEmits, PropType, ref, onMounted} from 'vue'
-import {Plate, WellDetails, LegendColor, SelectOption} from './models'
+import {Plate, WellDetails, LegendColor} from './models'
 import {positionFromRowCol} from '../helpers/plate'
 import {palettes, percentageToHsl} from 'components/helpers'
 import {storeToRefs} from 'pinia'
@@ -31,21 +31,22 @@ const props = defineProps({
 // })
 
 const combinedLabels = computed<string[]>(() => {
-  const combined_labels: string[] = []
+  // const combined_labels: string[] = []
 
-  for (let i = 0; i < props.plate.details.measurement_labels.length; ++i) {
-    if (props.plate.details.measurement_timestamps && props.plate.details.measurement_timestamps.length > 1) {
-      for (let j = 0; j < props.plate.details.measurement_timestamps.length; ++j) {
-        combined_labels.push(
-          `${props.plate.details.measurement_labels[i]} (${props.plate.details.measurement_timestamps[j]})`
-        )
-      }
-    } else {
-      combined_labels.push(props.plate.details.measurement_labels[i])
-    }
-  }
+  // for (let i = 0; i < props.plate.details.measurement_labels.length; ++i) {
+  //   if (props.plate.details.measurement_timestamps && props.plate.details.measurement_timestamps.length > 1) {
+  //     for (let j = 0; j < props.plate.details.measurement_timestamps.length; ++j) {
+  //       combined_labels.push(
+  //         `${props.plate.details.measurement_labels[i]} (${props.plate.details.measurement_timestamps[j]})`
+  //       )
+  //     }
+  //   } else {
+  //     combined_labels.push(props.plate.details.measurement_labels[i])
+  //   }
+  // }
 
-  return combined_labels
+  // return combined_labels
+  return props.plate.details.measurement_labels
 })
 
 const wellContentOptions = [
@@ -64,10 +65,20 @@ const wellContentOptions = [
 ]
 
 const selectedMeasurement = ref<string | null>(null)
-const measurementOptions = ref<string[]>([])
+const measurementOptions = ref<string[] | null>(null)
 
 const selectedTimestampIdx = ref<number>(0)
-const timestampOptions = ref<Array<SelectOption<number>>>([])
+const timestampOptions = computed(() => {
+  if (selectedMeasurement.value) {
+    const timestamps = props.plate.details.measurement_timestamps[selectedMeasurement.value]
+    if (timestamps && timestamps.length > 0) {
+      return timestamps.map((ts, idx) => {
+        return {label: ts, value: idx}
+      })
+    }
+  }
+  return null
+})
 
 const openCalculator = ref<boolean>(false)
 
@@ -222,12 +233,6 @@ onMounted(() => {
     measurementOptions.value = props.plate.details.measurement_labels
     selectedMeasurement.value = measurementOptions.value[0]
   }
-  if (props.plate.details.measurement_timestamps && props.plate.details.measurement_timestamps.length > 0) {
-    timestampOptions.value = props.plate.details.measurement_timestamps.map((ts, idx) => {
-      return {label: ts, value: idx}
-    })
-    selectedTimestampIdx.value = 0
-  }
 })
 
 const calculateNewMeasurement = async (expression: string, newLabel: string) => {
@@ -308,45 +313,33 @@ const calculateNewMeasurement = async (expression: string, newLabel: string) => 
     </div>
   </div>
   <div class="row">
-    <div v-if="z_prime" class="col-4 q-mt-sm">
-      <div class="col-12 q-mr-md">
-        <b>{{ t('label.z_prime') }}:</b>
-        <span
-          :class="{
-            'measurement': true,
-            'q-mx-xs': true,
-            'q-pa-xs': true,
-            'bg-green-3': z_prime >= 0.5 && z_prime <= 1,
-            'bg-orange-3': z_prime >= 0 && z_prime < 0.5,
-            'bg-red-3': z_prime < 0,
-          }">
-          {{ z_prime.toFixed(2) }}
-          <i>
-            ({{ selectedMeasurement }},
-            {{ timestampOptions.find(tso => tso.value === selectedTimestampIdx)?.label }})
-          </i>
-        </span>
-      </div>
+    <div v-if="z_prime" class="q-mt-sm">
+      <b>{{ t('label.z_prime') }}:</b>
+      <span
+        :class="{
+          'measurement': true,
+          'q-mx-xs': true,
+          'q-pa-xs': true,
+          'bg-green-3': z_prime >= 0.5 && z_prime <= 1,
+          'bg-orange-3': z_prime >= 0 && z_prime < 0.5,
+          'bg-red-3': z_prime < 0,
+        }">
+        {{ z_prime.toFixed(2) }}
+      </span>
     </div>
-    <div v-if="ssmd" class="col-4 q-mt-sm">
-      <div class="col-12 q-mr-md">
-        <b>{{ t('label.ssmd') }}:</b>
-        <span
-          :class="{
-            'measurement': true,
-            'q-mx-xs': true,
-            'q-pa-xs': true,
-            'bg-green-3': ssmd >= 12,
-            'bg-orange-3': ssmd >= 6 && ssmd < 12,
-            'bg-red-3': ssmd < 6,
-          }">
-          {{ ssmd.toFixed(2) }}
-          <i>
-            ({{ selectedMeasurement }},
-            {{ timestampOptions.find(tso => tso.value === selectedTimestampIdx)?.label }})
-          </i>
-        </span>
-      </div>
+    <div v-if="ssmd" class="q-mt-sm">
+      <b>{{ t('label.ssmd') }}:</b>
+      <span
+        :class="{
+          'measurement': true,
+          'q-mx-xs': true,
+          'q-pa-xs': true,
+          'bg-green-3': ssmd >= 12,
+          'bg-orange-3': ssmd >= 6 && ssmd < 12,
+          'bg-red-3': ssmd < 6,
+        }">
+        {{ ssmd.toFixed(2) }}
+      </span>
     </div>
   </div>
 
@@ -364,7 +357,7 @@ const calculateNewMeasurement = async (expression: string, newLabel: string) => 
         class="q-mt-md"></q-checkbox>
     </div>
 
-    <div v-if="measurementOptions.length > 0" class="col-4">
+    <div v-if="measurementOptions" class="col-4">
       <q-checkbox
         v-model="platePage.showHeatmap"
         :label="t('label.show_heatmap')"
@@ -380,13 +373,15 @@ const calculateNewMeasurement = async (expression: string, newLabel: string) => 
 
       <div class="col-12" v-if="platePage.showHeatmap && measurementOptions.length">
         <q-select
+          v-if="measurementOptions.length > 0"
           v-model="selectedMeasurement"
+          :disable="measurementOptions.length === 1"
           :options="measurementOptions"
-          :label="t('message.select_label')"
-          v-if="measurementOptions.length > 1"></q-select>
+          :label="t('message.select_label')"></q-select>
         <q-select
-          v-if="timestampOptions.length > 1"
+          v-if="timestampOptions"
           v-model="selectedTimestampIdx"
+          :disable="timestampOptions.length === 1"
           :options="timestampOptions"
           :label="t('message.select_timestamp')"
           emit-value

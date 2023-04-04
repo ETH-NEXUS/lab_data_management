@@ -59,8 +59,7 @@ CREATE MATERIALIZED VIEW core_platedetail AS
                 s1.id,
                 MAX(s1.rows) * MAX(s1.cols) AS num_wells,
                 ARRAY_AGG(DISTINCT s2.label ORDER BY s2.label) as measurement_labels,
-                -- MIN is a bit missleading it should just take the first
-                MIN(s2.timestamp) as measurement_timestamps,
+                json_merge(COALESCE(JSON_OBJECT_AGG(s2.label, s2.timestamp) FILTER (WHERE s2.label IS NOT NULL), '{}')) AS measurement_timestamps,
                 json_merge(COALESCE(JSON_OBJECT_AGG(s2.label, JSON_BUILD_OBJECT(well_type, JSON_BUILD_OBJECT('min', s2.min, 'max', s2.max, 'mean', s2.mean, 'median', s2.median, 'std', s2.std, 'mad', s2.mad))) FILTER (WHERE s2.label IS NOT NULL), '{}')) AS stats,
                 json_merge(COALESCE(JSON_OBJECT_AGG(s3.label, JSON_BUILD_OBJECT('min', s3.min, 'max', s3.max, 'mean', s3.mean, 'median', s3.median, 'std', s3.std, 'mad', s3.mad)) FILTER (WHERE s3.label IS NOT NULL), '{}')) AS overall_stats
         FROM (
@@ -109,7 +108,7 @@ CREATE MATERIALIZED VIEW core_platedetail AS
                 SELECT 
                         label,
                         plate_id,
-                        --ARRAY_AGG(measured_at ORDER BY measured_at) as timestamp,
+                        ARRAY_AGG(measured_at ORDER BY measured_at) as timestamp,
                         ARRAY_AGG(min ORDER BY measured_at) as min,
                         ARRAY_AGG(max ORDER BY measured_at) as max,
                         ARRAY_AGG(std ORDER BY measured_at) as std,
