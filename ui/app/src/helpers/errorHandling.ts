@@ -19,7 +19,11 @@ export const handleError = (err: AxiosError | string | unknown, notify = true) =
   if (notify) {
     let caption = 'error.no_details_available'
     if (err instanceof Error) {
-      caption = (err as AxiosError).response?.data.detail || formatKV((err as AxiosError).response?.data)
+      if ((err as AxiosError).response?.headers['content-type'].startswith('text/html')) {
+        caption = (err as AxiosError).response?.statusText || 'error.no_details_available'
+      } else {
+        caption = (err as AxiosError).response?.data.detail || formatKV((err as AxiosError).response?.data)
+      }
     }
     Notify.create({
       message: String(err),

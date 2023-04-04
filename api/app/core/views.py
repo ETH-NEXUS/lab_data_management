@@ -2,7 +2,6 @@ import csv
 from datetime import datetime
 from uuid import uuid4
 import re
-import math
 from friendlylog import colored_logger as log
 
 from os import environ
@@ -160,7 +159,7 @@ class PlateViewSet(viewsets.ModelViewSet):
             measurement_combined_label = (
                 f""
                 f"{measurement.label}"
-                f"_{measurement.measurement_timestamp.isoformat().split('+')[0]}"
+                f"_{measurement.measured_at.isoformat().split('+')[0]}"
             )
             first_well_measurements_indices[measurement_combined_label] = index
 
@@ -201,7 +200,7 @@ class PlateViewSet(viewsets.ModelViewSet):
                         well=well,
                         label=new_label,
                         value=result,
-                        measurement_timestamp=now,
+                        measured_at=now,
                         identifier="",
                         feature=measurement_feature,
                     )

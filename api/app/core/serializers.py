@@ -17,6 +17,8 @@ from .models import (
     WellType,
     BarcodeSpecification,
     MappingList,
+    PlateDetail,
+    WellDetail,
 )
 
 
@@ -71,9 +73,7 @@ class MeasurementSerializer(serializers.ModelSerializer):
 
     def to_representation(self, instance):
         representation = super().to_representation(instance)
-        representation[
-            "measurement_timestamp"
-        ] = instance.measurement_timestamp.isoformat().split("+")[0]
+        representation["measured_at"] = instance.measured_at.isoformat().split("+")[0]
 
         return representation
 
@@ -117,16 +117,22 @@ class WellTypeSerializer(serializers.ModelSerializer):
         fields = "__all__"
 
 
+class WellDetailSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = WellDetail
+        fields = "__all__"
+
+
 class WellSerializer(serializers.ModelSerializer):
-    measurements = MeasurementSerializer(many=True, required=False, allow_null=True)
     hr_position = serializers.ReadOnlyField()
-    amount = serializers.ReadOnlyField()
     compounds = WellCompoundSerializer(
         many=True, required=False, allow_null=True, source="well_compounds"
     )
     withdrawals = WellWithdrawalSerializer(many=True, required=False, allow_null=True)
     donors = WellWithdrawalSerializer(many=True, required=False, allow_null=True)
+    amount = serializers.ReadOnlyField()
     type = serializers.SlugRelatedField(slug_field="name", read_only=True)
+    measurements = MeasurementSerializer(many=True, required=False, allow_null=True)
 
     class Meta:
         model = Well
@@ -169,17 +175,24 @@ class PlateListSerializer(serializers.ModelSerializer):
         fields = "__all__"
 
 
+class PlateDetailSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = PlateDetail
+        fields = "__all__"
+
+
 class PlateSerializer(serializers.ModelSerializer):
     dimension = PlateDimensionSerializer(required=False, allow_null=True)
-    # library = CompoundLibrarySerializer(required=False, allow_null=True)
-    measurements = serializers.ReadOnlyField()
-    z_primes = serializers.ReadOnlyField()
-    min_max = serializers.ReadOnlyField()
-    wells = WellSerializer(many=True, required=False, allow_null=True)
+    details = serializers.SerializerMethodField()
+    wells = serializers.SerializerMethodField()
 
-    # def get_wells(self, instance):
-    #     wells = instance.wells.all().order_by('position')
-    #     return WellSerializer(wells, many=True).data
+    def get_details(self, plate: Plate):
+        plate_details = PlateDetail.objects.get(pk=plate.id)
+        return PlateDetailSerializer(plate_details).data
+
+    def get_wells(self, plate: Plate):
+        wells = WellDetail.objects.filter(plate_id=plate.id).order_by("position")
+        return WellDetailSerializer(wells, many=True).data
 
     def update(self, plate: Plate, validated_data):
         if "dimension" in validated_data:
@@ -196,16 +209,16 @@ class PlateSerializer(serializers.ModelSerializer):
 
         return plate
 
-    def to_representation(self, instance):
-        representation = super().to_representation(instance)
-        measurements_iso = instance.measurements
+    # def to_representation(self, instance):
+    #     representation = super().to_representation(instance)
+    #     measurements_iso = instance.measurements
 
-        for measurement in measurements_iso:
-            measurement["measurement_timestamp"] = (
-                measurement["measurement_timestamp"].isoformat().split("+")[0]
-            )
-        representation["measurements"] = measurements_iso
-        return representation
+    #     for measurement in measurements_iso:
+    #         measurement["measured_at"] = (
+    #             measurement["measured_at"].isoformat().split("+")[0]
+    #         )
+    #     representation["measurements"] = measurements_iso
+    #     return representation
 
     class Meta:
         model = Plate

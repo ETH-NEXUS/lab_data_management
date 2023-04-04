@@ -1,7 +1,5 @@
-from string import ascii_lowercase
+from string import ascii_uppercase
 import re
-
-LETTERS = {letter: str(index) for index, letter in enumerate(ascii_lowercase, start=1)}
 
 
 def charToAlphaPos(letters: str):
@@ -41,7 +39,7 @@ def posToAlphaChar(pos: int):
         letter = ""
         while pos > 0:
             pos, remainder = divmod(pos - 1, 26)
-            letter = ascii_lowercase[remainder].upper() + letter
+            letter = ascii_uppercase[remainder] + letter
         return letter
     except IndexError:
         return "?"

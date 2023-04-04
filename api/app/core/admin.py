@@ -70,8 +70,8 @@ class WellAdmin(admin.ModelAdmin):
 @admin.register(Measurement)
 class MeasurementAdmin(admin.ModelAdmin):
     raw_id_fields = ("well",)
-    list_display = ("value", "identifier", "measurement_timestamp")
-    list_filter = ("measurement_timestamp",)
+    list_display = ("value", "identifier", "measured_at")
+    list_filter = ("measured_at",)
     list_per_page = 1000
 
 
@@ -128,5 +128,5 @@ class MeasurementAssignmentAdmin(admin.ModelAdmin):
     list_display = (
         "filename",
         "status",
-        "assignment_timestamp",
+        "created_at",
     )
