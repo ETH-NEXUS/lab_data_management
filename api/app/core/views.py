@@ -179,7 +179,6 @@ class PlateViewSet(viewsets.ModelViewSet):
             )[0]
             if len(current_plate_details.measurement_timestamps[measurement_label]) > 1:
                 time_series_support = True
-                time_series_several_labels_support = True
             else:
                 timestamps = []
                 for key in current_plate_details.measurement_timestamps.keys():
@@ -195,50 +194,31 @@ class PlateViewSet(viewsets.ModelViewSet):
 
         for well in wells:
             well_measurements = well.measurements.all()
-
             if time_series_support:
                 for measurement in well_measurements:
-                    if time_series_several_labels_support:
-                        current_measurement_time = measurement.measured_at
-                        same_time_measurements_data = {}
-                        for _measurement in well_measurements:
-                            if _measurement.measured_at == current_measurement_time:
-                                same_time_measurements_data[
-                                    _measurement.label
-                                ] = _measurement.value
+                    current_measurement_time = measurement.measured_at
+                    same_time_measurements_data = {}
+                    for _measurement in well_measurements:
+                        if _measurement.measured_at == current_measurement_time:
+                            same_time_measurements_data[
+                                _measurement.label
+                            ] = _measurement.value
 
-                        new_expression = expression.replace("ln(", "math.log(")
-                        print("!!!!!!!!!!!!!!!", same_time_measurements_data)
-                        if (
-                            len(same_time_measurements_data) > 0
-                            and measurement.label in expression
-                        ):
-                            for key in same_time_measurements_data.keys():
-                                new_expression = new_expression.replace(
-                                    key, str(same_time_measurements_data[key])
-                                )
-                            result = self.__evaluate_expression(new_expression)
-                            self.__create_measurement(
-                                well,
-                                new_label,
-                                result,
-                                current_measurement_time,
-                                "",
-                                measurement_feature,
+                    new_expression = expression.replace("ln(", "math.log(")
+                    if (
+                        len(same_time_measurements_data) > 0
+                        and measurement.label in expression
+                    ):
+                        for key in same_time_measurements_data.keys():
+                            new_expression = new_expression.replace(
+                                key, str(same_time_measurements_data[key])
                             )
-
-                    else:
-                        new_expression = expression.replace("ln(", "math.log(")
-                        new_expression = new_expression.replace(
-                            measurement.label, str(measurement.value)
-                        )
-
                         result = self.__evaluate_expression(new_expression)
                         self.__create_measurement(
                             well,
                             new_label,
                             result,
-                            measurement.measured_at,
+                            current_measurement_time,
                             "",
                             measurement_feature,
                         )
