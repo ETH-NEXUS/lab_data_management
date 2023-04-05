@@ -155,7 +155,6 @@ class PlateViewSet(viewsets.ModelViewSet):
         import math
 
         used_labels = request.data.get("used_labels")
-        print(used_labels, "used_labels", "^^^^^^^^^^^^^^^^^^^^^^^^^^^^^")
         plate_id = self.get_object().id
         expression = request.data.get("expression")
         new_label = request.data.get("new_label")
@@ -273,6 +272,9 @@ class PlateViewSet(viewsets.ModelViewSet):
             defaults={"value": value, "identifier": identifier, "feature": feature},
         )
         return measurement, _
+
+    def __add_new_measurement_to_plate(self):
+        pass
 
 
 class WellViewSet(viewsets.ModelViewSet):
