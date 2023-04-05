@@ -239,8 +239,8 @@ onMounted(() => {
   })
 })
 
-const calculateNewMeasurement = async (expression: string, newLabel: string) => {
-  await projectStore.addNewMeasurement(props.plate.id, expression, newLabel)
+const calculateNewMeasurement = async (expression: string, newLabel: string, usedLabels: string[]) => {
+  await projectStore.addNewMeasurement(props.plate.id, expression, newLabel, usedLabels)
   openCalculator.value = false
 
   emit('refresh')
