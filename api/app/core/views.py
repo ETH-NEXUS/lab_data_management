@@ -155,13 +155,52 @@ class PlateViewSet(viewsets.ModelViewSet):
         import math
 
         used_labels = request.data.get("used_labels")
-        plate_id = self.get_object().id
-        expression = request.data.get("expression")
         new_label = request.data.get("new_label")
-        now = datetime.now().replace(microsecond=0)
+        expression = request.data.get("expression")
+
         current_plate = self.get_object()
+        plate_id = self.get_object().id
         current_plate_details = PlateDetail.objects.get(id=plate_id)
 
+        self.__add_new_measurement_to_plate(
+            current_plate, current_plate_details, used_labels, new_label, expression
+        )
+        return Response(status.HTTP_200_OK)
+
+    def filter_queryset(self, queryset):
+        return super().filter_queryset(queryset)
+
+    def __evaluate_expression(self, new_expression):
+        import math
+
+        try:
+            result = eval(new_expression)
+            if not result:
+                log.warning(
+                    f"Result is None or 0. Setting result to 0. Formula: "
+                    f"{new_expression}"
+                )
+                result = 0
+        except ZeroDivisionError:
+            log.error("Division by zero occurred. Setting result to 0")
+            result = 0
+        return result
+
+    def __create_measurement(
+        self, well, label, value, measured_at, identifier, feature
+    ):
+        measurement, _ = Measurement.objects.get_or_create(
+            well=well,
+            label=label,
+            measured_at=measured_at,
+            defaults={"value": value, "identifier": identifier, "feature": feature},
+        )
+        return measurement, _
+
+    def __add_new_measurement_to_plate(
+        self, current_plate, current_plate_details, used_labels, new_label, expression
+    ):
+        now = datetime.now().replace(microsecond=0)
         time_series_support = False
         new_measurement_timestamp = now
 
@@ -241,40 +280,6 @@ class PlateViewSet(viewsets.ModelViewSet):
 
         PlateDetail.refresh(concurrently=True)
         WellDetail.refresh(concurrently=True)
-        return Response(status.HTTP_200_OK)
-
-    def filter_queryset(self, queryset):
-        return super().filter_queryset(queryset)
-
-    def __evaluate_expression(self, new_expression):
-        import math
-
-        try:
-            result = eval(new_expression)
-            if not result:
-                log.warning(
-                    f"Result is None or 0. Setting result to 0. Formula: "
-                    f"{new_expression}"
-                )
-                result = 0
-        except ZeroDivisionError:
-            log.error("Division by zero occurred. Setting result to 0")
-            result = 0
-        return result
-
-    def __create_measurement(
-        self, well, label, value, measured_at, identifier, feature
-    ):
-        measurement, _ = Measurement.objects.get_or_create(
-            well=well,
-            label=label,
-            measured_at=measured_at,
-            defaults={"value": value, "identifier": identifier, "feature": feature},
-        )
-        return measurement, _
-
-    def __add_new_measurement_to_plate(self):
-        pass
 
 
 class WellViewSet(viewsets.ModelViewSet):
