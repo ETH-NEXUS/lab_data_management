@@ -89,7 +89,7 @@ const addMeasurement = () => {
     return
   }
 
-  emit('calculate', currentExpression.value, newLabel.value)
+  emit('calculate', currentExpression.value, newLabel.value, usedLabels.value)
 }
 </script>
 

@@ -154,6 +154,8 @@ class PlateViewSet(viewsets.ModelViewSet):
     def add_new_measurement(self, request, pk=None):
         import math
 
+        used_labels = request.data.get("used_labels")
+        print(used_labels, "used_labels", "^^^^^^^^^^^^^^^^^^^^^^^^^^^^^")
         plate_id = self.get_object().id
         expression = request.data.get("expression")
         new_label = request.data.get("new_label")
@@ -162,7 +164,6 @@ class PlateViewSet(viewsets.ModelViewSet):
         current_plate_details = PlateDetail.objects.get(id=plate_id)
 
         time_series_support = False
-        time_series_several_labels_support = False
         new_measurement_timestamp = now
 
         if len(current_plate_details.measurement_labels) == 1:
@@ -207,7 +208,7 @@ class PlateViewSet(viewsets.ModelViewSet):
                     new_expression = expression.replace("ln(", "math.log(")
                     if (
                         len(same_time_measurements_data) > 0
-                        and measurement.label in expression
+                        and measurement.label in used_labels
                     ):
                         for key in same_time_measurements_data.keys():
                             new_expression = new_expression.replace(
@@ -265,14 +266,13 @@ class PlateViewSet(viewsets.ModelViewSet):
     def __create_measurement(
         self, well, label, value, measured_at, identifier, feature
     ):
-        Measurement.objects.create(
+        measurement, _ = Measurement.objects.get_or_create(
             well=well,
             label=label,
-            value=value,
             measured_at=measured_at,
-            identifier=identifier,
-            feature=feature,
+            defaults={"value": value, "identifier": identifier, "feature": feature},
         )
+        return measurement, _
 
 
 class WellViewSet(viewsets.ModelViewSet):
