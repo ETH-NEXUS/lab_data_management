@@ -248,7 +248,15 @@ const calculateNewMeasurement = async (expression: string, newLabel: string, use
 </script>
 
 <template>
-  <div class="row">
+  <q-toggle
+    class="q-mb-md"
+    size="sm"
+    checked-icon="check"
+    v-model="platePage.smallerMapView"
+    :label="t('label.smaller_map_view')"
+    right-label
+    color="secondary"></q-toggle>
+  <div class="row no-wrap">
     <table v-if="props.plate" :class="platePage.smallerMapView ? 'smaller' : ''">
       <tr>
         <th />
@@ -306,6 +314,7 @@ const calculateNewMeasurement = async (expression: string, newLabel: string, use
         </td>
       </tr>
     </table>
+
     <div v-if="platePage.showHeatmap && selectedMeasurement && legendColors" class="q-my-md q-ml-md">
       <div
         class="legendItem"
@@ -355,10 +364,6 @@ const calculateNewMeasurement = async (expression: string, newLabel: string, use
         :label="t('label.well_content')"
         emit-value
         map-options />
-      <q-checkbox
-        v-model="platePage.smallerMapView"
-        :label="t('label.smaller_map_view')"
-        class="q-mt-md"></q-checkbox>
     </div>
 
     <div v-if="measurementOptions" class="col-4">
