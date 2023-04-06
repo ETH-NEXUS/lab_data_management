@@ -701,3 +701,16 @@ class PlateDetail(MaterializedViewModel):
     class Meta:
         db_table = "core_platedetail"
         managed = False
+
+
+class ExperimentDetail(MaterializedViewModel):
+    id = models.BigIntegerField(primary_key=True)
+    project_id = models.BigIntegerField(blank=True, null=True)
+    measurement_labels = ArrayField(models.TextField(blank=True, null=True))
+    measurement_timestamps = DictField()
+    stats = DictField()
+    overall_stats = DictField()
+
+    class Meta:
+        db_table = "core_experimentdetail"
+        managed = False
