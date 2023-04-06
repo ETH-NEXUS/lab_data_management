@@ -30,7 +30,7 @@ const measurementFeatureOptions = ref<Array<MeasurementFeature>>([])
 const filteredMeasurementFeatureOptions = ref<Array<MeasurementFeature>>([])
 const enteredMeasurement = ref<number>(0)
 
-const {wellDetails} = storeToRefs(useSettingsStore())
+const {wellDetails, platePage} = storeToRefs(useSettingsStore())
 const blurCompound = ref<boolean>(false)
 import TimeSeriesChart from 'components/TimeSeriesChartsContainer.vue'
 
@@ -254,7 +254,15 @@ const filterMeasurementFeatures = (query: string, update: (f: () => void) => voi
             @click="addMeasurementDialog = true" />
         </div>
         <div class="col-8">
-          <table>
+          <q-toggle
+            class="q-mt-md"
+            size="sm"
+            checked-icon="check"
+            v-model="platePage.plotView"
+            :label="t('label.plot_view')"
+            right-label
+            color="secondary"></q-toggle>
+          <table v-if="!platePage.plotView">
             <thead>
               <tr>
                 <th>{{ t('label.label') }}</th>
@@ -270,7 +278,8 @@ const filterMeasurementFeatures = (query: string, update: (f: () => void) => voi
               </tr>
             </tbody>
           </table>
-          <div v-if="well.measurements.length > 0">
+
+          <div v-if="well.measurements.length > 0 && platePage.plotView">
             <TimeSeriesChart :measurements="well.measurements" />
           </div>
         </div>
