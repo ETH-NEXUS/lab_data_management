@@ -57,6 +57,7 @@ DROP MATERIALIZED VIEW IF EXISTS core_platedetail;
 CREATE MATERIALIZED VIEW core_platedetail AS
         SELECT
                 s1.id,
+                experiment_id,
                 MAX(s1.rows) * MAX(s1.cols) AS num_wells,
                 ARRAY_AGG(DISTINCT s2.label ORDER BY s2.label) as measurement_labels,
                 json_merge(COALESCE(JSON_OBJECT_AGG(s2.label, s2.timestamp) FILTER (WHERE s2.label IS NOT NULL), '{}')) AS measurement_timestamps,
@@ -65,6 +66,7 @@ CREATE MATERIALIZED VIEW core_platedetail AS
         FROM (
                 SELECT 
                         p.id,
+                        p.experiment_id,
                         d.rows,
                         d.cols
                 FROM core_plate AS p
@@ -133,12 +135,145 @@ CREATE MATERIALIZED VIEW core_platedetail AS
                 GROUP BY plate_id, label
         ) s3
         ON s1.id = s3.plate_id
-        GROUP BY id;
+        GROUP BY id, experiment_id;
 
 -- Create indexes on core_platedetail
 CREATE UNIQUE INDEX ON core_platedetail(id);
+CREATE INDEX core_platedetail_experiment_id_idx on core_platedetail(experiment_id);   
         
-        
+-- Create the experiment detail view
+DROP MATERIALIZED VIEW IF EXISTS core_experimentdetail;
+CREATE MATERIALIZED VIEW core_experimentdetail AS
+        SELECT
+                s1.id,
+                project_id,
+                --MAX(s1.rows) * MAX(s1.cols) AS num_wells,
+                ARRAY_AGG(DISTINCT s6.label ORDER BY s6.label) as measurement_labels,
+                json_merge(COALESCE(JSON_OBJECT_AGG(s6.label, s6.timestamp) FILTER (WHERE s6.label IS NOT NULL), '{}')) AS measurement_timestamps,
+                json_merge(COALESCE(JSON_OBJECT_AGG(s10.label, JSON_BUILD_OBJECT(well_type, JSON_BUILD_OBJECT('min', s10.min, 'max', s10.max, 'mean', s10.mean, 'median', s10.median, 'std', s10.std, 'mad', s10.mad))) FILTER (WHERE s10.label IS NOT NULL), '{}')) AS stats,
+                json_merge(COALESCE(JSON_OBJECT_AGG(s6.label, JSON_BUILD_OBJECT('min', s6.min, 'max', s6.max, 'mean', s6.mean, 'median', s6.median, 'std', s6.std, 'mad', s6.mad)) FILTER (WHERE s6.label IS NOT NULL), '{}')) AS overall_stats
+        FROM (
+                SELECT 
+                        e.id,
+                        p.id as project_id
+                FROM core_experiment AS e
+                INNER JOIN core_project p ON e.project_id = p.id
+        ) s1
+        -- per well type stats
+        LEFT JOIN (
+                SELECT 
+                        label,
+                        well_type,
+                        experiment_id,
+                        ARRAY_AGG(measured_at ORDER BY measurement_idx) as timestamp,
+                        ARRAY_AGG(min ORDER BY measurement_idx) as min,
+                        ARRAY_AGG(max ORDER BY measurement_idx) as max,
+                        ARRAY_AGG(std ORDER BY measurement_idx) as std,
+                        ARRAY_AGG(mean ORDER BY measurement_idx) as mean,
+                        ARRAY_AGG(median ORDER BY measurement_idx) as median,
+                        ARRAY_AGG(mad ORDER BY measurement_idx) as mad
+                FROM (
+                        SELECT
+                                label,
+                                experiment_id,
+                                well_type,
+                                measurement_idx,
+                                MIN(measured_at) AS measured_at,
+                                MIN(value),
+                                MAX(value),
+                                STDDEV_POP(value) AS std,
+                                AVG(value) as mean,
+                                PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY value) AS median,
+                                MAD(value) 
+                        FROM (
+                                SELECT 
+                                        label,
+                                        experiment_id,    
+                                        measurement_idx,
+                                        well_type,
+                                        MIN(measured_at) AS measured_at,
+                                        UNNEST(values) AS value
+                                FROM (
+                                        SELECT 
+                                                label,
+                                                MIN(measured_at) AS measured_at, --OVER (PARTITION BY plate_id, label, wt.name ORDER BY measured_at) AS measured_at,
+                                                experiment_id,
+                                                plate_id,
+                                                wt.name AS well_type,
+                                                ROW_NUMBER() OVER (PARTITION BY plate_id, label, wt.name ORDER BY measured_at) AS measurement_idx,
+                                                ARRAY_AGG(value) as values
+                                        FROM core_measurement AS m 
+                                        INNER JOIN core_well w ON m.well_id = w.id
+                                        INNER JOIN core_welltype wt ON w.type_id = wt.id
+                                        INNER JOIN core_plate p ON w.plate_id = p.id 
+                                        INNER JOIN core_experiment e ON p.experiment_id = e.id
+                                        GROUP BY experiment_id, plate_id, label, wt.name, measured_at
+                                        ORDER BY label, measurement_idx
+                                ) s7
+                                GROUP BY experiment_id, label, well_type, measurement_idx, values
+                        ) s8
+                        GROUP BY experiment_id, label, well_type, measurement_idx
+                ) s9
+                GROUP BY experiment_id, label, well_type
+        ) s10
+        ON s1.id = s10.experiment_id
+        -- overall stats
+        LEFT JOIN (
+                SELECT 
+                        label,
+                        experiment_id,
+                        ARRAY_AGG(timestamp ORDER BY measurement_idx) as timestamp,
+                        ARRAY_AGG(min ORDER BY measurement_idx) as min,
+                        ARRAY_AGG(max ORDER BY measurement_idx) as max,
+                        ARRAY_AGG(std ORDER BY measurement_idx) as std,
+                        ARRAY_AGG(mean ORDER BY measurement_idx) as mean,
+                        ARRAY_AGG(median ORDER BY measurement_idx) as median,
+                        ARRAY_AGG(mad ORDER BY measurement_idx) as mad
+                FROM (
+                        SELECT
+                                label,
+                                experiment_id,
+                                measurement_idx,
+                                MIN(timestamp) AS timestamp,
+                                MIN(value),
+                                MAX(value),
+                                STDDEV_POP(value) AS std,
+                                AVG(value) as mean,
+                                PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY value) AS median,
+                                MAD(value) 
+                        FROM (
+                                SELECT 
+                                        label,
+                                        experiment_id,    
+                                        measurement_idx,
+                                        MIN(measured_at) AS timestamp,
+                                        UNNEST(values) AS value
+                                FROM (
+                                        SELECT 
+                                                label,
+                                                measured_at,
+                                                experiment_id,
+                                                ROW_NUMBER() OVER (PARTITION BY plate_id ORDER BY measured_at) as measurement_idx,
+                                                ARRAY_AGG(value) as values
+                                        FROM core_measurement AS m 
+                                        INNER JOIN core_well w ON m.well_id = w.id
+                                        INNER JOIN core_plate p ON w.plate_id = p.id 
+                                        INNER JOIN core_experiment e ON p.experiment_id = e.id
+                                        GROUP BY experiment_id, plate_id, label, measured_at
+                                        ORDER BY label, measurement_idx
+                                ) s4
+                                GROUP BY experiment_id, label, measurement_idx, values
+                        ) s5
+                        GROUP BY experiment_id, label, measurement_idx
+                ) s3
+                GROUP BY experiment_id, label
+        ) s6
+        ON s1.id = s6.experiment_id
+        GROUP BY id, project_id;
+
+-- Create indexes on core_platedetail
+CREATE UNIQUE INDEX ON core_experimentdetail(id);
+CREATE INDEX core_experimentdetail_project_id_idx on core_experimentdetail(project_id);
         
         
         
