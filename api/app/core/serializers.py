@@ -81,10 +81,15 @@ class MeasurementSerializer(serializers.ModelSerializer):
 class SimplePlateSerializer(serializers.ModelSerializer):
     dimension = serializers.SlugRelatedField(read_only=True, slug_field="name")
     library = serializers.SlugRelatedField(read_only=True, slug_field="name")
+    measurement_labels = serializers.SerializerMethodField()
+
+    def get_measurement_labels(self, plate: Plate):
+        plate_details = PlateDetail.objects.get(pk=plate.id)
+        return plate_details.measurement_labels
 
     class Meta:
         model = Plate
-        fields = ("id", "barcode", "dimension", "library")
+        fields = ("id", "barcode", "dimension", "library", "measurement_labels")
 
 
 class WellPlateSerializer(serializers.ModelSerializer):
