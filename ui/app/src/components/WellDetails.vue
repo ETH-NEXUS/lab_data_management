@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import {defineProps, defineEmits, PropType, onMounted} from 'vue'
+import {defineProps, defineEmits, PropType, onMounted, computed} from 'vue'
 import {Plate, WellInfo, Well, MeasurementFeature, Compound} from './models'
 import DynamicImage from './DynamicImage.vue'
 import {useI18n} from 'vue-i18n'
@@ -50,6 +50,16 @@ const emit = defineEmits(['well-created', 'compound-added', 'measurement-added']
 const well = ref<Well>()
 const loading = ref<boolean>(true)
 
+const isTimeSeries = ref<boolean>(false)
+
+const showTable = computed(() => {
+  let res = true
+  if (platePage.value.plotView) {
+    res = !isTimeSeries.value
+  }
+  return res
+})
+
 onMounted(async () => {
   loading.value = true
   try {
@@ -65,6 +75,15 @@ onMounted(async () => {
     loading.value = false
   }
   console.log(well.value?.measurements)
+  if (well.value?.measurements && well.value?.measurements.length > 0) {
+    const timestamps: string[] | Date[] | (string | Date)[] = []
+    well.value.measurements.forEach(m => {
+      timestamps.push(m.measured_at)
+    })
+    if ([...new Set(timestamps)].length > 1) {
+      isTimeSeries.value = true
+    }
+  }
 })
 
 const createWell = async () => {
@@ -255,6 +274,7 @@ const filterMeasurementFeatures = (query: string, update: (f: () => void) => voi
         </div>
         <div class="col-8">
           <q-toggle
+            v-if="isTimeSeries"
             class="q-mt-md"
             size="sm"
             checked-icon="check"
@@ -262,7 +282,7 @@ const filterMeasurementFeatures = (query: string, update: (f: () => void) => voi
             :label="t('label.plot_view')"
             right-label
             color="secondary"></q-toggle>
-          <table v-if="!platePage.plotView">
+          <table v-if="showTable">
             <thead>
               <tr>
                 <th>{{ t('label.label') }}</th>
