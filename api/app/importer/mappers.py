@@ -383,7 +383,8 @@ class M1000Mapper(BaseMapper):
                     f"Plate with barcode {barcode} does not exist. Creating it."
                 )
                 barcode_specification, _ = BarcodeSpecification.objects.get_or_create(
-                    prefix=barcode,
+                    prefix=barcode.split("_")[0],
+                    sides=["North"],
                     experiment=Experiment.objects.get(
                         name=kwargs.get("experiment_name")
                     ),
