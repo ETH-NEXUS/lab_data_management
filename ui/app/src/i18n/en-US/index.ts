@@ -86,6 +86,7 @@ export default {
     about: 'About',
     smaller_map_view: 'Smaller map view',
     label: 'Label',
+    plot_view: 'Plot view',
   },
   hint: {
     username: 'Enter your ETH username',

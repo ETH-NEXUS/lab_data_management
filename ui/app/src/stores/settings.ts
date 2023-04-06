@@ -9,6 +9,7 @@ interface PlatePage {
   showHeatmap: boolean
   smallerMapView: boolean
   heatmapPalette: Palette
+  plotView: boolean
 }
 
 interface NavigationTree {
@@ -43,6 +44,7 @@ export const useSettingsStore = defineStore('settings', {
         showHeatmap: false,
         smallerMapView: false,
         heatmapPalette: {label: 'OrangeRed', value: {from: '#fff7bc', to: '#993404'}},
+        plotView: false,
       },
       navigationTree: {
         filter: '',
