@@ -93,13 +93,13 @@ export interface Well {
   sample: Sample
   amount: number
   type: string
+  status: string
   hr_position?: string
   compounds?: Array<Compound>
   measurements?: Array<Measurement>
   withdrawals?: Array<Withdrawal>
   donors?: Array<Withdrawal>
   mixture?: boolean
-  status: string
 }
 
 export interface PlateDimension {
@@ -266,4 +266,71 @@ export interface harvestProject {
 export interface SelectOption<T> {
   label: string
   value: T
+}
+
+export interface TimeSeriesChart {
+  series: {
+    name?: string
+    data?: string[] | number[]
+  }[]
+  colors: string[]
+  chart: {
+    id: string
+    type: string
+    height: number
+    zoom: {
+      enabled: boolean
+    }
+    dropShadow: {
+      enabled: boolean
+      color: string
+      top: number
+      left: number
+      blur: number
+      opacity: number
+    }
+  }
+  dataLabels: {
+    enabled: boolean
+  }
+  stroke: {
+    curve: string
+  }
+  title: {
+    text?: string
+    align: string
+  }
+  grid: {
+    borderColor: string
+    row: {
+      colors: string[]
+      opacity: number
+    }
+  }
+  xaxis: {
+    categories?: string[] | Date[] | number[] | (string | Date | number)[] | undefined
+    type: string
+  }
+  yaxis: {
+    title: {
+      text: string
+    }
+  }
+  markers: {
+    size: number
+  }
+  legend: {
+    position: string
+    horizontalAlign: string
+    floating: boolean
+    offsetY: number
+    offsetX: number
+  }
+}
+
+export interface PlotData {
+  name: string
+  data: string[] | number[] | Date[] | (string | Date | number)[]
+  color: string
+  categories: string[] | number[] | Date[] | (string | Date | number)[]
 }

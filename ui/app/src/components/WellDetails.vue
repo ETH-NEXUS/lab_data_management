@@ -32,6 +32,7 @@ const enteredMeasurement = ref<number>(0)
 
 const {wellDetails} = storeToRefs(useSettingsStore())
 const blurCompound = ref<boolean>(false)
+import TimeSeriesChart from 'components/TimeSeriesChartsContainer.vue'
 
 const props = defineProps({
   plate: {
@@ -63,6 +64,7 @@ onMounted(async () => {
   } finally {
     loading.value = false
   }
+  console.log(well.value?.measurements)
 })
 
 const createWell = async () => {
@@ -268,6 +270,9 @@ const filterMeasurementFeatures = (query: string, update: (f: () => void) => voi
               </tr>
             </tbody>
           </table>
+          <div v-if="well.measurements.length > 0">
+            <TimeSeriesChart :measurements="well.measurements" />
+          </div>
         </div>
         <div class="col-12">
           <hr />
