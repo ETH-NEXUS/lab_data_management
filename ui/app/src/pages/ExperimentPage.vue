@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import {useRoute} from 'vue-router'
-import {onMounted, ref} from 'vue'
+import {onMounted, ref, computed} from 'vue'
 import {useI18n} from 'vue-i18n'
 import {handleError} from 'src/helpers/errorHandling'
 import {useProjectStore} from 'stores/project'
@@ -20,6 +20,7 @@ import {csvColumnsNames} from 'components/data'
 import {useQuasar} from 'quasar'
 import {api} from 'boot/axios'
 import bus from 'src/eventBus'
+import MeasurementCalculator from 'components/MeasurementCalculator.vue'
 
 const route = useRoute()
 const projectStore = useProjectStore()
@@ -31,6 +32,7 @@ const loading = ref<boolean>(true)
 const project = ref<Project | null>(null)
 const experiment = ref<Experiment | null>(null)
 const generateBarcodeDialogToggle = ref<boolean>(false)
+const addNewMeasurementDialog = ref<boolean>(false)
 
 const applyTemplateDialog = ref<boolean>(false)
 const selectedTemplatePlateId = ref<number>()
@@ -184,13 +186,26 @@ const applyTemplate = async () => {
     loading.value = false
   }
 }
+
+const calculateNewMeasurement = async (expression: string, newLabel: string, usedLabels: string[]) => {
+  addNewMeasurementDialog.value = false
+  $q.loading.show({
+    message: t('info.calculation_in_progress'),
+  })
+  await projectStore.addNewMeasurement(null, expression, newLabel, usedLabels, experiment.value?.id)
+  $q.loading.hide()
+}
+
+const addNewMeasurement = () => {
+  addNewMeasurementDialog.value = true
+}
 </script>
 
 <template>
   <q-page v-if="project" class="q-px-md">
     <div v-if="experiment" class="text-h5 q-mt-lg q-mb-md q-pl-xl text-primary">
       {{ project.name }}: {{ getExperiment(Number(route.params.experiment)).name }}
-      <q-btn flat icon="edit" @click="editExperiment((field = 'name'))" />
+      <q-btn flat icon="edit" @click="editExperiment('name')" />
     </div>
     <div class="q-pa-md row items-start q-gutter-md">
       <q-card class="my-card" flat>
@@ -199,7 +214,7 @@ const applyTemplate = async () => {
             {{ t('experiment.description') }}:
             <p class="text-body1 text-grey-8">
               {{ experiment.description || t('info.no_description') }}
-              <q-btn flat icon="edit" @click="editExperiment((field = 'description'))" />
+              <q-btn flat icon="edit" @click="editExperiment('description')" />
             </p>
           </div>
 
@@ -316,6 +331,13 @@ const applyTemplate = async () => {
             icon="o_layers"
             color="secondary"
             @click="applyTemplateDialog = true" />
+          <q-btn
+            v-if="experiment.available_measurement_labels.length > 0"
+            class="q-ml-xs"
+            :label="t('action.add_measurement')"
+            icon="o_layers"
+            color="secondary"
+            @click="addNewMeasurement" />
         </q-card-actions>
       </q-card>
     </div>
@@ -357,6 +379,15 @@ const applyTemplate = async () => {
         </q-card-actions>
       </q-card>
     </q-dialog>
+    <q-dialog v-model="addNewMeasurementDialog">
+      <q-card class="calculator_dialog">
+        <q-card-section>
+          <MeasurementCalculator
+            :labels="experiment.available_measurement_labels"
+            @calculate="calculateNewMeasurement" />
+        </q-card-section>
+      </q-card>
+    </q-dialog>
   </q-page>
 </template>
 
@@ -364,4 +395,7 @@ const applyTemplate = async () => {
 
 .hidden
   visibility: hidden
+
+.calculator_dialog
+  min-width: 800px
 </style>

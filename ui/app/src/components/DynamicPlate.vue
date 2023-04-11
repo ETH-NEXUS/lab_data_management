@@ -9,6 +9,7 @@ import {useI18n} from 'vue-i18n'
 import MeasurementCalculator from 'components/MeasurementCalculator.vue'
 import {useProjectStore} from 'stores/project'
 import bus from 'src/eventBus'
+import {useQuasar} from 'quasar'
 
 const {t} = useI18n()
 
@@ -64,6 +65,8 @@ const wellContentOptions = [
     value: 'position',
   },
 ]
+
+const $q = useQuasar()
 
 const selectedMeasurement = ref<string | null>(null)
 const measurementOptions = ref<string[] | null>(null)
@@ -240,8 +243,12 @@ onMounted(() => {
 })
 
 const calculateNewMeasurement = async (expression: string, newLabel: string, usedLabels: string[]) => {
-  await projectStore.addNewMeasurement(props.plate.id, expression, newLabel, usedLabels)
   openCalculator.value = false
+  $q.loading.show({
+    message: t('info.calculation_in_progress'),
+  })
+  await projectStore.addNewMeasurement(props.plate.id, expression, newLabel, usedLabels)
+  $q.loading.hide()
 
   emit('refresh')
 }

@@ -34,6 +34,7 @@ from .models import (
     MeasurementFeature,
     PlateDetail,
     WellDetail,
+    ExperimentDetail,
 )
 from .serializers import (
     PlateSerializer,
@@ -158,13 +159,25 @@ class PlateViewSet(viewsets.ModelViewSet):
         new_label = request.data.get("new_label")
         expression = request.data.get("expression")
 
-        current_plate = self.get_object()
-        plate_id = self.get_object().id
-        current_plate_details = PlateDetail.objects.get(id=plate_id)
+        plate_id = request.data.get("plate_id")
+        experiment_id = request.data.get("experiment_id")
 
-        self.__add_new_measurement_to_plate(
-            current_plate, current_plate_details, used_labels, new_label, expression
-        )
+        if plate_id:
+            current_plate = Plate.objects.get(id=plate_id)
+            current_plate_details = PlateDetail.objects.get(id=plate_id)
+
+            self.__add_new_measurement_to_plate(
+                current_plate, current_plate_details, used_labels, new_label, expression
+            )
+        elif experiment_id:
+            experiment = Experiment.objects.get(id=experiment_id)
+            plates = Plate.objects.filter(experiment=experiment)
+            for plate in plates:
+                current_plate_details = PlateDetail.objects.get(id=plate.id)
+                self.__add_new_measurement_to_plate(
+                    plate, current_plate_details, used_labels, new_label, expression
+                )
+
         return Response(status.HTTP_200_OK)
 
     def filter_queryset(self, queryset):
@@ -280,6 +293,9 @@ class PlateViewSet(viewsets.ModelViewSet):
 
         PlateDetail.refresh(concurrently=True)
         WellDetail.refresh(concurrently=True)
+        log.info(
+            f"New measurement {new_label} added to plate {current_plate.id} with barcode {current_plate.barcode}"
+        )
 
 
 class WellViewSet(viewsets.ModelViewSet):

@@ -25,6 +25,7 @@ export interface Experiment {
   name: string
   plates: Array<Plate>
   project: number
+  available_measurement_labels: Array<string>
   barcode_specifications?: Array<BarcodeSpecification>
   description?: string
 }
@@ -155,6 +156,7 @@ export interface Plate {
   dimension: PlateDimension
   details: PlateDetails
   wells: Array<WellDetails>
+  measurement_labels?: Array<string>
   experiment?: number
   library?: number
   template?: number
