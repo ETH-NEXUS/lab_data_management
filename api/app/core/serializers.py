@@ -1,3 +1,5 @@
+from collections import defaultdict
+
 from compoundlib.models import CompoundLibrary, Compound
 from rest_framework import serializers
 
@@ -241,6 +243,22 @@ class ExperimentSerializer(serializers.ModelSerializer):
     barcode_specifications = BarcodeSpecificationSerializer(
         many=True, required=False, allow_null=True
     )
+    available_measurement_labels = serializers.SerializerMethodField()
+
+    # returns only those labels that are available for all plates in the experiment
+    def get_available_measurement_labels(self, experiment: Experiment):
+        labels_count = defaultdict(int)
+        labels = []
+        for plate in experiment.plates.all():
+            plate_details = PlateDetail.objects.get(pk=plate.id)
+            labels.extend(plate_details.measurement_labels)
+        for label in labels:
+            labels_count[label] += 1
+        return [
+            label
+            for label, count in labels_count.items()
+            if count == len(experiment.plates.all())
+        ]
 
     class Meta:
         model = Experiment

@@ -110,17 +110,25 @@ export const useProjectStore = defineStore('project', () => {
   //   projectStore.calculateNewMeasurement(props.plate.id, expression, newLabel)
   // }
   const addNewMeasurement = async (
-    plateId: number,
+    plateId: number | null,
     expression: string,
     newLabel: string,
-    usedLabels: string[]
+    usedLabels: string[],
+    experimentId: null | number | undefined = null
   ) => {
-    const res = await api.post(`/api/plates/${plateId}/add_new_measurement/`, {
-      plate_id: plateId,
-      expression: expression,
-      new_label: newLabel,
-      used_labels: usedLabels,
-    })
+    let payload = {}
+    if (plateId) {
+      payload = {plate_id: plateId, expression: expression, new_label: newLabel, used_labels: usedLabels}
+    } else if (experimentId) {
+      payload = {
+        experiment_id: experimentId,
+        expression: expression,
+        new_label: newLabel,
+        used_labels: usedLabels,
+      }
+    }
+
+    const res = await api.post(`/api/plates/${plateId}/add_new_measurement/`, payload)
     if (res.status === 200) {
       await initialize()
     }

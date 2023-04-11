@@ -186,5 +186,6 @@ export default {
   info: {
     no_description: 'No description provided',
     applying_in_progress: 'Applying template in progress. Hang on...',
+    calculation_in_progress: 'Calculation in progress. Hang on...',
   },
 }
