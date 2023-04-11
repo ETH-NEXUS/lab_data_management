@@ -166,7 +166,7 @@ class EchoMapper(BaseMapper):
                         )
                     except Plate.DoesNotExist:
                         destination_plate = self.__create_plate_by_name_and_barcode(
-                            destination_plate_name, destination_plate_barcode
+                            destination_plate_name, destination_plate_barcode, **kwargs
                         )
 
                 if source_plate_barcode in mapping_lists:
@@ -218,7 +218,9 @@ class EchoMapper(BaseMapper):
             kwargs.update({"try_queue": try_queue + 1})
             self.map(queue, **kwargs)
 
-    def __create_plate_by_name_and_barcode(self, plate_name: str, barcode: str):
+    def __create_plate_by_name_and_barcode(
+        self, plate_name: str, barcode: str, **kwargs
+    ):
         try:
             barcode_prefix = barcode.split("_")[0]
             barcode_specification = BarcodeSpecification.objects.get(
@@ -226,7 +228,23 @@ class EchoMapper(BaseMapper):
             )
         except BarcodeSpecification.DoesNotExist:
             log.error(f"No barcode specification found for {barcode}.")
-            raise ValueError(f"No barcode specification found for {barcode}.")
+            if kwargs.get("experiment_name"):
+                log.warning(
+                    f"Plate with barcode {barcode} does not exist. Creating it."
+                )
+                barcode_specification, _ = BarcodeSpecification.objects.get_or_create(
+                    prefix=barcode.split("_")[0],
+                    sides=["North"],
+                    experiment=Experiment.objects.get(
+                        name=kwargs.get("experiment_name")
+                    ),
+                )
+            else:
+                raise ValueError(
+                    f"No barcode specification found for {barcode} and no experiment name is provided."
+                    f" Please provide the experiment name in order to create the missing barcode "
+                    f"specifications."
+                )
 
         return Plate.objects.create(
             barcode=barcode,
