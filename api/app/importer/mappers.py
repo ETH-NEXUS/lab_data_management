@@ -227,21 +227,22 @@ class EchoMapper(BaseMapper):
                 prefix=barcode_prefix
             )
         except BarcodeSpecification.DoesNotExist:
-            log.error(f"No barcode specification found for {barcode}.")
             if kwargs.get("experiment_name"):
                 log.warning(
-                    f"Plate with barcode {barcode} does not exist. Creating it."
+                    f"No barcode specification found for {barcode}. Creating it."
                 )
                 barcode_specification, _ = BarcodeSpecification.objects.get_or_create(
                     prefix=barcode.split("_")[0],
                     sides=["North"],
+                    number_of_plates=4,
                     experiment=Experiment.objects.get(
                         name=kwargs.get("experiment_name")
                     ),
                 )
             else:
                 raise ValueError(
-                    f"No barcode specification found for {barcode} and no experiment name is provided."
+                    f"No barcode specification found for {barcode} and no experiment name is "
+                    f"provided."
                     f" Please provide the experiment name in order to create the missing barcode "
                     f"specifications."
                 )
@@ -403,6 +404,7 @@ class M1000Mapper(BaseMapper):
                 barcode_specification, _ = BarcodeSpecification.objects.get_or_create(
                     prefix=barcode.split("_")[0],
                     sides=["North"],
+                    number_of_plates=4,
                     experiment=Experiment.objects.get(
                         name=kwargs.get("experiment_name")
                     ),
