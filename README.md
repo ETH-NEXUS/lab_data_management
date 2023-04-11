@@ -40,6 +40,12 @@ In the api container run:
 ./manage.py map echo -i /data/echo 
 ```
 
+If you have not created barcode specifications for the plates in the ui, provide the experiment name so that they can be created during mapping:
+
+```bash
+./manage.py map echo -i /data/echo --experiment_name exp3
+```
+
 If the column names in your echo output files differ from the default ones, you should specify a mapping file:
 
 ```bash
