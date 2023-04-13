@@ -410,7 +410,10 @@ const calculateNewMeasurement = async (expression: string, newLabel: string, use
   <q-dialog v-model="openCalculator">
     <q-card class="calculator_dialog">
       <q-card-section>
-        <MeasurementCalculator :labels="combinedLabels" @calculate="calculateNewMeasurement" />
+        <MeasurementCalculator
+          :labels="combinedLabels"
+          @calculate="calculateNewMeasurement"
+          :measurementTimestamps="props.plate.details.measurement_timestamps" />
       </q-card-section>
     </q-card>
   </q-dialog>

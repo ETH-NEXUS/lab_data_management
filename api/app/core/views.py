@@ -157,17 +157,23 @@ class PlateViewSet(viewsets.ModelViewSet):
 
         used_labels = request.data.get("used_labels")
         new_label = request.data.get("new_label")
-        expression = request.data.get("expression")
+        expression = request.data.get("expression").replace("ln(", "math.log(")
 
         plate_id = request.data.get("plate_id")
         experiment_id = request.data.get("experiment_id")
+        separate_time_series_points = request.data.get("separate_time_series_points")
 
         if plate_id:
             current_plate = Plate.objects.get(id=plate_id)
             current_plate_details = PlateDetail.objects.get(id=plate_id)
 
             self.__add_new_measurement_to_plate(
-                current_plate, current_plate_details, used_labels, new_label, expression
+                current_plate,
+                current_plate_details,
+                used_labels,
+                new_label,
+                expression,
+                separate_time_series_points,
             )
         elif experiment_id:
             experiment = Experiment.objects.get(id=experiment_id)
@@ -199,20 +205,151 @@ class PlateViewSet(viewsets.ModelViewSet):
             result = 0
         return result
 
-    def __create_measurement(
-        self, well, label, value, measured_at, identifier, feature
-    ):
-        measurement, _ = Measurement.objects.get_or_create(
-            well=well,
-            label=label,
-            measured_at=measured_at,
-            defaults={"value": value, "identifier": identifier, "feature": feature},
-        )
-        return measurement, _
-
     def __add_new_measurement_to_plate(
-        self, current_plate, current_plate_details, used_labels, new_label, expression
+        self,
+        current_plate,
+        current_plate_details,
+        used_labels,
+        new_label,
+        expression,
+        separate_time_series_points,
     ):
+        new_measurement_timestamp, time_series_support = self.__create_new_timestamp(
+            current_plate_details
+        )
+        wells = current_plate.wells.all()
+        measurement_feature, _ = MeasurementFeature.objects.get_or_create(
+            abbrev=new_label
+        )
+        if separate_time_series_points:
+            self.__separate_time_series_points(
+                used_labels,
+                new_label,
+                expression,
+                wells,
+                measurement_feature,
+                new_measurement_timestamp,
+            )
+        else:
+            self.__all_time_series_points(
+                used_labels,
+                new_label,
+                expression,
+                wells,
+                measurement_feature,
+                time_series_support,
+                new_measurement_timestamp,
+            )
+
+        PlateDetail.refresh(concurrently=True)
+        WellDetail.refresh(concurrently=True)
+        log.info(
+            f"New measurement {new_label} added to plate {current_plate.id} with barcode {current_plate.barcode}"
+        )
+
+    def __separate_time_series_points(
+        self,
+        used_labels,
+        new_label,
+        expression,
+        wells,
+        measurement_feature,
+        new_measurement_timestamp,
+    ):
+        measurement_objects = []
+        for item in used_labels:
+            print("!!!!!!!!!!!!!!!!!!!!!", item)
+            label, timestamp = item.split("-->")
+            label = label.strip().lstrip()
+            timestamp = timestamp.strip().lstrip()
+            measurement_objects.append(
+                {"label": label, "timestamp": timestamp, "combined_label": item}
+            )
+        print("&&&&&&&&&&&", measurement_objects)
+        for well in wells:
+            well_measurements = well.measurements.all()
+            new_expression = expression
+            for measurement in well_measurements:
+                for measurement_object in measurement_objects:
+                    if measurement.label == measurement_object[
+                        "label"
+                    ] and measurement_object["timestamp"].split("+")[
+                        0
+                    ] == measurement.measured_at.strftime(
+                        "%Y-%m-%dT%H:%M:%S%z"
+                    ):
+                        new_expression = new_expression.replace(
+                            measurement_object["combined_label"],
+                            str(measurement.value),
+                        )
+            print("&&&&&&&&&&& NEW EXPRESSION", new_expression)
+            measurement, _ = self.__create_measurement(
+                well,
+                new_label,
+                new_expression,
+                new_measurement_timestamp,
+                "",
+                measurement_feature,
+            )
+
+    def __all_time_series_points(
+        self,
+        used_labels,
+        new_label,
+        expression,
+        wells,
+        measurement_feature,
+        time_series_support,
+        new_measurement_timestamp,
+    ):
+        for well in wells:
+            well_measurements = well.measurements.all()
+            if time_series_support:
+                for measurement in well_measurements:
+                    current_measurement_time = measurement.measured_at
+                    same_time_measurements_data = {}
+                    for _measurement in well_measurements:
+                        if _measurement.measured_at == current_measurement_time:
+                            same_time_measurements_data[
+                                _measurement.label
+                            ] = _measurement.value
+
+                    new_expression = expression
+                    if (
+                        len(same_time_measurements_data) > 0
+                        and measurement.label in used_labels
+                    ):
+                        for key in same_time_measurements_data.keys():
+                            new_expression = new_expression.replace(
+                                key, str(same_time_measurements_data[key])
+                            )
+
+                        self.__create_measurement(
+                            well,
+                            new_label,
+                            new_expression,
+                            current_measurement_time,
+                            "",
+                            measurement_feature,
+                        )
+
+            else:
+                new_expression = expression
+                for measurement in well_measurements:
+                    new_expression = new_expression.replace(
+                        measurement.label, str(measurement.value)
+                    )
+
+                self.__create_measurement(
+                    well,
+                    new_label,
+                    new_expression,
+                    new_measurement_timestamp,
+                    "new_value",
+                    measurement_feature,
+                )
+
+    def __create_new_timestamp(self, current_plate_details):
         now = datetime.now().replace(microsecond=0)
         time_series_support = False
         new_measurement_timestamp = now
@@ -238,64 +375,19 @@ class PlateViewSet(viewsets.ModelViewSet):
                         current_plate_details.measurement_timestamps[key][0]
                     )
                 new_measurement_timestamp = mean_time_point(timestamps)
+        return new_measurement_timestamp, time_series_support
 
-        wells = current_plate.wells.all()
-        measurement_feature, _ = MeasurementFeature.objects.get_or_create(
-            abbrev=new_label
+    def __create_measurement(
+        self, well, label, new_expression, measured_at, identifier, feature
+    ):
+        value = self.__evaluate_expression(new_expression)
+        measurement, _ = Measurement.objects.get_or_create(
+            well=well,
+            label=label,
+            measured_at=measured_at,
+            defaults={"value": value, "identifier": identifier, "feature": feature},
         )
-
-        for well in wells:
-            well_measurements = well.measurements.all()
-            if time_series_support:
-                for measurement in well_measurements:
-                    current_measurement_time = measurement.measured_at
-                    same_time_measurements_data = {}
-                    for _measurement in well_measurements:
-                        if _measurement.measured_at == current_measurement_time:
-                            same_time_measurements_data[
-                                _measurement.label
-                            ] = _measurement.value
-
-                    new_expression = expression.replace("ln(", "math.log(")
-                    if (
-                        len(same_time_measurements_data) > 0
-                        and measurement.label in used_labels
-                    ):
-                        for key in same_time_measurements_data.keys():
-                            new_expression = new_expression.replace(
-                                key, str(same_time_measurements_data[key])
-                            )
-                        result = self.__evaluate_expression(new_expression)
-                        self.__create_measurement(
-                            well,
-                            new_label,
-                            result,
-                            current_measurement_time,
-                            "",
-                            measurement_feature,
-                        )
-
-            else:
-                new_expression = expression.replace("ln(", "math.log(")
-                for measurement in well_measurements:
-                    new_expression = new_expression.replace(
-                        measurement.label, str(measurement.value)
-                    )
-                result = self.__evaluate_expression(new_expression)
-                self.__create_measurement(
-                    well,
-                    new_label,
-                    result,
-                    new_measurement_timestamp,
-                    "",
-                    measurement_feature,
-                )
-
-        PlateDetail.refresh(concurrently=True)
-        WellDetail.refresh(concurrently=True)
-        log.info(
-            f"New measurement {new_label} added to plate {current_plate.id} with barcode {current_plate.barcode}"
-        )
+        return measurement, _
 
 
 class WellViewSet(viewsets.ModelViewSet):
