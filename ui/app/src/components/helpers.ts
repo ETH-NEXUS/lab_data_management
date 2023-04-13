@@ -53,6 +53,7 @@ export const palettes: Array<Palette> = [
   {label: 'Green', value: {from: '#c7e9c0', to: '#006d2c'}},
   {label: 'Blue', value: {from: '#92c5de', to: '#0b2746'}},
   {label: 'GreenBrown', value: {from: '#b8e186', to: '#662506'}},
+  {label: 'Grey', value: {from: '#ffffff', to: '#525252'}},
 ]
 
 export const percentageToHsl = (percentage: number, fromColor: string, toColor: string) => {
