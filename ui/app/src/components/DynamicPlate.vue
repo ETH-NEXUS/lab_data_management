@@ -289,7 +289,7 @@ const calculateNewMeasurement = async (expression: string, newLabel: string, use
             })
           ">
           <div
-            class="inner"
+            :class="platePage.smallerMapView ? 'innerSmaller' : 'inner'"
             :style="{
               backgroundColor:
                 platePage.showHeatmap && selectedMeasurement
@@ -435,6 +435,15 @@ const calculateNewMeasurement = async (expression: string, newLabel: string, use
   min-height: 18px
   max-width: 18px
   max-height: 18px
+
+.innerSmaller
+  line-height: 15px
+  width: 15px
+  height: 15px
+  min-width: 15px
+  min-height: 15px
+  max-width: 15px
+  max-height: 15px
 
 table
   border-spacing: 5px
