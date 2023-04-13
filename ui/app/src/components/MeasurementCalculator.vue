@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import {ref, defineProps, onMounted, defineEmits} from 'vue'
+import {ref, defineProps, onMounted, defineEmits, PropType} from 'vue'
 import {useQuasar} from 'quasar'
 
 const props = defineProps({
@@ -7,14 +7,19 @@ const props = defineProps({
     type: Array<string>,
     required: true,
   },
+  measurementTimestamps: {
+    type: Object as PropType<{
+      [key: string]: string[]
+    }>,
+    required: false,
+  },
 })
 
 const emit = defineEmits(['calculate'])
-
 const $q = useQuasar()
 
 onMounted(async () => {
-  console.log('mounted')
+  combinedLabels.value = createCombinedLabels()
 })
 
 const buttons: string[] = ['1', '2', '3', '+', '4', '5', '6', '-', '7', '8', '9', '*', 'C', '0', '/', 'ln']
@@ -22,6 +27,7 @@ const currentExpression = ref<string>('')
 const previousButton = ref<string>('')
 const newLabel = ref<string>('')
 const usedLabels = ref<string[]>([])
+const combinedLabels = ref<string[]>([])
 
 const handleButtonClick = (button: string) => {
   switch (button) {
@@ -76,7 +82,7 @@ const addMeasurement = () => {
 
   // check if used labels contain any of the values in labels
   const usedLabelsSet = new Set(usedLabels.value)
-  const labelsSet = new Set(props.labels)
+  const labelsSet = new Set([...props.labels, ...combinedLabels.value])
   const intersection = new Set([...usedLabelsSet].filter(x => labelsSet.has(x)))
 
   // the measurement will not be added if no labels were used
@@ -88,8 +94,43 @@ const addMeasurement = () => {
 
     return
   }
+  // check if used labels contain both labels with --> substring inside  and ones without this substring
+  if (
+    usedLabels.value.some(label => label.includes('-->')) &&
+    usedLabels.value.some(label => !label.includes('-->'))
+  ) {
+    $q.notify({
+      type: 'negative',
+      message:
+        'Please make calculation on either all labels of the time series or on separate labels within the time series. They can not be combined',
+    })
+
+    return
+  }
 
   emit('calculate', currentExpression.value, newLabel.value, usedLabels.value)
+}
+
+const hasDifferentTimestamps = (timestamps: string[]) => {
+  const set = new Set(timestamps)
+  return set.size !== 1
+}
+
+const createCombinedLabels = () => {
+  const combinedLabels = []
+  if (props.measurementTimestamps) {
+    for (const [label, timestamps] of Object.entries(props.measurementTimestamps)) {
+      if (hasDifferentTimestamps(timestamps)) {
+        for (const timestamp of timestamps) {
+          // this string contains the '-->' substring, it is used to split the labels on the backend
+          // as well as in the function addMeasurement
+          // if you change this string, make sure to change the split-substring elsewhere as well
+          combinedLabels.push(`${label} --> ${timestamp}`)
+        }
+      }
+    }
+  }
+  return combinedLabels
 }
 </script>
 
@@ -112,6 +153,9 @@ const addMeasurement = () => {
         </button>
       </div>
     </div>
+    <div class="text-body2 text-blue-4 centered" v-if="combinedLabels.length > 0">
+      Calculate on all time series points
+    </div>
     <div class="labels">
       <div
         v-for="(label, index) in labels"
@@ -120,6 +164,19 @@ const addMeasurement = () => {
         :draggable="true"
         @dragstart="handleDragStart(label, $event)">
         {{ label }}
+      </div>
+    </div>
+    <div class="text-body2 text-blue-4 centered" v-if="combinedLabels.length > 0">
+      Calculate on separate time series points
+    </div>
+    <div v-if="combinedLabels.length > 0" class="labels">
+      <div
+        class="label"
+        v-for="(l, i) in combinedLabels"
+        :key="`${l}-${i}`"
+        :draggable="true"
+        @dragstart="handleDragStart(l, $event)">
+        {{ l }}
       </div>
     </div>
 
@@ -135,6 +192,10 @@ const addMeasurement = () => {
 </template>
 
 <style lang="sass">
+
+.centered
+  text-align: center
+  margin: 10px 0
 
 
 .calculator

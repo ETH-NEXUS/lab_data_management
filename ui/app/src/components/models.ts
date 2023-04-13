@@ -336,3 +336,12 @@ export interface PlotData {
   color: string
   categories: string[] | number[] | Date[] | (string | Date | number)[]
 }
+
+export interface CalculatorPayload {
+  expression?: string
+  new_label?: string
+  used_labels?: string[]
+  separate_time_series_points?: boolean
+  plate_id?: number | null
+  experiment_id?: number | null
+}

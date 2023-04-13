@@ -1,6 +1,13 @@
 import {defineStore} from 'pinia'
 
-import {Experiment, PlateDimension, Project, ExperimentPayload, ProjectPayload} from 'src/components/models'
+import {
+  Experiment,
+  PlateDimension,
+  Project,
+  ExperimentPayload,
+  ProjectPayload,
+  CalculatorPayload,
+} from 'src/components/models'
 
 import {api} from 'src/boot/axios'
 import {ref} from 'vue'
@@ -116,9 +123,12 @@ export const useProjectStore = defineStore('project', () => {
     usedLabels: string[],
     experimentId: null | number | undefined = null
   ) => {
-    let payload = {}
+    let payload: CalculatorPayload = {separate_time_series_points: false}
     if (plateId) {
       payload = {plate_id: plateId, expression: expression, new_label: newLabel, used_labels: usedLabels}
+      if (usedLabels.some(label => label.includes('-->'))) {
+        payload.separate_time_series_points = true
+      }
     } else if (experimentId) {
       payload = {
         experiment_id: experimentId,
