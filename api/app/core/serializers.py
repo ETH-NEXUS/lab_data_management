@@ -21,6 +21,7 @@ from .models import (
     MappingList,
     PlateDetail,
     WellDetail,
+    ExperimentDetail,
 )
 
 
@@ -238,12 +239,25 @@ class BarcodeSpecificationSerializer(serializers.ModelSerializer):
         fields = "__all__"
 
 
+# class ExperimentDetailSerializer(serializers.ModelSerializer):
+#     class Meta:
+#         model = ExperimentDetail
+#         fields = "__all__"
+#
+
+
 class ExperimentSerializer(serializers.ModelSerializer):
     plates = SimplePlateSerializer(many=True, required=False, allow_null=True)
     barcode_specifications = BarcodeSpecificationSerializer(
         many=True, required=False, allow_null=True
     )
     available_measurement_labels = serializers.SerializerMethodField()
+
+    # details = serializers.SerializerMethodField()
+    #
+    # def get_details(self, experiment: Experiment):
+    #     experiment_details = ExperimentDetail.objects.get(pk=experiment.id)
+    #     return ExperimentDetailSerializer(experiment_details).data
 
     # returns only those labels that are available for all plates in the experiment
     def get_available_measurement_labels(self, experiment: Experiment):
