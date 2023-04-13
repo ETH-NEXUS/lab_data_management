@@ -454,7 +454,6 @@ table
 
 
 td
-
   width: 24px
   height: 24px
   min-width: 24px
