@@ -258,14 +258,13 @@ class PlateViewSet(viewsets.ModelViewSet):
     ):
         measurement_objects = []
         for item in used_labels:
-            print("!!!!!!!!!!!!!!!!!!!!!", item)
             label, timestamp = item.split("-->")
             label = label.strip().lstrip()
             timestamp = timestamp.strip().lstrip()
             measurement_objects.append(
                 {"label": label, "timestamp": timestamp, "combined_label": item}
             )
-        print("&&&&&&&&&&&", measurement_objects)
+
         for well in wells:
             well_measurements = well.measurements.all()
             new_expression = expression
@@ -282,7 +281,7 @@ class PlateViewSet(viewsets.ModelViewSet):
                             measurement_object["combined_label"],
                             str(measurement.value),
                         )
-            print("&&&&&&&&&&& NEW EXPRESSION", new_expression)
+
             measurement, _ = self.__create_measurement(
                 well,
                 new_label,
