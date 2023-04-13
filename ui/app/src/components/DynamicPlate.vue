@@ -197,9 +197,9 @@ const heatmapColor = (well: WellDetails | undefined) => {
 }
 
 const typeColor_map: {[key: string]: string} = {
-  P: 'rgb(198, 223, 168)',
-  N: 'rgb(253, 204, 134)',
-  C: 'rgb(177, 190, 197)',
+  P: 'rgb(107,142,35)',
+  N: 'rgb(255, 99, 71)',
+  C: 'rgb(0,191,255)',
 }
 
 const typeColor = (well: WellDetails | undefined) => {
@@ -278,12 +278,7 @@ const calculateNewMeasurement = async (expression: string, newLabel: string, use
 
         <td
           :style="{
-            backgroundColor:
-              platePage.showHeatmap && selectedMeasurement
-                ? heatmapColor(wells[row][col])
-                : plate.template || (platePage.wellContent === 'type' && !platePage.showHeatmap)
-                ? typeColor(wells[row][col])
-                : 'transparent',
+            backgroundColor: typeColor(wells[row][col]),
           }"
           :key="`cols${col}`"
           v-for="(_, col) of props.plate.dimension.cols"
@@ -293,31 +288,42 @@ const calculateNewMeasurement = async (expression: string, newLabel: string, use
               position: positionFromRowCol(row, col, props.plate.dimension),
             })
           ">
-          <a v-if="wells[row][col]" :class="{'bg-warning': wells[row][col]!.status}">
-            {{ platePage.smallerMapView ? '&nbsp;&nbsp;&nbsp;' : wells[row][col]![platePage.wellContent] }}
-          </a>
-          <q-tooltip
-            class="tooltip"
-            v-if="wells[row][col]"
-            anchor="top middle"
-            self="bottom middle"
-            :offset="[5, 5]">
-            <b>{{ wells[row][col]?.hr_position }}</b>
-            ({{ wells[row][col]?.type }})
-            <small>({{ wells[row][col]?.position }})</small>
-            <hr />
-            <b v-if="wells[row][col]?.compounds" class="q-mt-md">{{ t('label.compounds') }}</b>
-            <table v-if="wells[row][col]?.compounds">
-              <tr v-for="compound in wells[row][col]?.compounds" :key="compound">
-                <b>{{ compound }}</b>
-              </tr>
-            </table>
-            <b v-if="selectedMeasurement" class="q-mt-md">{{ t('label.measurements') }}</b>
-            <br />
-            <span v-if="selectedMeasurement" class="q-mt-md">
-              {{ selectedMeasurement }}: {{ measurement(wells[row][col]!) }}
-            </span>
-          </q-tooltip>
+          <div
+            class="inner"
+            :style="{
+              backgroundColor:
+                platePage.showHeatmap && selectedMeasurement
+                  ? heatmapColor(wells[row][col])
+                  : plate.template || (platePage.wellContent === 'type' && !platePage.showHeatmap)
+                  ? typeColor(wells[row][col])
+                  : 'transparent',
+            }">
+            <a v-if="wells[row][col]" :class="{'bg-warning': wells[row][col]!.status}">
+              {{ platePage.smallerMapView ? '&nbsp;&nbsp;&nbsp;' : wells[row][col]![platePage.wellContent] }}
+            </a>
+            <q-tooltip
+              class="tooltip"
+              v-if="wells[row][col]"
+              anchor="top middle"
+              self="bottom middle"
+              :offset="[5, 5]">
+              <b>{{ wells[row][col]?.hr_position }}</b>
+              ({{ wells[row][col]?.type }})
+              <small>({{ wells[row][col]?.position }})</small>
+              <hr />
+              <b v-if="wells[row][col]?.compounds" class="q-mt-md">{{ t('label.compounds') }}</b>
+              <table v-if="wells[row][col]?.compounds">
+                <tr v-for="compound in wells[row][col]?.compounds" :key="compound">
+                  <b>{{ compound }}</b>
+                </tr>
+              </table>
+              <b v-if="selectedMeasurement" class="q-mt-md">{{ t('label.measurements') }}</b>
+              <br />
+              <span v-if="selectedMeasurement" class="q-mt-md">
+                {{ selectedMeasurement }}: {{ measurement(wells[row][col]!) }}
+              </span>
+            </q-tooltip>
+          </div>
         </td>
       </tr>
     </table>
@@ -417,15 +423,29 @@ const calculateNewMeasurement = async (expression: string, newLabel: string, use
 </template>
 
 <style scoped lang="sass">
+
+.inner
+  border-radius: 50%
+  line-height: 18px
+  margin: auto
+  text-align: center
+  width: 18px
+  height: 18px
+  min-width: 18px
+  min-height: 18px
+  max-width: 18px
+  max-height: 18px
+
 table
   border-spacing: 5px
   border: 1px solid #bbb
   border-radius: 12px
   padding: 4px 8px 8px 4px
   overflow: hidden
+
+
 td
-  border: 1px solid #4c4c4c
-  border-radius: 12px
+
   width: 24px
   height: 24px
   min-width: 24px
