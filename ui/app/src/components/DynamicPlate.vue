@@ -277,15 +277,16 @@ const calculateNewMeasurement = async (expression: string, newLabel: string, use
         </th>
 
         <td
-          :class="platePage.squareCompoundType ? 'square' : 'circle'"
+          :class="platePage.squareCompoundType && !platePage.smallerMapView ? 'square' : 'circle'"
           :style="{
-            backgroundColor: platePage.squareCompoundType
-              ? typeColor(wells[row][col])
-              : platePage.showHeatmap && selectedMeasurement
-              ? heatmapColor(wells[row][col])
-              : plate.template || (platePage.wellContent === 'type' && !platePage.showHeatmap)
-              ? typeColor(wells[row][col])
-              : 'transparent',
+            backgroundColor:
+              platePage.squareCompoundType && !platePage.smallerMapView
+                ? typeColor(wells[row][col])
+                : platePage.showHeatmap && selectedMeasurement
+                ? heatmapColor(wells[row][col])
+                : plate.template || (platePage.wellContent === 'type' && !platePage.showHeatmap)
+                ? typeColor(wells[row][col])
+                : 'transparent',
           }"
           :key="`cols${col}`"
           v-for="(_, col) of props.plate.dimension.cols"
@@ -438,14 +439,14 @@ const calculateNewMeasurement = async (expression: string, newLabel: string, use
   max-width: 22px
   max-height: 22px
 
-.innerSmaller
-  line-height: 15px
-  width: 15px
-  height: 15px
-  min-width: 15px
-  min-height: 15px
-  max-width: 15px
-  max-height: 15px
+//.innerSmaller
+//  line-height: 15px
+//  width: 15px
+//  height: 15px
+//  min-width: 15px
+//  min-height: 15px
+//  max-width: 15px
+//  max-height: 15px
 
 table
   border-spacing: 5px

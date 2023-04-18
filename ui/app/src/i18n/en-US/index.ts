@@ -87,7 +87,7 @@ export default {
     smaller_map_view: 'Smaller map view',
     label: 'Label',
     plot_view: 'Plot view',
-    show_type_as_square: 'Show type',
+    show_type_as_square: 'Show wells as squares',
   },
   hint: {
     username: 'Enter your ETH username',
