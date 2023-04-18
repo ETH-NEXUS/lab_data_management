@@ -21,6 +21,7 @@ import {useQuasar} from 'quasar'
 import {api} from 'boot/axios'
 import bus from 'src/eventBus'
 import MeasurementCalculator from 'components/MeasurementCalculator.vue'
+import ExperimentHeatmap from 'components/ExperimentHeatmap.vue'
 
 const route = useRoute()
 const projectStore = useProjectStore()
@@ -33,6 +34,7 @@ const project = ref<Project | null>(null)
 const experiment = ref<Experiment | null>(null)
 const generateBarcodeDialogToggle = ref<boolean>(false)
 const addNewMeasurementDialog = ref<boolean>(false)
+const showResults = ref<boolean>(false)
 
 const applyTemplateDialog = ref<boolean>(false)
 const selectedTemplatePlateId = ref<number>()
@@ -199,6 +201,9 @@ const calculateNewMeasurement = async (expression: string, newLabel: string, use
 const addNewMeasurement = () => {
   addNewMeasurementDialog.value = true
 }
+const toggleShowResults = () => {
+  showResults.value = !showResults.value
+}
 </script>
 
 <template>
@@ -338,7 +343,23 @@ const addNewMeasurement = () => {
             icon="o_layers"
             color="secondary"
             @click="addNewMeasurement" />
+          <q-btn
+            v-if="experiment.available_measurement_labels.length > 0"
+            class="q-ml-xs"
+            :label="t('action.show_results')"
+            icon="o_layers"
+            color="secondary"
+            @click="toggleShowResults" />
         </q-card-actions>
+
+        <q-card-section>
+          <ExperimentHeatmap
+            v-if="showResults"
+            :timestamps="experiment.details.measurement_timestamps"
+            :available-measurement-labels="experiment.available_measurement_labels"
+            :overall-stats="experiment.details.overall_stats"
+            :experiment-id="experiment.id" />
+        </q-card-section>
       </q-card>
     </div>
     <q-dialog v-model="generateBarcodeDialogToggle">
