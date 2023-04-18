@@ -10,6 +10,7 @@ import MeasurementCalculator from 'components/MeasurementCalculator.vue'
 import {useProjectStore} from 'stores/project'
 import bus from 'src/eventBus'
 import {useQuasar} from 'quasar'
+import WellTooltip from 'components/WellTooltip.vue'
 
 const {t} = useI18n()
 
@@ -22,15 +23,6 @@ const props = defineProps({
     required: true,
   },
 })
-
-//computed message saying that the combination of label and timestamp was not found
-
-// const notFoundMessage = computed(() => {
-//   if (!props.plate.wells || !(selectedMeasurement.value in props.plate.wells[0].measurements)) {
-//     return `No data found for ${selectedMeasurement.value} at ${selectedTimestampIdx.value}`
-//   }
-//   return ''
-// })
 
 const combinedLabels = computed<string[]>(() => {
   // const combined_labels: string[] = []
@@ -263,6 +255,14 @@ const calculateNewMeasurement = async (expression: string, newLabel: string, use
     :label="t('label.smaller_map_view')"
     right-label
     color="secondary"></q-toggle>
+  <q-toggle
+    class="q-mb-md"
+    size="sm"
+    checked-icon="check"
+    v-model="platePage.squareCompoundType"
+    :label="t('label.show_type_as_square')"
+    right-label
+    color="secondary"></q-toggle>
   <div class="row no-wrap">
     <table v-if="props.plate" :class="platePage.smallerMapView ? 'smaller' : ''">
       <tr>
@@ -277,8 +277,15 @@ const calculateNewMeasurement = async (expression: string, newLabel: string, use
         </th>
 
         <td
+          :class="platePage.squareCompoundType ? 'square' : 'circle'"
           :style="{
-            backgroundColor: typeColor(wells[row][col]),
+            backgroundColor: platePage.squareCompoundType
+              ? typeColor(wells[row][col])
+              : platePage.showHeatmap && selectedMeasurement
+              ? heatmapColor(wells[row][col])
+              : plate.template || (platePage.wellContent === 'type' && !platePage.showHeatmap)
+              ? typeColor(wells[row][col])
+              : 'transparent',
           }"
           :key="`cols${col}`"
           v-for="(_, col) of props.plate.dimension.cols"
@@ -289,6 +296,7 @@ const calculateNewMeasurement = async (expression: string, newLabel: string, use
             })
           ">
           <div
+            v-if="platePage.squareCompoundType && !platePage.smallerMapView"
             :class="platePage.smallerMapView ? 'innerSmaller' : 'inner'"
             :style="{
               backgroundColor:
@@ -301,29 +309,26 @@ const calculateNewMeasurement = async (expression: string, newLabel: string, use
             <a v-if="wells[row][col]" :class="{'bg-warning': wells[row][col]!.status}">
               {{ platePage.smallerMapView ? '&nbsp;&nbsp;&nbsp;' : wells[row][col]![platePage.wellContent] }}
             </a>
-            <q-tooltip
-              class="tooltip"
+            <WellTooltip
               v-if="wells[row][col]"
-              anchor="top middle"
-              self="bottom middle"
-              :offset="[5, 5]">
-              <b>{{ wells[row][col]?.hr_position }}</b>
-              ({{ wells[row][col]?.type }})
-              <small>({{ wells[row][col]?.position }})</small>
-              <hr />
-              <b v-if="wells[row][col]?.compounds" class="q-mt-md">{{ t('label.compounds') }}</b>
-              <table v-if="wells[row][col]?.compounds">
-                <tr v-for="compound in wells[row][col]?.compounds" :key="compound">
-                  <b>{{ compound }}</b>
-                </tr>
-              </table>
-              <b v-if="selectedMeasurement" class="q-mt-md">{{ t('label.measurements') }}</b>
-              <br />
-              <span v-if="selectedMeasurement" class="q-mt-md">
-                {{ selectedMeasurement }}: {{ measurement(wells[row][col]!) }}
-              </span>
-            </q-tooltip>
+              :well="wells[row][col]"
+              :selected-timestamp-idx="selectedTimestampIdx"
+              :selected-measurement="selectedMeasurement"
+              :col="col"
+              :row="row" />
           </div>
+          <a
+            v-if="wells[row][col] && !platePage.squareCompoundType"
+            :class="{'bg-warning': wells[row][col]!.status}">
+            {{ platePage.smallerMapView ? '&nbsp;&nbsp;&nbsp;' : wells[row][col]![platePage.wellContent] }}
+            <WellTooltip
+              v-if="wells[row][col] && !platePage.squareCompoundType"
+              :well="wells[row][col]"
+              :selected-timestamp-idx="selectedTimestampIdx"
+              :selected-measurement="selectedMeasurement"
+              :col="col"
+              :row="row" />
+          </a>
         </td>
       </tr>
     </table>
@@ -401,9 +406,6 @@ const calculateNewMeasurement = async (expression: string, newLabel: string, use
           emit-value
           map-options></q-select>
       </div>
-      <!-- <q-banner inline-actions class="text-white bg-red" v-if="notFoundMessage && platePage.showHeatmap">
-        {{ notFoundMessage }}
-      </q-banner> -->
 
       <div class="col-12" v-if="platePage.showHeatmap && measurementOptions.length > 0">
         <q-select
@@ -429,12 +431,12 @@ const calculateNewMeasurement = async (expression: string, newLabel: string, use
   line-height: 18px
   margin: auto
   text-align: center
-  width: 18px
-  height: 18px
-  min-width: 18px
-  min-height: 18px
-  max-width: 18px
-  max-height: 18px
+  width: 22px
+  height: 22px
+  min-width: 22px
+  min-height: 22px
+  max-width: 22px
+  max-height: 22px
 
 .innerSmaller
   line-height: 15px
@@ -454,6 +456,7 @@ table
 
 
 td
+
   width: 24px
   height: 24px
   min-width: 24px
@@ -466,6 +469,12 @@ td
 td
   a
     text-decoration: none
+td.circle
+  border: 1px solid #4c4c4c
+  border-radius: 12px
+
+
+
 td:hover
   background-color: #bbb
   cursor: pointer
@@ -521,6 +530,7 @@ table.smaller
   border-radius: unset
   padding: unset
   overflow: hidden
+
 .smaller td
   width: 15px
   height: 15px
