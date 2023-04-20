@@ -21,7 +21,16 @@ services:
       - DJANGO_DEBUG=True
     ports:
       - "5090:5000"
-      - "8890:8888"
+      # - "8888:8888"
   db:
     ports:
       - "54390:5432"
+  nginx:
+    image: nginx:stable-alpine
+    ports:
+      - "8080:80"
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf
+    depends_on:
+      - api
+
