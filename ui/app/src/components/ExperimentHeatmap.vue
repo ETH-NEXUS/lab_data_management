@@ -8,11 +8,17 @@ import HeatMapSettings from 'components/HeatMapSettings.vue'
 import {useI18n} from 'vue-i18n'
 import {useRouter} from 'vue-router'
 import {useQuasar} from 'quasar'
+import {storeToRefs} from 'pinia'
+import {useSettingsStore} from 'stores/settings'
 
 const router = useRouter()
 const $q = useQuasar()
+const {platePage} = storeToRefs(useSettingsStore())
 
 onMounted(async () => {
+  if (platePage.value.showHeatmap == false) {
+    platePage.value.showHeatmap = true
+  }
   $q.loading.show({
     message: t('info.downloading_results'),
   })
@@ -88,6 +94,7 @@ const min = computed(() => {
 </script>
 
 <template>
+  <br />
   <HeatMapSettings :showSquareCompoundType="false" />
   <br />
 
@@ -95,7 +102,7 @@ const min = computed(() => {
     <!--    <div class="col-4">-->
     <!--      <ColorLegend :max="max" :min="min" :selectedMeasurement="selectedMeasurement" />-->
     <!--    </div>-->
-    <div class="col-4 q-ml-sm">
+    <div class="col-4 q-ml-lg">
       <q-select
         v-if="measurementOptions.length > 0"
         v-model="selectedMeasurement"
