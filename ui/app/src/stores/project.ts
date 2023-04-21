@@ -60,6 +60,11 @@ export const useProjectStore = defineStore('project', () => {
     return plate
   }
 
+  const getExperimentPlates = async (experimentId: number) => {
+    const resp = await api.get(`/api/plates/?experiment=${experimentId}`)
+    return resp.data.results
+  }
+
   const generateBarcodes = async (
     experimentId: number,
     prefix: string,
@@ -160,5 +165,6 @@ export const useProjectStore = defineStore('project', () => {
     experiments,
     updateProject,
     addNewMeasurement,
+    getExperimentPlates,
   }
 })

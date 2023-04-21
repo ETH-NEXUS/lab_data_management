@@ -33,6 +33,7 @@ interface Settings {
   libraryNavigationTree: NavigationTree
   templateNavigationTree: NavigationTree
   wellDetails: WellDetails
+  showExperimentResults: boolean
 }
 
 export const useSettingsStore = defineStore('settings', {
@@ -51,6 +52,7 @@ export const useSettingsStore = defineStore('settings', {
       navigationTree: {
         filter: '',
       },
+      showExperimentResults: false,
       projectNavigationTree: {
         expandedNodes: [],
         needsUpdate: false,

@@ -148,6 +148,7 @@ export default {
     update_harvest_projects: 'Update Harvest projects',
     calculate_measurement: 'New measurement',
     add_plates: 'Add paltes',
+    show_results: 'Show measurement results',
     add_barcode_specification: 'Add barcode specification',
     new_project: 'New project',
     project_properties: 'Project properties',
@@ -185,6 +186,7 @@ export default {
     amount: 'µl',
   },
   info: {
+    downloading_results: 'Downloading results...',
     no_description: 'No description provided',
     applying_in_progress: 'Applying template in progress. Hang on...',
     calculation_in_progress: 'Calculation in progress. Hang on...',
