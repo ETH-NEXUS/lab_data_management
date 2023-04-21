@@ -22,6 +22,8 @@ import {api} from 'boot/axios'
 import bus from 'src/eventBus'
 import MeasurementCalculator from 'components/MeasurementCalculator.vue'
 import ExperimentHeatmap from 'components/ExperimentHeatmap.vue'
+import {storeToRefs} from 'pinia'
+import {useSettingsStore} from 'stores/settings'
 
 const route = useRoute()
 const projectStore = useProjectStore()
@@ -34,7 +36,6 @@ const project = ref<Project | null>(null)
 const experiment = ref<Experiment | null>(null)
 const generateBarcodeDialogToggle = ref<boolean>(false)
 const addNewMeasurementDialog = ref<boolean>(false)
-const showResults = ref<boolean>(false)
 
 const applyTemplateDialog = ref<boolean>(false)
 const selectedTemplatePlateId = ref<number>()
@@ -42,6 +43,7 @@ const templatePlateBarcodeOptions = ref<Array<PlateLabelValue>>([])
 const filteredTemplatePlateOptions = ref<Array<PlateLabelValue>>([])
 
 const {t} = useI18n()
+const {showExperimentResults} = storeToRefs(useSettingsStore())
 
 const initialize = async () => {
   try {
@@ -201,9 +203,6 @@ const calculateNewMeasurement = async (expression: string, newLabel: string, use
 const addNewMeasurement = () => {
   addNewMeasurementDialog.value = true
 }
-const toggleShowResults = () => {
-  showResults.value = !showResults.value
-}
 </script>
 
 <template>
@@ -343,22 +342,26 @@ const toggleShowResults = () => {
             icon="o_layers"
             color="secondary"
             @click="addNewMeasurement" />
-          <q-btn
-            v-if="experiment.available_measurement_labels.length > 0"
-            class="q-ml-xs"
-            :label="t('action.show_results')"
-            icon="o_layers"
-            color="secondary"
-            @click="toggleShowResults" />
         </q-card-actions>
 
-        <q-card-section>
-          <ExperimentHeatmap
-            v-if="showResults"
-            :timestamps="experiment.details.measurement_timestamps"
-            :available-measurement-labels="experiment.available_measurement_labels"
-            :overall-stats="experiment.details.overall_stats"
-            :experiment-id="experiment.id" />
+        <q-card-section class="q-mt-lg">
+          <q-expansion-item
+            v-model="expanded"
+            class="shadow-1 overflow-hidden"
+            style="border-radius: 30px"
+            icon="explore"
+            :label="t('action.show_results')"
+            @show="showExperimentResults = true"
+            @hide="showExperimentResults = false"
+            header-class="bg-secondary text-white"
+            expand-icon-class="text-white">
+            <ExperimentHeatmap
+              v-if="showExperimentResults"
+              :timestamps="experiment.details.measurement_timestamps"
+              :available-measurement-labels="experiment.available_measurement_labels"
+              :overall-stats="experiment.details.overall_stats"
+              :experiment-id="experiment.id" />
+          </q-expansion-item>
         </q-card-section>
       </q-card>
     </div>
