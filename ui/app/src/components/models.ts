@@ -20,12 +20,43 @@ export interface Todo {
   content: string
 }
 
+export interface ExperimentDetails {
+  d: number
+  project_id: number
+  measurement_labels: string[]
+  measurement_timestamps: {
+    [label: string]: string[]
+  }
+  stats: {
+    [label: string]: {
+      [label: string]: {
+        min: number[]
+        max: number[]
+        mean: number[]
+        median: number[]
+        std: number[]
+        mad: number[]
+      }
+    }
+  }
+  overall_stats: {
+    [label: string]: {
+      min: number[]
+      max: number[]
+      mean: number[]
+      median: number[]
+      std: number[]
+      mad: number[]
+    }
+  }
+}
 export interface Experiment {
   id: number
   name: string
   plates: Array<Plate>
   project: number
   available_measurement_labels: Array<string>
+  details: ExperimentDetails
   barcode_specifications?: Array<BarcodeSpecification>
   description?: string
 }
