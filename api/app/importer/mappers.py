@@ -24,6 +24,7 @@ from core.models import (
     Experiment,
     PlateDetail,
     WellDetail,
+    ExperimentDetail,
 )
 from core.config import Config
 from django.core.files import File
@@ -70,6 +71,7 @@ class BaseMapper:
         log.info("Refreshing materialized views...")
         PlateDetail.refresh(concurrently=True)
         WellDetail.refresh(concurrently=True)
+        ExperimentDetail.refresh(concurrently=True)
 
     def parse(self, file: TextIOWrapper, **kwargs):
         raise NotImplementedError
