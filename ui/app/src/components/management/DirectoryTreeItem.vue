@@ -1,4 +1,9 @@
 <script setup lang="ts">
+/*
+
+ This component is not in used at the moment, but we might need it later
+
+*/
 import {FileSystemItem} from '../models'
 
 defineProps<{
