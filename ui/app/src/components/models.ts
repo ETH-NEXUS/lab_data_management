@@ -380,11 +380,13 @@ export interface CalculatorPayload {
 interface FileItem {
   type: 'file'
   name: string
+  path: string
 }
 
 interface DirectoryItem {
   type: 'directory'
   name: string
+  path: string
   children: Array<FileSystemItem>
 }
 

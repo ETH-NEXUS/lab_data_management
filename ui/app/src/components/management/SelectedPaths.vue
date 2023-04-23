@@ -19,7 +19,7 @@ const handleDragStart = (path: string, event: DragEvent) => {
 </script>
 
 <template>
-  <div style="max-width: 550px" class="q-mb-lg">
+  <div style="max-width: 750px" class="q-mb-lg">
     <div class="text-body1 q-mb-md">{{ t('management.selected_directories') }}:</div>
     <q-list dense padding class="rounded-borders" v-if="selectedPaths.length > 0">
       <q-item v-for="(path, index) in selectedPaths" :key="path + index">
