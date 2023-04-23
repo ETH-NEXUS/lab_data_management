@@ -19,6 +19,7 @@ def list_files(start_path):
 
     return walk(start_path)
 
+
 def directory_content(request, start_path="/data"):
     content = list_files(start_path)
     return JsonResponse({"directory_content": content})
@@ -52,4 +53,3 @@ def run_command(request):
     output.close()
 
     return JsonResponse({"command_output": output_str})
-
