@@ -23,6 +23,7 @@ from rest_framework_simplejwt.views import (
     TokenRefreshView,
 )
 from users.urls import router as user_router
+from management.views import directory_content, run_command
 
 urlpatterns = [
     path("admin/", admin.site.urls),
@@ -42,6 +43,8 @@ urlpatterns = [
     path("api/version/", VersionView.as_view()),
     re_path(r"^docs/(?P<uri>.*)$", DocsView.as_view(), name="docs"),
     path("api/harvest/", include("harvest.urls")),
+    path("api/directory_content/", directory_content, name="directory_content"),
+    path("api/run_command/", run_command, name="run_command"),
 ]
 
 if not settings.DISABLE_BROWSABLE_API and not settings.DISABLE_AUTH:

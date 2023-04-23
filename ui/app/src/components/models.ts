@@ -376,3 +376,30 @@ export interface CalculatorPayload {
   plate_id?: number | null
   experiment_id?: number | null
 }
+
+interface FileItem {
+  type: 'file'
+  name: string
+}
+
+interface DirectoryItem {
+  type: 'directory'
+  name: string
+  children: Array<FileSystemItem>
+}
+
+export type FileSystemItem = FileItem | DirectoryItem
+
+export interface Options {
+  [key: string]: {
+    type: 'str' | 'bool'
+    label: string
+    required: boolean
+    inputType?: string
+    choices?: string[]
+  }
+}
+
+export interface FormData {
+  [key: string]: string | boolean
+}
