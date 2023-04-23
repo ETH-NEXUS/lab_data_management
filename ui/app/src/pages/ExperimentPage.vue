@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import {useRoute} from 'vue-router'
-import {onMounted, ref, computed} from 'vue'
+import {onMounted, ref} from 'vue'
 import {useI18n} from 'vue-i18n'
 import {handleError} from 'src/helpers/errorHandling'
 import {useProjectStore} from 'stores/project'
@@ -344,7 +344,7 @@ const addNewMeasurement = () => {
             @click="addNewMeasurement" />
         </q-card-actions>
 
-        <q-card-section class="q-mt-lg">
+        <q-card-section class="q-mt-lg" v-if="experiment.details.measurement_timestamps.length > 0">
           <q-expansion-item
             v-model="expanded"
             class="shadow-1 overflow-hidden"

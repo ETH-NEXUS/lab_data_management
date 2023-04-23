@@ -1,10 +1,8 @@
 import traceback
 from os.path import join
-
 import yaml
 from django.core.management.base import BaseCommand
 from friendlylog import colored_logger as log
-
 from importer.mappers import EchoMapper, M1000Mapper
 
 
@@ -82,10 +80,15 @@ class Command(BaseCommand):
                     with open(options.get("headers_file"), "r") as file:
                         headers = yaml.safe_load(file)
                 except FileNotFoundError:
-                    log.error(f"The headers file '{headers_file}' could not be found.")
+                    log.error(
+                        f"The headers file '{headers_file}' could not be found."
+                    )  # probably there is a way to redirect logger output to a specific location,
+                    # but I didn't find it. we need to print the messages in order to catch them for the frontend in management.views.run_command
+                    print(f"The headers file '{headers_file}' could not be found.")
                     return
                 except yaml.YAMLError as e:
                     log.error(f"Error parsing the YAML file '{headers_file}': {e}")
+                    print(f"Error parsing the YAML file '{headers_file}': {e}")
                     return
             try:
                 mapper = EchoMapper()
@@ -96,6 +99,7 @@ class Command(BaseCommand):
                 )
             except Exception as ex:
                 log.error(ex)
+                print(ex)
                 traceback.print_exc()
 
         elif options.get("machine") == "m1000":
@@ -122,4 +126,5 @@ class Command(BaseCommand):
 
             except Exception as ex:
                 log.error(ex)
+                print(ex)
                 traceback.print_exc()

@@ -190,5 +190,14 @@ export default {
     no_description: 'No description provided',
     applying_in_progress: 'Applying template in progress. Hang on...',
     calculation_in_progress: 'Calculation in progress. Hang on...',
+    running_in_progress: 'Running in progress. Hang on...',
+  },
+  management: {
+    selected_directories: 'Selected directories/files',
+    no_dirs_selected: 'No directories/files selected',
+    management: 'Management',
+    echo: 'Echo/M1000',
+    import: 'Import',
+    export: 'Export',
   },
 }
