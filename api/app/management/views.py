@@ -9,7 +9,12 @@ from django.core import management
 
 def list_files(start_path):
     def walk(path, children=None):
-        data = {"type": "directory", "name": os.path.basename(path), "children": []}
+        data = {
+            "type": "directory",
+            "name": os.path.basename(path),
+            "children": [],
+            "path": path,
+        }
         for entry in os.scandir(path):
             if entry.is_file():
                 data["children"].append({"type": "file", "name": entry.name})

@@ -39,6 +39,7 @@ const convertToQTreeNodes = (fileSystemItems: FileSystemItem[]): QTreeNode[] => 
       label: item.name,
       type: item.type,
       name: item.name,
+      path: item.path,
       children: item.type === 'directory' ? convertToQTreeNodes(item.children) : [],
     }
     return qTreeNode
@@ -49,7 +50,7 @@ const nodeHandler = async (node: QTreeNode) => {
   if (node.label === 'Management') {
     await router.push('/management')
   } else if (node.type === 'file' || node.type === 'directory') {
-    selectedPaths.value.push(node.name)
+    selectedPaths.value.push(node.path)
   }
 }
 </script>
