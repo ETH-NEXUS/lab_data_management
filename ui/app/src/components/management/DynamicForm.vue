@@ -43,7 +43,7 @@ const onSubmit = () => {
 
 <template>
   <div class="q-pa-md formContainer">
-    <q-form @submit="onSubmit" class="q-gutter-md form">
+    <q-form @submit="onSubmit" class="q-gutter-md">
       <div v-for="(option, key) in props.options" :key="option.label">
         <q-select
           v-if="option.type === 'str' && option.choices"
@@ -62,7 +62,7 @@ const onSubmit = () => {
         <q-toggle v-else-if="option.type === 'bool'" v-model="form[key]" :label="option.label" />
       </div>
 
-      <q-btn color="secondary" type="submit" :label="t('action.submit')" class="q-mt-lg form_button" />
+      <q-btn color="secondary" type="submit" :label="t('action.submit')" class="q-mt-lg" />
     </q-form>
   </div>
 </template>
@@ -70,15 +70,5 @@ const onSubmit = () => {
 <style>
 .formContainer {
   max-width: 700px;
-}
-.form {
-  position: relative;
-}
-
-.form_button {
-  position: absolute;
-  right: 0;
-  bottom: 0;
-  margin-top: 30px;
 }
 </style>

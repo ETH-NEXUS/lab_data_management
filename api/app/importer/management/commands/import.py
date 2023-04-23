@@ -24,7 +24,7 @@ class Command(BaseCommand):
     def add_arguments(self, parser):
         parser.add_argument("what", type=str, help="What to import: sdf | template")
         parser.add_argument(
-            "--input-file",
+            "--input_file",
             "-i",
             type=str,
             required=True,
@@ -37,7 +37,7 @@ class Command(BaseCommand):
             help="The mapping file for the sdf columns, otherwise default mapping is used",
         )
         parser.add_argument(
-            "--library-name",
+            "--library_name",
             "-l",
             type=str,
             help="The name of the library, otherwise the filename is the library name",
@@ -62,14 +62,14 @@ class Command(BaseCommand):
             help="The number of wells each plate. This setting overrides --number-of-rows and --number-of-columns",
         )
         parser.add_argument(
-            "--category-name",
+            "--category_name",
             "--cat",
             type=str,
             help="The name of the template category, defaults to 'Default'",
             default="Default",
         )
         parser.add_argument(
-            "--template-name",
+            "--template_name",
             "-t",
             type=str,
             help="The name of the template, defaults to 'Default'",
@@ -94,6 +94,7 @@ class Command(BaseCommand):
                 log.debug(msg)
 
         log.info(f"Importing SDF file {sdf_file}...")
+        print(f"Importing SDF file {sdf_file}...")
         if number_of_wells:
             number_of_rows, number_of_columns = row_col_from_wells(number_of_wells)
         if isfile(sdf_file):
@@ -117,6 +118,7 @@ class Command(BaseCommand):
             # Import plates
             for mapping_barcode_idx, mapping_barcode in enumerate(mapping.barcodes):
                 log.info(f"Processing plates for barcode column {mapping_barcode}...")
+                print(f"Processing plates for barcode column {mapping_barcode}...")
                 with tqdm(
                     desc="Processing plates",
                     unit="plates",
@@ -292,8 +294,10 @@ class Command(BaseCommand):
                     pbar.update(1)
 
             log.info("Successfully imported.")
+            print("Successfully imported.")
 
         else:
+            print(f"File does not exist: {input_file}")
             log.error(f"File does not exist: {input_file}")
 
     def handle(self, *args, **options):
@@ -324,5 +328,6 @@ class Command(BaseCommand):
                 WellDetail.refresh(concurrently=True)
 
         except Exception as ex:
+            print(ex)
             log.error(ex)
             traceback.print_exc()

@@ -2,9 +2,14 @@
 import DynamicForm from './DynamicForm.vue'
 import {Options, FormData} from '../models'
 import {useManagementStore} from 'stores/management'
-import {ref, onMounted} from 'vue'
+import {onMounted} from 'vue'
 import {useQuasar} from 'quasar'
 import {useI18n} from 'vue-i18n'
+
+const props = defineProps<{
+  options: Options
+  command: string
+}>()
 
 const managementStore = useManagementStore()
 const $q = useQuasar()
@@ -38,15 +43,10 @@ const mapCommandOptions: Options = {
     label: 'Experiment name',
     required: true,
   },
-  debug: {
-    type: 'bool',
-    label: 'Enable debug mode',
-    required: false,
-  },
 }
 
 const onSubmit = async (formData: FormData) => {
-  formData['command'] = 'map'
+  formData['command'] = props.command
   $q.loading.show({
     message: t('info.running_in_progress'),
   })
@@ -57,7 +57,7 @@ const onSubmit = async (formData: FormData) => {
 
 <template>
   <div>
-    <dynamic-form :options="mapCommandOptions" @submit="onSubmit" />
+    <dynamic-form :options="options" @submit="onSubmit" />
   </div>
   <div>
     <div>

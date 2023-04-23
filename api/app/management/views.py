@@ -17,7 +17,9 @@ def list_files(start_path):
         }
         for entry in os.scandir(path):
             if entry.is_file():
-                data["children"].append({"type": "file", "name": entry.name})
+                data["children"].append(
+                    {"type": "file", "name": entry.name, "path": entry.path}
+                )
             elif entry.is_dir():
                 data["children"].append(walk(entry.path, children))
         return data
@@ -46,12 +48,25 @@ def run_command(request):
                 kwargs = {
                     "path": form_data.get("path"),
                     "mapping_file": form_data.get("mapping_file"),
-                    "debug": form_data.get("debug"),
+                    "debug": False,
                     "create_missing_plates": True,
                     "experiment_name": form_data.get("experiment_name"),
                     "stdout": output,
                 }
                 management.call_command("map", machine, **kwargs)
+        elif form_data.get("command") == "import":
+            what = form_data.get("what")
+            kwargs = {
+                "input_file": form_data.get("input_file"),
+                "debug": False,
+                "library_name": form_data.get("library_name")
+                if form_data.get("library_name")
+                else None,
+                "template_name": form_data.get("template_name")
+                if form_data.get("template_name")
+                else None,
+            }
+            management.call_command("import", what, **kwargs)
 
     sys.stdout = sys.__stdout__
     output_str = output.getvalue()
