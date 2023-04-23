@@ -4,6 +4,7 @@ import {onMounted, ref} from 'vue'
 import SelectedPaths from 'components/management/SelectedPaths.vue'
 import MapCommand from 'components/management/MapCommand.vue'
 import {useI18n} from 'vue-i18n'
+import {mapCommandOptions, importCommandOptions} from 'components/data'
 
 const managementStore = useManagementStore()
 
@@ -34,35 +35,20 @@ const tab = ref<string>('map')
           narrow-indicator>
           <q-tab name="map" :label="t('management.echo')"></q-tab>
           <q-tab name="import" :label="t('management.import')"></q-tab>
-          <q-tab name="export" :label="t('management.export')"></q-tab>
         </q-tabs>
 
         <q-separator></q-separator>
 
         <q-tab-panels v-model="tab" animated>
           <q-tab-panel name="map">
-            <MapCommand />
+            <MapCommand :options="mapCommandOptions" command="map" />
           </q-tab-panel>
 
           <q-tab-panel name="import">
-            <div class="text-h6">Import</div>
-            Gallia est omnis divisa in partes tres, quarum unam incolunt Belgae, aliam Aquitani, tertiam, qui
-            ipsorum lingua Celtae, nostra Galli appellantur.
-          </q-tab-panel>
-
-          <q-tab-panel name="export">
-            <div class="text-h6">Export</div>
-            Ille mi par esse deo videtur, ille, si fas est, superare divos, qui sedens adversus identidem te
-            spectat et audit.
+            <MapCommand :options="importCommandOptions" command="import" />
           </q-tab-panel>
         </q-tab-panels>
       </q-card>
     </div>
-
-    <!--    <div>-->
-    <!--      <ul>-->
-    <!--        <directory-tree-item :item="dataDirectory"></directory-tree-item>-->
-    <!--      </ul>-->
-    <!--    </div>-->
   </q-page>
 </template>

@@ -4,6 +4,7 @@ import yaml
 from django.core.management.base import BaseCommand
 from friendlylog import colored_logger as log
 from importer.mappers import EchoMapper, M1000Mapper
+from core.models import Experiment
 
 
 def die(message):
@@ -71,10 +72,20 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         path = options.get("path")
+        if options.get("experiment_name", None):
+            experiment = Experiment.objects.filter(
+                name=options.get("experiment_name")
+            ).first()
+            if not experiment:
+                print(
+                    f"No experiment with name '{options.get('experiment_name')}' found in the database."
+                )
+                return
 
         if options.get("machine") == "echo":
             headers = EchoMapper.DEFAULT_COLUMNS
             headers_file = options.get("headers_file", None)
+
             if headers_file:
                 try:
                     with open(options.get("headers_file"), "r") as file:
@@ -110,6 +121,7 @@ class Command(BaseCommand):
                             "No experiment name provided. If you would like to add missing "
                             "plates, you need to provide the experiment name."
                         )
+
                 evaluation = options.get("evaluate", None)
                 measurement_name = options.get("measurement_name", None)
                 if evaluation and not measurement_name:
