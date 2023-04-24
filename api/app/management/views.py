@@ -57,6 +57,7 @@ def run_command(request):
         elif form_data.get("command") == "import":
             what = form_data.get("what")
             kwargs = {
+                "mapping_file": form_data.get("mapping_file"),
                 "input_file": form_data.get("input_file"),
                 "debug": False,
                 "library_name": form_data.get("library_name")
