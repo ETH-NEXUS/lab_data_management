@@ -36,6 +36,7 @@ const project = ref<Project | null>(null)
 const experiment = ref<Experiment | null>(null)
 const generateBarcodeDialogToggle = ref<boolean>(false)
 const addNewMeasurementDialog = ref<boolean>(false)
+const expanded = ref<boolean>(false)
 
 const applyTemplateDialog = ref<boolean>(false)
 const selectedTemplatePlateId = ref<number>()
@@ -344,7 +345,7 @@ const addNewMeasurement = () => {
             @click="addNewMeasurement" />
         </q-card-actions>
 
-        <q-card-section class="q-mt-lg" v-if="experiment.details.measurement_timestamps.length > 0">
+        <q-card-section class="q-mt-lg" v-if="experiment.available_measurement_labels.length > 0">
           <q-expansion-item
             v-model="expanded"
             class="shadow-1 overflow-hidden"
