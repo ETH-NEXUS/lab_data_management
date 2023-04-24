@@ -1,11 +1,10 @@
 import traceback
 from os.path import join
-
 import yaml
 from django.core.management.base import BaseCommand
 from friendlylog import colored_logger as log
-
 from importer.mappers import EchoMapper, M1000Mapper
+from core.models import Experiment
 
 
 def die(message):
@@ -73,19 +72,34 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         path = options.get("path")
+        if options.get("experiment_name", None):
+            experiment = Experiment.objects.filter(
+                name=options.get("experiment_name")
+            ).first()
+            if not experiment:
+                print(
+                    f"No experiment with name '{options.get('experiment_name')}' found in the database."
+                )
+                return
 
         if options.get("machine") == "echo":
             headers = EchoMapper.DEFAULT_COLUMNS
             headers_file = options.get("headers_file", None)
+
             if headers_file:
                 try:
                     with open(options.get("headers_file"), "r") as file:
                         headers = yaml.safe_load(file)
                 except FileNotFoundError:
-                    log.error(f"The headers file '{headers_file}' could not be found.")
+                    log.error(
+                        f"The headers file '{headers_file}' could not be found."
+                    )  # probably there is a way to redirect logger output to a specific location,
+                    # but I didn't find it. we need to print the messages in order to catch them for the frontend in management.views.run_command
+                    print(f"The headers file '{headers_file}' could not be found.")
                     return
                 except yaml.YAMLError as e:
                     log.error(f"Error parsing the YAML file '{headers_file}': {e}")
+                    print(f"Error parsing the YAML file '{headers_file}': {e}")
                     return
             try:
                 mapper = EchoMapper()
@@ -96,6 +110,7 @@ class Command(BaseCommand):
                 )
             except Exception as ex:
                 log.error(ex)
+                print(ex)
                 traceback.print_exc()
 
         elif options.get("machine") == "m1000":
@@ -106,6 +121,7 @@ class Command(BaseCommand):
                             "No experiment name provided. If you would like to add missing "
                             "plates, you need to provide the experiment name."
                         )
+
                 evaluation = options.get("evaluate", None)
                 measurement_name = options.get("measurement_name", None)
                 if evaluation and not measurement_name:
@@ -122,4 +138,5 @@ class Command(BaseCommand):
 
             except Exception as ex:
                 log.error(ex)
+                print(ex)
                 traceback.print_exc()
