@@ -19,39 +19,13 @@ onMounted(() => {
   managementStore.commandOutput = ''
 })
 
-const mapCommandOptions: Options = {
-  // probably there is a way to get this data dynamically from the backend
-  machine: {
-    type: 'str',
-    choices: ['echo', 'm1000'],
-    label: 'Machine to map from',
-    required: true,
-  },
-  path: {
-    type: 'str',
-    label: 'Path to the directory containing the mapping files',
-    required: true,
-  },
-  mapping_file: {
-    type: 'str',
-    label: 'For echo mapping only: a yml file with the column headers, otherwise default headers are used',
-    required: false,
-  },
-
-  experiment_name: {
-    type: 'str',
-    label: 'Experiment name',
-    required: true,
-  },
-}
-
 const onSubmit = async (formData: FormData) => {
   formData['command'] = props.command
-  $q.loading.show({
-    message: t('info.running_in_progress'),
-  })
+  // $q.loading.show({
+  //   message: t('info.running_in_progress'),
+  // })
   await managementStore.runCommand(formData)
-  $q.loading.hide()
+  //$q.loading.hide()
 }
 </script>
 
