@@ -5,7 +5,7 @@ import {defineStore} from 'pinia'
 export const useManagementStore = defineStore({
   id: 'management',
   state: () => ({
-    dataDirectory: {type: 'directory', name: '', children: []} as FileSystemItem,
+    dataDirectory: {type: 'directory', name: '', children: [], path: ''} as FileSystemItem,
     selectedPath: '',
     selectedPaths: [] as string[],
     commandOutput: '' as string,
