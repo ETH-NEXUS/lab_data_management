@@ -32,7 +32,7 @@ if [ "$DJANGO_DEBUG" == "True" ]; then
 else
   gunicorn ldm.asgi:application \
     --log-file - \
-    --workers 16 \
+    --workers 4 \
     --worker-class uvicorn.workers.UvicornWorker \
     --timeout 300 \
     --bind 0.0.0.0:${PORT}
