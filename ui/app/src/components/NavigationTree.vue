@@ -6,6 +6,7 @@ import {storeToRefs} from 'pinia'
 import LibraryNavigationTree from './LibraryNavigationTree.vue'
 import ProjectNavigationTree from './ProjectNavigationTree.vue'
 import TemplateNavigationTree from './TemplateNavigationTree.vue'
+import ManagementNavigationTree from 'components/management/ManagementNavigationTree.vue'
 
 const {t} = useI18n()
 
@@ -33,10 +34,13 @@ const resetFilter = () => {
     <project-navigation-tree />
     <library-navigation-tree />
     <template-navigation-tree />
+    <management-navigation-tree />
   </div>
 </template>
 
 <style lang="sass">
 .q-tree__node-header-content
   cursor: pointer
+.link:hover
+  color: $primary
 </style>
