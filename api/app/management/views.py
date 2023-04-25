@@ -93,3 +93,15 @@ def long_polling(request, room_name):
         return JsonResponse({"message": output, "status": status})
     else:
         return JsonResponse({"message": None, "status": status})
+
+
+def delete_file(request):
+    if request.method == "POST":
+        body_unicode = request.body.decode("utf-8")
+        body_data = json.loads(body_unicode)
+        path = body_data.get("path")
+        if os.path.exists(path):
+            os.remove(path)
+        return JsonResponse({"status": "ok"})
+
+    return JsonResponse({"status": "error"})
