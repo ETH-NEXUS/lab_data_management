@@ -83,8 +83,10 @@ class Command(BaseCommand):
                 name=options.get("experiment_name")
             ).first()
             if not experiment:
-                print(
-                    f"No experiment with name '{options.get('experiment_name')}' found in the database."
+                message(
+                    f"No experiment with name '{options.get('experiment_name')}' found in the database.",
+                    "error",
+                    options.get("room_name", None),
                 )
                 return
 
