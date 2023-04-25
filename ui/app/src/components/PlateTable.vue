@@ -73,7 +73,7 @@ const heatmapColor = (well: WellDetails | undefined) => {
 const typeColor_map: {[key: string]: string} = {
   P: 'rgb(107,142,35)',
   N: 'rgb(255, 99, 71)',
-  C: 'rgb(0,191,255)',
+  C: 'rgb(255,255,255)',
 }
 
 const typeColor = (well: WellDetails | undefined) => {
@@ -193,6 +193,7 @@ const percentage = (well: WellDetails | undefined) => {
   min-height: 22px
   max-width: 22px
   max-height: 22px
+  border: 1px solid #4c4c4c
 
 
 table
@@ -202,9 +203,7 @@ table
   padding: 4px 8px 8px 4px
   overflow: hidden
 
-
 td
-
   width: 24px
   height: 24px
   min-width: 24px
