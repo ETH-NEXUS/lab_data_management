@@ -21,8 +21,26 @@ export const useManagementStore = defineStore({
     },
 
     async runCommand(formData: FormData) {
-      const res = await api.post('/api/run_command/', {form_data: formData})
-      this.commandOutput = res.data.command_output
+      this.startLongPolling(formData['room_name'].toString()) // no await here
+      await api.post('/api/run_command/', {form_data: formData})
+    },
+
+    async startLongPolling(roomName: string) {
+      try {
+        const res = await api.get(`api/long_polling/${roomName}/`)
+        const message = res.data.message
+        const status = res.data.status
+
+        if (message) {
+          this.commandOutput += '\n' + message
+        }
+
+        if (status !== 'completed') {
+          setTimeout(() => this.startLongPolling(roomName), 500)
+        }
+      } catch (error) {
+        console.error('Long polling error:', error)
+      }
     },
   },
   persist: {

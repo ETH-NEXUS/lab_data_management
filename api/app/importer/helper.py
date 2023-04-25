@@ -1,4 +1,6 @@
 import re
+from django.core.cache import cache
+from friendlylog import colored_logger as log
 
 
 def sameSchema(dict1, dict2, same=True):
@@ -49,3 +51,18 @@ def normalize_row(row: int):
 
 def normalize_col(col: int):
     return closest(col, (12, 24, 48))
+
+
+def message(text, type="info", room_name=None, status="pending"):
+    if room_name:
+        cache.set(f"command_output_{room_name}", text)
+        cache.set(f"command_status_{room_name}", status)
+    if type == "info":
+        log.info(text)
+    elif type == "error":
+        log.error(text)
+    elif type == "warning":
+        log.warning(text)
+    elif type == "debug":
+        log.debug(text)
+    print(text)

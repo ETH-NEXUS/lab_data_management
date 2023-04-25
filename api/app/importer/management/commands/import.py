@@ -14,6 +14,7 @@ from os.path import splitext
 from pathlib import Path
 from tqdm import tqdm
 import csv
+from importer.helper import message
 
 from rdkit.Chem import PandasTools
 from rdkit.Chem.rdchem import Mol
@@ -78,6 +79,11 @@ class Command(BaseCommand):
         parser.add_argument(
             "--debug", action="store_true", help="Outputs debug messages"
         )
+        parser.add_argument(
+            "--room_name",
+            "-o",
+            help="Unique room name for long polling.",
+        )
 
     def sdf(
         self,
@@ -88,13 +94,14 @@ class Command(BaseCommand):
         number_of_columns: int = None,
         number_of_wells: int = None,
         debug: bool = False,
+        room_name: str = None,
     ):
         def __debug(msg):
             if debug:
-                log.debug(msg)
+                message(msg, "debug", room_name)
 
-        log.info(f"Importing SDF file {sdf_file}...")
-        print(f"Importing SDF file {sdf_file}...")
+        message(f"Importing SDF file {sdf_file}...", "info", room_name)
+
         if number_of_wells:
             number_of_rows, number_of_columns = row_col_from_wells(number_of_wells)
         if isfile(sdf_file):
@@ -104,8 +111,10 @@ class Command(BaseCommand):
                 name=library_name, defaults={"file_name": Path(sdf_file).name}
             )
             if created:
+                message(f"Created library {library}.", "info", room_name)
                 __debug(f"Created library {library}.")
             else:
+                message(f"Created library {library}.", "info", room_name)
                 __debug(f"Using library {library}.")
 
             sdf = PandasTools.LoadSDF(
@@ -117,8 +126,12 @@ class Command(BaseCommand):
 
             # Import plates
             for mapping_barcode_idx, mapping_barcode in enumerate(mapping.barcodes):
-                log.info(f"Processing plates for barcode column {mapping_barcode}...")
-                print(f"Processing plates for barcode column {mapping_barcode}...")
+                message(
+                    f"Processing plates for barcode column {mapping_barcode}...",
+                    "info",
+                    room_name,
+                )
+
                 with tqdm(
                     desc="Processing plates",
                     unit="plates",
@@ -249,12 +262,14 @@ class Command(BaseCommand):
         input_file: str,
         category_name: str,
         template_name: str,
+        room_name: str = None,
     ):
         if isfile(input_file):
             well_types = []
             num_rows = 0
             num_cols = 0
             with open(input_file, "r") as file:
+                message("Reading template file...", "info", room_name)
                 reader = csv.reader(file, delimiter="\t")
                 for row in reader:
                     well_types += row
@@ -292,13 +307,12 @@ class Command(BaseCommand):
                     well.type = well_type
                     well.save()
                     pbar.update(1)
-
-            log.info("Successfully imported.")
-            print("Successfully imported.")
+            message(
+                f"Successfully imported template {template_name}.", "info", room_name
+            )
 
         else:
-            print(f"File does not exist: {input_file}")
-            log.error(f"File does not exist: {input_file}")
+            message(f"File does not exist: {input_file}", "error", room_name)
 
     def handle(self, *args, **options):
         try:
@@ -312,6 +326,7 @@ class Command(BaseCommand):
                     number_of_rows=options.get("number_of_rows"),
                     number_of_columns=options.get("number_of_columns"),
                     number_of_wells=options.get("number_of_wells"),
+                    room_name=options.get("room_name"),
                 )
                 imported = True
             elif options.get("what") == "template":
@@ -319,15 +334,17 @@ class Command(BaseCommand):
                     options.get("input_file"),
                     category_name=options.get("category_name"),
                     template_name=options.get("template_name"),
+                    room_name=options.get("room_name"),
                 )
                 imported = True
 
             if imported:
-                log.info("Refreshing materialized views...")
+                message(
+                    "Refreshing materialized views...", "info", options.get("room_name")
+                )
                 PlateDetail.refresh(concurrently=True)
                 WellDetail.refresh(concurrently=True)
 
         except Exception as ex:
-            print(ex)
-            log.error(ex)
+            message(ex, "error", options.get("room_name"))
             traceback.print_exc()
