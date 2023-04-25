@@ -42,6 +42,10 @@ export const useManagementStore = defineStore({
         console.error('Long polling error:', error)
       }
     },
+    async deleteFile(path: string) {
+      await api.post('api/delete_file/', {path: path})
+      await this.getDataDirectory()
+    },
   },
   persist: {
     enabled: true,
