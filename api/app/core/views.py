@@ -193,6 +193,8 @@ class PlateViewSet(viewsets.ModelViewSet):
 
     @action(detail=True, methods=["post"])
     def add_new_measurement(self, request, pk=None):
+        import math  # don't delete this import, it is used in expression = request.data.get("expression").replace("ln(", "math.log(")
+
         used_labels = request.data.get("used_labels")
         new_label = request.data.get("new_label")
         expression = request.data.get("expression").replace("ln(", "math.log(")
@@ -228,6 +230,8 @@ class PlateViewSet(viewsets.ModelViewSet):
         return super().filter_queryset(queryset)
 
     def __evaluate_expression(self, new_expression):
+        import math  # don't delete this import, it is used in eval if expression contains 'ln('
+
         try:
             result = eval(new_expression)
             if not result:
