@@ -7,18 +7,21 @@ from friendlylog import colored_logger as log
 
 from os import environ
 import os
+import json
 
 from compoundlib.serializers import SimpleCompoundLibrarySerializer
 from django.core.exceptions import ValidationError
 from django.db import IntegrityError
 from django.db.models import Prefetch, Q
-from django.http import Http404
+from django.contrib.auth import authenticate, login, logout
+from django.http import Http404, JsonResponse
 from rest_framework import viewsets, views, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from django.http import HttpResponse
 import mimetypes
 from django.utils.translation import gettext as _
+from django.core.handlers.wsgi import WSGIRequest
 
 from .models import (
     Well,
@@ -34,7 +37,6 @@ from .models import (
     MeasurementFeature,
     PlateDetail,
     WellDetail,
-    ExperimentDetail,
 )
 from .serializers import (
     PlateSerializer,
@@ -48,6 +50,44 @@ from .serializers import (
 
 from django.views.generic import View
 from django.conf import settings
+
+from django.utils.decorators import method_decorator
+from django.views.decorators.csrf import ensure_csrf_cookie
+
+
+class CsrfCookieView(View):
+    @method_decorator(ensure_csrf_cookie)
+    def get(self, request: WSGIRequest, *args, **kwargs):
+        return JsonResponse({"details": _("CSRF cookie set")})
+
+
+class LoginView(View):
+    def post(self, request: WSGIRequest, *args, **kwargs):
+        data = json.loads(request.body)
+        username = data.get("username")
+        password = data.get("password")
+
+        if username is None or password is None:
+            return JsonResponse(
+                {"detail": _("Please provide username and password.")}, status=400
+            )
+
+        user = authenticate(username=username, password=password)
+
+        if user is None:
+            return JsonResponse({"detail": _("Invalid credentials.")}, status=400)
+
+        login(request, user)
+        return JsonResponse({"detail": _("Successfully logged in.")})
+
+
+class LogoutView(View):
+    def get(self, request: WSGIRequest, *args, **kwargs):
+        if not request.user.is_authenticated:
+            return JsonResponse({"detail": _("You're not logged in.")}, status=400)
+
+        logout(request)
+        return JsonResponse({"detail": _("Successfully logged out.")})
 
 
 def mean_time_point(dt_strings):
@@ -153,8 +193,6 @@ class PlateViewSet(viewsets.ModelViewSet):
 
     @action(detail=True, methods=["post"])
     def add_new_measurement(self, request, pk=None):
-        import math
-
         used_labels = request.data.get("used_labels")
         new_label = request.data.get("new_label")
         expression = request.data.get("expression").replace("ln(", "math.log(")
@@ -190,8 +228,6 @@ class PlateViewSet(viewsets.ModelViewSet):
         return super().filter_queryset(queryset)
 
     def __evaluate_expression(self, new_expression):
-        import math
-
         try:
             result = eval(new_expression)
             if not result:

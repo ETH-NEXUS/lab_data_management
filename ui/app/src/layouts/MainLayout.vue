@@ -19,8 +19,8 @@ const toggleLeftDrawer = () => {
   leftDrawerOpen.value = !leftDrawerOpen.value
 }
 
-const logout = () => {
-  userStore.removeToken()
+const logout = async () => {
+  await userStore.sessionLogout()
   $q.notify({
     type: 'positive',
     message: t('message.logged_out'),
@@ -57,7 +57,7 @@ const openDocsPage = () => {
         <span v-if="userStore.user">
           <strong>{{ userStore.user.first_name }} {{ userStore.user.last_name }}</strong>
         </span>
-        <q-btn v-if="userStore.jwt" flat round dense icon="person">
+        <q-btn v-if="userStore.authenticated" flat round dense icon="person">
           <q-menu fit>
             <q-list style="min-width: 100px">
               <q-item v-ripple>

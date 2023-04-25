@@ -47,7 +47,7 @@ INSTALLED_APPS = [
     "django_extensions",
     "corsheaders",
     "rest_framework",
-    "rest_framework_simplejwt",
+    "revproxy",
     "drf_auto_endpoint",
     "pg_ext",
     "core",
@@ -189,20 +189,11 @@ DISABLE_AUTH = False
 
 REST_FRAMEWORK = {
     "DEFAULT_AUTHENTICATION_CLASSES": (
-        # 'rest_framework.authentication.TokenAuthentication',
-        # 'rest_framework_jwt.authentication.JSONWebTokenAuthentication',
-        "rest_framework_simplejwt.authentication.JWTAuthentication",
         "rest_framework.authentication.SessionAuthentication",
     ),
     "DEFAULT_PERMISSION_CLASSES": [
-        # 'rest_framework.permissions.DjangoModelPermissionsOrAnonReadOnly',
-        "rest_framework.permissions.IsAuthenticatedOrReadOnly",
         "rest_framework.permissions.IsAuthenticated",
     ],
-    # We should not activate this if we are using drf-schema-adapter
-    # 'DEFAULT_FILTER_BACKENDS': [
-    #     'django_filters.rest_framework.DjangoFilterBackend'
-    # ],
     "DEFAULT_METADATA_CLASS": "meta.serializers.APIMetadata",
     "DEFAULT_RENDERER_CLASSES": (
         "rest_framework.renderers.JSONRenderer",
@@ -225,36 +216,6 @@ if DISABLE_AUTH:
 
 FIXTURE_DIRS = []
 
-# JWT
-SIMPLE_JWT = {
-    "ACCESS_TOKEN_LIFETIME": td(minutes=30),
-    "REFRESH_TOKEN_LIFETIME": td(days=1),
-    "ROTATE_REFRESH_TOKENS": False,
-    "BLACKLIST_AFTER_ROTATION": False,
-    "UPDATE_LAST_LOGIN": False,
-    "ALGORITHM": "HS256",
-    "SIGNING_KEY": SECRET_KEY,
-    "VERIFYING_KEY": None,
-    "AUDIENCE": None,
-    "ISSUER": None,
-    "JWK_URL": None,
-    "LEEWAY": 0,
-    "AUTH_HEADER_TYPES": ("Bearer", "JWT"),
-    "AUTH_HEADER_NAME": "HTTP_AUTHORIZATION",
-    "USER_ID_FIELD": "id",
-    "USER_ID_CLAIM": "user_id",
-    "USER_AUTHENTICATION_RULE": "rest_framework_simplejwt.authentication.default_user_authentication_rule",
-    "AUTH_TOKEN_CLASSES": ("rest_framework_simplejwt.tokens.AccessToken",),
-    "TOKEN_TYPE_CLAIM": "token_type",
-    "TOKEN_USER_CLASS": "rest_framework_simplejwt.models.TokenUser",
-    # We overwrite the token obtain serializer to support OTP
-    # 'TOKEN_OBTAIN_SERIALIZER': 'users.serializers.TokenObtainPair2FASerializer',
-    "JTI_CLAIM": "jti",
-    # 'SLIDING_TOKEN_REFRESH_EXP_CLAIM': 'refresh_exp',
-    # 'SLIDING_TOKEN_LIFETIME': td(minutes=30),
-    # 'SLIDING_TOKEN_REFRESH_LIFETIME': td(days=1),
-}
-
 ###
 # SECURITY
 ###
@@ -265,11 +226,26 @@ DISABLE_2FA = environ.get("DJANGO_DISABLE_2FA", "false").lower() == "true"
 # CORS configuration
 CORS_ALLOW_ALL_ORIGINS = False
 CORS_ALLOWED_ORIGINS = environ.get("DJANGO_CORS_ALLOWED_ORIGINS").split(",")
-CORS_ALLOW_HEADERS = default_headers + ("cache-control", "pragma", "expires")
+CORS_ALLOW_HEADERS = default_headers + (
+    "cache-control",
+    "pragma",
+    "expires",
+    "X-CSRFTOKEN",
+)
+CORS_EXPOSE_HEADERS = ["Content-Type", "X-CSRFToken"]
 CORS_ALLOW_CREDENTIALS = True
 
 # CSRF configuration
 CSRF_TRUSTED_ORIGINS = environ.get("DJANGO_CSRF_TRUSTED_ORIGINS").split(",")
+CSRF_USE_SESSIONS = False
+CSRF_COOKIE_HTTPONLY = False
+CSRF_COOKIE_SAMESITE = "Strict"
+SESSION_COOKIE_SAMESITE = "Strict"
+
+# PROD ONLY
+# CSRF_COOKIE_SECURE = True
+# SESSION_COOKIE_SECURE = True
+
 
 ###
 # LOGGING
@@ -313,6 +289,14 @@ Applications that are expected to receive an unusually large number of form fiel
 DATA_UPLOAD_MAX_NUMBER_FIELDS = 30000
 USE_TZ = False
 
+###
+# Jupyter Notebook
+###
+
+NOTEBOOK_SECURE_TOKEN = (
+    "0a85ce95c-f9a3c9867b0-063853a2c-96734dafbb7-c010e100dc-933002ecf8"
+)
+
 NOTEBOOK_ARGUMENTS = [
     "--ip",
     "*",
@@ -321,12 +305,17 @@ NOTEBOOK_ARGUMENTS = [
     "--notebook-dir",
     "/notebooks",
     "--NotebookApp.token",
-    "",
+    NOTEBOOK_SECURE_TOKEN,
     "--NotebookApp.password",
     "",
     "--NotebookApp.base_url",
     "/notebook",
 ]
 
+JUPYTER_URL = environ.get("JUPYTER_URL", "http://api:8888")
+
+###
+# Harvest
+###
 HARVEST_ACCESS_TOKEN = environ.get("HARVEST_ACCESS_TOKEN")
 HARVEST_ACCOUNT_ID = environ.get("HARVEST_ACCOUNT_ID")

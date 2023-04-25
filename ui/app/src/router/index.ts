@@ -39,8 +39,9 @@ export default route(function (/* { store, ssrContext } */) {
 
     if (!['/login'].includes(to.path ? to.path.toString() : '')) {
       // If we do not want to login or register we check if the JWT token exists, if not we route to the login page.
-      console.debug('jwt', userStore.jwt)
-      if (!userStore.jwt) {
+      console.debug('authenticated', userStore.authenticated)
+      // if (!userStore.jwt) {
+      if (!userStore.authenticated) {
         next({
           path: '/login',
           query: {next: encodeURI(to.fullPath)},
@@ -49,7 +50,7 @@ export default route(function (/* { store, ssrContext } */) {
         next()
       }
     } else {
-      if (userStore.jwt) {
+      if (userStore.authenticated) {
         // It makes no sense to login if we are already logged in so we route back to the path we come from.
         next({
           path: from.path,
