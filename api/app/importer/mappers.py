@@ -8,6 +8,7 @@ from itertools import dropwhile
 from tqdm import tqdm
 from datetime import datetime as dt
 from contextlib import redirect_stderr
+from importer.helper import message
 
 from chardet.universaldetector import UniversalDetector
 from core.mapping import Mapping, MappingList
@@ -47,8 +48,9 @@ class BaseMapper:
     def run(self, _glob, **kwargs):
         """Run the mapper"""
         for filename in self.get_files(_glob):
-            log.info(f"Processing file {filename}...")
-            print(f"Processing file {filename}...")
+            message(
+                f"Processing file {filename}...", "info", kwargs.get("room_name", None)
+            )
             with redirect_stderr(None):
                 detector = UniversalDetector()
                 with open(filename, "rb") as file:
@@ -68,8 +70,9 @@ class BaseMapper:
             kwargs.update({"filename": filename})
             self.map(data, **kwargs)
 
-        log.info("Refreshing materialized views...")
-        print("Refreshing materialized views...")
+        message(
+            "Refreshing materialized views...", "info", kwargs.get("room_name", None)
+        )
         PlateDetail.refresh(concurrently=True)
         WellDetail.refresh(concurrently=True)
         ExperimentDetail.refresh(concurrently=True)
@@ -127,7 +130,7 @@ class EchoMapper(BaseMapper):
     def map(self, data: list[dict], **kwargs) -> None:
         def __debug(msg):
             if kwargs.get("debug"):
-                log.debug(msg)
+                message(msg, "debug", kwargs.get("room_name", None))
 
         # Plates cache by barcode
         plates = {}
@@ -153,14 +156,13 @@ class EchoMapper(BaseMapper):
                         source_plate = Plate.objects.get(barcode=source_plate_barcode)
                         plates[source_plate_barcode] = source_plate
                     except Plate.DoesNotExist:
-                        log.warning(
+                        message(
                             f"""Source plate with barcode {entry['source_plate_barcode']} does not exist.
-                            I try again later..."""
+                            I try again later...""",
+                            "warning",
+                            kwargs.get("room_name", None),
                         )
-                        print(
-                            f"""Source plate with barcode {entry['source_plate_barcode']} does not exist.
-                            I try again later..."""
-                        )
+
                         queue.append(entry)
                         continue
 
@@ -209,16 +211,16 @@ class EchoMapper(BaseMapper):
                         target_plate=mapping_list.target,
                         mapping_file=File(file, os.path.basename(file.name)),
                     )
-                log.info(
-                    f"Mapped {source_plate.barcode} -> {mapping_list.target.barcode}"
+                message(
+                    f"Mapped {source_plate.barcode} -> {mapping_list.target.barcode}",
+                    "info",
+                    kwargs.get("room_name", None),
                 )
-                print(f"Mapped {source_plate.barcode} -> {mapping_list.target.barcode}")
             else:
-                log.error(
-                    f"Error mapping {source_plate.barcode} -> {mapping_list.target.barcode}"
-                )
-                print(
-                    f"Error mapping {source_plate.barcode} -> {mapping_list.target.barcode}"
+                message(
+                    f"Error mapping {source_plate.barcode} -> {mapping_list.target.barcode}",
+                    "error",
+                    kwargs.get("room_name", None),
                 )
 
         # If there are entries queued because the source plate did not yet exist
@@ -239,10 +241,12 @@ class EchoMapper(BaseMapper):
             )
         except BarcodeSpecification.DoesNotExist:
             if kwargs.get("experiment_name"):
-                log.warning(
-                    f"No barcode specification found for {barcode}. Creating it."
+                message(
+                    f"No barcode specification found for {barcode}. Creating it.",
+                    "warning",
+                    kwargs.get("room_name", None),
                 )
-                print(f"No barcode specification found for {barcode}. Creating it.")
+
                 barcode_specification, _ = BarcodeSpecification.objects.get_or_create(
                     prefix=barcode.split("_")[0],
                     sides=["North"],
@@ -252,6 +256,11 @@ class EchoMapper(BaseMapper):
                     ),
                 )
             else:
+                message(
+                    f"No barcode specification found for {barcode} and no experiment name is provided. Please provide the experiment name in order to create the missing barcode specifications.",
+                    "error",
+                    kwargs.get("room_name", None),
+                )
                 raise ValueError(
                     f"No barcode specification found for {barcode} and no experiment name is "
                     f"provided."
@@ -262,10 +271,10 @@ class EchoMapper(BaseMapper):
         return Plate.objects.create(
             barcode=barcode,
             experiment=barcode_specification.experiment,
-            dimension=self.__get_plate_dimension(plate_name),
+            dimension=self.__get_plate_dimension(plate_name, kwargs.get("room_name")),
         )
 
-    def __get_plate_dimension(self, plate_name: str):
+    def __get_plate_dimension(self, plate_name: str, room_name):
         try:
             rows, cols = row_col_from_name(plate_name)
             plate_dimension = PlateDimension.objects.get(rows=rows, cols=cols)
@@ -273,8 +282,7 @@ class EchoMapper(BaseMapper):
         except ValueError:
             raise
         except PlateDimension.DoesNotExist:
-            log.error(f"No plate dimension found: {rows}x{cols}")
-            print(f"No plate dimension found: {rows}x{cols}")
+            message(f"No plate dimension found: {rows}x{cols}", "error", room_name)
             raise ValueError(f"No plate dimension found: {rows}x{cols}")
 
 
@@ -321,7 +329,7 @@ class M1000Mapper(BaseMapper):
     def parse(self, file: TextIOWrapper, **kwargs) -> list[dict]:
         def __debug(msg):
             if kwargs.get("debug"):
-                log.debug(msg)
+                message(msg, "debug", kwargs.get("room_name", None))
 
         match = re.match(self.RE_FILENAME, os.path.basename(file.name))
         if match:
@@ -404,17 +412,19 @@ class M1000Mapper(BaseMapper):
     def map(self, data: list[dict], **kwargs) -> None:
         def __debug(msg):
             if kwargs.get("debug"):
-                log.debug(msg)
+                message(msg, "debug", kwargs.get("room_name", None))
 
         barcode = kwargs.get("barcode")
         try:
             plate = Plate.objects.get(barcode=barcode)
         except Plate.DoesNotExist:
             if kwargs.get("create_missing_plates"):
-                log.warning(
-                    f"Plate with barcode {barcode} does not exist. Creating it."
+                message(
+                    f"Plate with barcode {barcode} does not exist. Creating it.",
+                    "warning",
+                    kwargs.get("room_name", None),
                 )
-                print(f"Plate with barcode {barcode} does not exist. Creating it.")
+
                 barcode_specification, _ = BarcodeSpecification.objects.get_or_create(
                     prefix=barcode.split("_")[0],
                     sides=["North"],
@@ -429,6 +439,11 @@ class M1000Mapper(BaseMapper):
                     experiment=barcode_specification.experiment,
                 )
             else:
+                message(
+                    f"Plate with barcode {barcode} does not exist.",
+                    "error",
+                    kwargs.get("room_name", None),
+                )
                 raise ValueError(f"Plate with barcode {barcode} does not exist.")
 
         with tqdm(
