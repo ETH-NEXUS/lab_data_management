@@ -31,7 +31,10 @@ const routes: RouteRecordRaw[] = [
       },
     ],
   },
-
+  {
+    path: '/notebook/:catchAll(.*)*',
+    component: () => import('pages/ReloadPage.vue'),
+  },
   // Always leave this as last one,
   // but you can also remove it
   {

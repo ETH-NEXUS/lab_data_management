@@ -1,8 +1,7 @@
 from django.conf import settings
 from revproxy.views import ProxyView
 from django.core.handlers.wsgi import WSGIRequest
-from django.http import HttpResponseForbidden, HttpResponseRedirect
-from django.utils.translation import gettext as _
+from django.http import HttpResponseRedirect
 
 
 # We need to replace quote_plus with quote to replace forwarded utls with %20 instead of +
@@ -35,4 +34,6 @@ class JupyterProxyView(ProxyView):
         if request.user.is_authenticated:
             return super().dispatch(request, path)
         else:
-            return HttpResponseRedirect(redirect_to="/login")
+            return HttpResponseRedirect(
+                redirect_to=f"/login?next={request.get_full_path()}"
+            )
