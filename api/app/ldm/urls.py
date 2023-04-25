@@ -16,33 +16,35 @@ Including another URLconf
 from django.contrib import admin
 from django.urls import path, include, re_path
 from drf_auto_endpoint.router import router
-from django.conf import settings
-from core.views import MappingPreviewView, VersionView, DocsView
-from rest_framework_simplejwt.views import (
-    TokenObtainPairView,
-    TokenRefreshView,
+from core.views import (
+    MappingPreviewView,
+    VersionView,
+    DocsView,
+    CsrfCookieView,
+    LoginView,
+    LogoutView,
 )
+from django.conf import settings
+from jupyter.views import JupyterProxyView
 from users.urls import router as user_router
 from management.views import directory_content, run_command, long_polling
 
 urlpatterns = [
     path("admin/", admin.site.urls),
-    path(
-        "api/auth/token/",
-        TokenObtainPairView.as_view(),
-        name="token_obtain_pair",
-    ),
-    path(
-        "api/auth/token/refresh/",
-        TokenRefreshView.as_view(),
-        name="token_refresh",
-    ),
+    path("api/auth/cookie/", CsrfCookieView.as_view(), name="auth-cookie"),
+    path("api/auth/login/", LoginView.as_view(), name="login"),
+    path("api/auth/logout/", LogoutView.as_view(), name="logout"),
     path("api/", include(router.urls)),
     path("api/", include(user_router.urls)),
     path("api/mapping_preview/", MappingPreviewView.as_view()),
     path("api/version/", VersionView.as_view()),
     re_path(r"^docs/(?P<uri>.*)$", DocsView.as_view(), name="docs"),
     path("api/harvest/", include("harvest.urls")),
+    re_path(
+        "(?P<path>notebook/.*)$",
+        JupyterProxyView.as_view(),
+        name="notebook",
+    ),
     path("api/directory_content/", directory_content, name="directory_content"),
     path("api/run_command/", run_command, name="run_command"),
     path("api/long_polling/<str:room_name>/", long_polling, name="long_polling"),

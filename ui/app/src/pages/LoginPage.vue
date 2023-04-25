@@ -1,9 +1,10 @@
 <script setup lang="ts">
-import {ref} from 'vue'
+import {ref, onMounted} from 'vue'
 import {useRoute, useRouter} from 'vue-router'
 import {useUserStore} from 'src/stores/user'
 import {useI18n} from 'vue-i18n'
 import {useQuasar} from 'quasar'
+import {api} from 'src/boot/axios'
 
 const userStore = useUserStore()
 const router = useRouter()
@@ -16,11 +17,19 @@ const password = ref<string | null>(null)
 
 const error = ref(false)
 
+onMounted(() => {
+  // api.get('/api-auth/cookie/')
+})
+
 const login = async () => {
   error.value = false
   try {
     if (username.value && password.value) {
-      await userStore.obtainToken({
+      // await userStore.obtainToken({
+      //   username: username.value,
+      //   password: password.value,
+      // })
+      await userStore.sessionLogin({
         username: username.value,
         password: password.value,
       })
@@ -29,7 +38,8 @@ const login = async () => {
     console.error(err)
   }
 
-  if (userStore.jwt) {
+  // if(userStore.jwt) {
+  if (userStore.authenticated) {
     $q.notify({
       type: 'positive',
       message: t('message.successfully_logged_in'),

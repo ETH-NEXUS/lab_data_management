@@ -1,8 +1,6 @@
 import {boot} from 'quasar/wrappers'
 import axios, {AxiosInstance} from 'axios'
 import {Notify, LoadingBar} from 'quasar'
-import {formatKV} from '../helpers/errorHandling'
-import {useUserStore} from 'src/stores/user'
 import {useRouter} from 'vue-router'
 
 declare module '@vue/runtime-core' {
@@ -21,13 +19,9 @@ const api = axios.create({baseURL: import.meta.env.VITE_APP_BACKEND_URL})
 
 api.interceptors.request.use(
   config => {
-    const userStore = useUserStore()
-    const token = userStore.jwt
-    if (token) {
-      if (config.headers) {
-        config.headers.Authorization = `JWT ${token}`
-      }
-    }
+    config.withCredentials = true
+    config.xsrfHeaderName = 'X-CSRFToken'
+    config.xsrfCookieName = 'csrftoken'
     // Add a trailing slash to the url if there are no parameters in the url
     if (!config.url?.includes('?') && !config.url?.endsWith('/')) {
       config.url += '/'
@@ -53,23 +47,10 @@ api.interceptors.response.use(
     return response
   },
   async error => {
-    const userStore = useUserStore()
     LoadingBar.stop()
-    const originalConfig = error.config
-    if (
-      error.response.status === 401 &&
-      !originalConfig._retry &&
-      originalConfig.url !== '/auth/token/refresh/' &&
-      userStore.refreshJwt
-    ) {
-      // In case the token has expired we try to refresh the token
-      originalConfig._retry = true
-      await userStore.refreshToken()
-      // Resend the request with the refreshed token
-      return api(originalConfig)
-    } else if (error.response.status === 401 && originalConfig._retry) {
-      // If the token cannot be refreshed we logout and route to the login page
-      await userStore.removeToken()
+    if (error.response.status === 401) {
+      const router = useRouter()
+      router.push('/login')
     } else if (error.response) {
       if (!error.response.data.hidden) {
         Notify.create({

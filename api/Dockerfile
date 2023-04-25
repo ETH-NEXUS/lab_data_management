@@ -16,8 +16,6 @@ RUN mkdir -p /vol/backups
 # Update the package cache
 RUN apt-get update
 
-
-
 # Used for jupyter
 COPY ./requirements.jupyter.txt /
 ARG ENABLE_JUPYTER

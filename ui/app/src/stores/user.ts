@@ -3,6 +3,9 @@ import {api} from 'src/boot/axios'
 import {ref} from 'vue'
 
 interface Endpoints {
+  loginCookie: string
+  sessionLogin: string
+  sessionLogout: string
   obtainToken: string
   refreshToken: string
   user: string
@@ -27,18 +30,26 @@ interface UpdateTokenPayload {
 }
 
 export const useUserStore = defineStore('user', () => {
+  const authenticated = ref<string | null>(localStorage.getItem('authenticated'))
   const jwt = ref<string | null>(localStorage.getItem('jwt'))
   const refreshJwt = ref<string | null>(localStorage.getItem('refreshJwt'))
   const user = ref<User | null>(JSON.parse(localStorage.getItem('user') || 'null'))
   const endpoints: Endpoints = {
+    loginCookie: '/api/auth/cookie/',
+    sessionLogin: '/api/auth/login/',
+    sessionLogout: '/api/auth/logout/',
     obtainToken: '/api/auth/token/',
     refreshToken: '/api/auth/token/refresh/',
     user: '/api/auth/users/me/',
   }
 
   const _updateToken = (payload: UpdateTokenPayload) => {
-    localStorage.setItem('jwt', payload.access)
-    jwt.value = payload.access
+    localStorage.setItem('authenticated', 'true')
+    authenticated.value = 'true'
+    if (payload.access) {
+      localStorage.setItem('jwt', payload.access)
+      jwt.value = payload.access
+    }
     if (payload.refresh) {
       localStorage.setItem('refreshJwt', payload.refresh)
       refreshJwt.value = payload.refresh
@@ -46,8 +57,10 @@ export const useUserStore = defineStore('user', () => {
   }
 
   const _removeToken = () => {
+    localStorage.removeItem('authenticated')
     localStorage.removeItem('jwt')
     localStorage.removeItem('refreshJwt')
+    authenticated.value = null
     jwt.value = null
     refreshJwt.value = null
     user.value = null
@@ -68,6 +81,26 @@ export const useUserStore = defineStore('user', () => {
       const resp = await api.post(endpoints.obtainToken, payload)
       _updateToken(resp.data)
       await getUserInfo()
+    } catch (err) {
+      console.error(err)
+    }
+  }
+
+  const sessionLogin = async (payload: ObtainTokenPayload) => {
+    try {
+      await api.get(endpoints.loginCookie)
+      const resp = await api.post(endpoints.sessionLogin, payload)
+      _updateToken(resp.data)
+      await getUserInfo()
+    } catch (err) {
+      console.error(err)
+    }
+  }
+
+  const sessionLogout = async () => {
+    try {
+      await api.get(endpoints.sessionLogout)
+      removeToken()
     } catch (err) {
       console.error(err)
     }
@@ -99,5 +132,16 @@ export const useUserStore = defineStore('user', () => {
     _removeUserInfo()
   }
 
-  return {jwt, refreshJwt, user, obtainToken, getUserInfo, refreshToken, removeToken}
+  return {
+    authenticated,
+    jwt,
+    refreshJwt,
+    user,
+    sessionLogin,
+    sessionLogout,
+    obtainToken,
+    getUserInfo,
+    refreshToken,
+    removeToken,
+  }
 })
