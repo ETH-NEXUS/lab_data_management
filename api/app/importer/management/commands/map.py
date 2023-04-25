@@ -5,6 +5,7 @@ from django.core.management.base import BaseCommand
 from friendlylog import colored_logger as log
 from importer.mappers import EchoMapper, M1000Mapper
 from core.models import Experiment
+from importer.helper import message
 
 
 def die(message):
@@ -63,6 +64,11 @@ class Command(BaseCommand):
         )
 
         parser.add_argument(
+            "--room_name",
+            "-r",
+            help="Unique room name for long polling.",
+        )
+        parser.add_argument(
             "--experiment_name",
             "-x",
             help="If you would like to create missing plates by measurement "
@@ -91,15 +97,18 @@ class Command(BaseCommand):
                     with open(options.get("headers_file"), "r") as file:
                         headers = yaml.safe_load(file)
                 except FileNotFoundError:
-                    log.error(
-                        f"The headers file '{headers_file}' could not be found."
-                    )  # probably there is a way to redirect logger output to a specific location,
-                    # but I didn't find it. we need to print the messages in order to catch them for the frontend in management.views.run_command
-                    print(f"The headers file '{headers_file}' could not be found.")
+                    message(
+                        f"The headers file '{headers_file}' could not be found.",
+                        "error",
+                        options.get("room_name", None),
+                    )
                     return
                 except yaml.YAMLError as e:
-                    log.error(f"Error parsing the YAML file '{headers_file}': {e}")
-                    print(f"Error parsing the YAML file '{headers_file}': {e}")
+                    message(
+                        f"Error parsing the YAML file '{headers_file}': {e}",
+                        "error",
+                        options.get("room_name", None),
+                    )
                     return
             try:
                 mapper = EchoMapper()
@@ -107,10 +116,10 @@ class Command(BaseCommand):
                     join(path, "**", "*-transfer-*.csv"),
                     headers=headers,
                     debug=options.get("debug", False),
+                    room_name=options.get("room_name", None),
                 )
             except Exception as ex:
-                log.error(ex)
-                print(ex)
+                message(f"Error: {ex}", "error", options.get("room_name", None))
                 traceback.print_exc()
 
         elif options.get("machine") == "m1000":
@@ -134,9 +143,9 @@ class Command(BaseCommand):
                     measurement_name=measurement_name,
                     create_missing_plates=options.get("create_missing_plates", False),
                     experiment_name=options.get("experiment_name", None),
+                    room_name=options.get("room_name", None),
                 )
 
             except Exception as ex:
-                log.error(ex)
-                print(ex)
+                message(f"Error: {ex}", "error", options.get("room_name", None))
                 traceback.print_exc()

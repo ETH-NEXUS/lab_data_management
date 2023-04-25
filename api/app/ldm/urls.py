@@ -23,7 +23,7 @@ from rest_framework_simplejwt.views import (
     TokenRefreshView,
 )
 from users.urls import router as user_router
-from management.views import directory_content, run_command
+from management.views import directory_content, run_command, long_polling
 
 urlpatterns = [
     path("admin/", admin.site.urls),
@@ -45,6 +45,7 @@ urlpatterns = [
     path("api/harvest/", include("harvest.urls")),
     path("api/directory_content/", directory_content, name="directory_content"),
     path("api/run_command/", run_command, name="run_command"),
+    path("api/long_polling/<str:room_name>/", long_polling, name="long_polling"),
 ]
 
 if not settings.DISABLE_BROWSABLE_API and not settings.DISABLE_AUTH:

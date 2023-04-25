@@ -5,6 +5,7 @@ import json
 from io import StringIO
 import sys
 from django.core import management
+from django.core.cache import cache
 
 
 def list_files(start_path):
@@ -34,8 +35,8 @@ def directory_content(request, start_path="/data"):
 
 @csrf_exempt
 def run_command(request):
-    output = StringIO()
-    sys.stdout = output
+    # output = StringIO()
+    # sys.stdout = output
 
     if request.method == "POST":
         body_unicode = request.body.decode("utf-8")
@@ -51,7 +52,7 @@ def run_command(request):
                     "debug": False,
                     "create_missing_plates": True,
                     "experiment_name": form_data.get("experiment_name"),
-                    "stdout": output,
+                    "room_name": form_data.get("room_name"),
                 }
                 management.call_command("map", machine, **kwargs)
         elif form_data.get("command") == "import":
@@ -66,11 +67,27 @@ def run_command(request):
                 "template_name": form_data.get("template_name")
                 if form_data.get("template_name")
                 else None,
+                "room_name": form_data.get("room_name"),
             }
             management.call_command("import", what, **kwargs)
 
-    sys.stdout = sys.__stdout__
-    output_str = output.getvalue()
-    output.close()
+        cache.set(f"command_status_{form_data.get('room_name')}", "completed")
 
-    return JsonResponse({"command_output": output_str})
+    # sys.stdout = sys.__stdout__
+    # output_str = output.getvalue()
+    # output.close()
+
+    return JsonResponse({"status": "ok"})
+
+
+def long_polling(request, room_name):
+    output_key = f"command_output_{room_name}"
+    status_key = f"command_status_{room_name}"
+    output = cache.get(output_key)
+    status = cache.get(status_key)
+
+    if output:
+        cache.delete(output_key)
+        return JsonResponse({"message": output, "status": status})
+    else:
+        return JsonResponse({"message": None, "status": status})
