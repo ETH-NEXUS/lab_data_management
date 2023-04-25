@@ -7,6 +7,8 @@ import sys
 from django.core import management
 from django.core.cache import cache
 
+from importer.helper import message
+
 
 def list_files(start_path):
     def walk(path, children=None):
@@ -70,7 +72,7 @@ def run_command(request):
                 "room_name": form_data.get("room_name"),
             }
             management.call_command("import", what, **kwargs)
-
+        message("Command completed.", "info", form_data.get("room_name"))
         cache.set(f"command_status_{form_data.get('room_name')}", "completed")
 
     # sys.stdout = sys.__stdout__
