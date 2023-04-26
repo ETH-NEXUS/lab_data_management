@@ -185,6 +185,7 @@ export default {
   error: {
     select_plate_dimension: 'Please select a plate dimension.',
     no_details_available: 'No details available.',
+    cannot_login: 'Cannot login.',
   },
   unit: {
     amount: 'µl',

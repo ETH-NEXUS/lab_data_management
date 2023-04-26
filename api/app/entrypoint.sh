@@ -29,6 +29,13 @@ fi
 
 if [ "$DJANGO_DEBUG" == "True" ]; then
   python manage.py runserver 0.0.0.0:${PORT}
+  # python -m uvicorn ldm.asgi:application \
+  #   --log-level debug \
+  #   --access-log \
+  #   --workers 1 \
+  #   --host 0.0.0.0 \
+  #   --port ${PORT} \
+  #   --reload
 else
   gunicorn ldm.asgi:application \
     --log-file - \
