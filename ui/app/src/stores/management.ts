@@ -46,6 +46,10 @@ export const useManagementStore = defineStore({
       await api.post('api/delete_file/', {path: path})
       await this.getDataDirectory()
     },
+    async downloadFile(path: string) {
+      alert('Download file')
+      return await api.post('api/download_file/', {file_path: path})
+    },
   },
   persist: {
     enabled: true,
