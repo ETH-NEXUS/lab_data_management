@@ -47,16 +47,13 @@ export const useManagementStore = defineStore({
       await this.getDataDirectory()
     },
     async downloadFile(path: string) {
-      alert('Download file')
       return await api.post('api/download_file/', {file_path: path})
     },
     async uploadFile(path: string, file: File) {
       const form = new FormData()
-      console.log('FILE', file)
       form.append('file', file)
       form.append('directory_path', path)
       const res = await api.post('api/upload_file/', form)
-      console.log(res.data)
       await this.getDataDirectory()
     },
   },
