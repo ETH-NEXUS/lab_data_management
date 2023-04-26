@@ -3,11 +3,11 @@ from django.http import JsonResponse, HttpResponse
 from django.views.decorators.csrf import csrf_exempt
 import json
 import os
-from django.conf import settings
-from django.http import FileResponse, Http404
+from django.http import Http404
 from django.core import management
 from django.core.cache import cache
-from django.core.files.storage import default_storage
+from chardet.universaldetector import UniversalDetector
+from contextlib import redirect_stderr
 
 from importer.helper import message
 
@@ -155,3 +155,29 @@ def upload_file(request):
         return JsonResponse(
             {"message": "File uploaded successfully", "file_path": file_path}
         )
+
+
+@csrf_exempt
+def get_file_content(request):
+    if request.method == "POST":
+        body_unicode = request.body.decode("utf-8")
+        body_data = json.loads(body_unicode)
+        file_path = body_data.get("file_path")
+
+        if os.path.exists(file_path):
+            with redirect_stderr(None):
+                detector = UniversalDetector()
+                with open(file_path, "rb") as file:
+                    for line in file:
+                        detector.feed(line)
+                        if detector.done:
+                            break
+                    detector.close()
+                encoding = detector.result.get("encoding")
+            with open(file_path, "r", encoding=encoding) as file:
+                content = file.read()
+            return JsonResponse({"content": content})
+        else:
+            raise Http404("File not found")
+    else:
+        return JsonResponse({"error": "Invalid request method"})

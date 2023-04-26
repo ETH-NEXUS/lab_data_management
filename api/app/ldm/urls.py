@@ -34,6 +34,7 @@ from management.views import (
     delete_file,
     download_file,
     upload_file,
+    get_file_content,
 )
 
 urlpatterns = [
@@ -58,6 +59,7 @@ urlpatterns = [
     path("api/delete_file/", delete_file, name="delete_file"),
     path("api/download_file/", download_file, name="download_file"),
     path("api/upload_file/", upload_file, name="upload_file"),
+    path("api/get_file_content/", get_file_content, name="get_file_content"),
 ]
 
 if not settings.DISABLE_BROWSABLE_API and not settings.DISABLE_AUTH:
