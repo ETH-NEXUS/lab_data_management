@@ -179,6 +179,7 @@ export default {
     edit_specification: 'Edit specification',
     download_csv: 'Download CSV',
     delete_item: 'Delete item',
+    download_file: 'Download file',
   },
   error: {
     select_plate_dimension: 'Please select a plate dimension.',

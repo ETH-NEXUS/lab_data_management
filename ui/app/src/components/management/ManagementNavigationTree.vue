@@ -69,6 +69,16 @@ const deleteFile = async () => {
   await managementStore.deleteFile(selectedPath.value)
   deleteDialog.value = false
 }
+
+const downloadFile = async (path: string) => {
+  const res = await managementStore.downloadFile(path)
+
+  const link = document.createElement('a')
+  link.href = window.URL.createObjectURL(new Blob([res.data]))
+  link.setAttribute('download', path)
+  document.body.appendChild(link)
+  link.click()
+}
 </script>
 
 <template>
@@ -89,6 +99,11 @@ const deleteFile = async () => {
           <q-item clickable v-close-popup>
             <q-item-section @click="handleDeleteDialog(prop.node.path)">
               {{ t('action.delete_item') }}
+            </q-item-section>
+          </q-item>
+          <q-item clickable v-close-popup v-if="prop.node.type === 'file'">
+            <q-item-section @click="downloadFile(prop.node.path)">
+              {{ t('action.download_file') }}
             </q-item-section>
           </q-item>
         </q-list>
