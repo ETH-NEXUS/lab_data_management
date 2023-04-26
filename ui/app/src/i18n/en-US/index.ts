@@ -180,6 +180,7 @@ export default {
     download_csv: 'Download CSV',
     delete_item: 'Delete item',
     download_file: 'Download file',
+    upload_file: 'Upload file to the directory',
   },
   error: {
     select_plate_dimension: 'Please select a plate dimension.',

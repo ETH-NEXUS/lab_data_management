@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import {reactive, onMounted} from 'vue'
-import {Options, FormData} from 'components/models'
+import {Options, GeneralFormData} from 'components/models'
 import {useQuasar} from 'quasar'
 import {useI18n} from 'vue-i18n'
 
@@ -12,7 +12,7 @@ const emit = defineEmits(['submit'])
 const $q = useQuasar()
 const {t} = useI18n()
 
-const form = reactive({} as FormData)
+const form = reactive({} as GeneralFormData)
 
 onMounted(() => {
   initializeForm()

@@ -14,6 +14,9 @@ const {dataDirectory, selectedPath, selectedPaths} = storeToRefs(useManagementSt
 const managementStore = useManagementStore()
 const router = useRouter()
 const deleteDialog = ref<boolean>(false)
+const uploadDialog = ref<boolean>(false)
+const uploadDirectoryPath = ref<string>('')
+const file = ref<File | null>(null)
 
 const nodes = computed<QTreeNode[]>(() => {
   const res = convertToQTreeNodes([dataDirectory.value])
@@ -79,6 +82,17 @@ const downloadFile = async (path: string) => {
   document.body.appendChild(link)
   link.click()
 }
+
+const handleUploadDialog = (path: string) => {
+  uploadDirectoryPath.value = path
+  uploadDialog.value = true
+}
+const handleFileInput = async () => {
+  if (file.value) {
+    await managementStore.uploadFile(uploadDirectoryPath.value, file.value)
+    uploadDialog.value = false
+  }
+}
 </script>
 
 <template>
@@ -106,6 +120,11 @@ const downloadFile = async (path: string) => {
               {{ t('action.download_file') }}
             </q-item-section>
           </q-item>
+          <q-item clickable v-close-popup v-if="prop.node.type === 'directory'">
+            <q-item-section @click="handleUploadDialog(prop.node.path)">
+              {{ t('action.upload_file') }}
+            </q-item-section>
+          </q-item>
         </q-list>
       </q-menu>
       <span class="fileSystemItem">
@@ -113,6 +132,7 @@ const downloadFile = async (path: string) => {
       </span>
     </template>
   </q-tree>
+
   <q-dialog v-model="deleteDialog">
     <q-card>
       <q-card-section>
@@ -120,6 +140,22 @@ const downloadFile = async (path: string) => {
       </q-card-section>
       <q-card-actions align="right">
         <q-btn flat label="OK" color="primary" v-close-popup @click="deleteFile"></q-btn>
+      </q-card-actions>
+    </q-card>
+  </q-dialog>
+  <q-dialog v-model="uploadDialog">
+    <q-card>
+      <q-card-section>
+        <div>
+          <q-file outlined v-model="file">
+            <template v-slot:prepend>
+              <q-icon name="attach_file"></q-icon>
+            </template>
+          </q-file>
+        </div>
+      </q-card-section>
+      <q-card-actions align="right">
+        <q-btn flat label="Upload" color="primary" v-close-popup @click="handleFileInput"></q-btn>
       </q-card-actions>
     </q-card>
   </q-dialog>

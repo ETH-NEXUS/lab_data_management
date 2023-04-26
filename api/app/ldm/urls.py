@@ -33,6 +33,7 @@ from management.views import (
     long_polling,
     delete_file,
     download_file,
+    upload_file,
 )
 
 urlpatterns = [
@@ -56,6 +57,7 @@ urlpatterns = [
     path("api/long_polling/<str:room_name>/", long_polling, name="long_polling"),
     path("api/delete_file/", delete_file, name="delete_file"),
     path("api/download_file/", download_file, name="download_file"),
+    path("api/upload_file/", upload_file, name="upload_file"),
 ]
 
 if not settings.DISABLE_BROWSABLE_API and not settings.DISABLE_AUTH:
