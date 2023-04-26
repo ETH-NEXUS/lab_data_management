@@ -1,11 +1,13 @@
 import os.path
-from django.http import JsonResponse
+from django.http import JsonResponse, HttpResponse
 from django.views.decorators.csrf import csrf_exempt
 import json
-from io import StringIO
-import sys
+import os
+from django.conf import settings
+from django.http import FileResponse, Http404
 from django.core import management
 from django.core.cache import cache
+from django.core.files.storage import default_storage
 
 from importer.helper import message
 
@@ -93,3 +95,63 @@ def long_polling(request, room_name):
         return JsonResponse({"message": output, "status": status})
     else:
         return JsonResponse({"message": None, "status": status})
+
+
+def delete_file(request):
+    if request.method == "POST":
+        body_unicode = request.body.decode("utf-8")
+        body_data = json.loads(body_unicode)
+        path = body_data.get("path")
+        if os.path.exists(path):
+            os.remove(path)
+        return JsonResponse({"status": "ok"})
+
+    return JsonResponse({"status": "error"})
+
+
+@csrf_exempt
+def download_file(request):
+    if request.method == "POST":
+        body_unicode = request.body.decode("utf-8")
+        body_data = json.loads(body_unicode)
+        file_path = body_data.get("file_path")
+        print("file_path", file_path)
+
+        if not file_path:
+            raise Http404("File path not provided")
+
+        if os.path.exists(file_path):
+            try:
+                file = open(file_path, "rb")
+            except IOError:
+                raise Http404("File not found")
+
+            response = HttpResponse(file, content_type="application/octet-stream")
+            response[
+                "Content-Disposition"
+            ] = f'attachment; filename="{os.path.basename(file_path)}"'
+            return response
+        else:
+            raise Http404("File not found")
+
+
+@csrf_exempt
+def upload_file(request):
+    if request.method == "POST":
+        directory_path = request.POST.get("directory_path")
+        uploaded_file = request.FILES.get("file")
+
+        if not (directory_path and uploaded_file):
+            return JsonResponse(
+                {"status": "error", "error": "Directory path or file not provided"}
+            )
+        os.makedirs(directory_path, exist_ok=True)
+        file_path = os.path.join(directory_path, uploaded_file.name)
+
+        with open(file_path, "wb+") as destination:
+            for chunk in uploaded_file.chunks():
+                destination.write(chunk)
+
+        return JsonResponse(
+            {"message": "File uploaded successfully", "file_path": file_path}
+        )

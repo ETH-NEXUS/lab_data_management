@@ -402,6 +402,6 @@ export interface Options {
   }
 }
 
-export interface FormData {
+export interface GeneralFormData {
   [key: string]: string | boolean
 }
