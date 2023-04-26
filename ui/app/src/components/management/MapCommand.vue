@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import DynamicForm from './DynamicForm.vue'
-import {Options, FormData} from '../models'
+import {Options, GeneralFormData} from '../models'
 import {useManagementStore} from 'stores/management'
 import {onMounted} from 'vue'
 import {useQuasar} from 'quasar'
@@ -22,7 +22,7 @@ onMounted(() => {
   managementStore.commandOutput = ''
 })
 
-const onSubmit = async (formData: FormData) => {
+const onSubmit = async (formData: GeneralFormData) => {
   formData['room_name'] = user.value?.id.toString() || 'room_name'
   formData['command'] = props.command
   // $q.loading.show({

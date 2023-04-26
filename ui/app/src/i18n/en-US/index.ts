@@ -117,6 +117,7 @@ export default {
     well_type: 'Type',
     template_name: 'Template Name',
     status: 'Status',
+    sure_delete: 'Are you sure you want to delete this item?',
   },
   message: {
     select_label: 'Select label',
@@ -177,6 +178,9 @@ export default {
     delete_specification: 'Delete specification',
     edit_specification: 'Edit specification',
     download_csv: 'Download CSV',
+    delete_item: 'Delete item',
+    download_file: 'Download file',
+    upload_file: 'Upload file to the directory',
   },
   error: {
     select_plate_dimension: 'Please select a plate dimension.',
