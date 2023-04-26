@@ -16,6 +16,7 @@ from os import environ
 from django_auth_ldap.config import LDAPSearch
 
 from corsheaders.defaults import default_headers
+import logging
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -32,10 +33,15 @@ DEBUG = (environ.get("DJANGO_DEBUG", "False")) == "True"
 LOG_LEVEL = environ.get("DJANGO_LOG_LEVEL", "INFO")
 LOG_SQL = False
 LOG_LDAP = False
+LOG_WEBSOCKET = False
+LOG_REVPROXY = False
+LOG_DAPHNE = False
 
 # Application definition
 
 INSTALLED_APPS = [
+    "daphne",
+    "jupyter",
     "django.contrib.admin",
     "django.contrib.auth",
     "django.contrib.contenttypes",
@@ -85,7 +91,7 @@ TEMPLATES = [
     },
 ]
 
-WSGI_APPLICATION = "ldm.wsgi.application"
+ASGI_APPLICATION = "ldm.asgi.application"
 
 
 # Database
@@ -275,6 +281,19 @@ if LOG_LDAP:
         "handlers": ["console"],
         "propagate": False,
     }
+if not LOG_DAPHNE:
+    logging.getLogger("daphne").setLevel(logging.WARNING)
+    logging.getLogger("daphne.http_protocol").setLevel(logging.WARNING)
+    logging.getLogger("daphne.ws_protocol").setLevel(logging.WARNING)
+    logging.getLogger("daphne.server").setLevel(logging.WARNING)
+if not LOG_WEBSOCKET:
+    logging.getLogger("websockets").setLevel(logging.WARNING)
+    logging.getLogger("django.channels").setLevel(logging.WARNING)
+    logging.getLogger("django.channels.server").setLevel(logging.WARNING)
+if not LOG_REVPROXY:
+    logging.getLogger("revproxy").setLevel(logging.WARNING)
+    logging.getLogger("revproxy.cookies").setLevel(logging.WARNING)
+    logging.getLogger("revproxy.response").setLevel(logging.WARNING)
 
 FLOAT_PRECISION = 6
 
