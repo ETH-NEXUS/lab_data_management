@@ -1,5 +1,5 @@
 import {api} from 'src/boot/axios'
-import {FileSystemItem, FormData} from 'components/models'
+import {FileSystemItem, GeneralFormData} from 'components/models'
 import {defineStore} from 'pinia'
 
 export const useManagementStore = defineStore({
@@ -20,7 +20,7 @@ export const useManagementStore = defineStore({
       await this.getDataDirectory()
     },
 
-    async runCommand(formData: FormData) {
+    async runCommand(formData: GeneralFormData) {
       this.startLongPolling(formData['room_name'].toString()) // no await here
       await api.post('/api/run_command/', {form_data: formData})
     },
@@ -49,6 +49,15 @@ export const useManagementStore = defineStore({
     async downloadFile(path: string) {
       alert('Download file')
       return await api.post('api/download_file/', {file_path: path})
+    },
+    async uploadFile(path: string, file: File) {
+      const form = new FormData()
+      console.log('FILE', file)
+      form.append('file', file)
+      form.append('directory_path', path)
+      const res = await api.post('api/upload_file/', form)
+      console.log(res.data)
+      await this.getDataDirectory()
     },
   },
   persist: {

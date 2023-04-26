@@ -7,6 +7,7 @@ from django.conf import settings
 from django.http import FileResponse, Http404
 from django.core import management
 from django.core.cache import cache
+from django.core.files.storage import default_storage
 
 from importer.helper import message
 
@@ -132,3 +133,25 @@ def download_file(request):
             return response
         else:
             raise Http404("File not found")
+
+
+@csrf_exempt
+def upload_file(request):
+    if request.method == "POST":
+        directory_path = request.POST.get("directory_path")
+        uploaded_file = request.FILES.get("file")
+
+        if not (directory_path and uploaded_file):
+            return JsonResponse(
+                {"status": "error", "error": "Directory path or file not provided"}
+            )
+        os.makedirs(directory_path, exist_ok=True)
+        file_path = os.path.join(directory_path, uploaded_file.name)
+
+        with open(file_path, "wb+") as destination:
+            for chunk in uploaded_file.chunks():
+                destination.write(chunk)
+
+        return JsonResponse(
+            {"message": "File uploaded successfully", "file_path": file_path}
+        )
