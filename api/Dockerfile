@@ -80,6 +80,10 @@ RUN if [ "${ENABLE_RKERNEL}" = "True" ]; then R -e 'install.packages("IRkernel")
 RUN if [ "${ENABLE_RKERNEL}" = "True" ]; then R -e 'IRkernel::installspec()'; fi
 RUN if [ "${ENABLE_RKERNEL}" = "True" ]; then R -e 'install.packages("arrow")'; fi
 RUN if [ "${ENABLE_RKERNEL}" = "True" ]; then R -e 'install.packages(c("ggplot", "DT", "bioassays"))'; fi
+RUN if [ "${ENABLE_RKERNEL}" = "True" ]; then R -e 'install.packages(c("captioner", "RColorBrewer", "lawstat", "dplyr" ))'; fi
+RUN if [ "${ENABLE_RKERNEL}" = "True" ]; then R -e 'install.packages("car", dependencies=TRUE)'; fi
+RUN if [ "${ENABLE_RKERNEL}" = "True" ]; then R -e 'install.packages("ggpubr", dependencies=TRUE)'; fi
+
 
 # Used for LDAP authentication
 RUN apt-get install -y libsasl2-dev python-dev libldap2-dev libssl-dev

@@ -533,6 +533,7 @@ class ExperimentViewSet(viewsets.ModelViewSet):
             template_plate = Plate.objects.get(pk=template_plate_id)
             plates = Plate.objects.filter(experiment=experiment)
             for plate in plates:
+                print(f"Applying template to plate {plate.barcode}")
                 plate.apply_template(template_plate)
             return Response(status.HTTP_200_OK)
         else:
