@@ -36,6 +36,7 @@ LOG_LDAP = False
 LOG_WEBSOCKET = False
 LOG_REVPROXY = False
 LOG_DAPHNE = False
+LOG_URLLIB = False
 
 # Application definition
 
@@ -282,6 +283,7 @@ if LOG_LDAP:
         "propagate": False,
     }
 if not LOG_DAPHNE:
+    logging.getLogger("asyncio").setLevel(logging.WARNING)
     logging.getLogger("daphne").setLevel(logging.WARNING)
     logging.getLogger("daphne.http_protocol").setLevel(logging.WARNING)
     logging.getLogger("daphne.ws_protocol").setLevel(logging.WARNING)
@@ -290,10 +292,20 @@ if not LOG_WEBSOCKET:
     logging.getLogger("websockets").setLevel(logging.WARNING)
     logging.getLogger("django.channels").setLevel(logging.WARNING)
     logging.getLogger("django.channels.server").setLevel(logging.WARNING)
+    logging.getLogger("jupyter.consumers").setLevel(logging.WARNING)
+    logging.getLogger("jupyter").setLevel(logging.WARNING)
 if not LOG_REVPROXY:
     logging.getLogger("revproxy").setLevel(logging.WARNING)
     logging.getLogger("revproxy.cookies").setLevel(logging.WARNING)
     logging.getLogger("revproxy.response").setLevel(logging.WARNING)
+if not LOG_URLLIB:
+    logging.getLogger("urllib3").setLevel(logging.WARNING)
+    logging.getLogger("urllib3.util").setLevel(logging.WARNING)
+    logging.getLogger("urllib3.util.retry").setLevel(logging.WARNING)
+    logging.getLogger("urllib3.connection").setLevel(logging.WARNING)
+    logging.getLogger("urllib3.response").setLevel(logging.WARNING)
+    logging.getLogger("urllib3.connectionpool").setLevel(logging.WARNING)
+    logging.getLogger("urllib3.poolmanager").setLevel(logging.WARNING)
 
 FLOAT_PRECISION = 6
 
