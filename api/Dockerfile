@@ -75,7 +75,7 @@ RUN if [ "${ENABLE_JUPYTER}" = "True" ]; then jupyter contrib nbextension instal
 
 # Jupyter R Kernel
 ARG ENABLE_RKERNEL
-RUN if [ "${ENABLE_RKERNEL}" = "True" ]; then apt-get install -y r-base; fi
+RUN if [ "${ENABLE_RKERNEL}" = "True" ]; then apt-get install -y r-base cmake; fi
 RUN if [ "${ENABLE_RKERNEL}" = "True" ]; then R -e 'install.packages("IRkernel")'; fi
 RUN if [ "${ENABLE_RKERNEL}" = "True" ]; then R -e 'IRkernel::installspec()'; fi
 RUN if [ "${ENABLE_RKERNEL}" = "True" ]; then R -e 'install.packages("arrow")'; fi
