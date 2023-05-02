@@ -135,6 +135,8 @@ def get_experiment_measurements(experiment_name: str, label=None):
             measurements = well.measurements.all()
             if label is not None:
                 measurements = measurements.filter(label=label)
+            # print("compound name", well.compounds.first().name)
+
             well_rows = [
                 {
                     "well_coordinate": well.hr_position,
@@ -144,9 +146,13 @@ def get_experiment_measurements(experiment_name: str, label=None):
                     "plate_column": col,
                     "control": well.type.name,
                     "measurement": measurement.label,
+                    "compound": well.compounds.first().name
+                    if well.compounds and well.compounds.first()
+                    else None,
                 }
                 for measurement in measurements
             ]
+
             rows.extend(well_rows)
 
     rows = sorted(rows, key=lambda k: k["measurement"])
