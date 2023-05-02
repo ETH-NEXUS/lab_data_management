@@ -75,6 +75,7 @@ RUN if [ "${ENABLE_JUPYTER}" = "True" ]; then jupyter contrib nbextension instal
 
 # Jupyter R Kernel
 ARG ENABLE_RKERNEL
+
 RUN if [ "${ENABLE_RKERNEL}" = "True" ]; then apt-get install -y dirmngr gnupg apt-transport-https ca-certificates software-properties-common; fi
 # The foolowing two lines is to upgrade R to the latest version on bullseye
 # Reference: https://linux.how2shout.com/install-the-latest-r-programming-language-version-on-debian-11-bullseye/
@@ -88,6 +89,8 @@ RUN if [ "${ENABLE_RKERNEL}" = "True" ]; then R -e 'install.packages("arrow")'; 
 # Below the packages that are needed can be configured
 RUN if [ "${ENABLE_RKERNEL}" = "True" ]; then R -e 'install.packages(c("ggplot", "DT", "bioassays"), dependencies = TRUE, INSTALL_opts = c("--no-lock"))'; fi
 RUN if [ "${ENABLE_RKERNEL}" = "True" ]; then R -e 'install.packages(c("car", "ggpubr"), dependencies = TRUE, INSTALL_opts = c("--no-lock"))'; fi
+RUN if [ "${ENABLE_RKERNEL}" = "True" ]; then R -e 'install.packages(c("captioner", "RColorBrewer", "lawstat", "dplyr" ), dependencies = TRUE, INSTALL_opts = c("--no-lock"))'; fi
+
 
 # Used for LDAP authentication
 RUN apt-get install -y libsasl2-dev python-dev libldap2-dev libssl-dev
