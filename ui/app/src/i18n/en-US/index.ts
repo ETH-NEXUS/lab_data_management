@@ -84,6 +84,7 @@ export default {
     ssmd: 'ssmd',
     notebook: 'Notebook',
     about: 'About',
+    help: 'Help',
     smaller_map_view: 'Smaller map view',
     label: 'Label',
     plot_view: 'Plot view',
@@ -101,6 +102,7 @@ export default {
     template_plate: 'Select a template plate',
   },
   title: {
+    app: 'Lab Data Management',
     compound: 'Compound',
     compounds: 'Compounds',
     well: 'Well',

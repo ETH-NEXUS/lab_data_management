@@ -77,7 +77,7 @@ const openDocsPage = () => {
                 <q-item-section avatar>
                   <q-icon name="help_outline" />
                 </q-item-section>
-                <q-item-section>{{ t('label.about') }}</q-item-section>
+                <q-item-section>{{ t('label.help') }}</q-item-section>
               </q-item>
               <q-item v-ripple clickable @click="logout">
                 <q-item-section avatar>
