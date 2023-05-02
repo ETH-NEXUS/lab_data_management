@@ -183,6 +183,7 @@ export default {
     delete_item: 'Delete item',
     download_file: 'Download file',
     upload_file: 'Upload file to the directory',
+    view_file_content: 'View file content',
   },
   error: {
     select_plate_dimension: 'Please select a plate dimension.',
