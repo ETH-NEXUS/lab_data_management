@@ -83,9 +83,17 @@ def measurement(barcode: str, abbrev: str, matrix: bool = False):
     """
     plate = Plate.objects.get(barcode=barcode)
     if matrix:
-        df = pd.DataFrame(np.nan, index=[posToAlphaChar(row) for row in range(1, plate.dimension.rows + 1)], columns=range(1, plate.dimension.cols + 1), )
+        df = pd.DataFrame(
+            np.nan,
+            index=[posToAlphaChar(row) for row in range(1, plate.dimension.rows + 1)],
+            columns=range(1, plate.dimension.cols + 1),
+        )
     else:
-        df = pd.DataFrame(np.nan, index=range(plate.num_wells), columns=("row", "col", "position", "value"), )
+        df = pd.DataFrame(
+            np.nan,
+            index=range(plate.num_wells),
+            columns=("row", "col", "position", "value"),
+        )
 
     for position in range(plate.num_wells):
         row, col = plate.dimension.row_col(position)
@@ -95,7 +103,12 @@ def measurement(barcode: str, abbrev: str, matrix: bool = False):
             if matrix:
                 df.loc[row, col] = well.measurement(abbrev) or np.nan
             else:
-                df.iloc[position] = [row, col, position, well.measurement(abbrev) or np.nan, ]
+                df.iloc[position] = [
+                    row,
+                    col,
+                    position,
+                    well.measurement(abbrev) or np.nan,
+                ]
         except Well.DoesNotExist:
             if matrix:
                 df.loc[row, col] = np.nan
@@ -120,10 +133,18 @@ def get_experiment_measurements(experiment_name: str):
             row, col = plate_dimension.row_col(well.position)
 
             measurements = well.measurements.all()
-            well_rows = [{
-                "WellCoordinate": well.hr_position, "Value": measurement.value, "Plate": pl.barcode, "plateRow": row, "plateColumn": col, "Control": well.type.name,
-                "measurement": measurement.label,
-            } for measurement in measurements]
+            well_rows = [
+                {
+                    "well_coordinate": well.hr_position,
+                    "Value": measurement.value,
+                    "Plate": pl.barcode,
+                    "plateRow": row,
+                    "plateColumn": col,
+                    "Control": well.type.name,
+                    "measurement": measurement.label,
+                }
+                for measurement in measurements
+            ]
             rows.extend(well_rows)
 
     rows = sorted(rows, key=lambda k: k["measurement"])
@@ -136,20 +157,28 @@ def normalize_values(raw_data, log_value=False, label=None, pos_neg_only=False):
     raw_data = raw_data.copy()
 
     if pos_neg_only:
-        raw_data = raw_data[raw_data['Control'].isin(['P', 'N'])]
+        raw_data = raw_data[raw_data["Control"].isin(["P", "N"])]
     if label is not None:
-        raw_data = raw_data[raw_data['measurement'] == label]
+        raw_data = raw_data[raw_data["measurement"] == label]
     if log_value:
-        raw_data['Value'] = np.log10(raw_data['Value'])
+        raw_data["Value"] = np.log10(raw_data["Value"])
 
-    plate_median = raw_data.groupby(['Plate', 'Control'])['Value'].median().reset_index()
-    plate_median = plate_median.pivot_table(index='Plate', columns='Control', values='Value').reset_index()
+    plate_median = (
+        raw_data.groupby(["Plate", "Control"])["Value"].median().reset_index()
+    )
+    plate_median = plate_median.pivot_table(
+        index="Plate", columns="Control", values="Value"
+    ).reset_index()
 
-    column_names_map = {'C': 'med.c', 'N': 'med.n', 'P': 'med.p'}
-    plate_median.columns = ['Plate'] + [column_names_map[c] for c in plate_median.columns[1:]]
+    column_names_map = {"C": "med.c", "N": "med.n", "P": "med.p"}
+    plate_median.columns = ["Plate"] + [
+        column_names_map[c] for c in plate_median.columns[1:]
+    ]
 
-    result = pd.merge(raw_data, plate_median, on=['Plate'])
-    result['norm'] = (result['Value'] - result['med.n']) / (result['med.p'] - result['med.n'])
+    result = pd.merge(raw_data, plate_median, on=["Plate"])
+    result["norm"] = (result["Value"] - result["med.n"]) / (
+        result["med.p"] - result["med.n"]
+    )
 
     return result
 
@@ -164,14 +193,20 @@ def calculate_z_prime(raw_data, log_value=False):
     data = raw_data.copy()
 
     if log_value:
-        data['Value'] = np.log10(data['Value'])
+        data["Value"] = np.log10(data["Value"])
 
-    plate_med = data.groupby(['Plate', 'Control'])['Value'].median().unstack().reset_index()
-    plate_mad = data.groupby(['Plate', 'Control'])['Value'].apply(mad).unstack().reset_index()
+    plate_med = (
+        data.groupby(["Plate", "Control"])["Value"].median().unstack().reset_index()
+    )
+    plate_mad = (
+        data.groupby(["Plate", "Control"])["Value"].apply(mad).unstack().reset_index()
+    )
 
-    z_prime = 1 - (3 * (plate_mad['P'] + plate_mad['N']) / abs(plate_med['P'] - plate_med['N']))
+    z_prime = 1 - (
+        3 * (plate_mad["P"] + plate_mad["N"]) / abs(plate_med["P"] - plate_med["N"])
+    )
 
-    result = pd.concat([plate_med['Plate'], z_prime], axis=1)
-    result.columns = ['Plate', 'z_prime']
+    result = pd.concat([plate_med["Plate"], z_prime], axis=1)
+    result.columns = ["Plate", "z_prime"]
 
     return result
