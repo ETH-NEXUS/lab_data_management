@@ -117,7 +117,7 @@ def measurement(barcode: str, abbrev: str, matrix: bool = False):
     return df
 
 
-def get_experiment_measurements(experiment_name: str):
+def get_experiment_measurements(experiment_name: str, label=None):
     """
     Returns a pd DataFrame of measurements for a given experiment.
     """
@@ -133,6 +133,8 @@ def get_experiment_measurements(experiment_name: str):
             row, col = plate_dimension.row_col(well.position)
 
             measurements = well.measurements.all()
+            if label is not None:
+                measurements = measurements.filter(label=label)
             well_rows = [
                 {
                     "well_coordinate": well.hr_position,
