@@ -6,6 +6,7 @@ import {useRouter} from 'vue-router'
 import {FileSystemItem} from 'components/models'
 import {QTreeNode, useQuasar} from 'quasar'
 import {useI18n} from 'vue-i18n'
+import FileViewer from 'components/management/FileViewer.vue'
 
 const {t} = useI18n()
 const $q = useQuasar()
@@ -15,8 +16,12 @@ const managementStore = useManagementStore()
 const router = useRouter()
 const deleteDialog = ref<boolean>(false)
 const uploadDialog = ref<boolean>(false)
+const fileContentDialog = ref<boolean>(false)
 const uploadDirectoryPath = ref<string>('')
 const file = ref<File | null>(null)
+const viewFilePath = ref<string>('')
+const maximizedToggle = ref<boolean>(false)
+const viewFileContent = ref<string>('')
 
 const nodes = computed<QTreeNode[]>(() => {
   const res = convertToQTreeNodes([dataDirectory.value])
@@ -93,6 +98,13 @@ const handleFileInput = async () => {
     uploadDialog.value = false
   }
 }
+
+const handleOpenFile = async (path: string) => {
+  viewFilePath.value = path
+  const res = await managementStore.getFileContent(path)
+  viewFileContent.value = res.data.content
+  fileContentDialog.value = true
+}
 </script>
 
 <template>
@@ -120,6 +132,11 @@ const handleFileInput = async () => {
               {{ t('action.download_file') }}
             </q-item-section>
           </q-item>
+          <q-item clickable v-close-popup v-if="prop.node.type === 'file'">
+            <q-item-section @click="handleOpenFile(prop.node.path)">
+              {{ t('action.view_file_content') }}
+            </q-item-section>
+          </q-item>
           <q-item clickable v-close-popup v-if="prop.node.type === 'directory'">
             <q-item-section @click="handleUploadDialog(prop.node.path)">
               {{ t('action.upload_file') }}
@@ -133,7 +150,7 @@ const handleFileInput = async () => {
     </template>
   </q-tree>
 
-  <q-dialog v-model="deleteDialog">
+  <q-dialog v-model="deleteDialog" transition-show="rotate" transition-hide="rotate">
     <q-card>
       <q-card-section>
         <div>Are you sure you want to delete the item {{ selectedPath }}?</div>
@@ -143,7 +160,7 @@ const handleFileInput = async () => {
       </q-card-actions>
     </q-card>
   </q-dialog>
-  <q-dialog v-model="uploadDialog">
+  <q-dialog v-model="uploadDialog" transition-show="rotate" transition-hide="rotate">
     <q-card>
       <q-card-section>
         <div>
@@ -157,6 +174,27 @@ const handleFileInput = async () => {
       <q-card-actions align="right">
         <q-btn flat label="Upload" color="primary" v-close-popup @click="handleFileInput"></q-btn>
       </q-card-actions>
+    </q-card>
+  </q-dialog>
+  <q-dialog v-model="fileContentDialog" transition-show="slide-up" transition-hide="slide-down" maximized>
+    <q-card class="bg-primary text-white">
+      <q-bar>
+        <q-space />
+
+        <q-btn dense flat icon="close" v-close-popup>
+          <q-tooltip class="bg-white text-primary">Close</q-tooltip>
+        </q-btn>
+      </q-bar>
+      <q-card-section>
+        <div class="text-h6">{{ viewFilePath }}</div>
+      </q-card-section>
+      <q-separator></q-separator>
+
+      <q-card-section class="q-pt-none scroll">
+        <pre>
+          {{ viewFileContent }}
+        </pre>
+      </q-card-section>
     </q-card>
   </q-dialog>
 </template>
