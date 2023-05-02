@@ -99,8 +99,8 @@ export const useUserStore = defineStore('user', () => {
 
   const sessionLogout = async () => {
     try {
-      await api.get(endpoints.sessionLogout)
       removeToken()
+      await api.get(endpoints.sessionLogout)
     } catch (err) {
       console.error(err)
     }
