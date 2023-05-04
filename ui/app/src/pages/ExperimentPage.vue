@@ -331,6 +331,7 @@ const addNewMeasurement = () => {
             color="secondary"
             @click="generateBarcodeDialogToggle = true" />
           <q-btn
+            v-if="experiment.plates.length > 0"
             class="q-ml-xs"
             :label="t('action.apply_template')"
             icon="o_layers"
