@@ -240,6 +240,8 @@ class BarcodeSpecificationSerializer(serializers.ModelSerializer):
 
 
 class ExperimentDetailSerializer(serializers.ModelSerializer):
+    empty = {}
+
     class Meta:
         model = ExperimentDetail
         fields = "__all__"
@@ -255,8 +257,11 @@ class ExperimentSerializer(serializers.ModelSerializer):
     details = serializers.SerializerMethodField()
 
     def get_details(self, experiment: Experiment):
-        experiment_details = ExperimentDetail.objects.get(pk=experiment.id)
-        return ExperimentDetailSerializer(experiment_details).data
+        try:
+            experiment_details = ExperimentDetail.objects.get(pk=experiment.id)
+            return ExperimentDetailSerializer(experiment_details).data
+        except ExperimentDetail.DoesNotExist:
+            return ExperimentDetailSerializer.empty
 
     # returns only those labels that are available for all plates in the experiment
     def get_available_measurement_labels(self, experiment: Experiment):
