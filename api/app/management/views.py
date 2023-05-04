@@ -96,7 +96,7 @@ def long_polling(request, room_name):
     else:
         return JsonResponse({"message": None, "status": status})
 
-
+@csrf_exempt
 def delete_file(request):
     if request.method == "POST":
         body_unicode = request.body.decode("utf-8")
