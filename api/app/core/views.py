@@ -46,6 +46,7 @@ from .serializers import (
     ExperimentSerializer,
     ProjectSerializer,
     SimplePlateTemplateSerializer,
+    ExperimentDetail,
 )
 
 from django.views.generic import View

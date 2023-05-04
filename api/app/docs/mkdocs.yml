@@ -2,7 +2,8 @@ site_name: Lab Data Management Documentation
 docs_dir: docs
 site_dir: site
 nav:
-  - "Getting started": index.md
+  - "Getting started": getting_started.md
+  - "Command line tools": index.md
   - Changelog: CHANGELOG.md
 theme: readthedocs
 
