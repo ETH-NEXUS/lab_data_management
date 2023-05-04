@@ -132,7 +132,10 @@ const handleOpenFile = async (path: string) => {
               {{ t('action.download_file') }}
             </q-item-section>
           </q-item>
-          <q-item clickable v-close-popup v-if="prop.node.type === 'file'">
+          <q-item
+            clickable
+            v-close-popup
+            v-if="prop.node.type === 'file' && !prop.node.label.match(/\.(png|jpe?g)$/i)">
             <q-item-section @click="handleOpenFile(prop.node.path)">
               {{ t('action.view_file_content') }}
             </q-item-section>

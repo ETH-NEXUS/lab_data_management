@@ -53,7 +53,9 @@ const openDocsPage = () => {
     <q-header elevated>
       <q-toolbar>
         <q-btn flat dense round icon="menu" aria-label="Menu" @click="toggleLeftDrawer" />
-        <q-toolbar-title>Lab Data Management</q-toolbar-title>
+        <q-toolbar-title class="cursor-pointer" @click="router.push('/')">
+          Lab Data Management
+        </q-toolbar-title>
         <span v-if="userStore.user">
           <strong>{{ userStore.user.first_name }} {{ userStore.user.last_name }}</strong>
         </span>
