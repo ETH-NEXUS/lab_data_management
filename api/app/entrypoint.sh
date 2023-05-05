@@ -10,7 +10,7 @@ python manage.py migrate
 python manage.py initadmin
 python manage.py db init
 
-cat README.md > docs/docs/index.md
+cat README.md > docs/docs/cl_tools.md
 
 cd docs || exit
 [ -x ./scripts/generate_changelog.sh ] || chmod +x ./scripts/generate_changelog.sh
