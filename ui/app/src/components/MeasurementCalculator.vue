@@ -22,7 +22,7 @@ onMounted(async () => {
   combinedLabels.value = createCombinedLabels()
 })
 
-const buttons: string[] = ['1', '2', '3', '+', '4', '5', '6', '-', '7', '8', '9', '*', 'C', '0', '/', 'ln']
+const buttons: string[] = ['1', '2', '3', '+', '4', '5', '6', '-', '7', '8', '9', '*', 'C', '0', '/', 'log']
 const currentExpression = ref<string>('')
 const previousButton = ref<string>('')
 const newLabel = ref<string>('')
@@ -34,12 +34,12 @@ const handleButtonClick = (button: string) => {
     case 'C':
       currentExpression.value = ''
       break
-    case 'ln':
-      currentExpression.value += 'ln('
+    case 'log':
+      currentExpression.value += 'log('
       previousButton.value = button
       break
     default:
-      if (previousButton.value === 'ln') {
+      if (previousButton.value === 'log') {
         currentExpression.value += `${button})`
       } else {
         currentExpression.value += button
@@ -54,7 +54,7 @@ const handleDragStart = (label: string, event: DragEvent) => {
 const handleDrop = (event: DragEvent) => {
   const label = event.dataTransfer?.getData('text/plain')
   currentExpression.value += label
-  if (previousButton.value === 'ln') {
+  if (previousButton.value === 'log') {
     currentExpression.value += ')'
   }
   if (label) {

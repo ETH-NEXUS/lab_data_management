@@ -10,6 +10,7 @@ import {useRouter} from 'vue-router'
 import {useQuasar} from 'quasar'
 import {storeToRefs} from 'pinia'
 import {useSettingsStore} from 'stores/settings'
+import {palettes} from 'components/helpers'
 
 const router = useRouter()
 const $q = useQuasar()
@@ -117,6 +118,10 @@ const min = computed(() => {
         :label="t('message.select_timestamp')"
         emit-value
         map-options></q-select>
+      <q-select
+        v-model="platePage.heatmapPalette"
+        :options="palettes"
+        :label="t('label.select_color_palette')"></q-select>
     </div>
   </div>
   <div class="fit row wrap justify-evenly items-start content-start">
