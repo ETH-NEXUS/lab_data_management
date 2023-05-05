@@ -53,6 +53,7 @@ const initialize = async () => {
     project.value = projects?.find((p: Project) => p.id === Number(route.params.project)) ?? null
     options.value = plateDimensions?.map((d: PlateDimension) => ({label: d.name, value: d.id})) ?? []
     experiment.value = experiments?.find((e: Experiment) => e.id === Number(route.params.experiment)) ?? null
+    showExperimentResults.value = false
   } catch (err) {
     handleError(err)
   } finally {

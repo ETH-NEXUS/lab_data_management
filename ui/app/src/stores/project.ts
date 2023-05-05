@@ -128,19 +128,19 @@ export const useProjectStore = defineStore('project', () => {
     usedLabels: string[],
     experimentId: null | number | undefined = null
   ) => {
-    let payload: CalculatorPayload = {separate_time_series_points: false}
+    const payload: CalculatorPayload = {
+      expression: expression,
+      new_label: newLabel,
+      used_labels: usedLabels,
+      separate_time_series_points: false,
+    }
     if (plateId) {
-      payload = {plate_id: plateId, expression: expression, new_label: newLabel, used_labels: usedLabels}
-      if (usedLabels.some(label => label.includes('-->'))) {
-        payload.separate_time_series_points = true
-      }
+      payload.plate_id = plateId
     } else if (experimentId) {
-      payload = {
-        experiment_id: experimentId,
-        expression: expression,
-        new_label: newLabel,
-        used_labels: usedLabels,
-      }
+      payload.experiment_id = experimentId
+    }
+    if (usedLabels.some(label => label.includes('-->'))) {
+      payload.separate_time_series_points = true
     }
 
     const res = await api.post(`/api/plates/${plateId}/add_new_measurement/`, payload)

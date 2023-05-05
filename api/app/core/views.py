@@ -194,11 +194,11 @@ class PlateViewSet(viewsets.ModelViewSet):
 
     @action(detail=True, methods=["post"])
     def add_new_measurement(self, request, pk=None):
-        import math  # don't delete this import, it is used in expression = request.data.get("expression").replace("ln(", "math.log(")
+        import math  # don't delete this import, it is used in expression = request.data.get("expression").replace("log(", "math.log10(")
 
         used_labels = request.data.get("used_labels")
         new_label = request.data.get("new_label")
-        expression = request.data.get("expression").replace("ln(", "math.log(")
+        expression = request.data.get("expression").replace("log(", "math.log10(")
 
         plate_id = request.data.get("plate_id")
         experiment_id = request.data.get("experiment_id")
@@ -222,16 +222,21 @@ class PlateViewSet(viewsets.ModelViewSet):
             for plate in plates:
                 current_plate_details = PlateDetail.objects.get(id=plate.id)
                 self.__add_new_measurement_to_plate(
-                    plate, current_plate_details, used_labels, new_label, expression
+                    plate,
+                    current_plate_details,
+                    used_labels,
+                    new_label,
+                    expression,
+                    separate_time_series_points,
                 )
-
+        ExperimentDetail.refresh(concurrently=True)
         return Response(status.HTTP_200_OK)
 
     def filter_queryset(self, queryset):
         return super().filter_queryset(queryset)
 
     def __evaluate_expression(self, new_expression):
-        import math  # don't delete this import, it is used in eval if expression contains 'ln('
+        import math  # don't delete this import, it is used in eval if expression contains 'log('
 
         try:
             result = eval(new_expression)
