@@ -15,8 +15,8 @@ const {t} = useI18n()
 
 <style scoped lang="sass">
 .image-container
-  width: 80%
-  height: 80%
+  width: 60%
+  height: 60%
   display: flex
   align-items: center
   justify-content: center
