@@ -87,8 +87,11 @@ class SimplePlateSerializer(serializers.ModelSerializer):
     measurement_labels = serializers.SerializerMethodField()
 
     def get_measurement_labels(self, plate: Plate):
-        plate_details = PlateDetail.objects.get(pk=plate.id)
-        return plate_details.measurement_labels
+        try:
+            plate_details = PlateDetail.objects.get(pk=plate.id)
+            return plate_details.measurement_labels
+        except PlateDetail.DoesNotExist:
+            return PlateDetailSerializer.empty
 
     class Meta:
         model = Plate
@@ -184,6 +187,8 @@ class PlateListSerializer(serializers.ModelSerializer):
 
 
 class PlateDetailSerializer(serializers.ModelSerializer):
+    empty = {}
+
     class Meta:
         model = PlateDetail
         fields = "__all__"
@@ -195,8 +200,11 @@ class PlateSerializer(serializers.ModelSerializer):
     wells = serializers.SerializerMethodField()
 
     def get_details(self, plate: Plate):
-        plate_details = PlateDetail.objects.get(pk=plate.id)
-        return PlateDetailSerializer(plate_details).data
+        try:
+            plate_details = PlateDetail.objects.get(pk=plate.id)
+            return PlateDetailSerializer(plate_details).data
+        except PlateDetail.DoesNotExist:
+            return PlateDetailSerializer.empty
 
     def get_wells(self, plate: Plate):
         wells = WellDetail.objects.filter(plate_id=plate.id).order_by("position")
@@ -268,8 +276,11 @@ class ExperimentSerializer(serializers.ModelSerializer):
         labels_count = defaultdict(int)
         labels = []
         for plate in experiment.plates.all():
-            plate_details = PlateDetail.objects.get(pk=plate.id)
-            labels.extend(plate_details.measurement_labels)
+            try:
+                plate_details = PlateDetail.objects.get(pk=plate.id)
+                labels.extend(plate_details.measurement_labels)
+            except PlateDetail.DoesNotExist:
+                pass
         for label in labels:
             labels_count[label] += 1
         return [

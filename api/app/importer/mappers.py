@@ -174,6 +174,7 @@ class EchoMapper(BaseMapper):
                             barcode=destination_plate_barcode
                         )
                     except Plate.DoesNotExist:
+                        message(f"Creating destination plate {destination_plate_name}")
                         destination_plate = self.__create_plate_by_name_and_barcode(
                             destination_plate_name, destination_plate_barcode, **kwargs
                         )
