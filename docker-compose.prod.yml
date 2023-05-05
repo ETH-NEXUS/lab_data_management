@@ -17,6 +17,9 @@ services:
     depends_on:
       - api
       - db
+  api:
+    volumes:
+      - /data/ldm-data:/data
   ui:
     command: >
       bash -c "\
