@@ -299,6 +299,7 @@ media/
 site/
 index.md
 CHANGELOG.md
+cl_tools.md
 backups/
 temp/
 *.ipynb
