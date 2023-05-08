@@ -246,11 +246,11 @@ const addNewMeasurement = () => {
                 <q-item>
                   <q-item-section>
                     <!--                    <q-item-label class="text-body1 q-mt-lg">Barcode set #{{ i + 1 }}</q-item-label>-->
-                    <div
-                      class="text-primary cursor-pointer q-mt-lg q-mb-sm"
-                      @click="openDimensionsOptions(i)">
-                      >> {{ t('experiment.add_plates') }}
-                    </div>
+                    <!--                    <div-->
+                    <!--                      class="text-primary cursor-pointer q-mt-lg q-mb-sm"-->
+                    <!--                      @click="openDimensionsOptions(i)">-->
+                    <!--                      >> {{ t('experiment.add_plates') }}-->
+                    <!--                    </div>-->
                     {{}}
                     <div :id="`dimensions-${i}`" :class="`hidden q-my-lg`">
                       <div

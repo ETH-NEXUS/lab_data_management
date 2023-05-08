@@ -89,6 +89,9 @@ def long_polling(request, room_name):
     status_key = f"command_status_{room_name}"
     output = cache.get(output_key)
     status = cache.get(status_key)
+    if status == "completed":
+        cache.delete(output_key)
+        cache.delete(status_key)
 
     if output:
         cache.delete(output_key)

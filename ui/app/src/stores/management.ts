@@ -36,7 +36,7 @@ export const useManagementStore = defineStore({
         }
 
         if (status !== 'completed') {
-          setTimeout(() => this.startLongPolling(roomName), 500)
+          setTimeout(() => this.startLongPolling(roomName), 300)
         }
       } catch (error) {
         console.error('Long polling error:', error)
