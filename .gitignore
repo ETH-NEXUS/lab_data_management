@@ -291,6 +291,7 @@ dist
 # Additions
 .DS_Store
 .vscode
+.0-Trash
 !.env.TEMPLATE
 data/
 static/
