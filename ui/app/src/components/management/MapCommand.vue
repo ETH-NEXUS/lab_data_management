@@ -23,6 +23,7 @@ onMounted(() => {
 })
 
 const onSubmit = async (formData: GeneralFormData) => {
+  managementStore.commandOutput = `Executing command: ${props.command}\n...`
   formData['room_name'] = user.value?.id.toString() || 'room_name'
   formData['command'] = props.command
   // $q.loading.show({

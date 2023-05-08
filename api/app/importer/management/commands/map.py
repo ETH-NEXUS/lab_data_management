@@ -119,6 +119,7 @@ class Command(BaseCommand):
                     headers=headers,
                     debug=options.get("debug", False),
                     room_name=options.get("room_name", None),
+                    experiment_name=options.get("experiment_name", None),
                 )
             except Exception as ex:
                 message(f"Error: {ex}", "error", options.get("room_name", None))
