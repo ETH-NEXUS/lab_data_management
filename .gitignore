@@ -297,7 +297,7 @@ data/
 static/
 media/
 site/
-index.md
+
 CHANGELOG.md
 cl_tools.md
 backups/
@@ -305,7 +305,7 @@ temp/
 *.ipynb
 *.csv
 sitemap.xml.gz
-api/app/docs/docs/index.md
+
 
 Pipfile
 .sass-cache
