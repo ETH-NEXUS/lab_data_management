@@ -43,7 +43,7 @@ cd /tmp && \
 wget -q https://github.com/jgm/pandoc/releases/download/2.19.2/pandoc-2.19.2-1-amd64.deb && \
 dpkg -i pandoc-2.19.2-1-amd64.deb && \
 wget -q https://github.com/quarto-dev/quarto-cli/releases/download/v1.3.340/quarto-1.3.340-linux-amd64.deb && \
-dpkg -i quarto-1.3.340-linux-amd64.deb \
+dpkg -i quarto-1.3.340-linux-amd64.deb && \
 apt-get update && apt-get install -y \
 texlive-xetex \
 gconf-service \
