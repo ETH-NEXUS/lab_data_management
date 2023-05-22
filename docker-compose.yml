@@ -26,6 +26,7 @@ services:
       - ./api/app:/app
       - ./api/notebooks:/notebooks
       - ./api/app/notebook/startup:/root/.ipython/profile_default/startup
+      - ./api/app/notebook/nbextensions/printview:/root/.local/share/jupyter/nbextensions/printview
       - ./api/backups:/vol/backups
       - ./api/static:/vol/web/static:z
       - ./api/media:/vol/web/media:z
