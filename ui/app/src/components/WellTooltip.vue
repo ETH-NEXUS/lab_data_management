@@ -29,7 +29,7 @@ const props = defineProps({
 const {t} = useI18n()
 
 const measurement = (well: WellDetails) => {
-  if (props.selectedMeasurement) {
+  if (props.selectedMeasurement && well.measurements) {
     if (props.selectedMeasurement in well.measurements) {
       if (well.measurements[props.selectedMeasurement].length > props.selectedTimestampIdx) {
         return well.measurements[props.selectedMeasurement][props.selectedTimestampIdx]

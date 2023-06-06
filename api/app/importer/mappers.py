@@ -122,9 +122,11 @@ class EchoMapper(BaseMapper):
             ):
                 continue
 
-            results.append(
-                {new_key: row[old_key] for new_key, old_key in headers.items()}
-            )
+            res_dict = {}
+            for new_key, old_key in headers.items():
+                if old_key in row:
+                    res_dict[new_key] = row[old_key]
+            results.append(res_dict)
         return results
 
     def map(self, data: list[dict], **kwargs) -> None:
@@ -147,8 +149,10 @@ class EchoMapper(BaseMapper):
             for entry in data:
                 source_plate_barcode = entry["source_plate_barcode"]
                 destination_plate_name = entry["destination_plate_name"]
-                destination_plate_type = entry["destination_plate_type"]
-
+                if "destination_plate_type" in entry:
+                    destination_plate_type = entry["destination_plate_type"]
+                else:
+                    destination_plate_type = ""
                 destination_plate_barcode = entry["destination_plate_barcode"]
 
                 if source_plate_barcode in plates:

@@ -87,7 +87,7 @@ const typeColor = (well: WellDetails | undefined) => {
 }
 
 const measurement = (well: WellDetails) => {
-  if (props.selectedMeasurement && props.selectedTimestampIdx !== null) {
+  if (props.selectedMeasurement && props.selectedTimestampIdx !== null && well.measurements) {
     // it should be !== null, because the index can be 0
     if (props.selectedMeasurement in well.measurements) {
       if (well.measurements[props.selectedMeasurement].length > props.selectedTimestampIdx) {
@@ -105,7 +105,7 @@ const percentage = (well: WellDetails | undefined) => {
       return (value - props.min) / (props.max - props.min)
     }
   }
-  return 0
+  return -1
 }
 </script>
 
