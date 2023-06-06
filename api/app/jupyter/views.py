@@ -2,6 +2,7 @@ from django.conf import settings
 from revproxy.views import ProxyView
 from django.core.handlers.wsgi import WSGIRequest
 from django.http import HttpResponseRedirect
+import urllib3
 
 
 # We need to replace quote_plus with quote to replace forwarded utls with %20 instead of +
@@ -13,9 +14,15 @@ from urllib.parse import quote as quote_plus
 #   (Lines 1433-1449)
 QUOTE_SAFE = r'<.;>\(}*+|~=-$/_:^@)[{]&\'!,"`'
 
+HTTP_POOLS = urllib3.PoolManager(num_pools=50, block=True)
+
 
 class JupyterProxyView(ProxyView):
     upstream = settings.JUPYTER_URL
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.http = HTTP_POOLS
 
     def get_quoted_path(self, path):
         """Return quoted path to be used in proxied request"""
