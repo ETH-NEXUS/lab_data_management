@@ -21,18 +21,21 @@ class Config:
             "importer": {
                 "echo": {
                     "default": {
+                        "file_blob": str,
                         "columns": {
                             "source_plate_barcode": str,
                             "source_plate_type": str,
                             "source_well": str,
                             "destination_plate_name": str,
                             "destination_plate_barcode": str,
+                            "destination_plate_type": str,
                             "destination_well": str,
                             "actual_volume": str,
                             "transfer_status": str,
-                        }
+                        },
                     }
-                }
+                },
+                "m1000": {"default": {"file_blob": str}},
             }
         }
     )

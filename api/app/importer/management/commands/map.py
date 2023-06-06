@@ -117,7 +117,7 @@ class Command(BaseCommand):
                 mapper = EchoMapper()
                 mapper.run(
                     # join(path, "**", "*[_-][Tt]ransfer[_-]*.csv"),
-                    join(path, "**", Config.current.importer.echo.default.file_blob),
+                    join(path, Config.current.importer.echo.default.file_blob),
                     headers=headers,
                     debug=options.get("debug", False),
                     room_name=options.get("room_name", None),
@@ -142,7 +142,7 @@ class Command(BaseCommand):
                     raise ValueError("No measurement name provided")
                 mapper = M1000Mapper()
                 mapper.run(
-                    join(path, "*.asc"),
+                    join(path, Config.current.importer.m1000.default.file_blob),
                     debug=options.get("debug", False),
                     evaluation=evaluation,
                     measurement_name=measurement_name,

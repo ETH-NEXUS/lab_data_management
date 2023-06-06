@@ -147,6 +147,8 @@ class EchoMapper(BaseMapper):
             for entry in data:
                 source_plate_barcode = entry["source_plate_barcode"]
                 destination_plate_name = entry["destination_plate_name"]
+                destination_plate_type = entry["destination_plate_type"]
+
                 destination_plate_barcode = entry["destination_plate_barcode"]
 
                 if source_plate_barcode in plates:
@@ -174,9 +176,14 @@ class EchoMapper(BaseMapper):
                             barcode=destination_plate_barcode
                         )
                     except Plate.DoesNotExist:
-                        message(f"Creating destination plate {destination_plate_name}")
+                        message(
+                            f"Creating destination plate {destination_plate_name}, {destination_plate_type}"
+                        )
                         destination_plate = self.__create_plate_by_name_and_barcode(
-                            destination_plate_name, destination_plate_barcode, **kwargs
+                            destination_plate_name,
+                            destination_plate_type,
+                            destination_plate_barcode,
+                            **kwargs,
                         )
 
                 if source_plate_barcode in mapping_lists:
@@ -233,7 +240,7 @@ class EchoMapper(BaseMapper):
             self.map(queue, **kwargs)
 
     def __create_plate_by_name_and_barcode(
-        self, plate_name: str, barcode: str, **kwargs
+        self, plate_name: str, plate_type: str, barcode: str, **kwargs
     ):
         try:
             barcode_prefix = barcode.split("_")[0]
@@ -272,12 +279,14 @@ class EchoMapper(BaseMapper):
         return Plate.objects.create(
             barcode=barcode,
             experiment=barcode_specification.experiment,
-            dimension=self.__get_plate_dimension(plate_name, kwargs.get("room_name")),
+            dimension=self.__get_plate_dimension(
+                plate_name, plate_type, kwargs.get("room_name")
+            ),
         )
 
-    def __get_plate_dimension(self, plate_name: str, room_name):
+    def __get_plate_dimension(self, plate_name: str, plate_type: str, room_name):
         try:
-            rows, cols = row_col_from_name(plate_name)
+            rows, cols = row_col_from_name(f"{plate_type} {plate_name}")
             plate_dimension = PlateDimension.objects.get(rows=rows, cols=cols)
             return plate_dimension
         except ValueError:
