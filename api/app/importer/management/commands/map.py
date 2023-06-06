@@ -6,6 +6,7 @@ from friendlylog import colored_logger as log
 from importer.mappers import EchoMapper, M1000Mapper
 from core.models import Experiment
 from importer.helper import message
+from core.config import Config
 
 
 def die(message):
@@ -115,7 +116,8 @@ class Command(BaseCommand):
             try:
                 mapper = EchoMapper()
                 mapper.run(
-                    join(path, "**", "*-transfer-*.csv"),
+                    # join(path, "**", "*[_-][Tt]ransfer[_-]*.csv"),
+                    join(path, "**", Config.current.importer.echo.default.file_blob),
                     headers=headers,
                     debug=options.get("debug", False),
                     room_name=options.get("room_name", None),

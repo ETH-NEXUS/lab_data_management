@@ -22,6 +22,7 @@ class PlateAdmin(admin.ModelAdmin):
     list_display = ("barcode", "dimension", "library", "experiment")
     search_fields = ("barcode",)
     readonly_fields = ("get_wells",)
+    list_filter = ("dimension", "library", "experiment", "template")
 
     def get_wells(self, plate: Plate):
         out = "<table><tr>"
