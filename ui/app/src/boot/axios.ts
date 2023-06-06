@@ -2,6 +2,7 @@ import {boot} from 'quasar/wrappers'
 import axios, {AxiosInstance} from 'axios'
 import {Notify, LoadingBar} from 'quasar'
 import {useRouter} from 'vue-router'
+import {useUserStore} from 'src/stores/user'
 
 declare module '@vue/runtime-core' {
   interface ComponentCustomProperties {
@@ -48,9 +49,16 @@ api.interceptors.response.use(
   },
   async error => {
     LoadingBar.stop()
-    if (error.response.status === 401) {
+    console.debug('href', window.location.href)
+    if ([401, 403].includes(error.response.status) && window.location.href !== '/login') {
       const router = useRouter()
-      router.push('/login')
+      const userStore = useUserStore()
+      userStore.sessionLogout()
+      if (router) {
+        router.push('/login')
+      } else {
+        window.location.href = '/login'
+      }
     } else if (error.response) {
       if (!error.response.data.hidden) {
         Notify.create({
