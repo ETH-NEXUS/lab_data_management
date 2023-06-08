@@ -49,7 +49,7 @@ export type Palette = {
 
 export const palettes: Array<Palette> = [
   {label: 'OrangeRed', value: {from: '#fff7bc', to: '#993404'}},
-  {label: 'GreenRed', value: {from: '#00FF00', to: '#FF0000'}},
+  {label: 'GreenRed', value: {from: '#FF0000', to: '#00FF00'}},
   {label: 'Green', value: {from: '#c7e9c0', to: '#006d2c'}},
   {label: 'Blue', value: {from: '#92c5de', to: '#0b2746'}},
   {label: 'GreenBrown', value: {from: '#b8e186', to: '#662506'}},
