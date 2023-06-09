@@ -46,8 +46,13 @@ $$ LANGUAGE plpython3u;
 DROP FUNCTION IF EXISTS _final_mad(double precision[]) CASCADE;
 
 CREATE OR REPLACE FUNCTION _final_mad(vals double precision[]) RETURNS double precision AS $$
-from scipy.stats import median_abs_deviation as mad
-return mad(vals)
+import pandas as pd
+
+def mad(series, constant=1.4826):
+    return constant * (series - series.median()).abs().median()
+
+return mad(pd.Series(vals))
+
 $$ LANGUAGE plpython3u;
 
 CREATE OR REPLACE AGGREGATE MAD (
@@ -57,3 +62,4 @@ CREATE OR REPLACE AGGREGATE MAD (
   INITCOND='{}',
   FINALFUNC=_final_mad
 );
+
