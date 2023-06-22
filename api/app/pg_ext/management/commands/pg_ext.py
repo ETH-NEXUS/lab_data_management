@@ -1,7 +1,7 @@
 from django.core.management.base import BaseCommand
 from django.core.management import call_command
 import traceback
-from friendlylog import colored_logger as log
+from colorful_logger import logger as log
 
 
 class Command(BaseCommand):

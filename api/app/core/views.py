@@ -3,7 +3,7 @@ from datetime import datetime
 
 from uuid import uuid4
 import re
-from friendlylog import colored_logger as log
+from colorful_logger import logger as log
 
 from os import environ
 import os

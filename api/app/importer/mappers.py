@@ -30,7 +30,7 @@ from core.models import (
 from core.config import Config
 from django.core.files import File
 from django.utils import timezone
-from friendlylog import colored_logger as log
+from colorful_logger import logger as log
 
 from .helper import row_col_from_name
 

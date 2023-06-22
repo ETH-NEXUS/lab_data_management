@@ -1,6 +1,6 @@
 from django.core.management.base import BaseCommand
 from django.core import serializers
-from friendlylog import colored_logger as log
+from colorful_logger import logger as log
 from django.apps import apps
 import os
 from os import makedirs

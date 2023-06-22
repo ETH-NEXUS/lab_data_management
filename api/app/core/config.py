@@ -2,7 +2,7 @@ import yaml
 from easydict import EasyDict
 from django.utils.functional import classproperty
 from schema import Schema, SchemaError
-from friendlylog import colored_logger as log
+from colorful_logger import logger as log
 
 
 class Config:

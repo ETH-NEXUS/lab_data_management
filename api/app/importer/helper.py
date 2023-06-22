@@ -1,6 +1,6 @@
 import re
 from django.core.cache import cache
-from friendlylog import colored_logger as log
+from colorful_logger import logger as log
 
 
 def sameSchema(dict1, dict2, same=True):

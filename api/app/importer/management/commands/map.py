@@ -2,7 +2,7 @@ import traceback
 from os.path import join
 import yaml
 from django.core.management.base import BaseCommand
-from friendlylog import colored_logger as log
+from colorful_logger import logger as log
 from importer.mappers import EchoMapper, M1000Mapper
 from core.models import Experiment
 from importer.helper import message
