@@ -9,6 +9,7 @@ import {useQuasar} from 'quasar'
 import {useSettingsStore} from '../stores/settings'
 import {storeToRefs} from 'pinia'
 import {useCompoundLibraryStore} from '../stores/compoundLibrary'
+import bus from 'src/eventBus'
 
 const router = useRouter()
 const {t} = useI18n()
@@ -26,7 +27,10 @@ const initialize = async () => {
 }
 
 onMounted(async () => {
-  initialize()
+  await initialize()
+  bus.on('management-command', () => {
+    initialize()
+  })
 })
 
 const {navigationTree, libraryNavigationTree} = storeToRefs(useSettingsStore())

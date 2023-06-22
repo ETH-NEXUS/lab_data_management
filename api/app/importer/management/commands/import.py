@@ -21,9 +21,15 @@ from rdkit.Chem.rdchem import Mol
 from rdkit import Chem
 
 
+def full_strip(s: str):
+    return s.strip().lstrip()
+
+
 class Command(BaseCommand):
     def add_arguments(self, parser):
-        parser.add_argument("what", type=str, help="What to import: sdf | template")
+        parser.add_argument(
+            "what", type=str, help="What to import: sdf | template | library_plate"
+        )
         parser.add_argument(
             "--input_file",
             "-i",
@@ -83,6 +89,11 @@ class Command(BaseCommand):
             "--room_name",
             "-o",
             help="Unique room name for long polling.",
+        )
+
+        parser.add_argument(
+            "--plate_barcode",
+            help="The barcode of the new library plate",
         )
 
     def sdf(
@@ -257,6 +268,82 @@ class Command(BaseCommand):
                             )
                         wbar.update(1)
 
+    def __parse_library_plate_file(
+        self,
+        input_file,
+        room_name: str = None,
+    ):
+        if isfile(input_file):
+            message("Reading plate file...", "info", room_name)
+            with open(input_file, "r") as file:
+                reader = csv.reader(file)
+                matrix1 = []
+                matrix2 = []
+                current_matrix = matrix1
+                for row in reader:
+                    if all(x == "" for x in row):
+                        row = None
+                    if not row:
+                        current_matrix = matrix2
+                    else:
+                        current_matrix.append(row)
+                return matrix1, matrix2
+
+    def library_plate(
+        self,
+        input_file: str,
+        library_name: str,
+        plate_barcode: str,
+        room_name: str = None,
+    ):
+        library, created = CompoundLibrary.objects.update_or_create(name=library_name)
+        if created:
+            message(f"Created library {library_name}.", "success", room_name)
+        if isfile(input_file):
+            compounds, types = self.__parse_library_plate_file(input_file)
+            num_cols = len(compounds[0])
+            num_rows = len(compounds)
+            dimension, _ = PlateDimension.objects.get_or_create(
+                rows=num_rows,
+                cols=num_cols,
+                defaults={"name": f"dim_{num_cols*num_rows}_{num_cols}x{num_rows}"},
+            )
+
+            compounds = [item for sublist in compounds for item in sublist]
+            types = [item for sublist in types for item in sublist]
+            plate, created = Plate.objects.update_or_create(
+                barcode=plate_barcode, dimension=dimension, library=library
+            )
+            if created:
+                message(
+                    f"Created plate {plate_barcode} for library {library_name}.",
+                    "success",
+                    room_name,
+                )
+            with tqdm(
+                desc="Processing wells",
+                unit="wells",
+                total=len(compounds),
+            ) as pbar:
+                for pos, content in enumerate(compounds):
+                    _type = full_strip(types[pos])
+                    _compound = full_strip(content)
+                    if _type != "null" and _compound != "null":
+                        well = plate.well_at(pos, create_if_not_exist=True)
+
+                        well_type = WellType.by_name(_type)
+                        well.type = well_type
+                        compound, created = Compound.objects.get_or_create(
+                            name=_compound,
+                            library=library,
+                            identifier=f"{library_name}_{_compound}",
+                        )
+
+                        WellCompound.objects.create(well=well, compound=compound)
+                        well.save()
+                        pbar.update(1)
+            message(f"Finished processing plate {plate_barcode}.", "success", room_name)
+
     def template(
         self,
         input_file: str,
@@ -337,6 +424,19 @@ class Command(BaseCommand):
                     room_name=options.get("room_name"),
                 )
                 imported = True
+            elif options.get("what") == "library_plate":
+                if not (options.get("library_name") and options.get("plate_barcode")):
+                    raise ValueError(
+                        "Please specify library_name and plate_barcode when importing a library plate."
+                    )
+                else:
+                    self.library_plate(
+                        options.get("input_file"),
+                        library_name=options.get("library_name"),
+                        plate_barcode=options.get("plate_barcode"),
+                        room_name=options.get("room_name"),
+                    )
+                    imported = True
 
             if imported:
                 message(

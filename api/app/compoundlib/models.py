@@ -7,7 +7,7 @@ from base64 import b64encode
 
 class CompoundLibrary(models.Model):
     name = models.CharField(max_length=50, unique=True, verbose_name="compound library")
-    file_name = models.CharField(max_length=255, null=True)
+    file_name = models.CharField(max_length=255, null=True, blank=True)
 
     def __str__(self):
         return f"{self.name}"
@@ -18,7 +18,7 @@ class CompoundLibrary(models.Model):
 
 
 class Compound(models.Model):
-    identifier = models.CharField(max_length=50, unique=True)
+    identifier = models.TextField(unique=True)
     name = models.TextField()
     structure = models.TextField()
     library = models.ForeignKey(CompoundLibrary, null=True, on_delete=models.RESTRICT)

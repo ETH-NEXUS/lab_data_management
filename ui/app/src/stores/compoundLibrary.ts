@@ -8,6 +8,7 @@ export const useCompoundLibraryStore = defineStore('compoundLibrary', () => {
 
   const initialize = async () => {
     const resp_p = await api.get('/api/compoundlibraries/')
+    console.log(resp_p.data.results)
     libraries.value = resp_p.data.results
   }
 

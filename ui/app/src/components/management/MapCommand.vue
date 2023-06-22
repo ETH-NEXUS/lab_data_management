@@ -7,6 +7,7 @@ import {useQuasar} from 'quasar'
 import {useI18n} from 'vue-i18n'
 import {useUserStore} from 'stores/user'
 import {storeToRefs} from 'pinia'
+import bus from 'src/eventBus'
 
 const props = defineProps<{
   options: Options
@@ -31,6 +32,7 @@ const onSubmit = async (formData: GeneralFormData) => {
   // })
   await managementStore.runCommand(formData)
   //$q.loading.hide()
+  bus.emit('management-command')
 }
 </script>
 

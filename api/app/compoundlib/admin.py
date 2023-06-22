@@ -31,13 +31,14 @@ class CompoundAdmin(admin.ModelAdmin):
     def get_data(self, compound: Compound):
         out = "<table>"
         n_items = 0
-        for k, v in compound.data.items():
-            out += f"<tr><td>{k}</td><td>{v}</td></tr>"
-            if n_items >= 5:
-                break
-            else:
-                n_items += 1
-        out += "</table>"
-        return mark_safe(out)
+        if compound.data and compound.data.items():
+            for k, v in compound.data.items():
+                out += f"<tr><td>{k}</td><td>{v}</td></tr>"
+                if n_items >= 5:
+                    break
+                else:
+                    n_items += 1
+            out += "</table>"
+            return mark_safe(out)
 
     get_data.short_description = "data"

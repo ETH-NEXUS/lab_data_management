@@ -37,6 +37,20 @@ const onSubmit = () => {
       position: 'top',
     })
   }
+  if (Object.keys(form).includes('library_plate') && form.plate_barcode === '') {
+    $q.notify({
+      message: 'Please enter the barcode of the plate',
+      color: 'negative',
+      position: 'top',
+    })
+  }
+  if (Object.keys(form).includes('library_plate') && form.library_name === '') {
+    $q.notify({
+      message: 'Please enter the library name',
+      color: 'negative',
+      position: 'top',
+    })
+  }
   console.log('Form data:', form)
   emit('submit', form)
 }

@@ -14,6 +14,7 @@ from .models import (
     BarcodeSpecification,
     PlateMapping,
     MeasurementAssignment,
+    WellType,
 )
 
 
@@ -21,7 +22,7 @@ from .models import (
 class PlateAdmin(admin.ModelAdmin):
     list_display = ("barcode", "dimension", "library", "experiment")
     search_fields = ("barcode",)
-    readonly_fields = ("get_wells",)
+
     list_filter = ("dimension", "library", "experiment", "template")
 
     def get_wells(self, plate: Plate):
@@ -130,4 +131,12 @@ class MeasurementAssignmentAdmin(admin.ModelAdmin):
         "filename",
         "status",
         "created_at",
+    )
+
+
+@admin.register(WellType)
+class WellTypeAdmin(admin.ModelAdmin):
+    list_display = (
+        "name",
+        "description",
     )

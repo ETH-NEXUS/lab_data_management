@@ -71,15 +71,14 @@ def run_command(request):
                 "template_name": form_data.get("template_name")
                 if form_data.get("template_name")
                 else None,
+                "plate_barcode": form_data.get("plate_barcode")
+                if form_data.get("plate_barcode")
+                else None,
                 "room_name": form_data.get("room_name"),
             }
             management.call_command("import", what, **kwargs)
         message("Command completed.", "info", form_data.get("room_name"))
         cache.set(f"command_status_{form_data.get('room_name')}", "completed")
-
-    # sys.stdout = sys.__stdout__
-    # output_str = output.getvalue()
-    # output.close()
 
     return JsonResponse({"status": "ok"})
 

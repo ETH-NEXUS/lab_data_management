@@ -66,8 +66,8 @@ export const importCommandOptions: Options = {
   // probably there is a way to get this data dynamically from the backend
   what: {
     type: 'str',
-    choices: ['sdf', 'template'],
-    label: 'What to import: sdf | template',
+    choices: ['sdf', 'template', 'library_plate'],
+    label: 'What to import: sdf | template | library_plate',
     required: true,
   },
   input_file: {
@@ -83,8 +83,12 @@ export const importCommandOptions: Options = {
 
   library_name: {
     type: 'str',
-    label:
-      'For compound library import only: the name of the library, otherwise the filename is the library name',
+    label: 'Library name (for compound library and library_plate import only)',
+    required: false,
+  },
+  plate_barcode: {
+    type: 'str',
+    label: 'Plate barcode (for library_plate import only)',
     required: false,
   },
   template_name: {
