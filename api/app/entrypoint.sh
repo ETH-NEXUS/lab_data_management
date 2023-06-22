@@ -23,8 +23,32 @@ cd ..
 #   jupyter notebook --ip 0.0.0.0 --port 8888 --no-browser --allow-root --config notebook/ipython_config.py &
 # fi
 
+# if [ "$ENABLE_JUPYTER" == "True" ]; then
+#   python manage.py shell_plus --notebook &
+# fi
+
+# "--ip",
+# "*",
+# "--allow-root",
+# "--no-browser",
+# "--notebook-dir",
+# "/notebooks",
+# "--NotebookApp.token",
+# NOTEBOOK_SECURE_TOKEN,
+# "--NotebookApp.password",
+# "",
+# "--NotebookApp.base_url",
+# "/notebook",
+
 if [ "$ENABLE_JUPYTER" == "True" ]; then
-  python manage.py shell_plus --notebook &
+  jupyter lab \
+    --no-browser \
+    --ip='*' \
+    --allow-root \
+    --notebook-dir=/notebooks \
+    --NotebookApp.token="${NOTEBOOK_SECURE_TOKEN}" \
+    --NotebookApp.password='' \
+    --NotebookApp.base_url=/notebook &
 fi
 
 if [ "$DJANGO_DEBUG" == "True" ]; then
