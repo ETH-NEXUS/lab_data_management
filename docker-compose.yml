@@ -18,15 +18,15 @@ services:
       context: api
       args:
         ENABLE_JUPYTER: ${ENABLE_JUPYTER}
-        ENABLE_RKERNEL: ${ENABLE_RKERNEL}
+        ENABLE_R: ${ENABLE_R}
     hostname: api
     restart: unless-stopped
     entrypoint: sh -c '/app/entrypoint.sh'
     volumes:
       - ./api/app:/app
       - ./api/notebooks:/notebooks
-      - ./api/app/notebook/startup:/root/.ipython/profile_default/startup
-      - ./api/app/notebook/nbextensions/printview:/root/.local/share/jupyter/nbextensions/printview
+      # - ./api/app/notebook/startup:/root/.ipython/profile_default/startup
+      # - ./api/app/notebook/nbextensions/printview:/root/.local/share/jupyter/nbextensions/printview
       - ./api/backups:/vol/backups
       - ./api/static:/vol/web/static:z
       - ./api/media:/vol/web/media:z
@@ -34,6 +34,8 @@ services:
       - ./README.md:/app/README.md
       - ./.git:/app/docs/.git
       - ./api/notebooks:/data/notebooks
+      - ./conf/jupyter:/root/.jupyter
+      - ./conf/ipython:/root/.ipython
     env_file: .env
     environment:
       - GIT_VERSION=${GIT_VERSION}
