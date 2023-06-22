@@ -324,9 +324,7 @@ USE_TZ = False
 # Jupyter Notebook
 ###
 
-NOTEBOOK_SECURE_TOKEN = (
-    "0a85ce95c-f9a3c9867b0-063853a2c-96734dafbb7-c010e100dc-933002ecf8"
-)
+NOTEBOOK_SECURE_TOKEN = environ.get("NOTEBOOK_SECURE_TOKEN", "")
 
 NOTEBOOK_ARGUMENTS = [
     "--ip",

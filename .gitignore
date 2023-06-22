@@ -313,3 +313,6 @@ sitemap.xml.gz
 Pipfile
 .sass-cache
 .quasar
+.Rhistory
+.RData
+conf/jupyter/migrated

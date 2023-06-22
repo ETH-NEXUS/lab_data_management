@@ -30,6 +30,5 @@ redeploy: env_var
 	@git pull
 	@docker-compose -f docker-compose.yml -f docker-compose.prod.yml up --build -d
 
-
 ps:
 	@docker ps --format "$(FORMAT)"

@@ -1,29 +1,32 @@
-django==4.2.1
-django_extensions==3.2.1
-django-cors-headers==3.14.0
-django-filter==23.1
-django-auth-ldap==4.2.0
+django==4.2.2
+django_extensions==3.2.3
+django-cors-headers==4.1.0
+django-filter==23.2
+django-auth-ldap==4.3.0
 django-revproxy @ git+https://github.com/jazzband/django-revproxy.git@master
 djangorestframework==3.14.0
 djangorestframework-simplejwt==5.2.2
 djangorestframework-csv==2.1.1
 drf-schema-adapter==3.0.6
+colorful-logger==0.1.13
 markdown<3.4
-mkdocs==1.4.2
-friendlylog==1.0.2
+mkdocs==1.4.3
 gunicorn==20.1.0
-uvicorn==0.21.1
+uvicorn==0.22.0
 channels[daphne]==4.0.0
+websockets==11.0.3
 psycopg2==2.9.6
 pyyaml==6.0
-pandas==2.0.1
-numpy==1.24.3
-rdkit==2022.9.5
+pandas==2.0.2
+numpy==1.25.0
+rdkit==2023.3.1
 chardet==5.1.0
 tqdm==4.65.0
 easydict==1.10
 schema==0.7.5
 requests==2.31.0
 scipy==1.10.1
+sh==2.0.4
+
 
 
