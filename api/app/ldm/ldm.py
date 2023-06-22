@@ -3,7 +3,7 @@ from rest_framework.test import APIClient
 import pandas as pd
 import numpy as np
 from typing import Callable
-from core.models import Plate, Well, PlateDetail
+from core.models import Project, Experiment, Plate, Well
 from core.helper import posToAlphaChar
 
 # from scipy.stats import median_abs_deviation as mad
@@ -115,6 +115,16 @@ def measurement(barcode: str, abbrev: str, matrix: bool = False):
             else:
                 df.iloc[position] = [row, col, position, np.nan]
     return df
+
+
+def projects():
+    for p in Project.objects.all():
+        print(p.name)
+
+
+def experiments():
+    for e in Experiment.objects.all():
+        print(e.name)
 
 
 def get_experiment_measurements(experiment_name: str, label=None):

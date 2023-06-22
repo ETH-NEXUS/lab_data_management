@@ -4,7 +4,6 @@ import {useRoute, useRouter} from 'vue-router'
 import {useUserStore} from 'src/stores/user'
 import {useI18n} from 'vue-i18n'
 import {useQuasar} from 'quasar'
-import {api} from 'src/boot/axios'
 
 const userStore = useUserStore()
 const router = useRouter()
