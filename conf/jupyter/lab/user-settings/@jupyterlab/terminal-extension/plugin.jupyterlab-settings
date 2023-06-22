@@ -1,0 +1,12 @@
+{
+    "fontFamily": "monospace",
+    "fontSize": 16,
+    "lineHeight": 1,
+    "theme": "inherit",
+    "screenReaderMode": false,
+    "scrollback": 100000,
+    "shutdownOnClose": false,
+    "closeOnExit": true,
+    "pasteWithCtrlV": true,
+    "macOptionIsMeta": true
+}

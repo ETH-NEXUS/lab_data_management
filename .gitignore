@@ -79,8 +79,10 @@ target/
 .ipynb_checkpoints
 
 # IPython
-profile_default/
-ipython_config.py
+/conf/ipython/profile_default/*
+!/conf/ipython/profile_default/startup/
+!/conf/ipython/profile_default/ipython_config.py
+!/conf/ipython/profile_default/ipython_kernel_config.py
 
 # pyenv
 #   For a library or package, you might want to ignore these files since the code is
@@ -304,6 +306,7 @@ backups/
 temp/
 *.ipynb
 *.csv
+*.pdf
 sitemap.xml.gz
 
 
