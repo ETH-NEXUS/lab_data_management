@@ -19,8 +19,10 @@ RUN mkdir -p /vol/backups
 RUN apt-get update --fix-missing
 
 # Install Node.js, npm and Yarn
+# According to this guide: 
+# https://github.com/nodesource/distributions
+RUN curl -fsSL https://deb.nodesource.com/setup_20.x | bash -
 RUN apt-get install -y nodejs jq
-RUN curl -sL https://npmjs.org/install.sh | sh
 RUN npm install -g yarn
 
 # Install R
