@@ -77,3 +77,9 @@ For this, you need to add two parameters to the command:
 ./manage.py map m1000 -p /data/ex3/M1000 --create_missing_plates --experiment_name exp3
 
 ```
+Import control plate
+
+```bash
+./manage.py import library_plate -i /data/control_palte_example.csv --library_name controls_library --plate_barcode control12345
+
+```

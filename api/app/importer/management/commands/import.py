@@ -268,11 +268,33 @@ class Command(BaseCommand):
                             )
                         wbar.update(1)
 
+    def __check_file_format(self, input_file: str):
+        with open(input_file, "r") as file:
+            reader = csv.reader(file)
+            all_rows = list(reader)
+            empty_rows = [row for row in all_rows if all(x == "" for x in row)]
+            if len(empty_rows) != 1:
+                return False, "The file should contain exactly one empty line."
+            split_index = all_rows.index(empty_rows[0])
+            before_empty_line = all_rows[:split_index]
+            after_empty_line = all_rows[split_index + 1 :]
+            if len(before_empty_line) != len(after_empty_line):
+                return (
+                    False,
+                    "The number of lines before and after the empty line should be equal.",
+                )
+            return True, "File format is correct."
+
     def __parse_library_plate_file(
         self,
         input_file,
         room_name: str = None,
     ):
+        is_file_correct, message_text = self.__check_file_format(input_file)
+        if not is_file_correct:
+            message(message_text, "error", room_name)
+            return None, None
+
         if isfile(input_file):
             message("Reading plate file...", "info", room_name)
             with open(input_file, "r") as file:
@@ -301,6 +323,9 @@ class Command(BaseCommand):
             message(f"Created library {library_name}.", "success", room_name)
         if isfile(input_file):
             compounds, types = self.__parse_library_plate_file(input_file)
+            if compounds is None or types is None:
+                message("File format is incorrect.", "error", room_name)
+                return
             num_cols = len(compounds[0])
             num_rows = len(compounds)
             dimension, _ = PlateDimension.objects.get_or_create(
