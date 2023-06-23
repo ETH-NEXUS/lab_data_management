@@ -33,7 +33,7 @@ services:
       - ./data:/data
       - ./README.md:/app/README.md
       - ./.git:/app/docs/.git
-      - ./api/notebooks:/data/notebooks
+      # - ./api/notebooks:/data/notebooks
       - ./conf/jupyter:/root/.jupyter
       - ./conf/ipython:/root/.ipython
     env_file: .env
