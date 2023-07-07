@@ -19,7 +19,7 @@ services:
       - db
   api:
     volumes:
-      - /lab_shared_drive:/data
+      - /data/ldm-data:/data
   ui:
     command: >
       bash -c "\
