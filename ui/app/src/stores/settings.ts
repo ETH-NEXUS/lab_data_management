@@ -34,6 +34,7 @@ interface Settings {
   templateNavigationTree: NavigationTree
   wellDetails: WellDetails
   showExperimentResults: boolean
+  include_depricated_functionality: boolean
 }
 
 export const useSettingsStore = defineStore('settings', {
@@ -68,6 +69,7 @@ export const useSettingsStore = defineStore('settings', {
       wellDetails: {
         showStructure: true,
       },
+      include_depricated_functionality: import.meta.env.INCLUDE_DEPRICATED_FUNCTIONALITY,
     } as Settings),
   persist: {
     enabled: true,

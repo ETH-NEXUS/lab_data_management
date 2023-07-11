@@ -66,8 +66,8 @@ export const importCommandOptions: Options = {
   // probably there is a way to get this data dynamically from the backend
   what: {
     type: 'str',
-    choices: ['sdf', 'template', 'library_plate'],
-    label: 'What to import: sdf | template | library_plate',
+    choices: ['sdf', 'library_plate'],
+    label: 'What to import: sdf |  library_plate',
     required: true,
   },
   input_file: {
@@ -75,15 +75,10 @@ export const importCommandOptions: Options = {
     label: 'The input file',
     required: true,
   },
-  mapping_file: {
-    type: 'str',
-    label: 'The mapping file for the sdf columns, otherwise default mapping is used',
-    required: false,
-  },
 
   library_name: {
     type: 'str',
-    label: 'Library name (for compound library and library_plate import only)',
+    label: 'Library name',
     required: false,
   },
   plate_barcode: {
@@ -91,9 +86,14 @@ export const importCommandOptions: Options = {
     label: 'Plate barcode (for library_plate import only)',
     required: false,
   },
-  template_name: {
+  mapping_file: {
     type: 'str',
-    label: "For template import only: the name of the template, defaults to 'Default'",
+    label: 'The mapping file for the sdf columns, otherwise default mapping is used (for sdf import only)',
     required: false,
   },
+  // template_name: {
+  //   type: 'str',
+  //   label: "For template import only: the name of the template, defaults to 'Default'",
+  //   required: false,
+  // },
 }

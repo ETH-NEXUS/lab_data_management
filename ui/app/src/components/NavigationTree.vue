@@ -10,7 +10,7 @@ import ManagementNavigationTree from 'components/management/ManagementNavigation
 
 const {t} = useI18n()
 
-const {navigationTree} = storeToRefs(useSettingsStore())
+const {navigationTree, include_depricated_functionality} = storeToRefs(useSettingsStore())
 const filterRef = ref<HTMLInputElement>()
 
 const resetFilter = () => {
@@ -33,7 +33,7 @@ const resetFilter = () => {
 
     <project-navigation-tree />
     <library-navigation-tree />
-    <template-navigation-tree />
+    <template-navigation-tree v-if="include_depricated_functionality" />
     <management-navigation-tree />
   </div>
 </template>
