@@ -95,7 +95,14 @@ class SimplePlateSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Plate
-        fields = ("id", "barcode", "dimension", "library", "measurement_labels")
+        fields = (
+            "id",
+            "barcode",
+            "dimension",
+            "library",
+            "measurement_labels",
+            "archived",
+        )
 
 
 class WellPlateSerializer(serializers.ModelSerializer):
@@ -224,17 +231,6 @@ class PlateSerializer(serializers.ModelSerializer):
         plate.save()
 
         return plate
-
-    # def to_representation(self, instance):
-    #     representation = super().to_representation(instance)
-    #     measurements_iso = instance.measurements
-
-    #     for measurement in measurements_iso:
-    #         measurement["measured_at"] = (
-    #             measurement["measured_at"].isoformat().split("+")[0]
-    #         )
-    #     representation["measurements"] = measurements_iso
-    #     return representation
 
     class Meta:
         model = Plate

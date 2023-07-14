@@ -56,6 +56,7 @@ const compoundLibraryNodes = ref<QTreeNode>({
 })
 
 const addCompoundLibraryNode = (library: CompoundLibrary) => {
+  console.log(library.name, library.plates[0])
   const node: QTreeNode = {
     label: library.name,
     icon: 'science',
@@ -64,13 +65,15 @@ const addCompoundLibraryNode = (library: CompoundLibrary) => {
     library: library,
   }
   for (const plate of library.plates) {
-    node.children?.push({
-      label: `${plate.barcode} (${plate.dimension || t('message.no_dimension')})`,
-      icon: 'o_view_module',
-      header: 'plate',
-      handler: nodeHandler,
-      plate: plate,
-    })
+    if (!plate.archived) {
+      node.children?.push({
+        label: `${plate.barcode} (${plate.dimension || t('message.no_dimension')})`,
+        icon: 'o_view_module',
+        header: 'plate',
+        handler: nodeHandler,
+        plate: plate,
+      })
+    }
   }
   compoundLibraryNodes.value.children?.push(node)
 }

@@ -193,6 +193,7 @@ export interface Plate {
   experiment?: number
   library?: number
   template?: number
+  archived?: boolean
 }
 
 export interface MeasurementFeature {
