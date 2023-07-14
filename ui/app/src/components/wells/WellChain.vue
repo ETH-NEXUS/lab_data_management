@@ -1,9 +1,9 @@
 <script setup lang="ts">
 import {defineProps, PropType, onMounted, ref, nextTick, reactive} from 'vue'
-import {Well} from './models'
+import {Well} from '../models'
 import * as vNG from 'v-network-graph'
-import {Nodes, Edges, Layouts, Node} from 'v-network-graph'
-import {api} from 'src/boot/axios'
+import {Nodes, Edges, Layouts} from 'v-network-graph'
+import {api} from 'boot/axios'
 import {handleError} from 'src/helpers/errorHandling'
 // At the moment we need to base on this...
 import dagre from 'dagre/dist/dagre.min.js'

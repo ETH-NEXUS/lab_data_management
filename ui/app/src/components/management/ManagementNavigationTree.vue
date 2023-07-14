@@ -4,12 +4,10 @@ import {onMounted, computed, ref} from 'vue'
 import {storeToRefs} from 'pinia'
 import {useRouter} from 'vue-router'
 import {FileSystemItem} from 'components/models'
-import {QTreeNode, useQuasar} from 'quasar'
+import {QTreeNode} from 'quasar'
 import {useI18n} from 'vue-i18n'
-import FileViewer from 'components/management/FileViewer.vue'
 
 const {t} = useI18n()
-const $q = useQuasar()
 
 const {dataDirectory, selectedPath, selectedPaths} = storeToRefs(useManagementStore())
 const managementStore = useManagementStore()
@@ -20,7 +18,6 @@ const fileContentDialog = ref<boolean>(false)
 const uploadDirectoryPath = ref<string>('')
 const file = ref<File | null>(null)
 const viewFilePath = ref<string>('')
-const maximizedToggle = ref<boolean>(false)
 const viewFileContent = ref<string>('')
 
 const nodes = computed<QTreeNode[]>(() => {

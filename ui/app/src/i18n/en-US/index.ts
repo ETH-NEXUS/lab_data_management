@@ -184,6 +184,7 @@ export default {
     download_file: 'Download file',
     upload_file: 'Upload file to the directory',
     view_file_content: 'View file content',
+    delete_well: 'Delete well',
   },
   error: {
     select_plate_dimension: 'Please select a plate dimension.',
@@ -207,5 +208,8 @@ export default {
     echo: 'Echo/M1000',
     import: 'Import',
     export: 'Export',
+    import_control_plate: 'Import control plate',
+    import_library_plate: 'Import library plate',
+    import_sdf_library: 'Import SDF library',
   },
 }

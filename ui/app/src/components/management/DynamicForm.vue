@@ -51,6 +51,13 @@ const onSubmit = () => {
       position: 'top',
     })
   }
+  if (Object.keys(form).includes('project_name') && form.project_name === '') {
+    $q.notify({
+      message: 'Please enter the project name',
+      color: 'negative',
+      position: 'top',
+    })
+  }
   console.log('Form data:', form)
   emit('submit', form)
 }

@@ -24,7 +24,7 @@ const props = defineProps({
     right-label
     color="secondary"></q-toggle>
   <q-toggle
-    v-if="showSquareCompoundType"
+    v-if="props.showSquareCompoundType"
     class="q-mb-md"
     size="sm"
     checked-icon="check"

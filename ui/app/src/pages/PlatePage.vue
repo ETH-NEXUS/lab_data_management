@@ -3,9 +3,9 @@ import {Plate, PlateDimension, Well, WellInfo} from 'src/components/models'
 import {ref, onMounted} from 'vue'
 import {api} from '../boot/axios'
 import {useRoute, useRouter} from 'vue-router'
-import DynamicPlate from '../components/DynamicPlate.vue'
+import DynamicPlate from 'components/plate/DynamicPlate.vue'
 import {handleError, success} from '../helpers/errorHandling'
-import WellDetails from '../components/WellDetails.vue'
+import WellDetails from 'components/wells/WellDetails.vue'
 import {useI18n} from 'vue-i18n'
 import {storeToRefs} from 'pinia'
 import {useSettingsStore} from '../stores/settings'
@@ -117,6 +117,7 @@ const setPlateDimension = async () => {
 }
 
 const wellCreated = (well: Well) => {
+  console.log(well)
   console.warn('wellCreated not implemented correctly yet!')
   // plate.value?.wells?.push(well)
   // platePage.value.selectedWellInfo = {

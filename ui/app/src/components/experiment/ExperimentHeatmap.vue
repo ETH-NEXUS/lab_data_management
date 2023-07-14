@@ -1,9 +1,9 @@
 <script setup lang="ts">
 import {computed, onMounted, ref, PropType} from 'vue'
-import {Plate} from './models'
+import {Plate} from '../models'
 import {useProjectStore} from 'stores/project'
-import PlateTable from 'components/PlateTable.vue'
-import HeatMapSettings from 'components/HeatMapSettings.vue'
+import PlateTable from 'components/plate/PlateTable.vue'
+import HeatMapSettings from 'components/plate/HeatMapSettings.vue'
 // import ColorLegend from 'components/ColorLegend.vue'
 import {useI18n} from 'vue-i18n'
 import {useRouter} from 'vue-router'

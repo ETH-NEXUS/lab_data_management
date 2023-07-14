@@ -1,20 +1,20 @@
 <script setup lang="ts">
 import {computed, defineProps, defineEmits, PropType, ref, onMounted} from 'vue'
-import {Plate, WellInfo} from './models'
+import {Plate, WellInfo} from '../models'
 
 import {palettes} from 'components/helpers'
 import {storeToRefs} from 'pinia'
 import {useSettingsStore} from 'stores/settings'
 import {useI18n} from 'vue-i18n'
-import MeasurementCalculator from 'components/MeasurementCalculator.vue'
+import MeasurementCalculator from 'components/plate/MeasurementCalculator.vue'
 import {useProjectStore} from 'stores/project'
 import bus from 'src/eventBus'
 import {useQuasar} from 'quasar'
 
-import ColorLegend from 'components/ColorLegend.vue'
-import HeatMapSettings from 'components/HeatMapSettings.vue'
-import PlateStats from 'components/PlateStats.vue'
-import PlateTable from 'components/PlateTable.vue'
+import ColorLegend from 'components/plate/ColorLegend.vue'
+import HeatMapSettings from 'components/plate/HeatMapSettings.vue'
+import PlateStats from 'components/plate/PlateStats.vue'
+import PlateTable from 'components/plate/PlateTable.vue'
 
 const {t} = useI18n()
 
@@ -120,7 +120,7 @@ const max = computed<number>(() => {
 })
 
 onMounted(() => {
-  if (props.plate.details.measurement_labels.length > 0) {
+  if (props.plate.details.measurement_labels && props.plate.details.measurement_labels.length > 0) {
     measurementOptions.value = props.plate.details.measurement_labels
     selectedMeasurement.value = measurementOptions.value[0]
   }

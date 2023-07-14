@@ -1,8 +1,5 @@
 <script setup lang="ts">
-import {useI18n} from 'vue-i18n'
 import ldmLogo from '../assets/ldm_logo.png'
-
-const {t} = useI18n()
 </script>
 
 <template>

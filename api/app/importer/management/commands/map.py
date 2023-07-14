@@ -89,7 +89,9 @@ class Command(BaseCommand):
                     "error",
                     options.get("room_name", None),
                 )
-                return
+                raise ValueError(
+                    f"No experiment with name '{options.get('experiment_name')}' found in the database."
+                )
 
         if options.get("machine") == "echo":
             headers = EchoMapper.DEFAULT_COLUMNS

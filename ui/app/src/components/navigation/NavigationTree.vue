@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import {ref} from 'vue'
 import {useI18n} from 'vue-i18n'
-import {useSettingsStore} from 'src/stores/settings'
+import {useSettingsStore} from 'stores/settings'
 import {storeToRefs} from 'pinia'
 import LibraryNavigationTree from './LibraryNavigationTree.vue'
 import ProjectNavigationTree from './ProjectNavigationTree.vue'

@@ -1,14 +1,14 @@
 <script setup lang="ts">
 import {ref, onMounted, computed, watchEffect} from 'vue'
-import {handleError} from '../helpers/errorHandling'
-import {TemplateCategory, Template} from './models'
+import {handleError} from '../../helpers/errorHandling'
+import {TemplateCategory, Template} from '../models'
 import {QTreeNode} from 'quasar'
 import {useI18n} from 'vue-i18n'
 import {useRouter} from 'vue-router'
 import {useQuasar} from 'quasar'
-import {useSettingsStore} from '../stores/settings'
+import {useSettingsStore} from 'stores/settings'
 import {storeToRefs} from 'pinia'
-import {useTemplateStore} from 'src/stores/template'
+import {useTemplateStore} from 'stores/template'
 
 const router = useRouter()
 const {t} = useI18n()

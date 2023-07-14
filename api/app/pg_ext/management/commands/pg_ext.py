@@ -10,7 +10,7 @@ class Command(BaseCommand):
 
     def apply(self):
         call_command("migrate", "--fake", "pg_ext", "zero")
-        call_command("migrate")
+        # call_command("migrate")
 
     def handle(self, *args, **options):
         try:

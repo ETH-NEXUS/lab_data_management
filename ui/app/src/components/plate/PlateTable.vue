@@ -1,14 +1,12 @@
 <script setup lang="ts">
 import {computed, defineEmits, defineProps, PropType} from 'vue'
-import {useI18n} from 'vue-i18n'
 import {positionFromRowCol} from 'src/helpers/plate'
-import WellTooltip from 'components/WellTooltip.vue'
+import WellTooltip from 'components/wells/WellTooltip.vue'
 import {storeToRefs} from 'pinia'
 import {useSettingsStore} from 'stores/settings'
 import {Plate, WellDetails} from 'components/models'
 import {percentageToHsl} from 'components/helpers'
 
-const {t} = useI18n()
 const {platePage} = storeToRefs(useSettingsStore())
 
 const props = defineProps({
@@ -50,6 +48,7 @@ const wells = computed(() => {
       _wells[row][col] = byPosition(row * props.plate.dimension.cols + col)
     }
   }
+
   return _wells
 })
 

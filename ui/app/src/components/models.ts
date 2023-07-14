@@ -68,6 +68,7 @@ export interface Project {
   description?: string
   harvest_id?: number
   harvest_notes?: string
+  plates?: Array<Plate>
 }
 
 export interface Template {
@@ -132,6 +133,7 @@ export interface Well {
   withdrawals?: Array<Withdrawal>
   donors?: Array<Withdrawal>
   mixture?: boolean
+  is_invalid?: boolean
 }
 
 export interface PlateDimension {

@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import {ref, onMounted, computed, watchEffect} from 'vue'
-import {handleError} from '../helpers/errorHandling'
-import {Project, Experiment, Plate, harvestProject} from './models'
+import {handleError} from '../../helpers/errorHandling'
+import {Project, Experiment, Plate, harvestProject} from '../models'
 import {QTreeNode} from 'quasar'
 import {useI18n} from 'vue-i18n'
 import {useRouter} from 'vue-router'
@@ -34,6 +34,9 @@ onMounted(async () => {
     initialize()
   })
   bus.on('project-updated', () => {
+    initialize()
+  })
+  bus.on('management-command', () => {
     initialize()
   })
 })
@@ -82,12 +85,32 @@ const addProjectNode = (project: Project) => {
     project: project,
   }
   projectNodes.value.children?.push(node)
+  if (project.plates) {
+    for (const control_plate of project.plates) {
+      addControlPlatesNode(project, control_plate)
+    }
+  }
   for (const experiment of project.experiments) {
     addExperimentNode(project, experiment)
     for (const plate of experiment.plates) {
       addPlateNode(experiment, plate)
     }
     sortPlateNodes(experiment)
+  }
+}
+
+const addControlPlatesNode = (project: Project, control_plate: Plate) => {
+  const projectNode = projectNodes.value.children?.find(c => c.project.id === project.id)
+  if (projectNode) {
+    projectNode.children?.push({
+      label: `Control plate: ${control_plate.barcode}`,
+      icon: 'o_view_module',
+      header: 'control_plate',
+      handler: nodeHandler,
+      plate: control_plate,
+    })
+  } else {
+    handleError(`TSNH: Project ${project.name} not found in tree.`)
   }
 }
 
@@ -110,7 +133,10 @@ const addExperimentNode = (project: Project, experiment: Experiment) => {
 const addPlateNode = (experiment: Experiment, plate: Plate) => {
   const projectNode = projectNodes.value.children?.find(c => c.project.id === experiment.project)
   if (projectNode) {
-    const experimentNode = projectNode.children?.find(c => c.experiment.id === experiment.id)
+    // only those children which are experiments and not plates
+    const experimentNode = projectNode.children
+      ?.filter(c => c.header === 'experiment')
+      .find(c => c.experiment.id === experiment.id) // old version:  const experimentNode = projectNode.children?.find(c => c.experiment.id === experiment.id)
     if (experimentNode) {
       experimentNode.children?.push({
         label: `${plate.barcode} (${plate.dimension || t('message.no_dimension')})`,
@@ -128,9 +154,13 @@ const addPlateNode = (experiment: Experiment, plate: Plate) => {
 }
 
 const sortPlateNodes = (experiment: Experiment) => {
-  const projectNode = projectNodes.value.children?.find(c => c.project.id === experiment.project)
+  const projectNode = projectNodes.value.children
+    ?.filter(c => c.project !== undefined)
+    .find(c => c.project.id === experiment.project)
   if (projectNode) {
-    const experimentNode = projectNode.children?.find(c => c.experiment.id === experiment.id)
+    const experimentNode = projectNode.children
+      ?.filter(c => c.header === 'experiment')
+      .find(c => c.experiment.id === experiment.id)
     if (experimentNode) {
       experimentNode.children = experimentNode.children?.sort((n1, n2) =>
         n1.plate.barcode.localeCompare(n2.plate.barcode)

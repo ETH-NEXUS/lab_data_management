@@ -129,7 +129,7 @@ class Plate(TimeTrackedModel):
     dimension = models.ForeignKey(
         PlateDimension, on_delete=models.RESTRICT, default=None, null=True
     )
-    # A plate can only be a library, experiment or template plate
+    # A plate can only be a library, experiment, project or template plate
     experiment = models.ForeignKey(
         Experiment,
         null=True,
@@ -144,6 +144,13 @@ class Plate(TimeTrackedModel):
         on_delete=models.CASCADE,
         related_name=related_name,
     )
+    project = models.ForeignKey(
+        Project,
+        null=True,
+        blank=True,
+        on_delete=models.CASCADE,
+        related_name=related_name,
+    )
     template = models.OneToOneField(
         PlateTemplate,
         null=True,
@@ -151,24 +158,34 @@ class Plate(TimeTrackedModel):
         on_delete=models.CASCADE,
         related_name="plate",
     )
+    is_control_plate = models.BooleanField(default=False, null=True, blank=True)
+    archived = models.BooleanField(default=False, null=True, blank=True)
 
     class Meta:
         ordering = ("-id",)
-        # A plate can only be a library, experiment or template plate
+        # A plate can only be a library, experiment, project or template plate
         constraints = [
             CheckConstraint(
                 check=Q(experiment__isnull=True)
                 & Q(library__isnull=True)
                 & Q(template__isnull=True)
+                & Q(project__isnull=True)
                 | Q(experiment__isnull=False)
                 & Q(library__isnull=True)
                 & Q(template__isnull=True)
+                & Q(project__isnull=True)
                 | Q(experiment__isnull=True)
                 & Q(library__isnull=False)
                 & Q(template__isnull=True)
+                & Q(project__isnull=True)
                 | Q(experiment__isnull=True)
                 & Q(library__isnull=True)
-                & Q(template__isnull=False),
+                & Q(template__isnull=False)
+                & Q(project__isnull=True)
+                | Q(experiment__isnull=True)
+                & Q(library__isnull=True)
+                & Q(template__isnull=True)
+                & Q(project__isnull=False),
                 name="check_only_library_or_experiment_or_template",
             ),
             models.UniqueConstraint(
@@ -486,6 +503,7 @@ class Well(TimeTrackedModel):
         WellType, on_delete=models.RESTRICT, default=1, db_index=True
     )
     status = models.TextField(null=True, blank=True)
+    is_invalid = models.BooleanField(default=False, null=True, blank=True)
 
     class Meta:
         unique_together = ("plate", "position")
@@ -521,22 +539,6 @@ class Well(TimeTrackedModel):
         """
         amount = self.well_compounds.all().aggregate(Sum("amount"))["amount__sum"] or 0
         return amount
-
-    # def measurement(self, abbrev: str, timestamp: str) -> float:
-    #     """Returns the value of a measurements given by its abbrev"""
-
-    #     for measurement in self.measurements.all():
-    #         if (
-    #             measurement.label == abbrev
-    #             and measurement.measured_at == timestamp
-    #         ):
-    #             return measurement.value
-
-    # def z_score(self, abbrev: str, type: str = "C"):
-    #     """Returns the z score for this well"""
-    #     return (
-    #         self.measurement(abbrev) - self.plate.mean(abbrev, type)
-    #     ) / self.plate.std(abbrev, type)
 
 
 class WellCompound(models.Model):

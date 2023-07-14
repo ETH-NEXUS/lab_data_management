@@ -3,7 +3,7 @@ import traceback
 from colorful_logger import logger as log
 from os.path import isfile
 from compoundlib.models import Compound, CompoundLibrary
-from core.models import Plate, Well, PlateDimension, WellCompound, WellType
+from core.models import Plate, Well, PlateDimension, WellCompound, WellType, Project
 from platetemplate.models import PlateTemplate, PlateTemplateCategory
 from importer.mapping import SdfMapping
 from importer.helper import row_col_from_wells, normalize_col, normalize_row
@@ -48,6 +48,7 @@ class Command(BaseCommand):
             "-l",
             type=str,
             help="The name of the library, otherwise the filename is the library name",
+            default=None,
         )
         parser.add_argument(
             "--number-of-rows",
@@ -94,6 +95,16 @@ class Command(BaseCommand):
         parser.add_argument(
             "--plate_barcode",
             help="The barcode of the new library plate",
+        )
+        parser.add_argument(
+            "--project_name",
+            help="If you are importing a control plate, it should be associated with a project",
+            default=None,
+        )
+        parser.add_argument(
+            "--is_control_plate",
+            help="If the plate is a control plate for an experiment",
+            default=False,
         )
 
     def sdf(
@@ -212,7 +223,6 @@ class Command(BaseCommand):
                         compound, created = Compound.objects.update_or_create(
                             identifier=row[mapping.identifier],
                             defaults={
-                                "library": library,
                                 "name": row[mapping.name],
                                 "structure": Chem.MolToSmiles(row[mapping.structure])
                                 if isinstance(row[mapping.structure], Mol)
@@ -224,6 +234,8 @@ class Command(BaseCommand):
                             __debug(f"Created compound {compound}")
                         else:
                             __debug(f"Using compound {compound}")
+                        compound.library = library
+                        compound.save()
 
                         plate = Plate.objects.get(barcode=row[mapping_barcode])
                         well, created = Well.objects.update_or_create(
@@ -315,12 +327,11 @@ class Command(BaseCommand):
         self,
         input_file: str,
         library_name: str,
+        project_name: str,
         plate_barcode: str,
         room_name: str = None,
+        is_control_plate: bool = False,
     ):
-        library, created = CompoundLibrary.objects.update_or_create(name=library_name)
-        if created:
-            message(f"Created library {library_name}.", "success", room_name)
         if isfile(input_file):
             compounds, types = self.__parse_library_plate_file(input_file)
             if compounds is None or types is None:
@@ -336,12 +347,38 @@ class Command(BaseCommand):
 
             compounds = [item for sublist in compounds for item in sublist]
             types = [item for sublist in types for item in sublist]
-            plate, created = Plate.objects.update_or_create(
-                barcode=plate_barcode, dimension=dimension, library=library
-            )
-            if created:
+            plate_created = False
+            plate = None
+            library = None
+            if library_name:
+                library, library_created = CompoundLibrary.objects.update_or_create(
+                    name=library_name
+                )
+                if library_created:
+                    message(f"Created library {library_name}.", "success", room_name)
+                plate, plate_created = Plate.objects.update_or_create(
+                    barcode=plate_barcode,
+                    dimension=dimension,
+                    library=library,
+                    is_control_plate=is_control_plate,
+                )
+            elif project_name:
+                try:
+                    project = Project.objects.get(name=project_name)
+                    plate, plate_created = Plate.objects.update_or_create(
+                        barcode=plate_barcode,
+                        dimension=dimension,
+                        project=project,
+                        is_control_plate=is_control_plate,
+                    )
+                except Project.DoesNotExist:
+                    message(
+                        f"Project {project_name} does not exist.", "error", room_name
+                    )
+
+            if plate_created:
                 message(
-                    f"Created plate {plate_barcode} for library {library_name}.",
+                    f"Created plate {plate_barcode}.",
                     "success",
                     room_name,
                 )
@@ -355,15 +392,17 @@ class Command(BaseCommand):
                     _compound = full_strip(content)
                     if _type != "null" and _compound != "null":
                         well = plate.well_at(pos, create_if_not_exist=True)
-
                         well_type = WellType.by_name(_type)
                         well.type = well_type
                         compound, created = Compound.objects.get_or_create(
                             name=_compound,
                             library=library,
-                            identifier=f"{library_name}_{_compound}",
+                            identifier=f"{_compound}",
                         )
-
+                        if created:
+                            message(
+                                f"Created compound {_compound}.", "success", room_name
+                            )
                         WellCompound.objects.create(well=well, compound=compound)
                         well.save()
                         pbar.update(1)
@@ -450,16 +489,38 @@ class Command(BaseCommand):
                 )
                 imported = True
             elif options.get("what") == "library_plate":
-                if not (options.get("library_name") and options.get("plate_barcode")):
+                if not (options.get("plate_barcode")):
+                    message(
+                        "ERROR: Please specify plate_barcode.",
+                        "error",
+                        options.get("room_name"),
+                    )
                     raise ValueError(
-                        "Please specify library_name and plate_barcode when importing a library plate."
+                        "Please specify plate_barcode when importing a library plate."
                     )
                 else:
+                    # check if a plate with given barcode already exists
+
+                    plate_with_given_barcode = Plate.objects.filter(
+                        barcode=options.get("plate_barcode")
+                    )
+                    if plate_with_given_barcode:
+                        message(
+                            f"ERROR: Plate with barcode {options.get('plate_barcode')} already exists.",
+                            "error",
+                            options.get("room_name"),
+                        )
+                        raise ValueError(
+                            f"Plate with barcode {options.get('plate_barcode')} already exists."
+                        )
+
                     self.library_plate(
                         options.get("input_file"),
                         library_name=options.get("library_name"),
                         plate_barcode=options.get("plate_barcode"),
                         room_name=options.get("room_name"),
+                        is_control_plate=options.get("is_control_plate"),
+                        project_name=options.get("project_name"),
                     )
                     imported = True
 

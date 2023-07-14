@@ -14,14 +14,14 @@ import {
   PlateLabelValue,
 } from 'src/components/models'
 import {formatDate} from 'src/helpers/dateTime'
-import GenerateBarcodeForm from '../components/GenerateBarcodeForm.vue'
+import GenerateBarcodeForm from 'components/experiment/GenerateBarcodeForm.vue'
 import {downloadCSVData, generateBarcodes} from 'components/helpers'
 import {csvColumnsNames} from 'components/data'
 import {useQuasar} from 'quasar'
 import {api} from 'boot/axios'
 import bus from 'src/eventBus'
-import MeasurementCalculator from 'components/MeasurementCalculator.vue'
-import ExperimentHeatmap from 'components/ExperimentHeatmap.vue'
+import MeasurementCalculator from 'components/plate/MeasurementCalculator.vue'
+import ExperimentHeatmap from 'components/experiment/ExperimentHeatmap.vue'
 import {storeToRefs} from 'pinia'
 import {useSettingsStore} from 'stores/settings'
 
@@ -94,13 +94,13 @@ const openEditField = (index: number) => {
   }
 }
 
-const openDimensionsOptions = (index: number) => {
-  const id = `dimensions-${index}`
-  const dimensionsForm = document.getElementById(id) as HTMLInputElement
-  if (dimensionsForm) {
-    dimensionsForm.classList.toggle('hidden')
-  }
-}
+// const openDimensionsOptions = (index: number) => {
+//   const id = `dimensions-${index}`
+//   const dimensionsForm = document.getElementById(id) as HTMLInputElement
+//   if (dimensionsForm) {
+//     dimensionsForm.classList.toggle('hidden')
+//   }
+// }
 
 const addPlatesToExperiment = async (experimentId: number, barcodeSpecificationsId: number) => {
   try {

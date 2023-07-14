@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import {defineProps, onMounted, ref} from 'vue'
 import {Measurement} from 'components/models'
-import TimeSeriesChart from 'components/TimeSeriesChart.vue'
+import TimeSeriesChart from 'components/wells/TimeSeriesChart.vue'
 import {PlotData} from 'components/models'
 
 const props = defineProps({

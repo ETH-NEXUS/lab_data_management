@@ -18,10 +18,17 @@ class CompoundLibrary(models.Model):
 
 
 class Compound(models.Model):
+    related_name = "compounds"
     identifier = models.TextField(unique=True)
     name = models.TextField()
     structure = models.TextField()
-    library = models.ForeignKey(CompoundLibrary, null=True, on_delete=models.RESTRICT)
+    library = models.ForeignKey(
+        CompoundLibrary,
+        null=True,
+        on_delete=models.SET_NULL,
+        related_name=related_name,
+        blank=True,
+    )
     data = models.JSONField(null=True)
 
     def __str__(self):

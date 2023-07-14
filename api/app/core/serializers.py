@@ -323,6 +323,7 @@ class ProjectSerializer(serializers.ModelSerializer):
                     self.fields["name"].read_only = True
 
     experiments = ExperimentSerializer(many=True, required=False, allow_null=True)
+    plates = PlateSerializer(many=True, required=False, allow_null=True)
 
     class Meta:
         model = Project

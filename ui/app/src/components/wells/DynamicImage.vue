@@ -1,20 +1,20 @@
 <script setup lang="ts">
-import { ref, defineProps, onMounted } from 'vue'
-import { api} from '../boot/axios'
+import {ref, defineProps, onMounted} from 'vue'
+import {api} from 'boot/axios'
 
 const props = defineProps({
   url: {
     type: String,
-    required: true
+    required: true,
   },
   width: {
     type: String,
-    default: ''
+    default: '',
   },
   height: {
     type: String,
-    default: ''
-  }
+    default: '',
+  },
 })
 
 const src = ref<string>()
@@ -30,6 +30,6 @@ onMounted(async () => {
 </script>
 
 <template>
-  <q-img v-if="src" :src="src" :width="props.width" :height="props.height"/>
+  <q-img v-if="src" :src="src" :width="props.width" :height="props.height" />
   <q-spinner-grid v-else color="primary" size="2em" />
 </template>

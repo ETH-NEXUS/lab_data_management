@@ -15,7 +15,7 @@ const props = defineProps({
 </script>
 
 <template>
-  <div v-if="z_prime" class="q-mt-sm">
+  <div v-if="props.z_prime" class="q-mt-sm">
     <b>{{ t('label.z_prime') }}:</b>
     <span
       :class="{
@@ -29,16 +29,16 @@ const props = defineProps({
       {{ z_prime.toFixed(2) }}
     </span>
   </div>
-  <div v-if="ssmd" class="q-mt-sm">
+  <div v-if="props.ssmd" class="q-mt-sm">
     <b>{{ t('label.ssmd') }}:</b>
     <span
       :class="{
         'measurement': true,
         'q-mx-xs': true,
         'q-pa-xs': true,
-        'bg-green-3': ssmd >= 12,
-        'bg-orange-3': ssmd >= 6 && ssmd < 12,
-        'bg-red-3': ssmd < 6,
+        'bg-green-3': props.ssmd >= 12,
+        'bg-orange-3': props.ssmd >= 6 && props.ssmd < 12,
+        'bg-red-3': props.ssmd < 6,
       }">
       {{ ssmd.toFixed(2) }}
     </span>

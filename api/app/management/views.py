@@ -74,6 +74,12 @@ def run_command(request):
                 "plate_barcode": form_data.get("plate_barcode")
                 if form_data.get("plate_barcode")
                 else None,
+                "project_name": form_data.get("project_name")
+                if form_data.get("project_name")
+                else None,
+                "is_control_plate": form_data.get("is_control_plate")
+                if form_data.get("is_control_plate")
+                else None,
                 "room_name": form_data.get("room_name"),
             }
             management.call_command("import", what, **kwargs)
@@ -93,7 +99,7 @@ def long_polling(request, room_name):
         cache.delete(status_key)
 
     if output:
-        cache.delete(output_key)
+        # cache.delete(output_key)
         return JsonResponse({"message": output, "status": status})
     else:
         return JsonResponse({"message": None, "status": status})

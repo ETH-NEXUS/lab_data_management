@@ -1,14 +1,14 @@
 <script setup lang="ts">
 import {ref, onMounted, computed, watchEffect} from 'vue'
-import {handleError} from '../helpers/errorHandling'
-import {CompoundLibrary, Plate} from './models'
+import {handleError} from '../../helpers/errorHandling'
+import {CompoundLibrary, Plate} from '../models'
 import {QTreeNode} from 'quasar'
 import {useI18n} from 'vue-i18n'
 import {useRouter} from 'vue-router'
 import {useQuasar} from 'quasar'
-import {useSettingsStore} from '../stores/settings'
+import {useSettingsStore} from 'stores/settings'
 import {storeToRefs} from 'pinia'
-import {useCompoundLibraryStore} from '../stores/compoundLibrary'
+import {useCompoundLibraryStore} from 'stores/compoundLibrary'
 import bus from 'src/eventBus'
 
 const router = useRouter()

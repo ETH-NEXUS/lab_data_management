@@ -439,6 +439,26 @@ class WellViewSet(viewsets.ModelViewSet):
     serializer_class = WellSerializer
     queryset = Well.objects.all()
 
+    def destroy(self, request, *args, **kwargs):
+        well = self.get_object()
+        well.delete()
+
+        PlateDetail.refresh(concurrently=True)
+        WellDetail.refresh(concurrently=True)
+        ExperimentDetail.refresh(concurrently=True)
+
+        return Response(status=status.HTTP_200_OK)
+
+    @action(detail=True, methods=["get"])
+    def mark_as_invalid(self, request, pk=None):
+        well = self.get_object()
+        well.is_invalid = True
+        well.save()
+        PlateDetail.refresh(concurrently=True)
+        WellDetail.refresh(concurrently=True)
+        ExperimentDetail.refresh(concurrently=True)
+        return Response(status=status.HTTP_200_OK)
+
     @action(detail=True, methods=["get"])
     def chain(self, request, pk=None):
         def node_key(well):

@@ -1,15 +1,15 @@
 <script setup lang="ts">
 import {defineProps, defineEmits, PropType, onMounted, computed} from 'vue'
-import {Plate, WellInfo, Well, MeasurementFeature, Compound} from './models'
+import {Plate, WellInfo, Well, MeasurementFeature, Compound} from '../models'
 import DynamicImage from './DynamicImage.vue'
 import {useI18n} from 'vue-i18n'
-import {api} from '../boot/axios'
-import {handleError} from '../helpers/errorHandling'
-import {hrPositionFromPosition} from '../helpers/plate'
+import {api} from 'boot/axios'
+import {handleError} from '../../helpers/errorHandling'
+import {hrPositionFromPosition} from '../../helpers/plate'
 import {ref} from 'vue'
 import {date} from 'quasar'
 import {storeToRefs} from 'pinia'
-import {useSettingsStore} from '../stores/settings'
+import {useSettingsStore} from 'stores/settings'
 import WellChain from './WellChain.vue'
 
 const {t} = useI18n()
@@ -32,7 +32,7 @@ const enteredMeasurement = ref<number>(0)
 
 const {wellDetails, platePage} = storeToRefs(useSettingsStore())
 const blurCompound = ref<boolean>(false)
-import TimeSeriesChart from 'components/TimeSeriesChartsContainer.vue'
+import TimeSeriesChart from 'components/wells/TimeSeriesChartsContainer.vue'
 
 const props = defineProps({
   plate: {
@@ -93,6 +93,22 @@ const createWell = async () => {
       position: props.wellInfo.position,
     })
     emit('well-created', resp.data as Well)
+  } catch (err) {
+    handleError(err, false)
+  }
+}
+
+const deleteWell = async () => {
+  try {
+    await api.delete(`/api/wells/${props.wellInfo.well.id}/`)
+  } catch (err) {
+    handleError(err, false)
+  }
+}
+
+const markWellAsInvalid = async () => {
+  try {
+    await api.get(`/api/wells/${props.wellInfo.well.id}/mark_as_invalid`)
   } catch (err) {
     handleError(err, false)
   }
@@ -217,6 +233,12 @@ const filterMeasurementFeatures = (query: string, update: (f: () => void) => voi
             <q-icon name="o_water_drop" />
             {{ t('title.amount') }}
           </h4>
+          <q-btn
+            :label="t('action.delete_well')"
+            icon="delete"
+            color="secondary"
+            @click="deleteWell"
+            class="q-my-lg" />
         </div>
         <div class="col-8">
           <table>

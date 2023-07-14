@@ -97,3 +97,59 @@ export const importCommandOptions: Options = {
   //   required: false,
   // },
 }
+
+export const importControlPlateOptions: Options = {
+  input_file: {
+    type: 'str',
+    label: 'The input file',
+    required: true,
+  },
+
+  project_name: {
+    type: 'str',
+    label: 'Project name',
+    required: true,
+  },
+  plate_barcode: {
+    type: 'str',
+    label: 'Plate barcode',
+    required: false,
+  },
+}
+
+export const importLibraryPlateOptions: Options = {
+  input_file: {
+    type: 'str',
+    label: 'The input file',
+    required: true,
+  },
+
+  library_name: {
+    type: 'str',
+    label: 'Library name',
+    required: false,
+  },
+  plate_barcode: {
+    type: 'str',
+    label: 'Plate barcode',
+    required: false,
+  },
+}
+
+export const importSDFOptions: Options = {
+  input_file: {
+    type: 'str',
+    label: 'The input file',
+    required: true,
+  },
+  library_name: {
+    type: 'str',
+    label: 'Library name',
+    required: false,
+  },
+  mapping_file: {
+    type: 'str',
+    label: 'The mapping file for the sdf columns, otherwise default mapping is used',
+    required: false,
+  },
+}

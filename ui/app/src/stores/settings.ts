@@ -69,7 +69,7 @@ export const useSettingsStore = defineStore('settings', {
       wellDetails: {
         showStructure: true,
       },
-      include_depricated_functionality: import.meta.env.INCLUDE_DEPRICATED_FUNCTIONALITY,
+      include_depricated_functionality: false,
     } as Settings),
   persist: {
     enabled: true,

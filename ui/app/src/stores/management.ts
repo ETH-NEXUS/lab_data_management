@@ -54,6 +54,7 @@ export const useManagementStore = defineStore({
       form.append('file', file)
       form.append('directory_path', path)
       const res = await api.post('api/upload_file/', form)
+      console.log(res)
       await this.getDataDirectory()
     },
     getFileContent(path: string) {

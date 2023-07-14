@@ -46,12 +46,15 @@ $$ LANGUAGE plpython3u;
 DROP FUNCTION IF EXISTS _final_mad(double precision[]) CASCADE;
 
 CREATE OR REPLACE FUNCTION _final_mad(vals double precision[]) RETURNS double precision AS $$
-import pandas as pd
+import statistics
 
-def mad(series, constant=1.4826):
-    return constant * (series - series.median()).abs().median()
+def mad(values, constant=1.4826):
+    median = statistics.median(values)
+    deviations = [abs(x - median) for x in values]
+    mad = statistics.median(deviations)
+    return constant * mad
 
-return mad(pd.Series(vals))
+return mad(list(vals))
 
 $$ LANGUAGE plpython3u;
 

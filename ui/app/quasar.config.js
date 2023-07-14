@@ -107,6 +107,10 @@ module.exports = configure(function (/* ctx */) {
     // https://v2.quasar.dev/quasar-cli-vite/quasar-config-js#framework
     framework: {
       config: {
+        logging: {level: 'debug'},
+        errorHandler: {
+          showErrorMessage: true,
+        },
         notify: {},
         loadingBar: {
           color: 'light-blue-5',

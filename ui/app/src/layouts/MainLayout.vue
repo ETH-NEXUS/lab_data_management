@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import {ref, onMounted} from 'vue'
-import NavigationTree from '../components/NavigationTree.vue'
+import NavigationTree from 'components/navigation/NavigationTree.vue'
 import {useRoute, useRouter} from 'vue-router'
 import {useUserStore} from 'src/stores/user'
 import {useQuasar} from 'quasar'

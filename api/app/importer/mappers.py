@@ -39,6 +39,14 @@ import logging
 logging.getLogger("chardet.charsetprober").setLevel(logging.INFO)
 
 
+def convert_sci_to_float(sci_str):
+    try:
+        return float(sci_str)
+    except ValueError:
+        print(f"Cannot convert {sci_str} to float")
+        return None
+
+
 class BaseMapper:
     @staticmethod
     def get_files(_glob: str) -> list[str]:
@@ -228,6 +236,28 @@ class EchoMapper(BaseMapper):
                     "info",
                     kwargs.get("room_name", None),
                 )
+                if source_plate.is_control_plate:
+                    message(
+                        f"Applying control plate template to {mapping_list.target.barcode}",
+                        "info",
+                        kwargs.get("room_name", None),
+                    )
+                    _target_plate = mapping_list.target
+                    if source_plate.num_wells != _target_plate.num_wells:
+                        raise MappingError(
+                            f"{'Control plate and experiment plate must have the same amount of wells'}: {_target_plate.num_wells} != {source_plate.num_wells}"
+                        )
+                    for position in range(source_plate.num_wells):
+                        template_well = source_plate.well_at(position)
+                        well = _target_plate.well_at(position, create_if_not_exist=True)
+                        if template_well:
+                            well.type = template_well.type
+                            well.save()
+                        else:
+                            pass
+
+                    PlateDetail.refresh(concurrently=True)
+                    WellDetail.refresh(concurrently=True)
             else:
                 message(
                     f"Error mapping {source_plate.barcode} -> {mapping_list.target.barcode}",
@@ -307,6 +337,7 @@ class M1000Mapper(BaseMapper):
     RE_ID = r"^[^_]+_[^_]+$"
     RE_NUM = r"^[0-9\.]+$"
     RE_TAB = r"[\t\s]+"
+    RE_SCIENTIFIC = r"[-+]?[0-9]*\.?[0-9]+([eE][-+]?[0-9]+)?"
 
     RE_DATE_OF_MEASUREMENT = r"^Date of measurement: (?P<date>[^\/]+)\/Time of measurement: (?P<time>[0-9:]+)$"
     RE_PLATE_DESCRIPTION = r"^Plate Description: (?P<description>.+)$"
@@ -370,10 +401,13 @@ class M1000Mapper(BaseMapper):
                     "position": position,
                     "identifier": identifier,
                     "values": [
-                        part
+                        convert_sci_to_float(part)
                         for idx, part in enumerate(parts)
                         if idx not in [pos_index, id_index]
-                        and re.match(self.RE_NUM, part)
+                        and (
+                            re.match(self.RE_NUM, part)
+                            or re.match(self.RE_SCIENTIFIC, part)
+                        )
                     ],
                 }
                 # If there are no values in this line we ignore it

@@ -3,8 +3,6 @@ import DynamicForm from './DynamicForm.vue'
 import {Options, GeneralFormData} from '../models'
 import {useManagementStore} from 'stores/management'
 import {onMounted} from 'vue'
-import {useQuasar} from 'quasar'
-import {useI18n} from 'vue-i18n'
 import {useUserStore} from 'stores/user'
 import {storeToRefs} from 'pinia'
 import bus from 'src/eventBus'
@@ -12,11 +10,11 @@ import bus from 'src/eventBus'
 const props = defineProps<{
   options: Options
   command: string
+  what: string
 }>()
 
 const managementStore = useManagementStore()
-const $q = useQuasar()
-const {t} = useI18n()
+
 const {user} = storeToRefs(useUserStore())
 
 onMounted(() => {
@@ -27,11 +25,18 @@ const onSubmit = async (formData: GeneralFormData) => {
   managementStore.commandOutput = `Executing command: ${props.command}\n...`
   formData['room_name'] = user.value?.id.toString() || 'room_name'
   formData['command'] = props.command
-  // $q.loading.show({
-  //   message: t('info.running_in_progress'),
-  // })
+  if (props.what && props.command === 'import') {
+    if (props.what === 'control_plate') {
+      formData['what'] = 'library_plate'
+      formData['is_control_plate'] = true
+    } else if (props.what === 'library_plate') {
+      formData['what'] = 'library_plate'
+      formData['is_control_plate'] = false
+    } else {
+      formData['what'] = props.what
+    }
+  }
   await managementStore.runCommand(formData)
-  //$q.loading.hide()
   bus.emit('management-command')
 }
 </script>
