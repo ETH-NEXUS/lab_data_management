@@ -56,7 +56,6 @@ const compoundLibraryNodes = ref<QTreeNode>({
 })
 
 const addCompoundLibraryNode = (library: CompoundLibrary) => {
-  console.log(library.name, library.plates[0])
   const node: QTreeNode = {
     label: library.name,
     icon: 'science',
