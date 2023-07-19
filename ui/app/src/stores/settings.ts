@@ -46,7 +46,7 @@ export const useSettingsStore = defineStore('settings', {
         wellContent: 'hr_position',
         showHeatmap: false,
         smallerMapView: false,
-        heatmapPalette: {label: 'OrangeRed', value: {from: '#fff7bc', to: '#993404'}},
+        heatmapPalette: {label: 'GreenRed', value: {from: '#FF0000', to: '#00FF00'}},
         plotView: false,
         squareCompoundType: false,
       },
