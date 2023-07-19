@@ -25,6 +25,7 @@ class Config:
                         "columns": {
                             "source_plate_barcode": str,
                             "source_plate_type": str,
+                            "source_plate_name": str,
                             "source_well": str,
                             "destination_plate_name": str,
                             "destination_plate_barcode": str,

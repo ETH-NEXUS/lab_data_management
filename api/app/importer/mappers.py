@@ -155,6 +155,7 @@ class EchoMapper(BaseMapper):
             total=len(data),
         ) as mbar:
             for entry in data:
+                source_plate_name = entry["source_plate_name"]
                 source_plate_barcode = entry["source_plate_barcode"]
                 destination_plate_name = entry["destination_plate_name"]
                 if "destination_plate_type" in entry:
@@ -195,6 +196,7 @@ class EchoMapper(BaseMapper):
                             destination_plate_name,
                             destination_plate_type,
                             destination_plate_barcode,
+                            source_plate_name,
                             **kwargs,
                         )
 
@@ -274,7 +276,12 @@ class EchoMapper(BaseMapper):
             self.map(queue, **kwargs)
 
     def __create_plate_by_name_and_barcode(
-        self, plate_name: str, plate_type: str, barcode: str, **kwargs
+        self,
+        plate_name: str,
+        plate_type: str,
+        barcode: str,
+        source_plate_name: str,
+        **kwargs,
     ):
         try:
             barcode_prefix = barcode.split("_")[0]
@@ -314,24 +321,33 @@ class EchoMapper(BaseMapper):
             barcode=barcode,
             experiment=barcode_specification.experiment,
             dimension=self.__get_plate_dimension(
-                plate_name, plate_type, kwargs.get("room_name")
+                plate_name, plate_type, source_plate_name, kwargs.get("room_name")
             ),
         )
 
-    def __get_plate_dimension(self, plate_name: str, plate_type: str, room_name):
+    def __get_plate_dimension(
+        self, plate_name: str, plate_type: str, source_plate_name, room_name
+    ):
         try:
-            rows, cols = row_col_from_name(f"{plate_type} {plate_name}")
+            rows, cols = row_col_from_name(
+                f"{plate_type} {plate_name} {source_plate_name}"
+            )
             plate_dimension = PlateDimension.objects.get(rows=rows, cols=cols)
             return plate_dimension
         except ValueError:
+            message(
+                f"Could not determine plate dimensions for {plate_name}",
+                "error",
+                room_name,
+            )
             raise
         except PlateDimension.DoesNotExist:
-            message(f"No plate dimension found: {rows}x{cols}", "error", room_name)
-            raise ValueError(f"No plate dimension found: {rows}x{cols}")
+            message(f"No plate dimension found", "error", room_name)
+            raise ValueError(f"No plate dimension found for {plate_name}")
 
 
 class M1000Mapper(BaseMapper):
-    RE_FILENAME = r"(?P<date>[0-9]+)-(?P<time>[0-9]+)_(?P<barcode>[^\.]+)\.asc"
+    RE_FILENAME = r"(?:(?P<date>[0-9]+)-(?P<time>[0-9]+)_)?(?P<barcode>[^\.]+)\.asc"
 
     RE_POS = r"^[A-Z]+[0-9]+$"
     RE_ID = r"^[^_]+_[^_]+$"

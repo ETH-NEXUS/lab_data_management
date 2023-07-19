@@ -5,6 +5,7 @@ importer:
       columns:
         source_plate_barcode: Source Plate Barcode
         source_plate_type: Source Plate Type
+        source_plate_name: Source Plate Name
         source_well: Source Well
         destination_plate_name: Destination Plate Name
         destination_plate_barcode: Destination Plate Barcode
