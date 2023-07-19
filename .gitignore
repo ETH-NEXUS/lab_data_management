@@ -309,7 +309,7 @@ temp/
 *.csv
 *.pdf
 sitemap.xml.gz
-
+notebooks/
 
 Pipfile
 .sass-cache
