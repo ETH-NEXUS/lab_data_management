@@ -199,12 +199,14 @@ class EchoMapper(BaseMapper):
                             source_plate_name,
                             **kwargs,
                         )
-
-                if source_plate_barcode in mapping_lists:
-                    mapping_list = mapping_lists.get(source_plate_barcode)
+                mapping_list_index = (
+                    f"{source_plate_barcode}_**_{destination_plate_barcode}"
+                )
+                if mapping_list_index in mapping_lists:
+                    mapping_list = mapping_lists.get(mapping_list_index)
                 else:
                     mapping_list = MappingList(target=destination_plate)
-                    mapping_lists[source_plate_barcode] = mapping_list
+                    mapping_lists[mapping_list_index] = mapping_list
 
                 source_well = entry["source_well"]
                 destination_well = entry["destination_well"]
@@ -223,8 +225,9 @@ class EchoMapper(BaseMapper):
                 mapping_list.add(mapping)
 
                 mbar.update(1)
-
-        for source_plate_barcode, mapping_list in mapping_lists.items():
+        print(mapping_lists)
+        for mapping_list_index, mapping_list in mapping_lists.items():
+            source_plate_barcode = mapping_list_index.split("_**_")[0]
             source_plate = plates.get(source_plate_barcode)
             if source_plate.map(mapping_list, mapping_list.target):
                 with open(kwargs["filename"], "rb") as file:
