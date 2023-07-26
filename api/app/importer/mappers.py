@@ -200,7 +200,7 @@ class EchoMapper(BaseMapper):
                             **kwargs,
                         )
                 mapping_list_index = (
-                    f"{source_plate_barcode}_**_{destination_plate_barcode}"
+                    f"{source_plate_barcode}__**__{destination_plate_barcode}"
                 )
                 if mapping_list_index in mapping_lists:
                     mapping_list = mapping_lists.get(mapping_list_index)
@@ -227,7 +227,7 @@ class EchoMapper(BaseMapper):
                 mbar.update(1)
         print(mapping_lists)
         for mapping_list_index, mapping_list in mapping_lists.items():
-            source_plate_barcode = mapping_list_index.split("_**_")[0]
+            source_plate_barcode = mapping_list_index.split("__**__")[0]
             source_plate = plates.get(source_plate_barcode)
             if source_plate.map(mapping_list, mapping_list.target):
                 with open(kwargs["filename"], "rb") as file:
