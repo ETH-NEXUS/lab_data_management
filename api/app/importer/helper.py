@@ -1,6 +1,6 @@
 import re
 from django.core.cache import cache
-from colorful_logger import logger as log
+
 
 
 def sameSchema(dict1, dict2, same=True):
@@ -58,11 +58,11 @@ def message(text, type="info", room_name=None, status="pending"):
         cache.set(f"command_output_{room_name}", text)
         cache.set(f"command_status_{room_name}", status)
     if type == "info":
-        log.info(text)
+        print(text)
     elif type == "error":
-        log.error(text)
+        print(text)
     elif type == "warning":
-        log.warning(text)
+        print(text)
     elif type == "debug":
-        log.debug(text)
+        print(text)
     print(text)

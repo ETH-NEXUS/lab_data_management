@@ -30,7 +30,7 @@ from core.models import (
 from core.config import Config
 from django.core.files import File
 from django.utils import timezone
-from colorful_logger import logger as log
+
 
 from .helper import row_col_from_name
 
@@ -400,7 +400,7 @@ class M1000Mapper(BaseMapper):
             barcode = match.group("barcode")
         else:
             raise MappingError(
-                f"File name {os.path.basename(file.name)} does not much conventions."
+                f"File name {os.path.basename(file.name)} does not match conventions."
             )
 
         results = []
@@ -466,12 +466,12 @@ class M1000Mapper(BaseMapper):
         try:
             result = eval(formula)
         except ZeroDivisionError:
-            log.warning(
+            print(
                 f"Formula {formula} for {plate.barcode}{well.hr_position} resulted in a ZeroDivisionError. Setting result to zero."
             )
             result = 0
         except Exception as e:
-            log.error(
+            print(
                 f"Error while evaluating formula {formula} for {plate.barcode}{well.hr_position}: {e} "
             )
         return result

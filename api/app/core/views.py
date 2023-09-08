@@ -3,7 +3,7 @@ from datetime import datetime
 
 from uuid import uuid4
 import re
-from colorful_logger import logger as log
+
 
 from os import environ
 import os
@@ -241,13 +241,13 @@ class PlateViewSet(viewsets.ModelViewSet):
         try:
             result = eval(new_expression)
             if not result:
-                log.warning(
+                print(
                     f"Result is None or 0. Setting result to 0. Formula: "
                     f"{new_expression}"
                 )
                 result = 0
         except ZeroDivisionError:
-            log.error("Division by zero occurred. Setting result to 0")
+            print("Division by zero occurred. Setting result to 0")
             result = 0
         return result
 
@@ -289,7 +289,7 @@ class PlateViewSet(viewsets.ModelViewSet):
 
         PlateDetail.refresh(concurrently=True)
         WellDetail.refresh(concurrently=True)
-        log.info(
+        print(
             f"New measurement {new_label} added to plate {current_plate.id} with barcode {current_plate.barcode}"
         )
 

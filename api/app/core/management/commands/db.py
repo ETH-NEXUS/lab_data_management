@@ -1,7 +1,7 @@
 from django.core.management.base import BaseCommand
 from django.core.management import call_command
 import traceback
-from colorful_logger import logger as log
+
 from django.conf import settings
 from django.db import connection, connections
 
@@ -58,5 +58,5 @@ class Command(BaseCommand):
             elif options.get("action") == "reset":
                 self.reset()
         except Exception as ex:
-            log.error(ex)
+            print(ex)
             traceback.print_exc()

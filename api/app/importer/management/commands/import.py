@@ -1,6 +1,5 @@
 from django.core.management.base import BaseCommand
 import traceback
-from colorful_logger import logger as log
 from os.path import isfile
 from compoundlib.models import Compound, CompoundLibrary
 from core.models import Plate, Well, PlateDimension, WellCompound, WellType, Project
