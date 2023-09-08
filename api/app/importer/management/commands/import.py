@@ -20,6 +20,7 @@ from rdkit.Chem.rdchem import Mol
 from rdkit import Chem
 
 
+
 def full_strip(s: str):
     return s.strip().lstrip()
 
@@ -470,6 +471,7 @@ class Command(BaseCommand):
             message(f"File does not exist: {input_file}", "error", room_name)
 
     def handle(self, *args, **options):
+
         try:
             imported = False
             if options.get("what") == "sdf":

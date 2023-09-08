@@ -30,20 +30,15 @@ from core.models import (
 from core.config import Config
 from django.core.files import File
 from django.utils import timezone
-
-
 from .helper import row_col_from_name
-
-import logging
-
-logging.getLogger("chardet.charsetprober").setLevel(logging.INFO)
+from helpers.logger import logger
 
 
 def convert_sci_to_float(sci_str):
     try:
         return float(sci_str)
     except ValueError:
-        print(f"Cannot convert {sci_str} to float")
+        logger.error(f"Cannot convert {sci_str} to float")
         return None
 
 
@@ -225,7 +220,7 @@ class EchoMapper(BaseMapper):
                 mapping_list.add(mapping)
 
                 mbar.update(1)
-        print(mapping_lists)
+
         for mapping_list_index, mapping_list in mapping_lists.items():
             source_plate_barcode = mapping_list_index.split("__**__")[0]
             source_plate = plates.get(source_plate_barcode)
@@ -466,12 +461,12 @@ class M1000Mapper(BaseMapper):
         try:
             result = eval(formula)
         except ZeroDivisionError:
-            print(
+            logger.error(
                 f"Formula {formula} for {plate.barcode}{well.hr_position} resulted in a ZeroDivisionError. Setting result to zero."
             )
             result = 0
         except Exception as e:
-            print(
+            logger.error(
                 f"Error while evaluating formula {formula} for {plate.barcode}{well.hr_position}: {e} "
             )
         return result

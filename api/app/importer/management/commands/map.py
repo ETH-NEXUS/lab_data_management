@@ -6,6 +6,7 @@ from importer.mappers import EchoMapper, M1000Mapper
 from core.models import Experiment
 from importer.helper import message
 from core.config import Config
+from helpers.logger import logger
 
 
 def die(message):
@@ -77,6 +78,7 @@ class Command(BaseCommand):
         )
 
     def handle(self, *args, **options):
+
         path = options.get("path")
         if options.get("experiment_name", None):
             experiment = Experiment.objects.filter(

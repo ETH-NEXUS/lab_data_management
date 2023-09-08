@@ -1,9 +1,8 @@
 from django.core.management.base import BaseCommand
 from django.contrib.auth import get_user_model
 from os import environ
-import logging
+from helpers.logger import logger
 
-logger = logging.getLogger(__name__)
 
 
 class Command(BaseCommand):
@@ -16,6 +15,6 @@ class Command(BaseCommand):
                 environ.get("DJANGO_SU_EMAIL", "admin@admin.com"),
                 environ.get("DJANGO_SU_PASSWORD", "superuser"),
             )
-            logger.info("Created superuser account")
+            logger.debug("Created superuser account")
         else:
-            logger.info("Superuser exists")
+            logger.warning("Superuser exists")

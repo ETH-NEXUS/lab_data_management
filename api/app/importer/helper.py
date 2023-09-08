@@ -1,5 +1,6 @@
 import re
 from django.core.cache import cache
+from helpers.logger import logger
 
 
 
@@ -58,11 +59,11 @@ def message(text, type="info", room_name=None, status="pending"):
         cache.set(f"command_output_{room_name}", text)
         cache.set(f"command_status_{room_name}", status)
     if type == "info":
-        print(text)
+        logger.info(text)
     elif type == "error":
-        print(text)
+        logger.error(text)
     elif type == "warning":
-        print(text)
+        logger.warning(text)
     elif type == "debug":
-        print(text)
+        logger.debug(text)
     print(text)

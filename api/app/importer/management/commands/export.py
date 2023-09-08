@@ -3,13 +3,13 @@ from django.core import serializers
 from django.apps import apps
 import os
 from os import makedirs
-
+from helpers.logger import logger
 
 def export_data(app_name, model_name, _filter=None):
     model = apps.get_model(app_label=app_name, model_name=model_name)
     if _filter:
         # TODO: Introduce a flexible filter mechanism
-        print(_filter)
+        logger.info(_filter)
         queryset = model.objects.filter(eval(_filter))
     else:
         queryset = model.objects.all()
@@ -58,4 +58,4 @@ class Command(BaseCommand):
         with open(output_file, "a" if options.get("append") else "w") as file:
             file.write(data)
 
-        print(f"Data exported successfully to {output_file}")
+        logger.info(f"Data exported successfully to {output_file}")

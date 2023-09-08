@@ -22,6 +22,8 @@ from django.http import HttpResponse
 import mimetypes
 from django.utils.translation import gettext as _
 from django.core.handlers.wsgi import WSGIRequest
+from helpers.logger import logger
+
 
 from .models import (
     Well,
@@ -241,13 +243,13 @@ class PlateViewSet(viewsets.ModelViewSet):
         try:
             result = eval(new_expression)
             if not result:
-                print(
+                logger.warning(
                     f"Result is None or 0. Setting result to 0. Formula: "
                     f"{new_expression}"
                 )
                 result = 0
         except ZeroDivisionError:
-            print("Division by zero occurred. Setting result to 0")
+            logger.critical("Division by zero occurred. Setting result to 0")
             result = 0
         return result
 
@@ -289,7 +291,7 @@ class PlateViewSet(viewsets.ModelViewSet):
 
         PlateDetail.refresh(concurrently=True)
         WellDetail.refresh(concurrently=True)
-        print(
+        logger.info(
             f"New measurement {new_label} added to plate {current_plate.id} with barcode {current_plate.barcode}"
         )
 
@@ -559,7 +561,7 @@ class ExperimentViewSet(viewsets.ModelViewSet):
             template_plate = Plate.objects.get(pk=template_plate_id)
             plates = Plate.objects.filter(experiment=experiment)
             for plate in plates:
-                print(f"Applying template to plate {plate.barcode}")
+                logger.debug(f"Applying template to plate {plate.barcode}")
                 plate.apply_template(template_plate)
             return Response(status.HTTP_200_OK)
         else:

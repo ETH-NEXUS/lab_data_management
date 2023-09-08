@@ -2,7 +2,7 @@ import yaml
 from easydict import EasyDict
 from django.utils.functional import classproperty
 from schema import Schema, SchemaError
-
+from helpers.logger import logger
 
 
 class Config:
@@ -54,5 +54,5 @@ class Config:
                 cls.config_schema.validate(cfg)
                 return EasyDict(cfg)
             except SchemaError as se:
-                print(se)
+                logger.critical(se)
                 raise se
