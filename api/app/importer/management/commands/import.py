@@ -322,7 +322,9 @@ class Command(BaseCommand):
                     else:
                         current_matrix.append(row)
                 return matrix1, matrix2
-
+    """
+    This function imports both library plates and project control  plates.
+    """
     def library_plate(
         self,
         input_file: str,
@@ -382,12 +384,14 @@ class Command(BaseCommand):
                     "success",
                     room_name,
                 )
+            print('@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@')
             with tqdm(
                 desc="Processing wells",
                 unit="wells",
                 total=len(compounds),
             ) as pbar:
                 for pos, content in enumerate(compounds):
+                    print(pos, content)
                     _type = full_strip(types[pos])
                     _compound = full_strip(content)
                     if _type != "null" and _compound != "null":
@@ -406,6 +410,7 @@ class Command(BaseCommand):
                         WellCompound.objects.create(well=well, compound=compound)
                         well.save()
                         pbar.update(1)
+                print('**********************************')
             message(f"Finished processing plate {plate_barcode}.", "success", room_name)
 
     def template(
