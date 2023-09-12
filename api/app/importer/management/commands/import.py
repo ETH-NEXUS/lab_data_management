@@ -391,7 +391,6 @@ class Command(BaseCommand):
                 total=len(compounds),
             ) as pbar:
                 for pos, content in enumerate(compounds):
-                    print(pos, content)
                     _type = full_strip(types[pos])
                     _compound = full_strip(content)
                     if _type != "null" and _compound != "null":

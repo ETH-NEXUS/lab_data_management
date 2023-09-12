@@ -9,11 +9,11 @@ class CustomFormatter(logging.Formatter):
     magenta = "\x1b[35;20m"
     green = "\x1b[32;20m"
     reset = "\x1b[0m"
-    format = "%(name)s:  %(levelname)s - %(message)s (%(filename)s:%(lineno)d)"
+    format = "%(name)s:  %(levelname)s ----- %(message)s)"
 
     FORMATS = {
         logging.DEBUG: magenta + format + reset,
-        logging.INFO: blue + format + reset,
+        logging.INFO: green + format + reset,
         logging.WARNING: yellow + format + reset,
         logging.ERROR: red + format + reset,
         logging.CRITICAL: bold_red + format + reset
