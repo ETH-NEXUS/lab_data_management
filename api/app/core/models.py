@@ -605,7 +605,7 @@ class Measurement(TimeTrackedModel):
         blank=True,
     )
     value = models.FloatField()
-    label = models.CharField(max_length=50, null=True, blank=True)
+    label = models.CharField(max_length=50, default="none")
     identifier = models.CharField(max_length=20, null=True, blank=True)
     measured_at = models.DateTimeField(null=True, blank=True)
     measurement_assignment = models.ForeignKey(
