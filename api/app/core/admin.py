@@ -57,6 +57,7 @@ class WellAdmin(admin.ModelAdmin):
         "sample",
         "amount",
         "type",
+        "get_compounds",
         "get_measurements",
     )
     search_fields = ("plate__barcode", "compounds__identifier")
@@ -67,6 +68,11 @@ class WellAdmin(admin.ModelAdmin):
         return ", ".join([str(m) for m in well.measurements.all()])
 
     get_measurements.short_description = "measurements"
+
+    def get_compounds(self, well: Well):
+        return ", ".join([str(c) for c in well.compounds.all()])
+
+    get_compounds.short_description = "compounds"
 
 
 @admin.register(Measurement)
