@@ -347,7 +347,7 @@ const addNewMeasurement = () => {
             @click="addNewMeasurement" />
         </q-card-actions>
 
-        <q-card-section class="q-mt-lg" v-if="experiment.available_measurement_labels.length > 0">
+        <q-card-section class="q-mt-lg" v-if="experiment.details.measurement_labels.length > 0">
           <q-expansion-item
             v-model="expanded"
             class="shadow-1 overflow-hidden"
@@ -361,7 +361,7 @@ const addNewMeasurement = () => {
             <ExperimentHeatmap
               v-if="showExperimentResults"
               :timestamps="experiment.details.measurement_timestamps"
-              :available-measurement-labels="experiment.available_measurement_labels"
+              :available-measurement-labels="experiment.details.measurement_labels"
               :overall-stats="experiment.details.overall_stats"
               :experiment-id="experiment.id" />
           </q-expansion-item>
