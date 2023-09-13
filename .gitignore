@@ -317,3 +317,4 @@ Pipfile
 .Rhistory
 .RData
 conf/jupyter/migrated
+conf/jupyter/lab
