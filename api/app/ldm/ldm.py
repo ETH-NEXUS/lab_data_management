@@ -136,7 +136,8 @@ def get_experiment_measurements(experiment_name: str, label=None):
     experiment_plates = []
     for pl in _experiment_plates:
         wells = pl.wells.all()
-        if wells and wells.first().measurements.all():
+        # check if measurements have a label
+        if wells and wells.first().measurements.all() and wells.first().measurements.first().label:
             experiment_plates.append(pl)
 
     rows = []
