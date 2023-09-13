@@ -131,7 +131,13 @@ def get_experiment_measurements(experiment_name: str, label=None):
     """
     Returns a pd DataFrame of measurements for a given experiment.
     """
-    experiment_plates = Plate.objects.filter(experiment__name=experiment_name)
+    _experiment_plates = Plate.objects.filter(experiment__name=experiment_name)
+    # filter out plates that don't have any measurements in their wells
+    experiment_plates = []
+    for pl in _experiment_plates:
+        wells = pl.wells.all()
+        if wells and wells.first().measurements.all():
+            experiment_plates.append(pl)
 
     rows = []
     for pl in experiment_plates:
