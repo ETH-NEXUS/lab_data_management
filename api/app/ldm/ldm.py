@@ -131,6 +131,7 @@ def get_experiment_measurements(experiment_name: str, label=None):
     """
     Returns a pd DataFrame of measurements for a given experiment.
     """
+    print(f"Getting measurements for experiment {experiment_name}")
     _experiment_plates = Plate.objects.filter(experiment__name=experiment_name)
     # filter out plates that don't have any measurements in their wells
     experiment_plates = []
@@ -180,6 +181,7 @@ def get_experiment_measurements(experiment_name: str, label=None):
 
 def normalize_values(raw_data, log_value=False, label=None, pos_neg_only=False):
     raw_data = raw_data.copy()
+    print(raw_data)
 
     if pos_neg_only:
         raw_data = raw_data[raw_data["control"].isin(["P", "N"])]
