@@ -142,9 +142,10 @@ def get_experiment_measurements(experiment_name: str, label=None):
             experiment_plates.append(pl)
 
     rows = []
+    print('Processed plates:')
     for pl in experiment_plates:
         plate_dimension = pl.dimension
-        print(f"Processing plate {pl.barcode}")
+        print(f"{pl.barcode}")
 
         wells = pl.wells.all()  # Well.objects.filter(plate=pl)
         for well in wells:
@@ -153,7 +154,7 @@ def get_experiment_measurements(experiment_name: str, label=None):
             measurements = well.measurements.all()
             if label is not None:
                 measurements = measurements.filter(label=label)
-            # print("compound name", well.compounds.first().name)
+
 
             well_rows = [
                 {
@@ -181,7 +182,7 @@ def get_experiment_measurements(experiment_name: str, label=None):
 
 def normalize_values(raw_data, log_value=False, label=None, pos_neg_only=False):
     raw_data = raw_data.copy()
-    print(raw_data)
+
 
     if pos_neg_only:
         raw_data = raw_data[raw_data["control"].isin(["P", "N"])]
