@@ -21,9 +21,14 @@ RUN apt-get update --fix-missing
 # Install Node.js, npm and Yarn
 # According to this guide: 
 # https://github.com/nodesource/distributions
-RUN curl -fsSL https://deb.nodesource.com/setup_20.x | bash -
-RUN apt-get install -y nodejs jq
-RUN npm install -g yarn
+# RUN curl -fsSL https://deb.nodesource.com/setup_20.x | bash -
+# RUN apt-get install -y nodejs jq
+# RUN npm install -g yarn
+# Since this is deprecated we use the newer way according to the following information
+# https://github.com/nodesource/distributions#debian-and-ubuntu-based-distributions
+RUN curl -fsSL https://deb.nodesource.com/gpgkey/nodesource-repo.gpg.key | gpg --dearmor -o /etc/apt/keyrings/nodesource.gpg
+RUN echo "deb [signed-by=/etc/apt/keyrings/nodesource.gpg] https://deb.nodesource.com/node_20.x nodistro main" | tee /etc/apt/sources.list.d/nodesource.list
+RUN apt-get update --fix-missing && apt-get install nodejs -y
 
 # Install R
 # According to this guide: 
