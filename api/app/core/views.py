@@ -465,6 +465,7 @@ def generate_pdf_report(request):
         print(e)
         return JsonResponse({"error": str(e)}, status=500)
 
+@csrf_exempt
 def list_output_files(request):
     try:
         if request.method == "POST":
