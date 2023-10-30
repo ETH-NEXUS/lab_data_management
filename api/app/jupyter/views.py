@@ -44,3 +44,4 @@ class JupyterProxyView(ProxyView):
             return HttpResponseRedirect(
                 redirect_to=f"/login?next={request.get_full_path()}"
             )
+

@@ -24,9 +24,11 @@ import MeasurementCalculator from 'components/plate/MeasurementCalculator.vue'
 import ExperimentHeatmap from 'components/experiment/ExperimentHeatmap.vue'
 import {storeToRefs} from 'pinia'
 import {useSettingsStore} from 'stores/settings'
+import {useManagementStore} from 'stores/management'
 
 const route = useRoute()
 const projectStore = useProjectStore()
+const managementStore = useManagementStore()
 
 const $q = useQuasar()
 const options = ref<DimensionsOption[]>([])
@@ -54,6 +56,9 @@ const initialize = async () => {
     options.value = plateDimensions?.map((d: PlateDimension) => ({label: d.name, value: d.id})) ?? []
     experiment.value = experiments?.find((e: Experiment) => e.id === Number(route.params.experiment)) ?? null
     showExperimentResults.value = false
+    if (experiment.value) {
+      await projectStore.getNotebookOutputFiles(experiment.value.name)
+    }
   } catch (err) {
     handleError(err)
   } finally {
@@ -205,6 +210,23 @@ const calculateNewMeasurement = async (expression: string, newLabel: string, use
 const addNewMeasurement = () => {
   addNewMeasurementDialog.value = true
 }
+
+const generateReport = async () => {
+  if (experiment.value) {
+    $q.loading.show({
+      message: t('info.generation_in_progress'),
+    })
+    await projectStore.generateReport(
+      experiment.value?.name,
+      experiment.value.available_measurement_labels[0]
+    )
+    $q.loading.hide()
+  }
+}
+
+const downloadReport = async (path: string) => {
+  await projectStore.downloadPDFReport(path)
+}
 </script>
 
 <template>
@@ -345,9 +367,27 @@ const addNewMeasurement = () => {
             icon="o_layers"
             color="secondary"
             @click="addNewMeasurement" />
+          <q-btn
+            v-if="experiment.available_measurement_labels.length > 0"
+            class="q-ml-xs"
+            :label="t('action.generate_report')"
+            icon="o_layers"
+            color="secondary"
+            @click="generateReport" />
         </q-card-actions>
 
-        <q-card-section class="q-mt-lg" v-if="experiment.details.measurement_labels.length > 0">
+        <q-card-section v-if="projectStore.outputNotebooks.length > 0" class="q-ml-md">
+          <p class="text-caption subtitle">Available reports:</p>
+          <p
+            @click="downloadReport(notebook)"
+            class="text-blue-8 cursor-pointer"
+            :key="notebook"
+            v-for="notebook in projectStore.outputNotebooks">
+            {{ notebook.split('/').slice(-1)[0] }}
+          </p>
+        </q-card-section>
+
+        <q-card-section class="q-mt-md" v-if="experiment.details.measurement_labels.length > 0">
           <q-expansion-item
             v-model="expanded"
             class="shadow-1 overflow-hidden"
@@ -425,4 +465,7 @@ const addNewMeasurement = () => {
 
 .calculator_dialog
   min-width: 800px
+
+.subtitle
+  font-size: 1.1rem
 </style>

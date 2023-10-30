@@ -1,61 +1,38 @@
 import csv
-from datetime import datetime
-
-from uuid import uuid4
-import re
-
-
-from os import environ
-import os
 import json
+import mimetypes
+import os
+import re
+from datetime import datetime
+from os import environ
+from uuid import uuid4
+import subprocess
 
-from compoundlib.serializers import SimpleCompoundLibrarySerializer
+from django.conf import settings
+from django.contrib.auth import authenticate, login, logout
 from django.core.exceptions import ValidationError
+from django.core.handlers.wsgi import WSGIRequest
 from django.db import IntegrityError
 from django.db.models import Prefetch, Q
-from django.contrib.auth import authenticate, login, logout
-from django.http import Http404, JsonResponse
+from django.http import Http404
+from django.http import HttpResponse
+from django.utils.decorators import method_decorator
+from django.utils.translation import gettext as _
+from django.views.decorators.csrf import ensure_csrf_cookie, csrf_exempt
+from django.views.generic import View
 from rest_framework import viewsets, views, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
-from django.http import HttpResponse
-import mimetypes
-from django.utils.translation import gettext as _
-from django.core.handlers.wsgi import WSGIRequest
+from django.http import JsonResponse
+from IPython import get_ipython
+
+
+from compoundlib.serializers import SimpleCompoundLibrarySerializer
 from helpers.logger import logger
-
-
-from .models import (
-    Well,
-    Plate,
-    Measurement,
-    WellWithdrawal,
-    WellCompound,
-    PlateMapping,
-    Experiment,
-    BarcodeSpecification,
-    PlateDimension,
-    Project,
-    MeasurementFeature,
-    PlateDetail,
-    WellDetail,
-)
-from .serializers import (
-    PlateSerializer,
-    WellSerializer,
-    PlateMappingSerializer,
-    SimpleExperimentSerializer,
-    ExperimentSerializer,
-    ProjectSerializer,
-    SimplePlateTemplateSerializer,
-    ExperimentDetail,
-)
-
-from django.views.generic import View
-from django.conf import settings
-
-from django.utils.decorators import method_decorator
-from django.views.decorators.csrf import ensure_csrf_cookie
+from .models import (Well, Plate, Measurement, WellWithdrawal, WellCompound, PlateMapping, Experiment, BarcodeSpecification, PlateDimension, Project, MeasurementFeature,
+                     PlateDetail, WellDetail, )
+from .serializers import (PlateSerializer, WellSerializer, PlateMappingSerializer, SimpleExperimentSerializer, ExperimentSerializer, ProjectSerializer,
+                          SimplePlateTemplateSerializer, ExperimentDetail, )
 
 
 class CsrfCookieView(View):
@@ -71,9 +48,7 @@ class LoginView(View):
         password = data.get("password")
 
         if username is None or password is None:
-            return JsonResponse(
-                {"detail": _("Please provide username and password.")}, status=400
-            )
+            return JsonResponse({"detail": _("Please provide username and password.")}, status=400)
 
         user = authenticate(username=username, password=password)
 
@@ -107,9 +82,7 @@ class ProjectViewSet(viewsets.ModelViewSet):
     def get_queryset(self):
         experiments = Prefetch("experiments", queryset=Experiment.objects.all())
         plates = Prefetch("plates", queryset=Plate.objects.all().order_by("barcode"))
-        return (
-            Project.objects.all().prefetch_related(experiments).prefetch_related(plates)
-        )
+        return (Project.objects.all().prefetch_related(experiments).prefetch_related(plates))
 
 
 class PlateViewSet(viewsets.ModelViewSet):
@@ -121,32 +94,12 @@ class PlateViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         measurements = Prefetch("measurements", queryset=Measurement.objects.all())
-        withdrawals = Prefetch(
-            "withdrawals",
-            queryset=WellWithdrawal.objects.select_related("target_well").all(),
-        )
-        donors = Prefetch(
-            "donors",
-            queryset=WellWithdrawal.objects.select_related("well").all(),
-        )
-        well_compounds = Prefetch(
-            "well_compounds",
-            queryset=WellCompound.objects.select_related(
-                "compound", "compound__library"
-            ).all(),
-        )
-        wells = Prefetch(
-            "wells",
-            queryset=Well.objects.select_related("sample", "type")
-            .order_by("position")
-            .prefetch_related(well_compounds)
-            .prefetch_related(withdrawals)
-            .prefetch_related(donors)
-            .prefetch_related(measurements),
-        )
-        return Plate.objects.select_related(
-            "dimension", "experiment", "library", "template"
-        ).prefetch_related(wells)
+        withdrawals = Prefetch("withdrawals", queryset=WellWithdrawal.objects.select_related("target_well").all(), )
+        donors = Prefetch("donors", queryset=WellWithdrawal.objects.select_related("well").all(), )
+        well_compounds = Prefetch("well_compounds", queryset=WellCompound.objects.select_related("compound", "compound__library").all(), )
+        wells = Prefetch("wells", queryset=Well.objects.select_related("sample", "type").order_by("position").prefetch_related(well_compounds).prefetch_related(
+            withdrawals).prefetch_related(donors).prefetch_related(measurements), )
+        return Plate.objects.select_related("dimension", "experiment", "library", "template").prefetch_related(wells)
 
     @action(detail=False, methods=["get"])
     def barcodes(self, request):
@@ -161,26 +114,12 @@ class PlateViewSet(viewsets.ModelViewSet):
             predicate |= Q(experiment__isnull=(experiment.lower() != "true"))
         if template:
             predicate |= Q(template__isnull=(template.lower() != "true"))
-        return Response(
-            [
-                {
-                    "label": plate.barcode
-                    if plate.template is None
-                    else " / ".join(plate.barcode.replace("__TEMPL__", "").split("_")),
-                    "value": plate.id,
-                    "library": SimpleCompoundLibrarySerializer(plate.library).data
-                    if plate.library
-                    else None,
-                    "experiment": SimpleExperimentSerializer(plate.experiment).data
-                    if plate.experiment
-                    else None,
-                    "template": SimplePlateTemplateSerializer(plate.template).data
-                    if plate.template
-                    else None,
-                }
-                for plate in Plate.objects.filter(predicate)
-            ]
-        )
+        return Response([{
+            "label": plate.barcode if plate.template is None else " / ".join(plate.barcode.replace("__TEMPL__", "").split("_")), "value": plate.id,
+            "library": SimpleCompoundLibrarySerializer(plate.library).data if plate.library else None,
+            "experiment": SimpleExperimentSerializer(plate.experiment).data if plate.experiment else None,
+            "template": SimplePlateTemplateSerializer(plate.template).data if plate.template else None,
+        } for plate in Plate.objects.filter(predicate)])
 
     @action(detail=True, methods=["post"])
     def apply_template(self, request, pk=None):
@@ -196,7 +135,6 @@ class PlateViewSet(viewsets.ModelViewSet):
 
     @action(detail=True, methods=["post"])
     def add_new_measurement(self, request, pk=None):
-        import math  # don't delete this import, it is used in expression = request.data.get("expression").replace("log(", "math.log10(")
 
         used_labels = request.data.get("used_labels")
         new_label = request.data.get("new_label")
@@ -210,27 +148,13 @@ class PlateViewSet(viewsets.ModelViewSet):
             current_plate = Plate.objects.get(id=plate_id)
             current_plate_details = PlateDetail.objects.get(id=plate_id)
 
-            self.__add_new_measurement_to_plate(
-                current_plate,
-                current_plate_details,
-                used_labels,
-                new_label,
-                expression,
-                separate_time_series_points,
-            )
+            self.__add_new_measurement_to_plate(current_plate, current_plate_details, used_labels, new_label, expression, separate_time_series_points, )
         elif experiment_id:
             experiment = Experiment.objects.get(id=experiment_id)
             plates = Plate.objects.filter(experiment=experiment)
             for plate in plates:
                 current_plate_details = PlateDetail.objects.get(id=plate.id)
-                self.__add_new_measurement_to_plate(
-                    plate,
-                    current_plate_details,
-                    used_labels,
-                    new_label,
-                    expression,
-                    separate_time_series_points,
-                )
+                self.__add_new_measurement_to_plate(plate, current_plate_details, used_labels, new_label, expression, separate_time_series_points, )
         ExperimentDetail.refresh(concurrently=True)
         return Response(status.HTTP_200_OK)
 
@@ -238,117 +162,51 @@ class PlateViewSet(viewsets.ModelViewSet):
         return super().filter_queryset(queryset)
 
     def __evaluate_expression(self, new_expression):
-        import math  # don't delete this import, it is used in eval if expression contains 'log('
 
         try:
             result = eval(new_expression)
             if not result:
-                logger.warning(
-                    f"Result is None or 0. Setting result to 0. Formula: "
-                    f"{new_expression}"
-                )
+                logger.warning(f"Result is None or 0. Setting result to 0. Formula: "
+                               f"{new_expression}")
                 result = 0
         except ZeroDivisionError:
             logger.critical("Division by zero occurred. Setting result to 0")
             result = 0
         return result
 
-    def __add_new_measurement_to_plate(
-        self,
-        current_plate,
-        current_plate_details,
-        used_labels,
-        new_label,
-        expression,
-        separate_time_series_points,
-    ):
-        new_measurement_timestamp, time_series_support = self.__create_new_timestamp(
-            current_plate_details
-        )
+    def __add_new_measurement_to_plate(self, current_plate, current_plate_details, used_labels, new_label, expression, separate_time_series_points, ):
+        new_measurement_timestamp, time_series_support = self.__create_new_timestamp(current_plate_details)
         wells = current_plate.wells.all()
-        measurement_feature, _ = MeasurementFeature.objects.get_or_create(
-            abbrev=new_label
-        )
+        measurement_feature, _ = MeasurementFeature.objects.get_or_create(abbrev=new_label)
         if separate_time_series_points:
-            self.__separate_time_series_points(
-                used_labels,
-                new_label,
-                expression,
-                wells,
-                measurement_feature,
-                new_measurement_timestamp,
-            )
+            self.__separate_time_series_points(used_labels, new_label, expression, wells, measurement_feature, new_measurement_timestamp, )
         else:
-            self.__all_time_series_points(
-                used_labels,
-                new_label,
-                expression,
-                wells,
-                measurement_feature,
-                time_series_support,
-                new_measurement_timestamp,
-            )
+            self.__all_time_series_points(used_labels, new_label, expression, wells, measurement_feature, time_series_support, new_measurement_timestamp, )
 
         PlateDetail.refresh(concurrently=True)
         WellDetail.refresh(concurrently=True)
-        logger.info(
-            f"New measurement {new_label} added to plate {current_plate.id} with barcode {current_plate.barcode}"
-        )
+        logger.info(f"New measurement {new_label} added to plate {current_plate.id} with barcode {current_plate.barcode}")
 
-    def __separate_time_series_points(
-        self,
-        used_labels,
-        new_label,
-        expression,
-        wells,
-        measurement_feature,
-        new_measurement_timestamp,
-    ):
+    def __separate_time_series_points(self, used_labels, new_label, expression, wells, measurement_feature, new_measurement_timestamp, ):
         measurement_objects = []
         for item in used_labels:
             label, timestamp = item.split("-->")
             label = label.strip().lstrip()
             timestamp = timestamp.strip().lstrip()
-            measurement_objects.append(
-                {"label": label, "timestamp": timestamp, "combined_label": item}
-            )
+            measurement_objects.append({"label": label, "timestamp": timestamp, "combined_label": item})
 
         for well in wells:
             well_measurements = well.measurements.all()
             new_expression = expression
             for measurement in well_measurements:
                 for measurement_object in measurement_objects:
-                    if measurement.label == measurement_object[
-                        "label"
-                    ] and measurement_object["timestamp"].split("+")[
-                        0
-                    ] == measurement.measured_at.strftime(
-                        "%Y-%m-%dT%H:%M:%S%z"
-                    ):
-                        new_expression = new_expression.replace(
-                            measurement_object["combined_label"],
-                            str(measurement.value),
-                        )
+                    if measurement.label == measurement_object["label"] and measurement_object["timestamp"].split("+")[0] == measurement.measured_at.strftime(
+                            "%Y-%m-%dT%H:%M:%S%z"):
+                        new_expression = new_expression.replace(measurement_object["combined_label"], str(measurement.value), )
 
-            measurement, _ = self.__create_measurement(
-                well,
-                new_label,
-                new_expression,
-                new_measurement_timestamp,
-                "",
-                measurement_feature,
-            )
+            measurement, _ = self.__create_measurement(well, new_label, new_expression, new_measurement_timestamp, "", measurement_feature, )
 
-    def __all_time_series_points(
-        self,
-        used_labels,
-        new_label,
-        expression,
-        wells,
-        measurement_feature,
-        time_series_support,
-        new_measurement_timestamp,
-    ):
+    def __all_time_series_points(self, used_labels, new_label, expression, wells, measurement_feature, time_series_support, new_measurement_timestamp, ):
         for well in wells:
             well_measurements = well.measurements.all()
             if time_series_support:
@@ -357,44 +215,21 @@ class PlateViewSet(viewsets.ModelViewSet):
                     same_time_measurements_data = {}
                     for _measurement in well_measurements:
                         if _measurement.measured_at == current_measurement_time:
-                            same_time_measurements_data[
-                                _measurement.label
-                            ] = _measurement.value
+                            same_time_measurements_data[_measurement.label] = _measurement.value
 
                     new_expression = expression
-                    if (
-                        len(same_time_measurements_data) > 0
-                        and measurement.label in used_labels
-                    ):
+                    if (len(same_time_measurements_data) > 0 and measurement.label in used_labels):
                         for key in same_time_measurements_data.keys():
-                            new_expression = new_expression.replace(
-                                key, str(same_time_measurements_data[key])
-                            )
+                            new_expression = new_expression.replace(key, str(same_time_measurements_data[key]))
 
-                        self.__create_measurement(
-                            well,
-                            new_label,
-                            new_expression,
-                            current_measurement_time,
-                            "",
-                            measurement_feature,
-                        )
+                        self.__create_measurement(well, new_label, new_expression, current_measurement_time, "", measurement_feature, )
 
             else:
                 new_expression = expression
                 for measurement in well_measurements:
-                    new_expression = new_expression.replace(
-                        measurement.label, str(measurement.value)
-                    )
+                    new_expression = new_expression.replace(measurement.label, str(measurement.value))
 
-                self.__create_measurement(
-                    well,
-                    new_label,
-                    new_expression,
-                    new_measurement_timestamp,
-                    "new_value",
-                    measurement_feature,
-                )
+                self.__create_measurement(well, new_label, new_expression, new_measurement_timestamp, "new_value", measurement_feature, )
 
     def __create_new_timestamp(self, current_plate_details):
         now = datetime.now().replace(microsecond=0)
@@ -406,34 +241,22 @@ class PlateViewSet(viewsets.ModelViewSet):
             if len(current_plate_details.measurement_timestamps[measurement_label]) > 1:
                 time_series_support = True
             else:
-                new_measurement_timestamp = (
-                    current_plate_details.measurement_timestamps[measurement_label][0]
-                )
+                new_measurement_timestamp = (current_plate_details.measurement_timestamps[measurement_label][0])
         else:
-            measurement_label = list(
-                current_plate_details.measurement_timestamps.keys()
-            )[0]
+            measurement_label = list(current_plate_details.measurement_timestamps.keys())[0]
             if len(current_plate_details.measurement_timestamps[measurement_label]) > 1:
                 time_series_support = True
             else:
                 timestamps = []
                 for key in current_plate_details.measurement_timestamps.keys():
-                    timestamps.append(
-                        current_plate_details.measurement_timestamps[key][0]
-                    )
+                    timestamps.append(current_plate_details.measurement_timestamps[key][0])
                 new_measurement_timestamp = mean_time_point(timestamps)
         return new_measurement_timestamp, time_series_support
 
-    def __create_measurement(
-        self, well, label, new_expression, measured_at, identifier, feature
-    ):
+    def __create_measurement(self, well, label, new_expression, measured_at, identifier, feature):
         value = self.__evaluate_expression(new_expression)
-        measurement, _ = Measurement.objects.get_or_create(
-            well=well,
-            label=label,
-            measured_at=measured_at,
-            defaults={"value": value, "identifier": identifier, "feature": feature},
-        )
+        measurement, _ = Measurement.objects.get_or_create(well=well, label=label, measured_at=measured_at,
+                                                           defaults={"value": value, "identifier": identifier, "feature": feature}, )
         return measurement, _
 
 
@@ -473,37 +296,27 @@ class WellViewSet(viewsets.ModelViewSet):
             for donor in well.donors.all():
                 nodes.update({node_key(donor.well): {"name": node_name(donor.well)}})
                 edge_key = str(uuid4())
-                edges.update(
-                    {
-                        edge_key: {
-                            "source": node_key(donor.well),
-                            "target": node_key(well),
-                            "label": donor.amount,
-                        }
+                edges.update({
+                    edge_key: {
+                        "source": node_key(donor.well), "target": node_key(well), "label": donor.amount,
                     }
-                )
+                })
                 appendDonors(nodes, edges, donor.well)
 
         def appendWithdrawals(nodes, edges, well):
             for withdrawal in well.withdrawals.all():
                 if withdrawal.target_well:
-                    nodes.update(
-                        {
-                            node_key(withdrawal.target_well): {
-                                "name": node_name(withdrawal.target_well)
-                            }
+                    nodes.update({
+                        node_key(withdrawal.target_well): {
+                            "name": node_name(withdrawal.target_well)
                         }
-                    )
+                    })
                     edge_key = str(uuid4())
-                    edges.update(
-                        {
-                            edge_key: {
-                                "source": node_key(well),
-                                "target": node_key(withdrawal.target_well),
-                                "label": withdrawal.amount,
-                            }
+                    edges.update({
+                        edge_key: {
+                            "source": node_key(well), "target": node_key(withdrawal.target_well), "label": withdrawal.amount,
                         }
-                    )
+                    })
                     appendWithdrawals(nodes, edges, withdrawal.target_well)
 
         well = Well.objects.get(pk=pk)
@@ -543,12 +356,7 @@ class ExperimentViewSet(viewsets.ModelViewSet):
         """Saves a barcode specifications for an experiment"""
         data = request.data
         experiment = Experiment.objects.get(pk=data["experiment_id"])
-        barcode_specification = BarcodeSpecification(
-            prefix=data["prefix"],
-            number_of_plates=data["number_of_plates"],
-            sides=data["sides"],
-            experiment=experiment,
-        )
+        barcode_specification = BarcodeSpecification(prefix=data["prefix"], number_of_plates=data["number_of_plates"], sides=data["sides"], experiment=experiment, )
         barcode_specification.save()
         return Response(status=status.HTTP_200_OK)
 
@@ -565,9 +373,7 @@ class ExperimentViewSet(viewsets.ModelViewSet):
                 plate.apply_template(template_plate)
             return Response(status.HTTP_200_OK)
         else:
-            raise Http404(
-                _("Parameters 'template' and 'experiment_id' are " "required.")
-            )
+            raise Http404(_("Parameters 'template' and 'experiment_id' are " "required."))
 
     @action(detail=False, methods=["post"])
     def bulk_add_plates(self, request):
@@ -576,57 +382,32 @@ class ExperimentViewSet(viewsets.ModelViewSet):
             barcode_specification_id = int(request.data["barcode_specification_id"])
             plate_dimension_id = int(request.data["plate_dimension_id"])
             experiment = Experiment.objects.get(pk=experiment_id)
-            barcode_specification = BarcodeSpecification.objects.get(
-                pk=barcode_specification_id
-            )
+            barcode_specification = BarcodeSpecification.objects.get(pk=barcode_specification_id)
             plate_dimension = PlateDimension.objects.get(pk=plate_dimension_id)
             number_of_plates = barcode_specification.number_of_plates
         except Experiment.DoesNotExist:
-            return Response(
-                {"error": _("Experiment not found")},
-                status=status.HTTP_404_NOT_FOUND,
-            )
+            return Response({"error": _("Experiment not found")}, status=status.HTTP_404_NOT_FOUND, )
         except BarcodeSpecification.DoesNotExist:
-            return Response(
-                {"error": _("Barcode specification not found")},
-                status=status.HTTP_404_NOT_FOUND,
-            )
+            return Response({"error": _("Barcode specification not found")}, status=status.HTTP_404_NOT_FOUND, )
         except PlateDimension.DoesNotExist:
-            return Response(
-                {"error": _("Plate dimension not found")},
-                status=status.HTTP_404_NOT_FOUND,
-            )
+            return Response({"error": _("Plate dimension not found")}, status=status.HTTP_404_NOT_FOUND, )
 
         plates = []
         for i in range(number_of_plates):
-            plate = Plate(
-                barcode=barcode_specification.get_barcode_by_number(i + 1),
-                experiment=experiment,
-                dimension=plate_dimension,
-            )
+            plate = Plate(barcode=barcode_specification.get_barcode_by_number(i + 1), experiment=experiment, dimension=plate_dimension, )
             plates.append(plate)
 
         try:
             Plate.objects.bulk_create(plates)
         except IntegrityError:
-            return Response(
-                {
-                    "error": _(
-                        "Could not save plates to database. Probably you have already added the plates "
-                        "with these barcode prefix to the current experiment"
-                    )
-                },
-                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            )
+            return Response({
+                "error": _("Could not save plates to database. Probably you have already added the plates "
+                           "with these barcode prefix to the current experiment")
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR, )
         except ValidationError:
-            return Response(
-                {"error": _("Invalid plate data")},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
+            return Response({"error": _("Invalid plate data")}, status=status.HTTP_400_BAD_REQUEST, )
 
-        return Response(
-            {"success": _("Plates added successfully")}, status=status.HTTP_200_OK
-        )
+        return Response({"success": _("Plates added successfully")}, status=status.HTTP_200_OK)
 
 
 class VersionView(views.APIView):
@@ -653,3 +434,77 @@ class DocsView(View):
         content = re.sub(r"[^\x00-\x7F]+", "", content)
         mime_type = mimetypes.guess_type(file_path)
         return HttpResponse(content, content_type=mime_type[0])
+
+
+
+
+@csrf_exempt
+def generate_pdf_report(request):
+    try:
+        if request.method == "POST":
+            data = json.loads(request.body.decode('utf-8'))
+            notebook_path = data.get('notebook_path')
+            experiment = data.get('experiment')
+            label = data.get('label')
+            if not notebook_path:
+                notebook_path = '/notebooks/input/general.ipynb'
+
+            cmd = [
+                'python',
+                '/root/.ipython/profile_default/startup/report_generator.py',
+                '--notebook_path', notebook_path,
+                '--experiment', experiment,
+                '--label', label
+            ]
+            subprocess.run(cmd, check=True)
+            return JsonResponse({"status": "Report generated successfully"})
+        else:
+            return JsonResponse({"error": "Invalid request method"}, status=400)
+    except Exception as e:
+        print('EXCEPTION')
+        print(e)
+        return JsonResponse({"error": str(e)}, status=500)
+
+def list_output_files(request):
+    try:
+        if request.method == "POST":
+            data = json.loads(request.body.decode('utf-8'))
+            experiment = data.get('experiment')
+            notebooks_dir = f"/notebooks/output/{experiment}"
+            notebooks = []
+            print(notebooks_dir, experiment)
+            if not os.path.exists(notebooks_dir):
+                return JsonResponse({"notebooks": notebooks})
+            for file in os.listdir(notebooks_dir):
+                if file.endswith('.pdf'):
+                    full_path = os.path.join(notebooks_dir, file)
+                    notebooks.append(full_path)
+            return JsonResponse({"notebooks": notebooks})
+        else:
+            return JsonResponse({"error": "Invalid request method"}, status=400)
+    except Exception as e:
+        print('EXCEPTION')
+        print(e)
+        return JsonResponse({"error": str(e)}, status=500)
+
+def download_pdf_report(request):
+    try:
+        if request.method == "POST":
+            data = json.loads(request.body.decode('utf-8'))
+            path = data.get('path')
+            print('_________________________ path______________________', path)
+            print('exists: ', os.path.exists(path))
+            if not path:
+                return JsonResponse({"error": "Path not provided"}, status=400)
+            if not os.path.exists(path):
+                return JsonResponse({"error": "File not found"}, status=404)
+            with open(path, 'rb') as f:
+                response = HttpResponse(f, content_type='application/pdf')
+                response['Content-Disposition'] = f'attachment; filename="{os.path.basename(path)}"'
+                return response
+        else:
+            return JsonResponse({"error": "Invalid request method"}, status=400)
+    except Exception as e:
+        print('EXCEPTION')
+        print(e)
+        return JsonResponse({"error": str(e)}, status=500)

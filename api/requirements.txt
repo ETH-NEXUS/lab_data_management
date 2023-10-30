@@ -28,5 +28,6 @@ requests==2.31.0
 scipy==1.10.1
 sh==2.0.4
 colort==1.0.1
+papermill==2.4.0
 
 

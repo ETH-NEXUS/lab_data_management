@@ -318,3 +318,6 @@ Pipfile
 .RData
 conf/jupyter/migrated
 /conf/jupyter/lab
+api/notebooks
+
+/api/notebooks

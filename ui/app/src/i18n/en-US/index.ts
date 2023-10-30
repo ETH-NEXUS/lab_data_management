@@ -185,6 +185,7 @@ export default {
     upload_file: 'Upload file to the directory',
     view_file_content: 'View file content',
     delete_well: 'Delete well',
+    generate_report: 'Generate report',
   },
   error: {
     select_plate_dimension: 'Please select a plate dimension.',
@@ -200,6 +201,7 @@ export default {
     applying_in_progress: 'Applying template in progress. Hang on...',
     calculation_in_progress: 'Calculation in progress. Hang on...',
     running_in_progress: 'Running in progress. Hang on...',
+    generation_in_progress: 'Generation in progress. Hang on...',
   },
   management: {
     selected_directories: 'Selected directories/files',
