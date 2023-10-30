@@ -25,6 +25,9 @@ from rest_framework.decorators import action
 from rest_framework.response import Response
 from django.http import JsonResponse
 from IPython import get_ipython
+from rest_framework.decorators import api_view
+from rest_framework.response import Response
+from rest_framework import status
 
 
 from compoundlib.serializers import SimpleCompoundLibrarySerializer
@@ -465,36 +468,27 @@ def generate_pdf_report(request):
         print(e)
         return JsonResponse({"error": str(e)}, status=500)
 
-@csrf_exempt
+@api_view(['POST'])
 def list_output_files(request):
     try:
-        if request.method == "POST":
-            data = json.loads(request.body.decode('utf-8'))
-            experiment = data.get('experiment')
-            notebooks_dir = f"/notebooks/output/{experiment}"
-            notebooks = []
-            print(notebooks_dir, experiment)
-            if not os.path.exists(notebooks_dir):
-                return JsonResponse({"notebooks": notebooks})
+        experiment = request.data.get('experiment')
+        notebooks_dir = f"/notebooks/output/{experiment}"
+        notebooks = []
+        if os.path.exists(notebooks_dir):
             for file in os.listdir(notebooks_dir):
                 if file.endswith('.pdf'):
                     full_path = os.path.join(notebooks_dir, file)
                     notebooks.append(full_path)
-            return JsonResponse({"notebooks": notebooks})
-        else:
-            return JsonResponse({"error": "Invalid request method"}, status=400)
+        return Response({"notebooks": notebooks}, status=status.HTTP_200_OK)
     except Exception as e:
-        print('EXCEPTION')
-        print(e)
-        return JsonResponse({"error": str(e)}, status=500)
+        return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 def download_pdf_report(request):
     try:
         if request.method == "POST":
             data = json.loads(request.body.decode('utf-8'))
             path = data.get('path')
-            print('_________________________ path______________________', path)
-            print('exists: ', os.path.exists(path))
+
             if not path:
                 return JsonResponse({"error": "Path not provided"}, status=400)
             if not os.path.exists(path):
