@@ -468,6 +468,7 @@ def generate_pdf_report(request):
         print(e)
         return JsonResponse({"error": str(e)}, status=500)
 
+@csrf_exempt
 @api_view(['POST'])
 def list_output_files(request):
     try:
@@ -481,8 +482,10 @@ def list_output_files(request):
                     notebooks.append(full_path)
         return Response({"notebooks": notebooks}, status=status.HTTP_200_OK)
     except Exception as e:
+        print(e)
         return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
+@csrf_exempt
 def download_pdf_report(request):
     try:
         if request.method == "POST":
