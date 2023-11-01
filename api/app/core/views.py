@@ -687,14 +687,19 @@ def generate_pdf_report(request):
 
 @csrf_exempt
 @api_view(["POST"])
-def list_output_files(request):
+def list_files(request):
     try:
         experiment = request.data.get("experiment")
-        notebooks_dir = f"/notebooks/output/{experiment}"
+        notebooks_dir = request.data.get("notebooks_dir")
+        file_format = request.data.get("format")
+        if not notebooks_dir:
+            notebooks_dir = f"/notebooks/output/{experiment}"
+        if not file_format:
+            file_format = ".pdf"
         notebooks = []
         if os.path.exists(notebooks_dir):
             for file in os.listdir(notebooks_dir):
-                if file.endswith(".pdf"):
+                if file.endswith(file_format):
                     full_path = os.path.join(notebooks_dir, file)
                     notebooks.append(full_path)
         return Response({"notebooks": notebooks}, status=status.HTTP_200_OK)

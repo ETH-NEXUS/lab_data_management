@@ -17,6 +17,7 @@ export const useProjectStore = defineStore('project', () => {
   const plateDimensions = ref<Array<PlateDimension>>([])
   const experiments = ref<Array<Experiment>>([])
   const outputNotebooks = ref<Array<string>>([])
+  const inputNotebookPath = ref<string>('')
 
   const initialize = async () => {
     const resp_p = await api.get('/api/projects/')
@@ -155,13 +156,14 @@ export const useProjectStore = defineStore('project', () => {
     const res = await api.post('/api/generate_pdf_report/', {
       label: label,
       experiment: experiment,
+      notebook_path: inputNotebookPath.value,
     })
     await getNotebookOutputFiles(experiment)
     return res.data
   }
 
   const getNotebookOutputFiles = async (experiment: string) => {
-    const res = await api.post('/api/list_notebook_output_files/', {experiment: experiment})
+    const res = await api.post('/api/list_files/', {experiment: experiment})
     console.log('notebooks', res)
     outputNotebooks.value = res.data.notebooks
   }
@@ -196,5 +198,6 @@ export const useProjectStore = defineStore('project', () => {
     outputNotebooks,
     getNotebookOutputFiles,
     downloadPDFReport,
+    inputNotebookPath,
   }
 })

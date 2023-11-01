@@ -25,6 +25,7 @@ import ExperimentHeatmap from 'components/experiment/ExperimentHeatmap.vue'
 import {storeToRefs} from 'pinia'
 import {useSettingsStore} from 'stores/settings'
 import {useManagementStore} from 'stores/management'
+import GenerateReportDialog from 'components/experiment/GenerateReportDialog.vue'
 
 const route = useRoute()
 const projectStore = useProjectStore()
@@ -39,6 +40,7 @@ const experiment = ref<Experiment | null>(null)
 const generateBarcodeDialogToggle = ref<boolean>(false)
 const addNewMeasurementDialog = ref<boolean>(false)
 const expanded = ref<boolean>(false)
+const generateReportDialog = ref<boolean>(false)
 
 const applyTemplateDialog = ref<boolean>(false)
 const selectedTemplatePlateId = ref<number>()
@@ -454,6 +456,11 @@ const downloadReport = async (path: string) => {
             @calculate="calculateNewMeasurement" />
         </q-card-section>
       </q-card>
+    </q-dialog>
+    <q-dialog :model="generateReportDialog">
+      <GenerateReportDialog
+        :label="experiment.available_measurement_labels[0]"
+        :experiment-name="experiment.name" />
     </q-dialog>
   </q-page>
 </template>

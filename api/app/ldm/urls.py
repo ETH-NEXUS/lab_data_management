@@ -22,7 +22,10 @@ from core.views import (
     DocsView,
     CsrfCookieView,
     LoginView,
-    LogoutView,generate_pdf_report, list_output_files, download_pdf_report
+    LogoutView,
+    generate_pdf_report,
+    list_files,
+    download_pdf_report,
 )
 from django.conf import settings
 from jupyter.views import JupyterProxyView
@@ -35,7 +38,6 @@ from management.views import (
     download_file,
     upload_file,
     get_file_content,
-
 )
 
 urlpatterns = [
@@ -62,9 +64,8 @@ urlpatterns = [
     path("api/upload_file/", upload_file, name="upload_file"),
     path("api/get_file_content/", get_file_content, name="get_file_content"),
     path("api/generate_pdf_report/", generate_pdf_report, name="generate_pdf_report"),
-    path("api/list_notebook_output_files/", list_output_files, name="list_notebook_output_files"),
+    path("api/list_files/", list_files, name="list_files"),
     path("api/download_pdf_report/", download_pdf_report, name="download_pdf_report"),
-
 ]
 
 if not settings.DISABLE_BROWSABLE_API and not settings.DISABLE_AUTH:
