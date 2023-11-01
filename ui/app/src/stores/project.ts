@@ -161,7 +161,7 @@ export const useProjectStore = defineStore('project', () => {
   }
 
   const getNotebookOutputFiles = async (experiment: string) => {
-    const res = await api.post('api/list_notebook_output_files/', {experiment: experiment})
+    const res = await api.post('/api/list_notebook_output_files/', {experiment: experiment})
     console.log('notebooks', res)
     outputNotebooks.value = res.data.notebooks
   }
