@@ -61,7 +61,9 @@ INSTALLED_APPS = [
     "compoundlib",
     "platetemplate",
     "harvest",
+    "dbbackup",
 ]
+
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
@@ -348,3 +350,13 @@ JUPYTER_URL = environ.get("JUPYTER_URL", "http://api:8888")
 ###
 HARVEST_ACCESS_TOKEN = environ.get("HARVEST_ACCESS_TOKEN")
 HARVEST_ACCOUNT_ID = environ.get("HARVEST_ACCOUNT_ID")
+
+
+###
+# DB Backup
+###
+
+DBBACKUP_STORAGE = "django.core.files.storage.FileSystemStorage"
+DBBACKUP_STORAGE_OPTIONS = {
+    "location": environ.get("DBBACKUP_STORAGE_LOCATION", "/vol/backups/")
+}

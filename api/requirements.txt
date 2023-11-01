@@ -4,6 +4,7 @@ django-cors-headers==4.1.0
 django-filter==23.2
 django-auth-ldap==4.3.0
 django-revproxy @ git+https://github.com/jazzband/django-revproxy.git@master
+django-dbbackup==4.0.2
 djangorestframework==3.14.0
 djangorestframework-simplejwt==5.2.2
 djangorestframework-csv==2.1.1

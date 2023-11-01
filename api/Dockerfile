@@ -18,6 +18,13 @@ RUN mkdir -p /vol/backups
 # Update the package cache
 RUN apt-get update --fix-missing
 
+# Install PostgreSQL client
+RUN apt-get install -y postgresql-client
+
+# Cleanup
+RUN apt-get clean && rm -rf /var/lib/apt/lists/*
+
+
 # Install Node.js, npm and Yarn
 # According to this guide: 
 # https://github.com/nodesource/distributions
@@ -154,7 +161,7 @@ COPY ./requirements.txt /
 RUN pip install -r /requirements.txt
 
 # Install R dependecies
-RUN if [ "${ENABLE_R}" = "True" ]; then R -e 'install.packages(c("ggplot2", "DT", "bioassays"), dependencies = TRUE, INSTALL_opts = c("--no-lock"))'; fi
+RUN if [ "${ENABLE_R}" = "True" ]; then R -e 'install.packages(c("ggplot2", "DT", "bioassays", "repr"), dependencies = TRUE, INSTALL_opts = c("--no-lock"))'; fi
 RUN if [ "${ENABLE_R}" = "True" ]; then R -e 'install.packages(c("car", "ggpubr", "captioner", "lawstat"), dependencies = TRUE, INSTALL_opts = c("--no-lock"))'; fi
 
 # Set working directory
