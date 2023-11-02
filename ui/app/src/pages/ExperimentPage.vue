@@ -24,12 +24,10 @@ import MeasurementCalculator from 'components/plate/MeasurementCalculator.vue'
 import ExperimentHeatmap from 'components/experiment/ExperimentHeatmap.vue'
 import {storeToRefs} from 'pinia'
 import {useSettingsStore} from 'stores/settings'
-import {useManagementStore} from 'stores/management'
 import GenerateReportDialog from 'components/experiment/GenerateReportDialog.vue'
 
 const route = useRoute()
 const projectStore = useProjectStore()
-const managementStore = useManagementStore()
 
 const $q = useQuasar()
 const options = ref<DimensionsOption[]>([])
@@ -214,16 +212,7 @@ const addNewMeasurement = () => {
 }
 
 const generateReport = async () => {
-  if (experiment.value) {
-    $q.loading.show({
-      message: t('info.generation_in_progress'),
-    })
-    await projectStore.generateReport(
-      experiment.value?.name,
-      experiment.value.available_measurement_labels[0]
-    )
-    $q.loading.hide()
-  }
+  generateReportDialog.value = true
 }
 
 const downloadReport = async (path: string) => {
@@ -377,7 +366,7 @@ const downloadReport = async (path: string) => {
             color="secondary"
             @click="generateReport" />
         </q-card-actions>
-
+        <!--  @click="generateReport" />-->
         <q-card-section v-if="projectStore.outputNotebooks.length > 0" class="q-ml-md">
           <p class="text-caption subtitle">Available reports:</p>
           <p
@@ -457,7 +446,7 @@ const downloadReport = async (path: string) => {
         </q-card-section>
       </q-card>
     </q-dialog>
-    <q-dialog :model="generateReportDialog">
+    <q-dialog v-model="generateReportDialog">
       <GenerateReportDialog
         :label="experiment.available_measurement_labels[0]"
         :experiment-name="experiment.name" />

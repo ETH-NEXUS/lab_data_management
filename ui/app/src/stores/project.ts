@@ -17,7 +17,7 @@ export const useProjectStore = defineStore('project', () => {
   const plateDimensions = ref<Array<PlateDimension>>([])
   const experiments = ref<Array<Experiment>>([])
   const outputNotebooks = ref<Array<string>>([])
-  const inputNotebookPath = ref<string>('')
+  const inputNotebookPath = ref<string | null>(null)
 
   const initialize = async () => {
     const resp_p = await api.get('/api/projects/')

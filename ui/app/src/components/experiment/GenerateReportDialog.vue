@@ -24,17 +24,19 @@ const notebookOptions = ref<string[]>([])
 const projectStore = useProjectStore()
 const $q = useQuasar()
 const {t} = useI18n()
+const inputNotebookPath = ref<string | null>(null)
 
 const getInputNotebookOptions = async () => {
   const response = await api.post('/api/list_files/', {
     notebooks_dir: '/notebooks/input',
     file_format: '.ipynb',
   })
+  console.log('input', response.data)
   notebookOptions.value = response.data.notebooks
 }
 
 const submit = async () => {
-  if (!projectStore.inputNotebookPath) {
+  if (!inputNotebookPath.value) {
     $q.notify({
       message: 'Please select a notebook template  to generate a report from.',
       type: 'negative',
@@ -50,9 +52,17 @@ const submit = async () => {
 </script>
 
 <template>
-  <q-card>
+  <q-card class="card">
     <q-card-section>
-      <q-select :model="projectStore.inputNotebookPath" :options="notebookOptions"></q-select>
+      <q-select v-model="inputNotebookPath" :options="notebookOptions" label="Notebook Template">
+        <template v-slot:option="scope">
+          <q-item v-bind="scope.itemProps" v-on="scope.itemEvents">
+            <q-item-section>
+              {{ scope.opt.split('/').pop() }}
+            </q-item-section>
+          </q-item>
+        </template>
+      </q-select>
     </q-card-section>
     <q-card-actions align="right">
       <q-btn flat label="Cancel" color="primary" v-close-popup />
@@ -61,4 +71,11 @@ const submit = async () => {
   </q-card>
 </template>
 
-<style scoped lang="sass"></style>
+<style scoped lang="sass">
+.card
+  width: 400px
+  max-width: 90vw
+  min-height: 150px
+  max-height: 90vh
+  overflow: auto
+</style>

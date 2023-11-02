@@ -688,10 +688,12 @@ def generate_pdf_report(request):
 @csrf_exempt
 @api_view(["POST"])
 def list_files(request):
+    print("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
     try:
         experiment = request.data.get("experiment")
         notebooks_dir = request.data.get("notebooks_dir")
-        file_format = request.data.get("format")
+        file_format = request.data.get("file_format")
+        print(experiment, notebooks_dir, file_format)
         if not notebooks_dir:
             notebooks_dir = f"/notebooks/output/{experiment}"
         if not file_format:
