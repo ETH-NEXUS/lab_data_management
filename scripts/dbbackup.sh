@@ -9,5 +9,5 @@ function log {
 }
 
 log "Starting DB Backup..."
-cd "${DIR}/.." && ./manage.py dbbackup
+cd "${DIR}/.." && docker-compose exec api /bin/bash -c './manage.py dbbackup' 2>&1
 log "DONE DB Backup."
