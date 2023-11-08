@@ -378,7 +378,9 @@ const downloadReport = async (path: string) => {
           </p>
         </q-card-section>
 
-        <q-card-section class="q-mt-md" v-if="experiment.details.measurement_labels.length > 0">
+        <q-card-section
+          class="q-mt-md"
+          v-if="experiment.details.measurement_labels && experiment.details.measurement_labels.length > 0">
           <q-expansion-item
             v-model="expanded"
             class="shadow-1 overflow-hidden"
