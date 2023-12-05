@@ -161,7 +161,7 @@ COPY ./requirements.txt /
 RUN pip install -r /requirements.txt
 
 # Install R dependecies
-RUN if [ "${ENABLE_R}" = "True" ]; then R -e 'install.packages(c("ggplot2", "DT", "bioassays", "repr"), dependencies = TRUE, INSTALL_opts = c("--no-lock"))'; fi
+RUN if [ "${ENABLE_R}" = "True" ]; then R -e 'install.packages(c("ggplot2", "DT", "bioassays", "repr", "tidyverse"), dependencies = TRUE, INSTALL_opts = c("--no-lock"))'; fi
 RUN if [ "${ENABLE_R}" = "True" ]; then R -e 'install.packages(c("car", "ggpubr", "captioner", "lawstat"), dependencies = TRUE, INSTALL_opts = c("--no-lock"))'; fi
 
 # Set working directory
