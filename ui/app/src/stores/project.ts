@@ -189,7 +189,6 @@ export const useProjectStore = defineStore('project', () => {
     updateBarcode,
     deleteBarcode,
     plateDimensions,
-    addPlatesToExperiment,
     experiments,
     updateProject,
     addNewMeasurement,

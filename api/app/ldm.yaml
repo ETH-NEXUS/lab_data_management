@@ -19,3 +19,8 @@ importer:
   #     columns:
   #       A: B
   #       C: D
+
+  microscope:
+    default:
+      file_blob: "**/*.xlsx"
+

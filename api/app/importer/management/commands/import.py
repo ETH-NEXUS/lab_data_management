@@ -20,7 +20,6 @@ from rdkit.Chem.rdchem import Mol
 from rdkit import Chem
 
 
-
 def full_strip(s: str):
     return s.strip().lstrip()
 
@@ -28,7 +27,9 @@ def full_strip(s: str):
 class Command(BaseCommand):
     def add_arguments(self, parser):
         parser.add_argument(
-            "what", type=str, help="What to import: sdf | template | library_plate"
+            "what",
+            type=str,
+            help="What to import: sdf | template | library_plate",
         )
         parser.add_argument(
             "--input_file",
@@ -322,9 +323,11 @@ class Command(BaseCommand):
                     else:
                         current_matrix.append(row)
                 return matrix1, matrix2
+
     """
     This function imports both library plates and project control  plates.
     """
+
     def library_plate(
         self,
         input_file: str,
@@ -384,7 +387,7 @@ class Command(BaseCommand):
                     "success",
                     room_name,
                 )
-            print('@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@')
+
             with tqdm(
                 desc="Processing wells",
                 unit="wells",
@@ -409,7 +412,7 @@ class Command(BaseCommand):
                         WellCompound.objects.create(well=well, compound=compound)
                         well.save()
                         pbar.update(1)
-                print('**********************************')
+                print("**********************************")
             message(f"Finished processing plate {plate_barcode}.", "success", room_name)
 
     def template(

@@ -2,7 +2,7 @@ import traceback
 from os.path import join
 import yaml
 from django.core.management.base import BaseCommand
-from importer.mappers import EchoMapper, M1000Mapper
+from importer.mappers import EchoMapper, M1000Mapper, MicroscopeMapper
 from core.models import Experiment
 from importer.helper import message
 from core.config import Config
@@ -18,7 +18,7 @@ class Command(BaseCommand):
         parser.add_argument(
             "machine",
             type=str,
-            choices=("echo", "m1000"),
+            choices=("echo", "m1000", "microscope"),
             help="Machine to map from",
         )
         parser.add_argument(
@@ -119,7 +119,6 @@ class Command(BaseCommand):
             try:
                 mapper = EchoMapper()
                 mapper.run(
-                    # join(path, "**", "*[_-][Tt]ransfer[_-]*.csv"),
                     join(path, Config.current.importer.echo.default.file_blob),
                     headers=headers,
                     debug=options.get("debug", False),
@@ -149,6 +148,27 @@ class Command(BaseCommand):
                     debug=options.get("debug", False),
                     evaluation=evaluation,
                     measurement_name=measurement_name,
+                    create_missing_plates=options.get("create_missing_plates", False),
+                    experiment_name=options.get("experiment_name", None),
+                    room_name=options.get("room_name", None),
+                )
+
+            except Exception as ex:
+                message(f"Error: {ex}", "error", options.get("room_name", None))
+                traceback.print_exc()
+        elif options.get("machine") == "microscope":
+            try:
+                if options.get("create_missing_plates", False):
+                    if not options.get("experiment_name", None):
+                        die(
+                            "No experiment name provided. If you would like to add missing "
+                            "plates, you need to provide the experiment name."
+                        )
+                print(options.get("machine"))
+                mapper = MicroscopeMapper()
+                mapper.run(
+                    join(path, Config.current.importer.microscope.default.file_blob),
+                    debug=options.get("debug", False),
                     create_missing_plates=options.get("create_missing_plates", False),
                     experiment_name=options.get("experiment_name", None),
                     room_name=options.get("room_name", None),

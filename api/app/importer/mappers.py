@@ -32,6 +32,7 @@ from django.core.files import File
 from django.utils import timezone
 from .helper import row_col_from_name
 from helpers.logger import logger
+from openpyxl import load_workbook
 
 
 def convert_sci_to_float(sci_str):
@@ -50,6 +51,8 @@ class BaseMapper:
 
     def run(self, _glob, **kwargs):
         """Run the mapper"""
+        print(_glob)
+        print("getting files ", self.get_files(_glob))
         for filename in self.get_files(_glob):
             message(
                 f"Processing file {filename}...", "info", kwargs.get("room_name", None)
@@ -573,3 +576,33 @@ class M1000Mapper(BaseMapper):
                 measurement_file=File(file, os.path.basename(file.name)),
             )
             return assignment
+
+
+class MicroscopeMapper(BaseMapper):
+    # file name : 231121-083504-231115AK_1.xlsx
+    RE_FILENAME = r"(?P<date>[0-9]+)-(?P<time>[0-9]+)-(?P<barcode>[^\.]+)\.xlsx"
+
+    def parse(self, file: TextIOWrapper, **kwargs):
+        wb = load_workbook(file)
+        sheet = wb.active
+        metadata = self.__parse_metadata(sheet)
+
+    def map(self, data: list[dict], **kwargs) -> None:
+        print("mapping")
+        pass
+
+    def __parse_metadata(self, sheet):
+        metadata = {}
+        current_label = None
+        for row in sheet.iter_rows(min_row=1, max_row=38):
+            for cell in row:
+                if ":" in cell:
+                    current_label = cell.replace(":", "").strip().lstrip()
+                    metadata[current_label] = []
+                elif current_label:
+                    metadata[current_label].append(cell)
+                else:
+                    generic_label = f"Detail_{len(metadata) + 1}"
+                    metadata[generic_label] = []
+                    current_label = generic_label
+        print(metadata)
