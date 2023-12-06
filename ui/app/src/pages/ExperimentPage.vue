@@ -31,7 +31,6 @@ const projectStore = useProjectStore()
 
 const $q = useQuasar()
 const options = ref<DimensionsOption[]>([])
-const dimension = ref<number | null>(null)
 const loading = ref<boolean>(true)
 const project = ref<Project | null>(null)
 const experiment = ref<Experiment | null>(null)
@@ -40,7 +39,6 @@ const addNewMeasurementDialog = ref<boolean>(false)
 const expanded = ref<boolean>(false)
 const generateReportDialog = ref<boolean>(false)
 
-const applyTemplateDialog = ref<boolean>(false)
 const selectedTemplatePlateId = ref<number>()
 const templatePlateBarcodeOptions = ref<Array<PlateLabelValue>>([])
 const filteredTemplatePlateOptions = ref<Array<PlateLabelValue>>([])
@@ -67,8 +65,6 @@ const initialize = async () => {
 }
 
 onMounted(async () => {
-  const resp_template_plates = await api.get('/api/plates/barcodes/?template=true')
-  templatePlateBarcodeOptions.value = resp_template_plates.data
   await initialize()
 })
 
@@ -84,40 +80,6 @@ const deleteBarcode = async (id: number) => {
   try {
     await projectStore.deleteBarcode(id)
     await initialize()
-  } catch (err) {
-    handleError(err)
-  }
-}
-
-const openEditField = (index: number) => {
-  const id = `edit-${index}`
-  const editForm = document.getElementById(id) as HTMLInputElement
-  if (editForm) {
-    if (editForm) {
-      editForm.classList.toggle('hidden')
-    }
-  }
-}
-
-// const openDimensionsOptions = (index: number) => {
-//   const id = `dimensions-${index}`
-//   const dimensionsForm = document.getElementById(id) as HTMLInputElement
-//   if (dimensionsForm) {
-//     dimensionsForm.classList.toggle('hidden')
-//   }
-// }
-
-const addPlatesToExperiment = async (experimentId: number, barcodeSpecificationsId: number) => {
-  try {
-    if (dimension.value) {
-      await projectStore.addPlatesToExperiment(experimentId, barcodeSpecificationsId, dimension.value)
-      await initialize()
-    } else {
-      $q.notify({
-        type: 'negative',
-        message: t('message.select_dimension'),
-      })
-    }
   } catch (err) {
     handleError(err)
   }
@@ -163,38 +125,6 @@ const editExperiment = async (field: string) => {
         }
       }
     })
-  }
-}
-
-const filterTemplatePlates = (query: string, update: (f: () => void) => void) => {
-  update(() => {
-    if (query.length > 1) {
-      filteredTemplatePlateOptions.value = templatePlateBarcodeOptions.value.filter(m =>
-        m.label.includes(query)
-      )
-    }
-    filteredTemplatePlateOptions.value = templatePlateBarcodeOptions.value.sort((a, b) =>
-      a.label.localeCompare(b.label)
-    )
-  })
-}
-
-const applyTemplate = async () => {
-  try {
-    if (experiment.value) {
-      $q.loading.show({
-        message: t('info.applying_in_progress'),
-      })
-      await api.post('/api/experiments/bulk_apply_template/', {
-        template: selectedTemplatePlateId.value,
-        experiment_id: experiment.value.id,
-      })
-      $q.loading.hide()
-    }
-  } catch (err) {
-    handleError(err)
-  } finally {
-    loading.value = false
   }
 }
 
@@ -253,40 +183,11 @@ const downloadReport = async (path: string) => {
 
           <div class="text-body1 q-pl-md">{{ t('experiment.barcode_sets') }}:</div>
 
-          <div class="text-body1 text-grey-8" v-if="experiment.barcode_specifications">
+          <div class="text-body1 text-grey-8">
             <q-list>
-              <div v-for="(s, i) in experiment.barcode_specifications" :key="`${s.prefix}-${s.id}`">
+              <div v-for="(s, i) in experiment.barcode_specifications" :key="`${s.prefix}-${s.id}-${i}`">
                 <q-item>
                   <q-item-section>
-                    <!--                    <q-item-label class="text-body1 q-mt-lg">Barcode set #{{ i + 1 }}</q-item-label>-->
-                    <!--                    <div-->
-                    <!--                      class="text-primary cursor-pointer q-mt-lg q-mb-sm"-->
-                    <!--                      @click="openDimensionsOptions(i)">-->
-                    <!--                      >> {{ t('experiment.add_plates') }}-->
-                    <!--                    </div>-->
-                    {{}}
-                    <div :id="`dimensions-${i}`" :class="`hidden q-my-lg`">
-                      <div
-                        v-if="
-                          !(
-                            experiment.plates.length > 0 &&
-                            experiment.plates[0].barcode &&
-                            experiment.plates[0].barcode.includes(s.prefix)
-                          )
-                        ">
-                        <p class="text-subtitle2">{{ t('experiment.choose_dimensions') }}:</p>
-                        <q-option-group :options="options" type="radio" v-model="dimension"></q-option-group>
-
-                        <q-btn
-                          :label="t('action.add_plates')"
-                          type="submit"
-                          color="secondary"
-                          class="q-mt-md"
-                          @click="addPlatesToExperiment(experiment.id, s.id)"></q-btn>
-                      </div>
-                      <div v-else class="text-subtitle2 text-red-3">* {{ t('experiment.plates_added') }}</div>
-                    </div>
-
                     <q-item-label caption lines="2">
                       <q-table
                         bordered
@@ -305,33 +206,12 @@ const downloadReport = async (path: string) => {
 
                 <q-btn
                   flat
-                  :label="t('action.edit_specification')"
-                  color="warning"
-                  class="q-mt-md"
-                  @click="openEditField(i)" />
-
-                <q-btn
-                  flat
                   v-if="experiment.barcode_specifications.length > 0"
                   :label="t('action.download_csv')"
                   type="submit"
                   color="secondary"
                   class="q-mt-md"
                   @click="download" />
-
-                <div :id="`edit-${i}`" :class="`hidden q-mt-lg q-ml-md`">
-                  <GenerateBarcodeForm
-                    :edit="true"
-                    @update="update"
-                    :experiment-id="experiment.id"
-                    :prefilledData="{
-                      index: i,
-                      prefix: s.prefix,
-                      number_of_plates: s.number_of_plates,
-                      sides: s.sides,
-                      id: s.id,
-                    }" />
-                </div>
               </div>
             </q-list>
           </div>
@@ -344,13 +224,7 @@ const downloadReport = async (path: string) => {
             icon="qr_code_2"
             color="secondary"
             @click="generateBarcodeDialogToggle = true" />
-          <q-btn
-            v-if="experiment.plates.length > 0"
-            class="q-ml-xs"
-            :label="t('action.apply_template')"
-            icon="o_layers"
-            color="secondary"
-            @click="applyTemplateDialog = true" />
+
           <q-btn
             v-if="experiment.available_measurement_labels.length > 0"
             class="q-ml-xs"
@@ -403,41 +277,6 @@ const downloadReport = async (path: string) => {
     </div>
     <q-dialog v-model="generateBarcodeDialogToggle">
       <GenerateBarcodeForm :experiment-id="experiment.id" @update="update" />
-    </q-dialog>
-    <q-dialog v-model="applyTemplateDialog" persistent>
-      <q-card style="width: 700px; max-width: 80vw" class="q-px-sm">
-        <q-card-body class="q-gutter-y-sm">
-          <q-select
-            filled
-            v-model="selectedTemplatePlateId"
-            emit-value
-            map-options
-            use-input
-            input-debounce="0"
-            :label="t('label.template_plate')"
-            :options="filteredTemplatePlateOptions"
-            @filter="filterTemplatePlates"
-            behavior="menu"
-            :hint="t('hint.template_plate')">
-            <template v-slot:no-option>
-              <q-item>
-                <q-item-section class="text-grey">
-                  {{ t('message.no_plates_found') }}
-                </q-item-section>
-              </q-item>
-            </template>
-          </q-select>
-        </q-card-body>
-        <q-card-actions align="right" class="bg-white text-teal">
-          <q-btn flat :label="t('label.cancel')" v-close-popup />
-          <q-btn
-            flat
-            :label="t('action.apply')"
-            :disabled="!selectedTemplatePlateId"
-            v-close-popup
-            @click="applyTemplate" />
-        </q-card-actions>
-      </q-card>
     </q-dialog>
     <q-dialog v-model="addNewMeasurementDialog">
       <q-card class="calculator_dialog">
