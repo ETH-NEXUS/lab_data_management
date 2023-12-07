@@ -39,10 +39,6 @@ const addNewMeasurementDialog = ref<boolean>(false)
 const expanded = ref<boolean>(false)
 const generateReportDialog = ref<boolean>(false)
 
-const selectedTemplatePlateId = ref<number>()
-const templatePlateBarcodeOptions = ref<Array<PlateLabelValue>>([])
-const filteredTemplatePlateOptions = ref<Array<PlateLabelValue>>([])
-
 const {t} = useI18n()
 const {showExperimentResults} = storeToRefs(useSettingsStore())
 
@@ -289,6 +285,7 @@ const downloadReport = async (path: string) => {
     </q-dialog>
     <q-dialog v-model="generateReportDialog">
       <GenerateReportDialog
+        :labels="experiment.available_measurement_labels"
         :label="experiment.available_measurement_labels[0]"
         :experiment-name="experiment.name" />
     </q-dialog>

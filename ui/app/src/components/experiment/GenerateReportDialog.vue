@@ -14,6 +14,10 @@ const props = defineProps({
     type: String,
     required: true,
   },
+  labels: {
+    type: Array,
+    required: true,
+  },
 })
 
 onMounted(async () => {
@@ -25,6 +29,7 @@ const projectStore = useProjectStore()
 const $q = useQuasar()
 const {t} = useI18n()
 const inputNotebookPath = ref<string | null>(null)
+const selectedLabel = ref<string | null>(null)
 
 const getInputNotebookOptions = async () => {
   const response = await api.post('/api/list_files/', {
@@ -41,11 +46,17 @@ const submit = async () => {
       message: 'Please select a notebook template  to generate a report from.',
       type: 'negative',
     })
+  } else if (!selectedLabel.value) {
+    $q.notify({
+      message: 'Please select a measurement label to generate a report for.',
+      type: 'negative',
+    })
   } else {
     $q.loading.show({
       message: t('info.generation_in_progress'),
     })
-    await projectStore.generateReport(props.experimentName, props.label, inputNotebookPath.value)
+
+    await projectStore.generateReport(props.experimentName, selectedLabel.value, inputNotebookPath.value)
     $q.loading.hide()
   }
 }
@@ -63,6 +74,12 @@ const submit = async () => {
           </q-item>
         </template>
       </q-select>
+
+      <q-select
+        class="q-mt-lg"
+        label="Measurement label"
+        :options="props.labels"
+        v-model="selectedLabel"></q-select>
     </q-card-section>
     <q-card-actions align="right">
       <q-btn flat label="Cancel" color="primary" v-close-popup />
