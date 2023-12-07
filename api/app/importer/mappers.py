@@ -1,6 +1,8 @@
 import csv
 import os
 import re
+from typing import TextIO
+
 import pandas as pd
 from io import TextIOWrapper
 from glob import glob
@@ -35,6 +37,18 @@ from helpers.logger import logger
 from openpyxl import load_workbook
 
 
+def convert_string_to_datetime(date_str, time_str):
+    try:
+        formatted_date_str = f"{date_str[:2]}-{date_str[2:4]}-{date_str[4:]}"
+        formatted_time_str = f"{time_str[:2]}:{time_str[2:4]}:{time_str[4:]}"
+        combined_str = f"{formatted_date_str} {formatted_time_str}"
+        datetime_obj = dt.strptime(combined_str, "%d-%m-%y %H:%M:%S")
+        return datetime_obj
+    except ValueError:
+        logger.error(f"Cannot convert {date_str} {time_str} to datetime")
+        return None
+
+
 def convert_sci_to_float(sci_str):
     try:
         return float(sci_str)
@@ -51,8 +65,7 @@ class BaseMapper:
 
     def run(self, _glob, **kwargs):
         """Run the mapper"""
-        print(_glob)
-        print("getting files ", self.get_files(_glob))
+
         for filename in self.get_files(_glob):
             message(
                 f"Processing file {filename}...", "info", kwargs.get("room_name", None)
@@ -66,13 +79,16 @@ class BaseMapper:
                             break
                     detector.close()
                 encoding = detector.result.get("encoding")
-            with open(filename, "r", encoding=encoding) as file:
-                ret = self.parse(file, **kwargs)
-                if isinstance(ret, tuple):
-                    data = ret[0]
-                    kwargs.update(ret[1])
-                else:
-                    data = ret
+            if filename.endswith(".xlsx"):
+                data = self.parse(filename, **kwargs)
+            else:
+                with open(filename, "r", encoding=encoding) as file:
+                    ret = self.parse(file, **kwargs)
+                    if isinstance(ret, tuple):
+                        data = ret[0]
+                        kwargs.update(ret[1])
+                    else:
+                        data = ret
             kwargs.update({"filename": filename})
             self.map(data, **kwargs)
 
@@ -83,11 +99,91 @@ class BaseMapper:
         WellDetail.refresh(concurrently=True)
         ExperimentDetail.refresh(concurrently=True)
 
-    def parse(self, file: TextIOWrapper, **kwargs):
+    def parse(self, file: TextIOWrapper | str | TextIO, **kwargs):
         raise NotImplementedError
 
     def map(self, data: list[dict], **kwargs) -> None:
         raise NotImplementedError
+
+    def create_measurement_assignment(self, plate, filename):
+        with open(filename, "rb") as file:
+            assignment, _ = MeasurementAssignment.objects.update_or_create(
+                status="success",
+                plate=plate,
+                filename=filename,
+                measurement_file=File(file, os.path.basename(file.name)),
+            )
+            return assignment
+
+    def create_plate_by_name_and_barcode(
+        self,
+        plate_name: str,
+        plate_type: str,
+        barcode: str,
+        source_plate_name: str,
+        **kwargs,
+    ):
+        try:
+            barcode_prefix = barcode.split("_")[0]
+            barcode_specification = BarcodeSpecification.objects.get(
+                prefix=barcode_prefix
+            )
+        except BarcodeSpecification.DoesNotExist:
+            if kwargs.get("experiment_name"):
+                message(
+                    f"No barcode specification found for {barcode}. Creating it.",
+                    "warning",
+                    kwargs.get("room_name", None),
+                )
+
+                barcode_specification, _ = BarcodeSpecification.objects.get_or_create(
+                    prefix=barcode.split("_")[0],
+                    sides=["North"],
+                    number_of_plates=4,
+                    experiment=Experiment.objects.get(
+                        name=kwargs.get("experiment_name")
+                    ),
+                )
+            else:
+                message(
+                    f"No barcode specification found for {barcode} and no experiment name is provided. Please provide the experiment name in order to create the missing barcode specifications.",
+                    "error",
+                    kwargs.get("room_name", None),
+                )
+                raise ValueError(
+                    f"No barcode specification found for {barcode} and no experiment name is "
+                    f"provided."
+                    f" Please provide the experiment name in order to create the missing barcode "
+                    f"specifications."
+                )
+
+        return Plate.objects.create(
+            barcode=barcode,
+            experiment=barcode_specification.experiment,
+            dimension=self.get_plate_dimension(
+                plate_name, plate_type, source_plate_name, kwargs.get("room_name")
+            ),
+        )
+
+    def get_plate_dimension(
+        self, plate_name: str, plate_type: str, source_plate_name, room_name
+    ):
+        try:
+            rows, cols = row_col_from_name(
+                f"{plate_type} {plate_name} {source_plate_name}"
+            )
+            plate_dimension = PlateDimension.objects.get(rows=rows, cols=cols)
+            return plate_dimension
+        except ValueError:
+            message(
+                f"Could not determine plate dimensions for {plate_name}",
+                "error",
+                room_name,
+            )
+            raise
+        except PlateDimension.DoesNotExist:
+            message(f"No plate dimension found", "error", room_name)
+            raise ValueError(f"No plate dimension found for {plate_name}")
 
 
 class EchoMapper(BaseMapper):
@@ -190,7 +286,7 @@ class EchoMapper(BaseMapper):
                         message(
                             f"Creating destination plate {destination_plate_name}, {destination_plate_type}"
                         )
-                        destination_plate = self.__create_plate_by_name_and_barcode(
+                        destination_plate = self.create_plate_by_name_and_barcode(
                             destination_plate_name,
                             destination_plate_type,
                             destination_plate_barcode,
@@ -275,76 +371,6 @@ class EchoMapper(BaseMapper):
         if try_queue < MAX_TRY_QUEUE and len(queue) > 0:
             kwargs.update({"try_queue": try_queue + 1})
             self.map(queue, **kwargs)
-
-    def __create_plate_by_name_and_barcode(
-        self,
-        plate_name: str,
-        plate_type: str,
-        barcode: str,
-        source_plate_name: str,
-        **kwargs,
-    ):
-        try:
-            barcode_prefix = barcode.split("_")[0]
-            barcode_specification = BarcodeSpecification.objects.get(
-                prefix=barcode_prefix
-            )
-        except BarcodeSpecification.DoesNotExist:
-            if kwargs.get("experiment_name"):
-                message(
-                    f"No barcode specification found for {barcode}. Creating it.",
-                    "warning",
-                    kwargs.get("room_name", None),
-                )
-
-                barcode_specification, _ = BarcodeSpecification.objects.get_or_create(
-                    prefix=barcode.split("_")[0],
-                    sides=["North"],
-                    number_of_plates=4,
-                    experiment=Experiment.objects.get(
-                        name=kwargs.get("experiment_name")
-                    ),
-                )
-            else:
-                message(
-                    f"No barcode specification found for {barcode} and no experiment name is provided. Please provide the experiment name in order to create the missing barcode specifications.",
-                    "error",
-                    kwargs.get("room_name", None),
-                )
-                raise ValueError(
-                    f"No barcode specification found for {barcode} and no experiment name is "
-                    f"provided."
-                    f" Please provide the experiment name in order to create the missing barcode "
-                    f"specifications."
-                )
-
-        return Plate.objects.create(
-            barcode=barcode,
-            experiment=barcode_specification.experiment,
-            dimension=self.__get_plate_dimension(
-                plate_name, plate_type, source_plate_name, kwargs.get("room_name")
-            ),
-        )
-
-    def __get_plate_dimension(
-        self, plate_name: str, plate_type: str, source_plate_name, room_name
-    ):
-        try:
-            rows, cols = row_col_from_name(
-                f"{plate_type} {plate_name} {source_plate_name}"
-            )
-            plate_dimension = PlateDimension.objects.get(rows=rows, cols=cols)
-            return plate_dimension
-        except ValueError:
-            message(
-                f"Could not determine plate dimensions for {plate_name}",
-                "error",
-                room_name,
-            )
-            raise
-        except PlateDimension.DoesNotExist:
-            message(f"No plate dimension found", "error", room_name)
-            raise ValueError(f"No plate dimension found for {plate_name}")
 
 
 class M1000Mapper(BaseMapper):
@@ -483,33 +509,24 @@ class M1000Mapper(BaseMapper):
         try:
             plate = Plate.objects.get(barcode=barcode)
         except Plate.DoesNotExist:
-            if kwargs.get("create_missing_plates"):
-                message(
-                    f"Plate with barcode {barcode} does not exist. Creating it.",
-                    "warning",
-                    kwargs.get("room_name", None),
-                )
 
-                barcode_specification, _ = BarcodeSpecification.objects.get_or_create(
-                    prefix=barcode.split("_")[0],
-                    sides=["North"],
-                    number_of_plates=4,
-                    experiment=Experiment.objects.get(
-                        name=kwargs.get("experiment_name")
-                    ),
-                )
-                plate = Plate.objects.create(
-                    barcode=barcode,
-                    dimension=PlateDimension.by_num_wells(len(data)),
-                    experiment=barcode_specification.experiment,
-                )
-            else:
-                message(
-                    f"Plate with barcode {barcode} does not exist.",
-                    "error",
-                    kwargs.get("room_name", None),
-                )
-                raise ValueError(f"Plate with barcode {barcode} does not exist.")
+            message(
+                f"Plate with barcode {barcode} does not exist. Creating it.",
+                "warning",
+                kwargs.get("room_name", None),
+            )
+
+            barcode_specification, _ = BarcodeSpecification.objects.get_or_create(
+                prefix=barcode.split("_")[0],
+                sides=["North"],
+                number_of_plates=4,
+                experiment=Experiment.objects.get(name=kwargs.get("experiment_name")),
+            )
+            plate = Plate.objects.create(
+                barcode=barcode,
+                dimension=PlateDimension.by_num_wells(len(data)),
+                experiment=barcode_specification.experiment,
+            )
 
         with tqdm(
             desc="Processing measurements",
@@ -517,8 +534,7 @@ class M1000Mapper(BaseMapper):
             total=len(data),
         ) as mbar:
             assignment = self.create_measurement_assignment(
-                plate,
-                kwargs.get("filename"),
+                plate, kwargs.get("filename")
             )
 
             for entry in data:
@@ -567,42 +583,127 @@ class M1000Mapper(BaseMapper):
 
                 mbar.update(1)
 
-    def create_measurement_assignment(self, plate, filename):
-        with open(filename, "rb") as file:
-            assignment, _ = MeasurementAssignment.objects.update_or_create(
-                status="success",
-                plate=plate,
-                filename=filename,
-                measurement_file=File(file, os.path.basename(file.name)),
-            )
-            return assignment
-
 
 class MicroscopeMapper(BaseMapper):
-    # file name : 231121-083504-231115AK_1.xlsx
-    RE_FILENAME = r"(?P<date>[0-9]+)-(?P<time>[0-9]+)-(?P<barcode>[^\.]+)\.xlsx"
+    RE_FILENAME = r"(?P<date>[0-9]+)-(?P<time>[0-9]+)-(?P<barcode>[^\.]+)\.xlsx"  # 231121-083504-231115AK_1.xlsx
 
-    def parse(self, file: TextIOWrapper, **kwargs):
+    def parse(self, file, **kwargs):
+        match = re.match(self.RE_FILENAME, os.path.basename(file))
+        date = match.group("date")
+        time = match.group("time")
+        barcode = match.group("barcode")
         wb = load_workbook(file)
         sheet = wb.active
         metadata = self.__parse_metadata(sheet)
+        results = self.__parse_results(sheet)
+        print(results[:2])
+        return {
+            "metadata": metadata,
+            "results": results,
+            "date": date,
+            "time": time,
+            "barcode": barcode,
+        }
 
-    def map(self, data: list[dict], **kwargs) -> None:
+    def map(self, data: dict, **kwargs) -> None:
         print("mapping")
-        pass
+        RE_NUMBER = r"^[0-9]+$"
+        RE_SCIENCE = r"^[0-9\.]+[eE][+-]?[0-9]+$"
+
+        barcode = data["barcode"]
+        try:
+            plate = Plate.objects.get(barcode=barcode)
+        except Plate.DoesNotExist:
+            message(
+                f"Plate with barcode {barcode} does not exist. Creating it.",
+                "warning",
+                kwargs.get("room_name", None),
+            )
+            barcode_specification, _ = BarcodeSpecification.objects.get_or_create(
+                prefix=barcode.split("_")[0],
+                sides=["North"],
+                number_of_plates=4,
+                experiment=Experiment.objects.get(name=kwargs.get("experiment_name")),
+            )
+            plate = Plate.objects.create(
+                barcode=barcode,
+                dimension=PlateDimension.by_num_wells(len(data["results"])),
+                experiment=barcode_specification.experiment,
+            )
+        measured_at = convert_string_to_datetime(data["date"], data["time"])
+        with tqdm(
+            desc="Processing microscope output",
+            unit="measurement",
+            total=len(data["results"]),
+        ) as mbar:
+            for entry in data["results"]:
+                position = plate.dimension.position(entry.get("Well"))
+                well = plate.well_at(position)
+                if not well:
+                    well = Well.objects.create(plate=plate, position=position)
+                for key, value in entry.items():
+                    if key in ["Well ID", "Well"]:
+                        continue
+                    if re.match(RE_NUMBER, str(value)):
+                        value = float(value)
+                    elif re.match(RE_SCIENCE, str(value)):
+                        value = convert_sci_to_float(value)
+                    else:
+                        continue
+                    Measurement.objects.update_or_create(
+                        well=well,
+                        label=key,
+                        measured_at=measured_at,
+                        defaults={
+                            "value": value,
+                        },
+                    )
+
+                mbar.update(1)
+        self.create_measurement_assignment(plate, kwargs.get("filename"))
 
     def __parse_metadata(self, sheet):
         metadata = {}
         current_label = None
         for row in sheet.iter_rows(min_row=1, max_row=38):
-            for cell in row:
-                if ":" in cell:
-                    current_label = cell.replace(":", "").strip().lstrip()
+            for index, cell in enumerate(row):
+                if index == 0 and cell.value:
+                    current_label = str(cell.value).strip().lstrip().replace(":", "")
                     metadata[current_label] = []
-                elif current_label:
-                    metadata[current_label].append(cell)
-                else:
-                    generic_label = f"Detail_{len(metadata) + 1}"
-                    metadata[generic_label] = []
-                    current_label = generic_label
-        print(metadata)
+
+                elif index != 0 and cell.value:
+                    str_value = str(cell.value)
+                    if ": " in str_value:
+                        k = str_value.split(":")[0].strip().lstrip()
+                        v = str_value.split(":")[1].strip().lstrip()
+                        metadata[k] = v
+                    else:
+                        metadata[current_label].append(str_value)
+
+        return metadata
+
+    def __parse_results(self, sheet):
+        results_data = []
+        headers = []
+        results_start_row = None
+        for index, row in enumerate(sheet.iter_rows(values_only=True)):
+            if row[1] and str(row[1]).lower() == "well id":
+                for cell in sheet.iter_rows(
+                    min_row=index + 1, max_row=index + 1, values_only=True
+                ):
+                    if cell:
+                        headers.append(cell)
+                results_start_row = index + 2
+                break
+        headers = [header for header in headers[0] if header is not None]
+        if headers and results_start_row:
+            for row in sheet.iter_rows(min_row=results_start_row, values_only=True):
+                if not any(row):
+                    continue
+                row_data = dict(zip(headers, row[1:]))
+                results_data.append(row_data)
+
+        return results_data
+
+    def __parse_layout(self):
+        pass

@@ -286,18 +286,18 @@ const filterMeasurementFeatures = (query: string, update: (f: () => void) => voi
           </table>
           <hr />
         </div>
-        <div class="col-4">
+        <div>
           <h4 class="q-ma-none vertical-top">{{ t('title.measurements') }}</h4>
-          <q-btn
-            :label="t('action.add_measurement')"
-            icon="o_straighten"
-            color="secondary"
-            @click="addMeasurementDialog = true" />
+          <!--          <q-btn-->
+          <!--            :label="t('action.add_measurement')"-->
+          <!--            icon="o_straighten"-->
+          <!--            color="secondary"-->
+          <!--            @click="addMeasurementDialog = true" />-->
         </div>
-        <div class="col-8">
+        <div class="col-10">
           <q-toggle
             v-if="isTimeSeries"
-            class="q-mt-md"
+            class="q-mt-md q-mb-md"
             size="sm"
             checked-icon="check"
             v-model="platePage.plotView"

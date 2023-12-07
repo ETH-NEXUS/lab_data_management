@@ -207,7 +207,7 @@ export default {
     selected_directories: 'Selected directories/files',
     no_dirs_selected: 'No directories/files selected',
     management: 'Management',
-    echo: 'Echo/M1000',
+    echo: 'Echo/M1000/Micro',
     import: 'Import',
     export: 'Export',
     import_control_plate: 'Import control plate',

@@ -40,7 +40,7 @@ export const mapCommandOptions: Options = {
   // probably there is a way to get this data dynamically from the backend
   machine: {
     type: 'str',
-    choices: ['echo', 'm1000'],
+    choices: ['echo', 'm1000', 'microscope'],
     label: 'Machine to map from',
     required: true,
   },

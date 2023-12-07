@@ -58,13 +58,6 @@ class Command(BaseCommand):
         )
 
         parser.add_argument(
-            "--create_missing_plates",
-            "-c",
-            action="store_true",
-            help="Create missing plates by measurement mapping",
-        )
-
-        parser.add_argument(
             "--room_name",
             "-r",
             help="Unique room name for long polling.",
@@ -131,12 +124,11 @@ class Command(BaseCommand):
 
         elif options.get("machine") == "m1000":
             try:
-                if options.get("create_missing_plates", False):
-                    if not options.get("experiment_name", None):
-                        die(
-                            "No experiment name provided. If you would like to add missing "
-                            "plates, you need to provide the experiment name."
-                        )
+                if not options.get("experiment_name", None):
+                    die(
+                        "No experiment name provided. If you would like to add missing "
+                        "plates, you need to provide the experiment name."
+                    )
 
                 evaluation = options.get("evaluate", None)
                 measurement_name = options.get("measurement_name", None)
@@ -148,7 +140,6 @@ class Command(BaseCommand):
                     debug=options.get("debug", False),
                     evaluation=evaluation,
                     measurement_name=measurement_name,
-                    create_missing_plates=options.get("create_missing_plates", False),
                     experiment_name=options.get("experiment_name", None),
                     room_name=options.get("room_name", None),
                 )
@@ -158,18 +149,16 @@ class Command(BaseCommand):
                 traceback.print_exc()
         elif options.get("machine") == "microscope":
             try:
-                if options.get("create_missing_plates", False):
-                    if not options.get("experiment_name", None):
-                        die(
-                            "No experiment name provided. If you would like to add missing "
-                            "plates, you need to provide the experiment name."
-                        )
+                if not options.get("experiment_name", None):
+                    die(
+                        "No experiment name provided. If you would like to add missing "
+                        "plates, you need to provide the experiment name."
+                    )
                 print(options.get("machine"))
                 mapper = MicroscopeMapper()
                 mapper.run(
                     join(path, Config.current.importer.microscope.default.file_blob),
                     debug=options.get("debug", False),
-                    create_missing_plates=options.get("create_missing_plates", False),
                     experiment_name=options.get("experiment_name", None),
                     room_name=options.get("room_name", None),
                 )

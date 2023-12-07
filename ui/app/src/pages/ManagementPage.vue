@@ -40,7 +40,6 @@ const tab = ref<string>('map')
           align="justify"
           narrow-indicator>
           <q-tab name="map" :label="t('management.echo')"></q-tab>
-          <!--          <q-tab name="import" :label="t('management.import')"></q-tab>-->
           <q-tab name="importControlPlate" :label="t('management.import_control_plate')"></q-tab>
           <q-tab name="importLibraryPlate" :label="t('management.import_library_plate')"></q-tab>
           <q-tab name="importSDF" :label="t('management.import_sdf_library')"></q-tab>
@@ -52,10 +51,6 @@ const tab = ref<string>('map')
           <q-tab-panel name="map">
             <MapCommand :options="mapCommandOptions" command="map" what="" />
           </q-tab-panel>
-
-          <!--          <q-tab-panel name="import">-->
-          <!--            <MapCommand :options="importCommandOptions" command="import" what="" />-->
-          <!--          </q-tab-panel>-->
 
           <q-tab-panel name="importControlPlate">
             <MapCommand :options="importControlPlateOptions" command="import" what="control_plate" />

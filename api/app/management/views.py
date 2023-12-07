@@ -39,9 +39,6 @@ def directory_content(request, start_path="/data"):
 
 @csrf_exempt
 def run_command(request):
-    # output = StringIO()
-    # sys.stdout = output
-
     if request.method == "POST":
         body_unicode = request.body.decode("utf-8")
         body_data = json.loads(body_unicode)
@@ -49,12 +46,11 @@ def run_command(request):
 
         if form_data.get("command") == "map":
             machine = form_data.get("machine")
-            if machine in ["echo", "m1000"]:
+            if machine in ["echo", "m1000", "microscope"]:
                 kwargs = {
                     "path": form_data.get("path"),
                     "mapping_file": form_data.get("mapping_file"),
                     "debug": False,
-                    "create_missing_plates": True,
                     "experiment_name": form_data.get("experiment_name"),
                     "room_name": form_data.get("room_name"),
                 }
