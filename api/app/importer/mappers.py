@@ -28,6 +28,7 @@ from core.models import (
     PlateDetail,
     WellDetail,
     ExperimentDetail,
+    WellType,
 )
 from core.config import Config
 from django.core.files import File
@@ -596,6 +597,7 @@ class MicroscopeMapper(BaseMapper):
         sheet = wb.active
         metadata = self.__parse_metadata(sheet)
         results = self.__parse_results(sheet)
+        layout = self.__parse_layout(sheet, len(results))
         print(results[:2])
         return {
             "metadata": metadata,
@@ -603,6 +605,7 @@ class MicroscopeMapper(BaseMapper):
             "date": date,
             "time": time,
             "barcode": barcode,
+            "layout": layout,
         }
 
     def map(self, data: dict, **kwargs) -> None:
@@ -641,6 +644,10 @@ class MicroscopeMapper(BaseMapper):
                 well = plate.well_at(position)
                 if not well:
                     well = Well.objects.create(plate=plate, position=position)
+                if entry.get("Well") in data["layout"]:
+                    well_type = data["layout"][entry.get("Well")]
+                    well.type = WellType.objects.get(name=well_type)
+                    well.save()
                 for key, value in entry.items():
                     if key in ["Well ID", "Well"]:
                         continue
@@ -705,5 +712,30 @@ class MicroscopeMapper(BaseMapper):
 
         return results_data
 
-    def __parse_layout(self):
-        pass
+    def __parse_layout(self, sheet, plate):
+        layout_start_row = None
+        layout_end_row = None
+        layout_data = []
+        position_type = {}
+        for index, row in enumerate(sheet.iter_rows(values_only=True)):
+            if row[0] and str(row[0]).lower() == "layout":
+                layout_start_row = index + 2
+            if row[0] and str(row[0]).lower() == "results":
+                layout_end_row = index - 1
+        if layout_start_row and layout_end_row:
+            for row in sheet.iter_rows(
+                min_row=layout_start_row, max_row=layout_end_row, values_only=True
+            ):
+                if not any(row):
+                    continue
+                layout_data.append(row[1:])
+
+        for item in layout_data:
+            if item[0]:
+                for index, value in enumerate(item):
+                    if value in ["POS", "NEG"]:
+                        well_position = f"{item[0]}{index}"
+                        well_type = "P" if value == "POS" else "N"
+                        position_type[well_position] = well_type
+        print("position_type", position_type)
+        return position_type
