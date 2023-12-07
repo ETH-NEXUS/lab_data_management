@@ -158,6 +158,7 @@ export const useProjectStore = defineStore('project', () => {
       experiment: experiment,
       notebook_path: inputNotebookPath.value,
     })
+    console.log(inputNotebookPath.value)
     await getNotebookOutputFiles(experiment)
     return res.data
   }
@@ -169,7 +170,7 @@ export const useProjectStore = defineStore('project', () => {
   }
 
   const downloadPDFReport = async (path: string) => {
-    const res = await api.post('/api/download_pdf_report/', {notebook_path: path}, {responseType: 'blob'})
+    const res = await api.post('/api/download_pdf_report/', {path: path}, {responseType: 'blob'})
 
     console.log('download', res)
     const link = document.createElement('a')
