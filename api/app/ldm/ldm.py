@@ -142,10 +142,10 @@ def get_experiment_measurements(experiment_name: str, label=None):
             experiment_plates.append(pl)
 
     rows = []
-    print('Processed plates:')
+   # print('Processed plates:')
     for pl in experiment_plates:
         plate_dimension = pl.dimension
-        print(f"{pl.barcode}")
+      #  print(f"{pl.barcode}")
 
         wells = pl.wells.all()  # Well.objects.filter(plate=pl)
         for well in wells:
@@ -176,7 +176,7 @@ def get_experiment_measurements(experiment_name: str, label=None):
 
     rows = sorted(rows, key=lambda k: k["measurement"])
 
-    print(f"\nFound {len(rows)} measurements")
+   # print(f"\nFound {len(rows)} measurements")
     return pd.DataFrame(rows)
 
 

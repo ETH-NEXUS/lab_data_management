@@ -293,34 +293,35 @@ const filterMeasurementFeatures = (query: string, update: (f: () => void) => voi
           <!--            icon="o_straighten"-->
           <!--            color="secondary"-->
           <!--            @click="addMeasurementDialog = true" />-->
-        </div>
-        <div class="col-10">
-          <q-toggle
-            v-if="isTimeSeries"
-            class="q-mt-md q-mb-md"
-            size="sm"
-            checked-icon="check"
-            v-model="platePage.plotView"
-            :label="t('label.plot_view')"
-            right-label
-            color="secondary"></q-toggle>
-          <table v-if="showTable">
-            <thead>
-              <tr>
-                <th>{{ t('label.label') }}</th>
-                <th>{{ t('label.timestamp') }}</th>
-                <th>{{ t('label.value') }}</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr v-for="measurement in well.measurements" :key="measurement.label">
-                <td>{{ measurement.label }}</td>
-                <td>{{ measurement.measured_at }}</td>
-                <td>{{ measurement.value }}</td>
-              </tr>
-            </tbody>
-          </table>
 
+          <div>
+            <q-toggle
+              v-if="isTimeSeries"
+              class="q-mt-md q-mb-md"
+              size="sm"
+              checked-icon="check"
+              v-model="platePage.plotView"
+              :label="t('label.plot_view')"
+              right-label
+              color="secondary"></q-toggle>
+
+            <table v-if="showTable" class="mt-lg col-10">
+              <thead>
+                <tr>
+                  <th>{{ t('label.label') }}</th>
+                  <th>{{ t('label.timestamp') }}</th>
+                  <th>{{ t('label.value') }}</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr v-for="measurement in well.measurements" :key="measurement.label">
+                  <td>{{ measurement.label }}</td>
+                  <td>{{ measurement.measured_at }}</td>
+                  <td>{{ measurement.value }}</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
           <div v-if="well.measurements.length > 0 && platePage.plotView">
             <TimeSeriesChart :measurements="well.measurements" />
           </div>
@@ -530,6 +531,7 @@ const filterMeasurementFeatures = (query: string, update: (f: () => void) => voi
 <style scoped lang="sass">
 td, th
   text-align: left
+  padding: 5px
 h2
   font-family: 'Courier New', Courier, monospace
   font-size: 20px
