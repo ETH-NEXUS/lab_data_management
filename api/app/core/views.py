@@ -663,6 +663,7 @@ def generate_pdf_report(request):
             experiment = data.get("experiment")
             label = data.get("label")
             if not notebook_path:
+
                 notebook_path = "/notebooks/input/general.ipynb"
 
             cmd = [

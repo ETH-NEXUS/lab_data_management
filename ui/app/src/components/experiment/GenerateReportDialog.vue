@@ -45,7 +45,7 @@ const submit = async () => {
     $q.loading.show({
       message: t('info.generation_in_progress'),
     })
-    await projectStore.generateReport(props.experimentName, props.label)
+    await projectStore.generateReport(props.experimentName, props.label, inputNotebookPath.value)
     $q.loading.hide()
   }
 }
