@@ -17,7 +17,7 @@ def generate_report(notebook_path, experiment, label):
         os.makedirs(output_dir)
 
     base_filename = os.path.basename(notebook_path).replace(".ipynb", "")
-    output_filename = f"{base_filename}_{experiment}_output.ipynb"
+    output_filename = f"{base_filename}_{experiment}_{label}_output.ipynb"
     output_path = os.path.join(output_dir, output_filename)
 
     parameters = {"experiment": experiment, "label": label}
