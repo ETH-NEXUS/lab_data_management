@@ -610,7 +610,7 @@ class MicroscopeMapper(BaseMapper):
 
     def map(self, data: dict, **kwargs) -> None:
         print("mapping")
-        RE_NUMBER = r"^[0-9]+$"
+        RE_NUMBER = r"^[0-9]+(\.[0-9]+)?$"
         RE_SCIENCE = r"^[0-9\.]+[eE][+-]?[0-9]+$"
 
         barcode = data["barcode"]
