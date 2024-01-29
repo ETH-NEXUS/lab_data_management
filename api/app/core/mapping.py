@@ -15,7 +15,7 @@ class Mapping:
         self.__from = int(from_pos)
         self.__to = int(to_pos)
         self.__amount = float(amount)
-        self.__status = str(status)
+        self.__status = status  # not str(status)
 
     def __str__(self):
         return f"Mapping: {self.__from} -> {self.__to} ({self.__amount})"

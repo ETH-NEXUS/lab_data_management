@@ -415,7 +415,9 @@ class Plate(TimeTrackedModel):
                     well, created = Well.objects.update_or_create(
                         position=mapping.to_pos,
                         plate=target,
-                        defaults={"status": mapping.status},
+                        defaults={
+                            "status": mapping.status
+                        },  # should the well status be taken from mapping status?
                     )
                     if created:
                         # To create an id
@@ -423,6 +425,7 @@ class Plate(TimeTrackedModel):
                     for compound in from_well.compounds.all():
                         # The amount is a suggestion derived from the distribution
                         # rate in the source and the total amount of the withdrawal
+                        # TODO but for some reason the amount of the source well is always zero
                         from_well_compound = WellCompound.objects.get(
                             well=from_well, compound=compound
                         )

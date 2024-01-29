@@ -209,6 +209,8 @@ const filterMeasurementFeatures = (query: string, update: (f: () => void) => voi
           </h2>
         </div>
       </div>
+      <!--      {{ props.wellInfo }}-->
+      <!-- What does this status mean ? -->
       <div v-if="props.wellInfo.well.status" class="row">
         <div class="col-4 bg-orange-2">
           <h4 class="q-ma-none vertical-top">
