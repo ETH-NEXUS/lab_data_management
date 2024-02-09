@@ -11,20 +11,19 @@ import {
   PlateDimension,
   Project,
   ExperimentPayload,
-  PlateLabelValue,
 } from 'src/components/models'
 import {formatDate} from 'src/helpers/dateTime'
 import GenerateBarcodeForm from 'components/experiment/GenerateBarcodeForm.vue'
 import {downloadCSVData, generateBarcodes} from 'components/helpers'
 import {csvColumnsNames} from 'components/data'
 import {useQuasar} from 'quasar'
-import {api} from 'boot/axios'
 import bus from 'src/eventBus'
 import MeasurementCalculator from 'components/plate/MeasurementCalculator.vue'
 import ExperimentHeatmap from 'components/experiment/ExperimentHeatmap.vue'
 import {storeToRefs} from 'pinia'
 import {useSettingsStore} from 'stores/settings'
 import GenerateReportDialog from 'components/experiment/GenerateReportDialog.vue'
+import DownloadCSVDialog from 'components/experiment/DownloadCSVDialog.vue'
 
 const route = useRoute()
 const projectStore = useProjectStore()
@@ -38,6 +37,7 @@ const generateBarcodeDialogToggle = ref<boolean>(false)
 const addNewMeasurementDialog = ref<boolean>(false)
 const expanded = ref<boolean>(false)
 const generateReportDialog = ref<boolean>(false)
+const downloadCSVDialog = ref<boolean>(false)
 
 const {t} = useI18n()
 const {showExperimentResults} = storeToRefs(useSettingsStore())
@@ -144,6 +144,10 @@ const generateReport = async () => {
 const downloadReport = async (path: string) => {
   await projectStore.downloadPDFReport(path)
 }
+
+const downloadCsvData = async () => {
+  downloadCSVDialog.value = true
+}
 </script>
 
 <template>
@@ -152,7 +156,7 @@ const downloadReport = async (path: string) => {
       {{ project.name }}: {{ getExperiment(Number(route.params.experiment)).name }}
       <q-btn flat icon="edit" @click="editExperiment('name')" />
     </div>
-    <div class="q-pa-md row items-start q-gutter-md">
+    <div class="q-pa-md row items-start q-gutter-md" v-if="experiment">
       <q-card class="my-card" flat>
         <q-card-section class="q-pt-xs">
           <div class="text-body1 q-pl-md">
@@ -235,6 +239,13 @@ const downloadReport = async (path: string) => {
             icon="o_layers"
             color="secondary"
             @click="generateReport" />
+          <q-btn
+            v-if="experiment.available_measurement_labels.length > 0"
+            class="q-ml-xs"
+            :label="t('action.download_csv_data')"
+            icon="o_layers"
+            color="secondary"
+            @click="downloadCsvData" />
         </q-card-actions>
         <!--  @click="generateReport" />-->
         <q-card-section v-if="projectStore.outputNotebooks.length > 0" class="q-ml-md">
@@ -271,24 +282,32 @@ const downloadReport = async (path: string) => {
         </q-card-section>
       </q-card>
     </div>
-    <q-dialog v-model="generateBarcodeDialogToggle">
-      <GenerateBarcodeForm :experiment-id="experiment.id" @update="update" />
-    </q-dialog>
-    <q-dialog v-model="addNewMeasurementDialog">
-      <q-card class="calculator_dialog">
-        <q-card-section>
-          <MeasurementCalculator
-            :labels="experiment.available_measurement_labels"
-            @calculate="calculateNewMeasurement" />
-        </q-card-section>
-      </q-card>
-    </q-dialog>
-    <q-dialog v-model="generateReportDialog">
-      <GenerateReportDialog
-        :labels="experiment.available_measurement_labels"
-        :label="experiment.available_measurement_labels[0]"
-        :experiment-name="experiment.name" />
-    </q-dialog>
+    <div v-if="experiment">
+      <q-dialog v-model="generateBarcodeDialogToggle">
+        <GenerateBarcodeForm :experiment-id="experiment.id" @update="update" />
+      </q-dialog>
+      <q-dialog v-model="addNewMeasurementDialog">
+        <q-card class="calculator_dialog">
+          <q-card-section>
+            <MeasurementCalculator
+              :labels="experiment.available_measurement_labels"
+              @calculate="calculateNewMeasurement" />
+          </q-card-section>
+        </q-card>
+      </q-dialog>
+      <q-dialog v-model="generateReportDialog">
+        <GenerateReportDialog
+          :labels="experiment.available_measurement_labels"
+          :label="experiment.available_measurement_labels[0]"
+          :experiment-name="experiment.name" />
+      </q-dialog>
+      <q-dialog v-model="downloadCSVDialog">
+        <DownloadCSVDialog
+          :labels="experiment.available_measurement_labels"
+          :experiment-name="experiment.name"
+          :label="experiment.available_measurement_labels[0]" />
+      </q-dialog>
+    </div>
   </q-page>
 </template>
 

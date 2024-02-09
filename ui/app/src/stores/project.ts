@@ -178,6 +178,20 @@ export const useProjectStore = defineStore('project', () => {
     document.body.appendChild(link)
     link.click()
   }
+
+  const downloadCSVData = async (experiment: string, label: string) => {
+    alert('downloading csv data')
+    const res = await api.post('/api/download_csv_data/', {
+      label: label,
+      experiment: experiment,
+    })
+    const link = document.createElement('a')
+    link.href = window.URL.createObjectURL(new Blob([res.data]))
+    link.setAttribute('download', `${experiment}_${label}.csv`)
+    document.body.appendChild(link)
+    link.click()
+  }
+
   return {
     projects,
     initialize,
@@ -198,5 +212,6 @@ export const useProjectStore = defineStore('project', () => {
     getNotebookOutputFiles,
     downloadPDFReport,
     inputNotebookPath,
+    downloadCSVData,
   }
 })

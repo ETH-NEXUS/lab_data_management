@@ -22,12 +22,11 @@ from django.views.decorators.csrf import ensure_csrf_cookie, csrf_exempt
 from django.views.generic import View
 from rest_framework import viewsets, views, status
 from rest_framework.decorators import action
-from rest_framework.response import Response
 from django.http import JsonResponse
-from IPython import get_ipython
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from rest_framework import status
+from ldm.ldm import get_experiment_measurements
 
 
 from compoundlib.serializers import SimpleCompoundLibrarySerializer
@@ -729,6 +728,25 @@ def download_pdf_report(request):
                 return response
         else:
             return JsonResponse({"error": "Invalid request method"}, status=400)
+    except Exception as e:
+        print("EXCEPTION")
+        print(e)
+        return JsonResponse({"error": str(e)}, status=500)
+
+
+@csrf_exempt
+def download_csv_data(request):
+    try:
+        if request.method == "POST":
+            data = json.loads(request.body.decode("utf-8"))
+            label = data.get("label")
+            experiment = data.get("experiment")
+            df = get_experiment_measurements(experiment, label)
+            response = HttpResponse(content_type="text/csv")
+            response["Content-Disposition"] = f'attachment; filename="{label}.csv"'
+            df.to_csv(response, index=False)
+            return response
+
     except Exception as e:
         print("EXCEPTION")
         print(e)

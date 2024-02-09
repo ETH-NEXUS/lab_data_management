@@ -186,6 +186,7 @@ export default {
     view_file_content: 'View file content',
     delete_well: 'Delete well',
     generate_report: 'Generate report',
+    download_csv_data: 'Download CSV data',
   },
   error: {
     select_plate_dimension: 'Please select a plate dimension.',
