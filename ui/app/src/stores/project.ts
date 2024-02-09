@@ -180,7 +180,6 @@ export const useProjectStore = defineStore('project', () => {
   }
 
   const downloadCSVData = async (experiment: string, label: string) => {
-    alert('downloading csv data')
     const res = await api.post('/api/download_csv_data/', {
       label: label,
       experiment: experiment,
