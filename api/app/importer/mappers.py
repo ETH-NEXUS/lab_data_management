@@ -305,9 +305,9 @@ class EchoMapper(BaseMapper):
 
                 source_well = entry["source_well"]
                 destination_well = entry["destination_well"]
-                __debug(
-                    f"Mapping {source_plate.barcode}:{source_well} -> {destination_plate.barcode}:{destination_well}"
-                )
+                # __debug(
+                #     f"Mapping {source_plate.barcode}:{source_well} -> {destination_plate.barcode}:{destination_well}"
+                # )
                 from_pos = source_plate.dimension.position(source_well)
                 to_pos = destination_plate.dimension.position(destination_well)
 
@@ -316,14 +316,20 @@ class EchoMapper(BaseMapper):
                     to_pos=to_pos,
                     amount=float(entry["actual_volume"]),
                     status=entry["transfer_status"],
+                    map_type=source_plate.is_control_plate,  # if it is true, we need to map the type
                 )
                 mapping_list.add(mapping)
-
                 mbar.update(1)
 
         for mapping_list_index, mapping_list in mapping_lists.items():
             source_plate_barcode = mapping_list_index.split("__**__")[0]
             source_plate = plates.get(source_plate_barcode)
+            message(
+                f"Mapping {source_plate.barcode} -> {mapping_list.target.barcode}",
+                "info",
+                kwargs.get("room_name", None),
+            )
+
             if source_plate.map(mapping_list, mapping_list.target):
                 with open(kwargs["filename"], "rb") as file:
                     PlateMapping.objects.create(
@@ -336,28 +342,28 @@ class EchoMapper(BaseMapper):
                     "info",
                     kwargs.get("room_name", None),
                 )
-                if source_plate.is_control_plate:
-                    message(
-                        f"Applying control plate template to {mapping_list.target.barcode}",
-                        "info",
-                        kwargs.get("room_name", None),
-                    )
-                    _target_plate = mapping_list.target
-                    if source_plate.num_wells != _target_plate.num_wells:
-                        raise MappingError(
-                            f"{'Control plate and experiment plate must have the same amount of wells'}: {_target_plate.num_wells} != {source_plate.num_wells}"
-                        )
-                    for position in range(source_plate.num_wells):
-                        template_well = source_plate.well_at(position)
-                        well = _target_plate.well_at(position, create_if_not_exist=True)
-                        if template_well:
-                            well.type = template_well.type
-                            well.save()
-                        else:
-                            pass
+                # if source_plate.is_control_plate:
+                #     message(
+                #         f"Applying control plate template to {mapping_list.target.barcode}",
+                #         "info",
+                #         kwargs.get("room_name", None),
+                #     )
+                #     _target_plate = mapping_list.target
+                #     if source_plate.num_wells != _target_plate.num_wells:
+                #         raise MappingError(
+                #             f"{'Control plate and experiment plate must have the same amount of wells'}: {_target_plate.num_wells} != {source_plate.num_wells}"
+                #         )
+                #     for position in range(source_plate.num_wells):
+                #         template_well = source_plate.well_at(position)
+                #         well = _target_plate.well_at(position, create_if_not_exist=True)
+                #         if template_well:
+                #             well.type = template_well.type
+                #             well.save()
+                #         else:
+                #             pass
 
-                    PlateDetail.refresh(concurrently=True)
-                    WellDetail.refresh(concurrently=True)
+                PlateDetail.refresh(concurrently=True)
+                WellDetail.refresh(concurrently=True)
             else:
                 message(
                     f"Error mapping {source_plate.barcode} -> {mapping_list.target.barcode}",
@@ -598,7 +604,7 @@ class MicroscopeMapper(BaseMapper):
         metadata = self.__parse_metadata(sheet)
         results = self.__parse_results(sheet)
         layout = self.__parse_layout(sheet, len(results))
-        print(results[:2])
+
         return {
             "metadata": metadata,
             "results": results,
@@ -609,7 +615,7 @@ class MicroscopeMapper(BaseMapper):
         }
 
     def map(self, data: dict, **kwargs) -> None:
-        print("mapping")
+
         RE_NUMBER = r"^[0-9]+(\.[0-9]+)?$"
         RE_SCIENCE = r"^[0-9\.]+[eE][+-]?[0-9]+$"
 

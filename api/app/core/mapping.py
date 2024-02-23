@@ -10,12 +10,18 @@ class Mapping:
     """Represents one mapping"""
 
     def __init__(
-        self, from_pos: int, to_pos: int, amount: float = 0, status: str = None
+        self,
+        from_pos: int,
+        to_pos: int,
+        amount: float = 0,
+        status: str = None,
+        map_type: bool = False,
     ):
         self.__from = int(from_pos)
         self.__to = int(to_pos)
         self.__amount = float(amount)
         self.__status = status  # not str(status)
+        self.__map_type = map_type  # if we need to map the well type (apply when we map a control plate)
 
     def __str__(self):
         return f"Mapping: {self.__from} -> {self.__to} ({self.__amount})"
@@ -35,6 +41,10 @@ class Mapping:
     @property
     def status(self) -> str:
         return self.__status
+
+    @property
+    def map_type(self) -> bool:
+        return self.__map_type
 
 
 class MappingList:

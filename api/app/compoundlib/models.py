@@ -19,7 +19,10 @@ class CompoundLibrary(models.Model):
 
 class Compound(models.Model):
     related_name = "compounds"
-    identifier = models.TextField(unique=True)
+    identifier = models.TextField(
+        null=True, blank=True
+    )  # the identifier field is not used anywhere and by nooone. it is probaly some producer's identifier which is not
+    # relevant
     name = models.TextField()
     structure = models.TextField()
     library = models.ForeignKey(

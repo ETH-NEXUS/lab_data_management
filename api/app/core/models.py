@@ -403,6 +403,7 @@ class Plate(TimeTrackedModel):
         """
         with transaction.atomic():
             for mapping in mappingList:
+
                 from_well = self.well_at(mapping.from_pos)
                 # We only need to map wells that are not empty
                 # TODO: If no from_well a destination well could probably be generated anyway..?..
@@ -419,8 +420,10 @@ class Plate(TimeTrackedModel):
                             "status": mapping.status
                         },  # should the well status be taken from mapping status?
                     )
-                    if created:
-                        # To create an id
+                    if created:  #  To create an id
+                        well.save()
+                    if mapping.map_type:
+                        well.type = from_well.type
                         well.save()
                     for compound in from_well.compounds.all():
                         # The amount is a suggestion derived from the distribution

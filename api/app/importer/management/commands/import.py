@@ -403,7 +403,6 @@ class Command(BaseCommand):
                         compound, created = Compound.objects.get_or_create(
                             name=_compound,
                             library=library,
-                            identifier=f"{_compound}_{library.name if library else project_name}",
                         )
                         if created:
                             message(
