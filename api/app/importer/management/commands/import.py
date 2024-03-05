@@ -400,14 +400,18 @@ class Command(BaseCommand):
                         well = plate.well_at(pos, create_if_not_exist=True)
                         well_type = WellType.by_name(_type)
                         well.type = well_type
-                        compound, created = Compound.objects.get_or_create(
-                            name=_compound,
-                            library=library,
-                        )
-                        if created:
+                        filtered_compounds = Compound.objects.filter(name=_compound)
+                        if len(filtered_compounds) > 0:
+                            compound = filtered_compounds[0]
+                        else:
+                            compound = Compound.objects.create(
+                                name=_compound,
+                                library=library,
+                            )
                             message(
                                 f"Created compound {_compound}.", "success", room_name
                             )
+
                         WellCompound.objects.create(well=well, compound=compound)
                         well.save()
                         pbar.update(1)
