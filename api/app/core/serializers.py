@@ -42,16 +42,14 @@ class UndefinedAffineModelSerializer(serializers.ModelSerializer):
 class CompoundSerializer(serializers.ModelSerializer):
     class Meta:
         model = Compound
-        fields = ("name", "identifier", "structure")
+        fields = ("name", "structure")
 
 
 class WellCompoundSerializer(serializers.ModelSerializer):
     name = serializers.SlugRelatedField(
         slug_field="name", source="compound", read_only=True
     )
-    identifier = serializers.SlugRelatedField(
-        slug_field="identifier", source="compound", read_only=True
-    )
+
     structure = serializers.SlugRelatedField(
         slug_field="structure", source="compound", read_only=True
     )

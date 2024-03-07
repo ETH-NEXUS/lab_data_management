@@ -131,9 +131,7 @@ class PlateViewSet(viewsets.ModelViewSet):
         )
         well_compounds = Prefetch(
             "well_compounds",
-            queryset=WellCompound.objects.select_related(
-                "compound", "compound__library"
-            ).all(),
+            queryset=WellCompound.objects.select_related("compound").all(),
         )
         wells = Prefetch(
             "wells",

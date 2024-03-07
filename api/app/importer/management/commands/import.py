@@ -216,15 +216,13 @@ class Command(BaseCommand):
                             mapping_barcode,
                             mapping.amounts[mapping_barcode_idx],
                             mapping.position,
-                            mapping.identifier,
                             mapping.name,
                         ]:
                             del data[key]
 
                         compound, created = Compound.objects.update_or_create(
-                            identifier=row[mapping.identifier],
+                            name=row[mapping.name],
                             defaults={
-                                "name": row[mapping.name],
                                 "structure": Chem.MolToSmiles(row[mapping.structure])
                                 if isinstance(row[mapping.structure], Mol)
                                 else row[mapping.structure],
@@ -235,7 +233,7 @@ class Command(BaseCommand):
                             __debug(f"Created compound {compound}")
                         else:
                             __debug(f"Using compound {compound}")
-                        compound.library = library
+
                         compound.save()
 
                         plate = Plate.objects.get(barcode=row[mapping_barcode])
@@ -406,7 +404,6 @@ class Command(BaseCommand):
                         else:
                             compound = Compound.objects.create(
                                 name=_compound,
-                                library=library,
                             )
                             message(
                                 f"Created compound {_compound}.", "success", room_name

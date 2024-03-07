@@ -13,13 +13,11 @@ class CompoundLibraryAdmin(admin.ModelAdmin):
 class CompoundAdmin(admin.ModelAdmin):
     list_display = (
         "get_structure",
-        "identifier",
         "structure",
-        "library",
         "get_data",
     )
-    search_fields = ("identifier", "structure", "library__name")
-    list_filter = ("library__name",)
+    search_fields = ("name", "structure")
+    list_filter = ("name",)
 
     def get_structure(self, compound: Compound):
         return mark_safe(

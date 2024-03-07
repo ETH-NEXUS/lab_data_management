@@ -264,7 +264,7 @@ const filterMeasurementFeatures = (query: string, update: (f: () => void) => voi
           <table>
             <tr>
               <th>{{ t('label.name') }}</th>
-              <th>{{ t('label.identifier') }}</th>
+
               <th>{{ t('label.initial_amount') }}</th>
               <th style="white-space: nowrap">
                 {{ t('label.structure') }}
@@ -273,9 +273,8 @@ const filterMeasurementFeatures = (query: string, update: (f: () => void) => voi
                   @update:model-value="blurCompound = !blurCompound" />
               </th>
             </tr>
-            <tr v-for="compound in well.compounds" :key="compound.identifier">
+            <tr v-for="(compound, index) in well.compounds" :key="compound.name + '_' + index">
               <th class="vertical-top">{{ compound.name }}</th>
-              <td class="vertical-top">{{ compound.identifier }}</td>
               <td class="vertical-top">{{ compound.amount }}{{ t('unit.amount') }}</td>
               <td class="vertical-top">
                 <dynamic-image
