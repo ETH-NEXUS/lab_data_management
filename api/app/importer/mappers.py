@@ -552,8 +552,14 @@ class M1000Mapper(BaseMapper):
                     well = Well.objects.create(plate=plate, position=position)
 
                 if not kwargs.get("evaluation"):
+                    measurement_names = None
+                    if kwargs.get("measurement_name"):
+                        measurement_names = kwargs.get("measurement_name").split(",")
                     for idx, value in enumerate(entry.get("values")):
-                        label = kwargs.get("meta_data")[idx].get("Label")
+                        if measurement_names:
+                            label = measurement_names[idx]
+                        else:
+                            label = kwargs.get("meta_data")[idx].get("Label")
 
                         Measurement.objects.update_or_create(
                             well=well,

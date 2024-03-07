@@ -60,6 +60,12 @@ export const mapCommandOptions: Options = {
     label: 'Experiment name',
     required: true,
   },
+  measurement_name: {
+    type: 'str',
+    label:
+      'For M1000 mapping only: measurement name. If not provided, the default name "Label1" is used. If measurement files contain several measurements, please separate the names by comma.',
+    required: false,
+  },
 }
 
 export const importCommandOptions: Options = {

@@ -53,6 +53,7 @@ def run_command(request):
                     "debug": False,
                     "experiment_name": form_data.get("experiment_name"),
                     "room_name": form_data.get("room_name"),
+                    "measurement_name": form_data.get("measurement_name"),
                 }
                 management.call_command("map", machine, **kwargs)
         elif form_data.get("command") == "import":
