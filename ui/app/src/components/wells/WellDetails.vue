@@ -278,7 +278,7 @@ const filterMeasurementFeatures = (query: string, update: (f: () => void) => voi
               <td class="vertical-top">{{ compound.amount }}{{ t('unit.amount') }}</td>
               <td class="vertical-top">
                 <dynamic-image
-                  v-if="wellDetails.showStructure"
+                  v-if="wellDetails.showStructure && compound.name !== 'unknown'"
                   :url="`/api/compounds/${compound.compound}/structure/`"
                   width="250px"
                   :key="'' + blurCompound + compound.id" />

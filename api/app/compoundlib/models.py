@@ -24,7 +24,7 @@ class Compound(models.Model):
     # )  # the identifier field is not used anywhere and by nooone. it is probaly some producer's identifier which is not
     # relevant
     name = models.TextField()
-    structure = models.TextField()
+    structure = models.TextField(null=True, blank=True)
     # library = models.ForeignKey(
     #     CompoundLibrary,
     #     null=True,
@@ -39,6 +39,8 @@ class Compound(models.Model):
 
     @property
     def structure_image(self):
+        if not self.structure:
+            return None
         mol = Chem.MolFromSmiles(self.structure)
         img = Draw.MolToImage(mol)
         buffer = BytesIO()
