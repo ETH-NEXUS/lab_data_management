@@ -43,17 +43,18 @@ class Command(BaseCommand):
 
     def process_rows(self, rows, library):
         unique_barcodes = self.extract_unique_barcodes(rows)
+        print(f"Unique barcodes: {unique_barcodes}")
         new_plates = self.create_plates(unique_barcodes, library)
         self.create_well_compounds(rows, new_plates)
 
     def extract_unique_barcodes(self, rows):
-        return list(
-            {
-                row["CompoundPlateBarcode"]
-                for row in rows
-                if "CompoundPlateBarcode" in row
-            }
-        )
+        barcodes = []
+        for row in rows:
+            for key, value in row.items():
+
+                if key.startswith("CompoundPlateBarcode"):
+                    barcodes.append(value)
+        return list(set(barcodes))
 
     def create_plates(self, barcodes, library):
         dimension_384 = PlateDimension.objects.get(name="dim_384_16x24")
@@ -64,7 +65,8 @@ class Command(BaseCommand):
                 barcode=new_barcode, library=library, dimension=dimension_384
             )
             plate.save()
-            print(f"Plate {plate.barcode} created.")
+            if _:
+                print(f"Plate {plate.barcode} created.")
             new_plates.append(plate)
         return new_plates
 
