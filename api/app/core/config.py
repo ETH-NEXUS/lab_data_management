@@ -33,6 +33,9 @@ class Config:
                             "destination_well": str,
                             "actual_volume": str,
                             "transfer_status": str,
+                            "current_fluid_volume": str,
+                            "DMSO": str,
+
                         },
                     }
                 },
