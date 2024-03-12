@@ -20,6 +20,8 @@ class CompoundAdmin(admin.ModelAdmin):
     list_filter = ("name",)
 
     def get_structure(self, compound: Compound):
+        if not compound.structure:
+            return None
         return mark_safe(
             '<img src="{}" width="150" height="150" />'.format(compound.structure_image)
         )
