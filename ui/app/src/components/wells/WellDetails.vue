@@ -315,7 +315,6 @@ const filterMeasurementFeatures = (query: string, update: (f: () => void) => voi
                 </tr>
               </thead>
               <tbody>
-                {{ well }}
                 <tr v-for="measurement in well.measurements" :key="measurement.label">
                   <td>{{ measurement.label }}</td>
                   <td>{{ measurement.measured_at }}</td>

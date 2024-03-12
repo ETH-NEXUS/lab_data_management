@@ -598,7 +598,7 @@ class M1000Mapper(BaseMapper):
 
 
 class MicroscopeMapper(BaseMapper):
-    RE_FILENAME = r"(?P<date>[0-9]+)-(?P<time>[0-9]+)-(?P<barcode>[^\.]+)\.xlsx"  # 231121-083504-231115AK_1.xlsx
+    RE_FILENAME = r"(?P<date>[0-9]+)-(?P<time>[0-9]+)[-_](?P<barcode>[^\.]+)\.xlsx"  # 231121-083504-231115AK_1.xlsx
 
     def parse(self, file, **kwargs):
         match = re.match(self.RE_FILENAME, os.path.basename(file))
