@@ -458,12 +458,17 @@ class Plate(TimeTrackedModel):
                             )
                             # We add a withdrawal to the source well
                             well_withdrawal.amount = F("amount") + mapping.amount
+                            well_withdrawal.current_amount = mapping.current_amount
+                            well_withdrawal.current_dmso = mapping.current_dmso
+
                             well_withdrawal.save()
                         except ObjectDoesNotExist:
                             WellWithdrawal.objects.create(
                                 well=from_well,
                                 target_well=well,
                                 amount=mapping.amount,
+                                current_amount=mapping.current_amount,
+                                current_dmso=mapping.current_dmso,
                             )
             return True  # TODO: implement unmap!!!
 
@@ -546,6 +551,21 @@ class Well(TimeTrackedModel):
         amount = self.well_compounds.all().aggregate(Sum("amount"))["amount__sum"] or 0
         return amount
 
+    # @property
+    # def red_flag(self):
+    #     # red flag is raised if the current amount is < 2.5 and current_dmso < 80
+    #     # check if well has withdrawals and belongs to a library if not return None
+    #     withdrawals = self.withdrawals.all()
+    #
+    #     if self.plate.library is None:
+    #         return None
+    #
+    #     withdrawals = self.withdrawals.all()
+    #     if not withdrawals:
+    #         return None
+    #     pass
+    #     # red flag is raised if the current amount is < 2.5 and current_dmso < 80
+
 
 class WellCompound(models.Model):
     """
@@ -577,6 +597,8 @@ class WellWithdrawal(TimeTrackedModel):
         Well, null=True, on_delete=models.SET_NULL, related_name="donors"
     )
     amount = models.FloatField()
+    current_amount = models.FloatField(null=True, blank=True)
+    current_dmso = models.FloatField(null=True, blank=True)
 
     def __str__(self):
         return f"{self.well.hr_position} ({self.amount})"

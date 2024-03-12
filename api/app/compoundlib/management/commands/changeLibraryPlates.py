@@ -37,6 +37,7 @@ class Command(BaseCommand):
 
     def get_or_create_library(self, library_name):
         library, _ = CompoundLibrary.objects.get_or_create(name=library_name)
+        print(f"Library {library}")
         return library
 
     def process_rows(self, rows, library):
@@ -62,6 +63,7 @@ class Command(BaseCommand):
                 barcode=new_barcode, library=library, dimension=dimension_384
             )
             new_plates.append(plate)
+            print(f"Created plate {new_barcode}")
         return new_plates
 
     def create_well_compounds(self, rows, plates):
@@ -76,6 +78,8 @@ class Command(BaseCommand):
         compound, _ = Compound.objects.get_or_create(
             name=row["MoleculeName"], structure=structure
         )
+        if _:
+            print(f"Created compound {compound}")
         return compound
 
     def get_or_create_well(self, position_raw, plate):

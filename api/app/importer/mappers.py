@@ -253,6 +253,8 @@ class EchoMapper(BaseMapper):
                 source_plate_name = entry["source_plate_name"]
                 source_plate_barcode = entry["source_plate_barcode"]
                 destination_plate_name = entry["destination_plate_name"]
+                current_fluid_volume = entry["current_fluid_volume"]
+                current_dmso = entry["DMSO"]
                 if "destination_plate_type" in entry:
                     destination_plate_type = entry["destination_plate_type"]
                 else:
@@ -317,6 +319,8 @@ class EchoMapper(BaseMapper):
                     amount=float(entry["actual_volume"]),
                     status=entry["transfer_status"],
                     map_type=source_plate.is_control_plate,  # if it is true, we need to map the type
+                    current_amount=current_fluid_volume,
+                    current_dmso=current_dmso,
                 )
                 mapping_list.add(mapping)
                 mbar.update(1)

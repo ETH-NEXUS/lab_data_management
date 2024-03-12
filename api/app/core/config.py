@@ -35,7 +35,6 @@ class Config:
                             "transfer_status": str,
                             "current_fluid_volume": str,
                             "DMSO": str,
-
                         },
                     }
                 },
