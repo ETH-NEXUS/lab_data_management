@@ -12,7 +12,7 @@ class CompoundLibraryAdmin(admin.ModelAdmin):
 @admin.register(Compound)
 class CompoundAdmin(admin.ModelAdmin):
     list_display = (
-        "get_structure",
+        #   "get_structure",
         "structure",
         "get_data",
     )
@@ -21,7 +21,7 @@ class CompoundAdmin(admin.ModelAdmin):
 
     def get_structure(self, compound: Compound):
         if not compound.structure:
-            return None
+            return ""
         return mark_safe(
             '<img src="{}" width="150" height="150" />'.format(compound.structure_image)
         )
