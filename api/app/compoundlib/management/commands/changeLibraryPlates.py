@@ -14,6 +14,7 @@ from core.models import (
 
 def read_file(file_path):
     with open(file_path, "r") as file:
+        print(f"Reading file {file_path}")
         return list(csv.DictReader(file, delimiter="\t"))
 
 
@@ -37,6 +38,7 @@ class Command(BaseCommand):
 
     def get_or_create_library(self, library_name):
         library, _ = CompoundLibrary.objects.get_or_create(name=library_name)
+        print(f"Library {library.name} found.")
         return library
 
     def process_rows(self, rows, library):
@@ -61,6 +63,8 @@ class Command(BaseCommand):
             plate, _ = Plate.objects.get_or_create(
                 barcode=new_barcode, library=library, dimension=dimension_384
             )
+            plate.save()
+            print(f"Plate {plate.barcode} created.")
             new_plates.append(plate)
         return new_plates
 
@@ -69,16 +73,22 @@ class Command(BaseCommand):
             compound = self.get_or_create_compound(row)
             for plate in plates:
                 well = self.get_or_create_well(row["WellCoordinate"], plate)
-                WellCompound.objects.get_or_create(compound=compound, well=well)
+                well_compound, created = WellCompound.objects.get_or_create(
+                    compound=compound, well=well
+                )
+                well_compound.save()
 
     def get_or_create_compound(self, row):
         structure = row["Smiles"] if row["Smiles"] else None
         compound, _ = Compound.objects.get_or_create(
             name=row["MoleculeName"], structure=structure
         )
+
+        compound.save()
         return compound
 
     def get_or_create_well(self, position_raw, plate):
         position = plate.dimension.position(position_raw)
         well, _ = Well.objects.get_or_create(plate=plate, position=position)
+        well.save()
         return well
