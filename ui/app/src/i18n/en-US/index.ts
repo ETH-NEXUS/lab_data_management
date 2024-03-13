@@ -115,6 +115,7 @@ export default {
     withdrawals: 'Withdrawals',
     donors: 'Donors',
     amount: 'Amount',
+    amount_dmso: 'Amount &  DMSO',
     chain: 'Chain',
     well_type: 'Type',
     template_name: 'Template Name',
@@ -194,7 +195,8 @@ export default {
     cannot_login: 'Cannot login.',
   },
   unit: {
-    amount: 'µl',
+    mikro: 'µl',
+    nL: 'nL',
   },
   info: {
     downloading_results: 'Downloading results...',
@@ -214,5 +216,9 @@ export default {
     import_control_plate: 'Import control plate',
     import_library_plate: 'Import library plate',
     import_sdf_library: 'Import SDF library',
+  },
+  well: {
+    current_amount: 'Current amount',
+    current_dmso: 'Current  DMSO',
   },
 }

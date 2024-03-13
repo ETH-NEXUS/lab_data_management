@@ -551,20 +551,19 @@ class Well(TimeTrackedModel):
         amount = self.well_compounds.all().aggregate(Sum("amount"))["amount__sum"] or 0
         return amount
 
-    # @property
-    # def red_flag(self):
-    #     # red flag is raised if the current amount is < 2.5 and current_dmso < 80
-    #     # check if well has withdrawals and belongs to a library if not return None
-    #     withdrawals = self.withdrawals.all()
-    #
-    #     if self.plate.library is None:
-    #         return None
-    #
-    #     withdrawals = self.withdrawals.all()
-    #     if not withdrawals:
-    #         return None
-    #     pass
-    #     # red flag is raised if the current amount is < 2.5 and current_dmso < 80
+    @property
+    def current_info(self):
+        withdrawals = self.withdrawals.all()
+        if self.plate.library is None or not withdrawals:
+            return None
+
+        last_withdrawal = withdrawals.latest("created_at")
+        current_amount = last_withdrawal.current_amount
+        current_dmso = last_withdrawal.current_dmso
+        return {
+            "current_amount": current_amount,
+            "current_dmso": current_dmso,
+        }
 
 
 class WellCompound(models.Model):

@@ -134,6 +134,10 @@ export interface Well {
   donors?: Array<Withdrawal>
   mixture?: boolean
   is_invalid?: boolean
+  current_info?: {
+    current_amount: number
+    current_dmso: number
+  }
 }
 
 export interface PlateDimension {
