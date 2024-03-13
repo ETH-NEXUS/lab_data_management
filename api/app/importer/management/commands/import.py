@@ -412,7 +412,7 @@ class Command(BaseCommand):
                         WellCompound.objects.create(well=well, compound=compound)
                         well.save()
                         pbar.update(1)
-                print("**********************************")
+
             message(f"Finished processing plate {plate_barcode}.", "success", room_name)
 
     def template(

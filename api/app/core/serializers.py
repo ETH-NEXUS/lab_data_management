@@ -141,6 +141,7 @@ class WellDetailSerializer(serializers.ModelSerializer):
 
 class WellSerializer(serializers.ModelSerializer):
     hr_position = serializers.ReadOnlyField()
+    current_info = serializers.ReadOnlyField()
     compounds = WellCompoundSerializer(
         many=True, required=False, allow_null=True, source="well_compounds"
     )

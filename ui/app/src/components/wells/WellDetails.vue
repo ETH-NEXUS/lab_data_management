@@ -195,6 +195,16 @@ const filterMeasurementFeatures = (query: string, update: (f: () => void) => voi
     }
   })
 }
+const findAmountFromDonors = () => {
+  if (well.value && well.value.donors && well.value.donors.length > 0) {
+    let amount = 0
+    for (const donor of well.value.donors) {
+      amount += donor.amount
+    }
+    return amount
+  }
+  return null
+}
 </script>
 
 <template>
@@ -233,7 +243,7 @@ const filterMeasurementFeatures = (query: string, update: (f: () => void) => voi
         <div class="col-4">
           <h4 class="q-ma-none vertical-top">
             <q-icon name="o_water_drop" />
-            {{ t('title.amount') }}
+            {{ t('title.amount_dmso') }}
           </h4>
           <q-btn
             :label="t('action.delete_well')"
@@ -245,7 +255,16 @@ const filterMeasurementFeatures = (query: string, update: (f: () => void) => voi
         <div class="col-8">
           <table>
             <tr>
-              <th>{{ props.wellInfo.well.amount }}{{ t('unit.amount') }}</th>
+              <th v-if="well.current_info">
+                <p>
+                  {{ t('well.current_amount') }}: {{ well.current_info.current_amount }} {{ t('unit.mikro') }}
+                </p>
+                <p>{{ t('well.current_dmso') }}: {{ well.current_info.current_dmso }}%</p>
+              </th>
+              <th v-if="findAmountFromDonors()">{{ findAmountFromDonors() }}{{ t('unit.nL') }}</th>
+              <th v-if="!well.current_info && !findAmountFromDonors()">
+                {{ props.wellInfo.well.amount }}{{ t('unit.amount') }}
+              </th>
             </tr>
           </table>
         </div>

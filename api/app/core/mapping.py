@@ -16,12 +16,16 @@ class Mapping:
         amount: float = 0,
         status: str = None,
         map_type: bool = False,
+        current_amount: float = 0,
+        current_dmso: float = 0,
     ):
         self.__from = int(from_pos)
         self.__to = int(to_pos)
         self.__amount = float(amount)
         self.__status = status  # not str(status)
         self.__map_type = map_type  # if we need to map the well type (apply when we map a control plate)
+        self.current_amount = current_amount
+        self.current_dmso = current_dmso
 
     def __str__(self):
         return f"Mapping: {self.__from} -> {self.__to} ({self.__amount})"

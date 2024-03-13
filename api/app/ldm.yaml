@@ -13,6 +13,8 @@ importer:
         destination_well: Destination Well
         actual_volume: Actual Volume
         transfer_status: Transfer Status
+        current_fluid_volume: Current Fluid Volume
+        DMSO: "% DMSO"
   m1000:
     default:
       file_blob: "*.asc"
