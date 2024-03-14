@@ -78,16 +78,16 @@ const recalculateStatus = async () => {
         <div class="text-body1 q-pl-md text-container">
           <div class="text-h6 q-mt-lg q-mb-md q-pl-sml text-primary">Empty Wells</div>
           <p class="text-body1 text-grey-8">
-            Here you can see the list of the plates with problematic wells (i. e. the wells which have amount
-            or DMSO concentration less that the threshhold) The same Information is represented on the
-            navigation tree as a red flag. You can change the threshold here and recalculate the status of the
-            wells and plates.
+            Here, you can see a list of plates with problematic wells (i.e., wells that have an amount or DMSO
+            concentration less than the threshold). This information is also represented on the navigation
+            tree as a warning icon. You can change the threshold here and recalculate the status of the wells
+            and plates.
           </p>
           <p class="text-body1 text-grey-8">
-            Not that this information is read from the echo-transfer files, so that not all plates are
-            considered here but only those which were recently imported with the echo-import. For older
-            projects, you can always resubmitt the echo-import in the management tab in order to make sure
-            that the calculation of the well status affects the plates.
+            Note that this information is derived from echo-transfer files; therefore, it only considers those
+            plates that have been recently imported to the LDM via the echo-import process. For older
+            projects, you can always resubmit the echo-import in the management tab to ensure that the
+            calculation of the well status affects the plates.
           </p>
         </div>
       </q-card-section>
