@@ -253,8 +253,14 @@ class EchoMapper(BaseMapper):
                 source_plate_name = entry["source_plate_name"]
                 source_plate_barcode = entry["source_plate_barcode"]
                 destination_plate_name = entry["destination_plate_name"]
-                current_fluid_volume = entry["current_fluid_volume"]
-                current_dmso = entry["DMSO"]
+                current_fluid_volume = (
+                    float(entry["current_fluid_volume"])
+                    if entry["current_fluid_volume"]
+                    else None
+                )
+                current_dmso = (
+                    float(entry["DMSO"].replace("%", "")) if entry["DMSO"] else None
+                )
                 if "destination_plate_type" in entry:
                     destination_plate_type = entry["destination_plate_type"]
                 else:

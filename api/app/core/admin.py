@@ -15,6 +15,7 @@ from .models import (
     PlateMapping,
     MeasurementAssignment,
     WellType,
+    Threshold,
 )
 
 
@@ -145,4 +146,16 @@ class WellTypeAdmin(admin.ModelAdmin):
     list_display = (
         "name",
         "description",
+    )
+
+
+@admin.register(Threshold)
+class ThresholdAdmin(admin.ModelAdmin):
+    list_display = (
+        "amount",
+        "dmso",
+    )
+    search_fields = (
+        "amount",
+        "dmso",
     )

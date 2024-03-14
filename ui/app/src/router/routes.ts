@@ -29,6 +29,10 @@ const routes: RouteRecordRaw[] = [
         path: '/management',
         component: () => import('pages/ManagementPage.vue'),
       },
+      {
+        path: '/messages',
+        component: () => import('pages/MessagesPage.vue'),
+      },
     ],
   },
   {

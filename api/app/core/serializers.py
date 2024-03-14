@@ -22,6 +22,7 @@ from .models import (
     PlateDetail,
     WellDetail,
     ExperimentDetail,
+    Threshold,
 )
 
 
@@ -100,6 +101,7 @@ class SimplePlateSerializer(serializers.ModelSerializer):
             "library",
             "measurement_labels",
             "archived",
+            "status",
         )
 
 
@@ -403,4 +405,10 @@ class PlateMappingSerializerOldVariant(UndefinedAffineModelSerializer):
 
     class Meta:
         model = PlateMapping
+        fields = "__all__"
+
+
+class ThresholdSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Threshold
         fields = "__all__"

@@ -13,6 +13,7 @@ from .models import (
     PlateMapping,
     Experiment,
     BarcodeSpecification,
+    Threshold,
 )
 from .serializers import (
     PlateSerializer,
@@ -20,6 +21,7 @@ from .serializers import (
     ProjectSerializer,
     PlateMappingSerializer,
     BarcodeSpecificationSerializer,
+    ThresholdSerializer,
 )
 from .views import (
     PlateViewSet,
@@ -108,3 +110,9 @@ class PlateMappingEndpoint(DefaultEndpoint):
     base_serializer = PlateMappingSerializer
     base_viewset = PlateMappingViewSet
     model = PlateMapping
+
+
+@register
+class ThresholdEndpoint(DefaultEndpoint):
+    model = Threshold
+    base_serializer = ThresholdSerializer

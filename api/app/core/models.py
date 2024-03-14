@@ -160,6 +160,7 @@ class Plate(TimeTrackedModel):
     )
     is_control_plate = models.BooleanField(default=False, null=True, blank=True)
     archived = models.BooleanField(default=False, null=True, blank=True)
+    status = models.TextField(null=True, blank=True)
 
     class Meta:
         ordering = ("-id",)
@@ -401,6 +402,9 @@ class Plate(TimeTrackedModel):
         """
         Maps this plate to another plate using a mapping list.
         """
+        thresholds = Threshold.objects.first()
+        threshold_amount = thresholds.amount
+        threshold_dmso = thresholds.dmso
         with transaction.atomic():
             for mapping in mappingList:
 
@@ -408,6 +412,7 @@ class Plate(TimeTrackedModel):
                 # We only need to map wells that are not empty
                 # TODO: If no from_well a destination well could probably be generated anyway..?..
                 if from_well:
+                    from_well_plate = from_well.plate
                     if not target.dimension:
                         raise MappingError(_("Target plate has no dimension assigned"))
                     if mapping.to_pos >= target.num_wells:
@@ -460,8 +465,21 @@ class Plate(TimeTrackedModel):
                             well_withdrawal.amount = F("amount") + mapping.amount
                             well_withdrawal.current_amount = mapping.current_amount
                             well_withdrawal.current_dmso = mapping.current_dmso
-
                             well_withdrawal.save()
+                            # assigning problematic status to from well and its pale if the amount or dmso is less than the threshold
+                            if (
+                                (mapping.current_amount and mapping.current_dmso)
+                                and (
+                                    mapping.current_amount < threshold_amount
+                                    or mapping.current_dmso < threshold_dmso
+                                )
+                                and from_well_plate.library
+                            ):
+                                from_well.status = "empty"
+                                from_well.save()
+                                from_well_plate.status = "empty_wells"
+                                from_well_plate.save()
+
                         except ObjectDoesNotExist:
                             WellWithdrawal.objects.create(
                                 well=from_well,
@@ -564,6 +582,11 @@ class Well(TimeTrackedModel):
             "current_amount": current_amount,
             "current_dmso": current_dmso,
         }
+
+
+class Threshold(models.Model):
+    dmso = models.FloatField(default=80)
+    amount = models.FloatField(default=2.5)
 
 
 class WellCompound(models.Model):

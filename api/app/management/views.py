@@ -96,7 +96,7 @@ def long_polling(request, room_name):
         cache.delete(status_key)
 
     if output:
-        # cache.delete(output_key)
+        cache.delete(output_key)
         return JsonResponse({"message": output, "status": status})
     else:
         return JsonResponse({"message": None, "status": status})

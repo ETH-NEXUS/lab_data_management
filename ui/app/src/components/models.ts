@@ -198,6 +198,7 @@ export interface Plate {
   library?: number
   template?: number
   archived?: boolean
+  status?: string
 }
 
 export interface MeasurementFeature {

@@ -2,7 +2,7 @@ from django.core.management.base import BaseCommand
 from django.contrib.auth import get_user_model
 from os import environ
 from helpers.logger import logger
-
+from core.models import Threshold
 
 
 class Command(BaseCommand):
@@ -18,3 +18,6 @@ class Command(BaseCommand):
             logger.debug("Created superuser account")
         else:
             logger.warning("Superuser exists")
+        if not Threshold.objects.exists():
+            Threshold.objects.create()
+            logger.debug("Created threshold")

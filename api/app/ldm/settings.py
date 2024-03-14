@@ -62,6 +62,7 @@ INSTALLED_APPS = [
     "platetemplate",
     "harvest",
     "dbbackup",
+    "problems",
 ]
 
 

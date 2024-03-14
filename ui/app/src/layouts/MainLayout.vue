@@ -59,6 +59,7 @@ const openDocsPage = () => {
         <span v-if="userStore.user">
           <strong>{{ userStore.user.first_name }} {{ userStore.user.last_name }}</strong>
         </span>
+        <q-btn @click="router.push('/messages')" flat round dense icon="flag"></q-btn>
         <q-btn v-if="userStore.authenticated" flat round dense icon="person">
           <q-menu fit>
             <q-list style="min-width: 100px">

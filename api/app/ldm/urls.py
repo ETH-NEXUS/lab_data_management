@@ -40,6 +40,7 @@ from management.views import (
     upload_file,
     get_file_content,
 )
+from compoundlib.views import RedFlagView, recalculate_status
 
 urlpatterns = [
     path("admin/", admin.site.urls),
@@ -68,6 +69,12 @@ urlpatterns = [
     path("api/list_files/", list_files, name="list_files"),
     path("api/download_pdf_report/", download_pdf_report, name="download_pdf_report"),
     path("api/download_csv_data/", download_csv_data, name="download_csv_data"),
+    path("api/compoundlib/redflag/", RedFlagView.as_view(), name="redflag"),
+    path(
+        "api/compoundlib/recalculate_status/",
+        recalculate_status,
+        name="recalculate_status",
+    ),
 ]
 
 if not settings.DISABLE_BROWSABLE_API and not settings.DISABLE_AUTH:

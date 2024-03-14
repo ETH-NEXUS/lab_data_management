@@ -51,7 +51,6 @@ class Command(BaseCommand):
         barcodes = []
         for row in rows:
             for key, value in row.items():
-
                 if key.startswith("CompoundPlateBarcode"):
                     barcodes.append(value)
         return list(set(barcodes))
