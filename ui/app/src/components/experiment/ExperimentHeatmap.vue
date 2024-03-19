@@ -24,6 +24,8 @@ onMounted(async () => {
     message: t('info.downloading_results'),
   })
   experimentPlates.value = await getExperimentPlates(props.experimentId)
+  // sort by barcode
+  experimentPlates.value.sort((a, b) => a.barcode.localeCompare(b.barcode))
   $q.loading.hide()
   measurementOptions.value = props.availableMeasurementLabels
   selectedMeasurement.value = measurementOptions.value[0]
