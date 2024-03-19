@@ -46,7 +46,7 @@ def convert_string_to_datetime(date_str, time_str):
         datetime_obj = dt.strptime(combined_str, "%d-%m-%y %H:%M:%S")
         return datetime_obj
     except ValueError:
-        logger.error(f"Cannot convert {date_str} {time_str} to datetime")
+        logger.warning(f"Cannot convert {date_str} {time_str} to datetime")
         return None
 
 
@@ -708,6 +708,8 @@ class MicroscopeMapper(BaseMapper):
                         metadata[k] = v
                     else:
                         metadata[current_label].append(str_value)
+                if str(cell.value).strip().lstrip().lower() == "results":
+                    break
 
         return metadata
 
@@ -716,9 +718,15 @@ class MicroscopeMapper(BaseMapper):
         headers = []
         results_start_row = None
         for index, row in enumerate(sheet.iter_rows(values_only=True)):
-            if row[1] and str(row[1]).lower() == "well id":
+            if (
+                row[1]
+                and str(row[1]).lower() == "well id"
+                or str(row[1]).lower() == "well"
+            ):
                 for cell in sheet.iter_rows(
-                    min_row=index + 1, max_row=index + 1, values_only=True
+                    min_row=index + 1,
+                    max_row=index + 1,
+                    values_only=True,  # we use index +1 because indices start with 1 in Excel
                 ):
                     if cell:
                         headers.append(cell)
@@ -733,6 +741,9 @@ class MicroscopeMapper(BaseMapper):
                 results_data.append(row_data)
 
         return results_data
+
+    def __parse_reader_mode(self, sheet, barcode, **kwargs):
+        pass
 
     def __parse_layout(self, sheet, plate):
         layout_start_row = None
