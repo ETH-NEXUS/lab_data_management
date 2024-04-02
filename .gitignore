@@ -326,3 +326,5 @@ api/notebooks
 
 
 *.jupyterlab-workspace
+
+data_temp/

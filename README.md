@@ -1,5 +1,58 @@
-# Lab Management
+# LDM User Guide
 
+This guide describes the usage of the app from the user's perspective, focusing on the app interface. It outlines a typical workflow that a user might follow once the app is completely set up.
+
+## Navigation Tree
+
+The left panel of the web app contains the navigation tree. The tree is divided into three main sections:
+
+- **Projects**: This section lists all the projects that the user has access to. Users can create new projects and view the details of existing projects. A project expands to show a list of experiments.
+
+- **Compound Libraries**: This section houses all the compound libraries uploaded by the user. Each library expands to reveal a list of plates. Clicking on a plate opens its corresponding page.
+
+- **Management**: Clicking on the management section opens the management page, where most operations are conducted. The management menu item expands to show a directory tree, mirroring the directory that was mounted as the main data storage directory during the installation process. Typically, this is a directory on the server where the app is deployed. Users can add files to it using tools like Cyberduck, FTP clients, or configure lab devices to automatically upload output files to this folder.
+
+![navigation tree view](./readme_images/nav_tree.png)
+
+## Starting a Workflow
+
+### Create a new project
+
+ A typical workflow begins by creating a new project. This is accomplished by right-clicking on the 'Projects' navigation item. The app can be configured to either use a custom project name or to select one from a project management tool like Harvest, provided that the latter offers an API. Once a project is created, you can click on its name to open the project page, where the project name and details can be edited.
+
+### Create a new experiment
+ A project can contain several experiments, with each experiment typically corresponding to one run. To create a new experiment, right-click on the project name and select 'New Experiment'. This action opens the experiment page, where you can edit the experiment name and details.
+
+![new experiment](./readme_images/new_exp.png)
+
+### Upload a Control Plate Layout
+
+Most experiments leverage a control plate to validate measurements and ensure accuracy. 
+The user needs to upload the control plate layout <span style="color: salmon;">before uploading the echo-output files</span> (otherwise, the QC metrics can not be calculated).
+The control plate layout must adhere to a specific format, outlined as follows:
+
+- **File Format**: The layout should be in a `.csv` (comma-separated values) format.
+- **Structure**: Each row in the file corresponds to a row on the control plate, with each cell representing a well. For wells containing a compound or DMSO, the compound's name should be specified. For empty wells, use the word `null` to indicate no compound. Following the rows that represent the control plate layout, include an empty row to signify the end of the section. After this separator, repeat the layout to denote the type of control for each well: `P` for positive control, `N` for negative control, and `C` for the rest of the wells.
+
+You can download an example control plate layout [here](./example_files/control_plate_example.csv).
+
+- **Uploading**: 
+
+1. Navigate to the **management page**, where most data management operations are conducted.
+2. Select the **"Import control plate"** tab.
+3. In the expandable menu on the left, click on the file name. The name of the file will then be displayed above the action box.
+4. **Drag and drop** or type the file name into the file name field.
+5. Specify the **name of the project**. Note: Each project can have several control plate layouts to be used in different experiments.
+6. After uploading, the layout will appear under the project node in the navigation tree.
+
+
+
+#### Example File Format
+
+The structure of the `.csv` file should resemble the following pattern, where `Staurosporine`, `DMSO` and other names represent actual compounds, and `null` denotes empty wells. The layout specifies the content of each well in the first section, followed by an empty row, and then the control designations (`P`, `N`, or `C`) in the repeated layout:
+
+
+# How to start the app 
 ## Getting started
 
 1. Clone it from github
