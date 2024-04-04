@@ -1,8 +1,9 @@
+import os
 import traceback
 from os.path import join
 import yaml
 from django.core.management.base import BaseCommand
-from importer.mappers import EchoMapper, M1000Mapper, MicroscopeMapper
+from importer.mappers import EchoMapper, M1000Mapper, MicroscopeMapper, DatMapper
 from core.models import Experiment
 from importer.helper import message
 from core.config import Config
@@ -18,7 +19,7 @@ class Command(BaseCommand):
         parser.add_argument(
             "machine",
             type=str,
-            choices=("echo", "m1000", "microscope"),
+            choices=("echo", "m1000", "microscope", "dat"),
             help="Machine to map from",
         )
         parser.add_argument(
@@ -111,8 +112,12 @@ class Command(BaseCommand):
                     return
             try:
                 mapper = EchoMapper()
+                file_blob = Config.current.importer.echo.default.file_blob
+                # if in the folder which was provided as 'path' arguments there are no .csv files we use xml_blob, otherwise the file_blob
+                if not any(file.endswith(".csv") for file in os.listdir(path)):
+                    file_blob = Config.current.importer.echo.default.xml_blob
                 mapper.run(
-                    join(path, Config.current.importer.echo.default.file_blob),
+                    join(path, file_blob),
                     headers=headers,
                     debug=options.get("debug", False),
                     room_name=options.get("room_name", None),
@@ -158,6 +163,25 @@ class Command(BaseCommand):
                 mapper = MicroscopeMapper()
                 mapper.run(
                     join(path, Config.current.importer.microscope.default.file_blob),
+                    debug=options.get("debug", False),
+                    experiment_name=options.get("experiment_name", None),
+                    room_name=options.get("room_name", None),
+                )
+
+            except Exception as ex:
+                message(f"Error: {ex}", "error", options.get("room_name", None))
+                traceback.print_exc()
+        elif options.get("machine") == "dat":
+            try:
+                if not options.get("experiment_name", None):
+                    die(
+                        "No experiment name provided. If you would like to add missing "
+                        "plates, you need to provide the experiment name."
+                    )
+
+                mapper = DatMapper()
+                mapper.run(
+                    join(path, Config.current.importer.dat.default.file_blob),
                     debug=options.get("debug", False),
                     experiment_name=options.get("experiment_name", None),
                     room_name=options.get("room_name", None),

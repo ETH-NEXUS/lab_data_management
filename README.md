@@ -2,6 +2,8 @@
 
 This guide describes the usage of the app from the user's perspective, focusing on the app interface. It outlines a typical workflow that a user might follow once the app is completely set up.
 
+**Note**: Before using the LDM, make sure that all the plate barcodes are unique. This concerns all types of plates: experiment run plates, compound library plates, and control plates. Duplicate barcodes can lead to errors in the app's workflow.
+
 ## Navigation Tree
 
 The left panel of the web app contains the navigation tree. The tree is divided into three main sections:
@@ -35,6 +37,7 @@ The control plate layout must adhere to a specific format, outlined as follows:
 - **Structure**: Each row in the file corresponds to a row on the control plate, with each cell representing a well. For wells containing a compound or DMSO, the compound's name should be specified. For empty wells, use the word `null` to indicate no compound. Following the rows that represent the control plate layout, include an empty row to signify the end of the section. After this separator, repeat the layout to denote the type of control for each well: `P` for positive control, `N` for negative control, and `C` for the rest of the wells.
 
 You can download an example control plate layout [here](./example_files/control_plate_example.csv).
+The structure of the `.csv` file should resemble the following pattern, where `Staurosporine`, `DMSO` and other names represent actual compounds, and `null` denotes empty wells. The layout specifies the content of each well in the first section, followed by an empty row, and then the control designations (`P`, `N`, or `C`) in the repeated layout:
 
 - **Uploading**: 
 
@@ -43,13 +46,13 @@ You can download an example control plate layout [here](./example_files/control_
 3. In the expandable menu on the left, click on the file name. The name of the file will then be displayed above the action box.
 4. **Drag and drop** or type the file name into the file name field.
 5. Specify the **name of the project**. Note: Each project can have several control plate layouts to be used in different experiments.
-6. After uploading, the layout will appear under the project node in the navigation tree.
+6. Specify the **plate barcode**. This barcode should be unique and correspond to the barcode of the physical control plate used in the experiment and in the echo files. 
+7. After uploading, the layout will appear under the project node in the navigation tree.
+
+![control plate](./readme_images/control_plate.png)
 
 
 
-#### Example File Format
-
-The structure of the `.csv` file should resemble the following pattern, where `Staurosporine`, `DMSO` and other names represent actual compounds, and `null` denotes empty wells. The layout specifies the content of each well in the first section, followed by an empty row, and then the control designations (`P`, `N`, or `C`) in the repeated layout:
 
 
 # How to start the app 

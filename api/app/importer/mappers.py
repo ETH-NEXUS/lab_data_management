@@ -2,6 +2,7 @@ import csv
 import os
 import re
 from typing import TextIO
+import xml.etree.ElementTree as ET
 
 import pandas as pd
 from io import TextIOWrapper
@@ -83,8 +84,10 @@ class BaseMapper:
             if filename.endswith(".xlsx"):
                 data = self.parse(filename, **kwargs)
             else:
+                xml_file = filename.endswith(".xml")
+                # add xml_file to **kwargs
                 with open(filename, "r", encoding=encoding) as file:
-                    ret = self.parse(file, **kwargs)
+                    ret = self.parse(file, xml_file=xml_file, **kwargs)
                     if isinstance(ret, tuple):
                         data = ret[0]
                         kwargs.update(ret[1])
@@ -199,6 +202,39 @@ class EchoMapper(BaseMapper):
         return dropwhile(lambda line: pattern not in line, file)
 
     def parse(self, file: TextIOWrapper, **kwargs) -> list[dict]:
+        if kwargs.get("xml_file"):
+            tree = ET.parse(file)
+            root = tree.getroot()
+            result = []
+            source_plate_name = None
+            source_plate_barcode = None
+            destination_plate_name = None
+            destination_plate_barcode = None
+            for plate in root.find("plateInfo"):
+                if plate.get("type") == "source":
+                    source_plate_name = plate.get("name")
+                    source_plate_barcode = plate.get("barcode")
+                elif plate.get("type") == "destination":
+                    destination_plate_name = plate.get("name")
+                    destination_plate_barcode = plate.get("barcode")
+            for w in root.find("printmap"):
+                result.append(
+                    {
+                        "source_plate_name": source_plate_name,
+                        "source_plate_barcode": source_plate_barcode,
+                        "destination_plate_name": destination_plate_name,
+                        "destination_plate_barcode": destination_plate_barcode,
+                        "source_well": w.get("n"),
+                        "destination_well": w.get("dn"),
+                        "actual_volume": w.get("vl"),
+                        "current_fluid_volume": w.get("cvl"),
+                        "DMSO": w.get("fc"),
+                        "transfer_status": "",
+                    }
+                )
+            print(result)
+            return result
+
         headers = kwargs.get("headers", EchoMapper.DEFAULT_COLUMNS)
         file = self.__fast_forward_to_header_row(file, headers)
         results = []
@@ -313,9 +349,6 @@ class EchoMapper(BaseMapper):
 
                 source_well = entry["source_well"]
                 destination_well = entry["destination_well"]
-                # __debug(
-                #     f"Mapping {source_plate.barcode}:{source_well} -> {destination_plate.barcode}:{destination_well}"
-                # )
                 from_pos = source_plate.dimension.position(source_well)
                 to_pos = destination_plate.dimension.position(destination_well)
 
@@ -352,26 +385,6 @@ class EchoMapper(BaseMapper):
                     "info",
                     kwargs.get("room_name", None),
                 )
-                # if source_plate.is_control_plate:
-                #     message(
-                #         f"Applying control plate template to {mapping_list.target.barcode}",
-                #         "info",
-                #         kwargs.get("room_name", None),
-                #     )
-                #     _target_plate = mapping_list.target
-                #     if source_plate.num_wells != _target_plate.num_wells:
-                #         raise MappingError(
-                #             f"{'Control plate and experiment plate must have the same amount of wells'}: {_target_plate.num_wells} != {source_plate.num_wells}"
-                #         )
-                #     for position in range(source_plate.num_wells):
-                #         template_well = source_plate.well_at(position)
-                #         well = _target_plate.well_at(position, create_if_not_exist=True)
-                #         if template_well:
-                #             well.type = template_well.type
-                #             well.save()
-                #         else:
-                #             pass
-
                 PlateDetail.refresh(concurrently=True)
                 WellDetail.refresh(concurrently=True)
             else:
@@ -772,3 +785,14 @@ class MicroscopeMapper(BaseMapper):
                         position_type[well_position] = well_type
         print("position_type", position_type)
         return position_type
+
+
+class DatMapper(BaseMapper):
+    def parse(self, file: TextIOWrapper | str | TextIO, **kwargs):
+        message(
+            "Parsing DAT file... ------------------------------------------", "debug"
+        )
+        print(file)
+
+    def map(self, data: list[dict], **kwargs) -> None:
+        pass

@@ -22,6 +22,7 @@ class Config:
                 "echo": {
                     "default": {
                         "file_blob": str,
+                        "xml_blob": str,
                         "columns": {
                             "source_plate_barcode": str,
                             "source_plate_type": str,
@@ -40,6 +41,7 @@ class Config:
                 },
                 "m1000": {"default": {"file_blob": str}},
                 "microscope": {"default": {"file_blob": str}},
+                "dat": {"default": {"file_blob": str}},
             }
         }
     )

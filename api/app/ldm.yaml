@@ -2,6 +2,7 @@ importer:
   echo:
     default:
       file_blob: "**/*[_-][Tt]ransfer[_-]*.csv"
+      xml_blob: "**/*[_-][Tt]ransfer[_-]*.xml"
       columns:
         source_plate_barcode: Source Plate Barcode
         source_plate_type: Source Plate Type
@@ -25,4 +26,7 @@ importer:
   microscope:
     default:
       file_blob: "**/*.xlsx"
+  dat:
+    default:
+      file_blob: "**/*.dat"
 

@@ -263,7 +263,7 @@ const findAmountFromDonors = () => {
               </th>
               <th v-if="findAmountFromDonors()">{{ findAmountFromDonors() }}{{ t('unit.nL') }}</th>
               <th v-if="!well.current_info && !findAmountFromDonors()">
-                {{ props.wellInfo.well.amount }}{{ t('unit.amount') }}
+                {{ props.wellInfo.well.amount }}
               </th>
             </tr>
           </table>
@@ -294,7 +294,8 @@ const findAmountFromDonors = () => {
             </tr>
             <tr v-for="(compound, index) in well.compounds" :key="compound.name + '_' + index">
               <th class="vertical-top">{{ compound.name }}</th>
-              <td class="vertical-top">{{ compound.amount }}{{ t('unit.amount') }}</td>
+              <td class="vertical-top" v-if="compound.amount">{{ compound.amount }}{{ t('unit.nL') }}</td>
+              <td class="vertical-top" v-else>NA</td>
               <td class="vertical-top">
                 <dynamic-image
                   v-if="wellDetails.showStructure && compound.name !== 'unknown'"
