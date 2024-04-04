@@ -220,6 +220,7 @@ class Plate(TimeTrackedModel):
         """
         Applies a template plate to this plate
         """
+        print(f"Applying template {template_plate} to {self}")
         if self.num_wells != template_plate.num_wells:
             raise MappingError(
                 f"{_('Template plate must have the same amount of wells')}: {self.num_wells} != {template_plate.num_wells}"
@@ -228,10 +229,11 @@ class Plate(TimeTrackedModel):
             template_well = template_plate.well_at(position)
             well = self.well_at(position, create_if_not_exist=True)
             # TODO: At the moment we only map the type
-            well.type = template_well.type
-            well.save()
-        PlateDetail.refresh(concurrently=True)
-        WellDetail.refresh(concurrently=True)
+            if well and template_well:
+                well.type = template_well.type
+                well.save()
+        # PlateDetail.refresh(concurrently=True)
+        # WellDetail.refresh(concurrently=True)
         return self
 
     def map(self, mappingList: MappingList, target: "Plate"):

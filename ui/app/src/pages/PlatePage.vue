@@ -11,10 +11,12 @@ import {storeToRefs} from 'pinia'
 import {useSettingsStore} from '../stores/settings'
 import {PlateLabelValue, PlateMapping} from '../components/models'
 import bus from 'src/eventBus'
+import {useQuasar} from 'quasar'
 
 const route = useRoute()
 const router = useRouter()
 const {t} = useI18n()
+const $q = useQuasar()
 
 const loading = ref<boolean>(true)
 const plate = ref<Plate | null>(null)
@@ -44,6 +46,7 @@ const mappingFileColumnOptions = ref<Array<string>>([])
 const selectedMappingFileFromColumn = ref<string | undefined>()
 const selectedMappingFileToColumn = ref<string | undefined>()
 const selectedMappingFileAmountColumn = ref<string | undefined>()
+const applyToAllExperimentPlates = ref<boolean>(false)
 
 const copyPlateDialog = ref<boolean>(false)
 const copyPlateAmount = ref<number>(0)
@@ -79,7 +82,7 @@ const initialize = async () => {
     targetPlateBarcodeOptions.value = resp_target_plates.data.filter(
       (p: PlateLabelValue) => p.label !== plate.value?.barcode
     )
-    const resp_template_plates = await api.get('/api/plates/barcodes/?template=true')
+    const resp_template_plates = await api.get(`/api/plates/barcodes/?barcode=${route.params.barcode}`)
     templatePlateBarcodeOptions.value = resp_template_plates.data.filter(
       (p: PlateLabelValue) => p.label !== plate.value?.barcode
     )
@@ -275,11 +278,14 @@ const copyPlate = async () => {
 const applyTemplate = async () => {
   try {
     if (plate.value) {
+      $q.loading.show()
       const resp = await api.post(`/api/plates/${plate.value.id}/apply_template/`, {
         template: selectedTemplatePlateId.value,
+        apply_to_all_experiment_plates: applyToAllExperimentPlates.value,
       })
       plate.value = resp.data
     }
+    $q.loading.hide()
   } catch (err) {
     handleError(err)
   } finally {
@@ -543,6 +549,9 @@ const refresh = async () => {
               </q-item>
             </template>
           </q-select>
+          <q-checkbox
+            v-model="applyToAllExperimentPlates"
+            label="Apply to all experiment plates"></q-checkbox>
         </q-card-body>
         <q-card-actions align="right" class="bg-white text-teal">
           <q-btn flat :label="t('label.cancel')" v-close-popup />

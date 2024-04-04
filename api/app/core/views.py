@@ -149,6 +149,19 @@ class PlateViewSet(viewsets.ModelViewSet):
     @action(detail=False, methods=["get"])
     def barcodes(self, request):
         """Returns an array of barcodes"""
+        if request.GET.get("barcode"):
+            plate = Plate.objects.get(barcode=request.GET.get("barcode"))
+            experiment = plate.experiment
+            if experiment:
+                project = experiment.project
+                project_plates = Plate.objects.filter(project=project)
+
+                return Response(
+                    [
+                        {"label": plate.barcode, "value": plate.id}
+                        for plate in project_plates
+                    ]
+                )
         library = request.GET.get("library")
         experiment = request.GET.get("experiment")
         template = request.GET.get("template")
@@ -180,17 +193,37 @@ class PlateViewSet(viewsets.ModelViewSet):
             ]
         )
 
+    from rest_framework.exceptions import ValidationError
+
     @action(detail=True, methods=["post"])
     def apply_template(self, request, pk=None):
         """Applies a template plate"""
-        plate = self.get_object()
+        apply_to_all_experiment_plates = request.data.get(
+            "apply_to_all_experiment_plates"
+        )
         template_plate_id = request.data.get("template")
-        if template_plate_id:
-            template_plate = Plate.objects.get(pk=template_plate_id)
-            plate = plate.apply_template(template_plate)
-            return Response(PlateSerializer(plate).data, status.HTTP_200_OK)
+        print("_______________________________________________")
+        print(f"apply_to_all_experiment_plates: {apply_to_all_experiment_plates}")
+        print(f"template_plate_id: {template_plate_id}")
+        if template_plate_id is None:
+            raise ValidationError(
+                {"template": ["This field is required."]}, code="invalid"
+            )
+
+        template_plate = Plate.objects.get(pk=template_plate_id)
+        plate = self.get_object()
+
+        if apply_to_all_experiment_plates:
+            plates = Plate.objects.filter(experiment=plate.experiment)
+            for _plate in plates:
+                _plate.apply_template(template_plate)
         else:
-            raise Http404("Parameter 'template' is required.")
+            plate.apply_template(template_plate)
+
+        PlateDetail.refresh(concurrently=True)
+        WellDetail.refresh(concurrently=True)
+
+        return Response(PlateSerializer(plate).data, status=status.HTTP_200_OK)
 
     @action(detail=True, methods=["post"])
     def add_new_measurement(self, request, pk=None):
