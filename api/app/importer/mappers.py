@@ -9,7 +9,7 @@ from io import TextIOWrapper
 from glob import glob
 from itertools import dropwhile
 from tqdm import tqdm
-from datetime import datetime as dt
+from datetime import datetime as dt, datetime
 from contextlib import redirect_stderr
 from importer.helper import message
 
@@ -783,16 +783,78 @@ class MicroscopeMapper(BaseMapper):
                         well_position = f"{item[0]}{index}"
                         well_type = "P" if value == "POS" else "N"
                         position_type[well_position] = well_type
-        print("position_type", position_type)
+
         return position_type
 
 
 class DatMapper(BaseMapper):
     def parse(self, file: TextIOWrapper | str | TextIO, **kwargs):
+
         message(
             "Parsing DAT file... ------------------------------------------", "debug"
         )
-        print(file)
 
-    def map(self, data: list[dict], **kwargs) -> None:
-        pass
+        content = file.read()
+        pattern = r"Date:\s*(\d{2}/\d{2}/\d{4})\s*Time:\s*(\d{2}:\d{2}:\d{2})"
+        match = re.search(pattern, content)
+
+        if match:
+            date_str = match.group(1)
+            time_str = match.group(2)
+            datetime_str = f"{date_str} {time_str}"
+            datetime_obj = datetime.strptime(datetime_str, "%d/%m/%Y %H:%M:%S")
+        else:
+            datetime_obj = datetime(
+                2024, 4, 4, 11, 00
+            )  # random time as a quick and dirty solution for now
+        last_counts = content.split("Chromatic / Channel:")[-1].split("\n")[3:]
+        result = {"measured_at": datetime_obj, "counts": []}
+        for line in last_counts:
+            line_list = line.split("\t")
+            if len(line_list) > 0:
+                for i in line_list:
+                    if i:
+                        result["counts"].append(int(i))
+        return result
+
+    def map(self, data: dict, **kwargs) -> None:
+        filename = kwargs.get("filename")
+        barcode = filename.split("/")[-1].split(".")[0]
+        try:
+            plate = Plate.objects.get(barcode=barcode)
+        except Plate.DoesNotExist:
+            message(
+                f"Plate with barcode {barcode} does not exist. Creating it.",
+                "warning",
+                kwargs.get("room_name", None),
+            )
+            barcode_specification, _ = BarcodeSpecification.objects.get_or_create(
+                prefix=barcode.split("_")[0],
+                sides=["North"],
+                number_of_plates=4,
+                experiment=Experiment.objects.get(name=kwargs.get("experiment_name")),
+            )
+            plate = Plate.objects.create(
+                barcode=barcode,
+                dimension=PlateDimension.by_num_wells(len(data)),
+                experiment=barcode_specification.experiment,
+            )
+        with tqdm(
+            desc="Processing dat file output",
+            unit="measurement",
+            total=len(data),
+        ) as mbar:
+            for idx, value in enumerate(data["counts"]):
+                well = plate.well_at(idx)
+                if not well:
+                    well = Well.objects.create(plate=plate, position=idx)
+                Measurement.objects.update_or_create(
+                    well=well,
+                    label="value",
+                    measured_at=data["measured_at"],
+                    defaults={
+                        "value": value,
+                    },
+                )
+                mbar.update(1)
+        self.create_measurement_assignment(plate, kwargs.get("filename"))
