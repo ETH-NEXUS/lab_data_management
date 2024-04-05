@@ -232,6 +232,8 @@ class Plate(TimeTrackedModel):
             if well and template_well:
                 well.type = template_well.type
                 well.save()
+            if well and not template_well:
+                well.type = 'C'
         # PlateDetail.refresh(concurrently=True)
         # WellDetail.refresh(concurrently=True)
         return self
