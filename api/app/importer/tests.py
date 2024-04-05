@@ -353,19 +353,3 @@ class MapperTests(TestCase):
         measurement_assignments = MeasurementAssignment.objects.all()
         self.assertEqual(1152, len(measurements))
         self.assertEqual(3, len(measurement_assignments))
-
-    def test_evaluation(self):
-        mapper = M1000Mapper()
-        mapper.run(
-            join(self.M1000_DIR_EVALUATION, "*.asc"),
-            evaluation="Acceptor/Donor",
-            measurement_name="ratio",
-        )
-
-        measurements_filtered = Measurement.objects.filter(feature__abbrev="ratio")
-        plate_mappings = PlateMapping.objects.filter(evaluation="Acceptor/Donor")
-        measurement = Measurement.objects.filter(identifier="SM1_1").first()
-
-        self.assertEqual(3, len(plate_mappings))
-        self.assertEqual(1152, len(measurements_filtered))
-        self.assertEqual(3.336, round(measurement.value, 3))

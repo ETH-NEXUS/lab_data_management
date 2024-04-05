@@ -86,8 +86,9 @@ class BaseMapper:
             else:
                 xml_file = filename.endswith(".xml")
                 # add xml_file to **kwargs
+                kwargs.update({"xml_file": xml_file})
                 with open(filename, "r", encoding=encoding) as file:
-                    ret = self.parse(file, xml_file=xml_file, **kwargs)
+                    ret = self.parse(file, **kwargs)
                     if isinstance(ret, tuple):
                         data = ret[0]
                         kwargs.update(ret[1])
@@ -512,24 +513,6 @@ class M1000Mapper(BaseMapper):
         )
         return results, kwargs
 
-    def apply_evaluation_formula(self, formula, plate, well, entry, **kwargs):
-        result = 0
-        for idx, value in enumerate(entry.get("values")):
-            abbrev = kwargs.get("meta_data")[idx].get("Label")
-            formula = formula.replace(abbrev, value)
-        try:
-            result = eval(formula)
-        except ZeroDivisionError:
-            logger.error(
-                f"Formula {formula} for {plate.barcode}{well.hr_position} resulted in a ZeroDivisionError. Setting result to zero."
-            )
-            result = 0
-        except Exception as e:
-            logger.error(
-                f"Error while evaluating formula {formula} for {plate.barcode}{well.hr_position}: {e} "
-            )
-        return result
-
     def map(self, data: list[dict], **kwargs) -> None:
         def __debug(msg):
             if kwargs.get("debug"):
@@ -574,49 +557,25 @@ class M1000Mapper(BaseMapper):
                 if not well:
                     well = Well.objects.create(plate=plate, position=position)
 
-                if not kwargs.get("evaluation"):
-                    measurement_names = None
-                    if kwargs.get("measurement_name"):
-                        measurement_names = kwargs.get("measurement_name").split(",")
-                    for idx, value in enumerate(entry.get("values")):
-                        if measurement_names:
-                            label = measurement_names[idx]
-                        else:
-                            label = kwargs.get("meta_data")[idx].get("Label")
-
-                        Measurement.objects.update_or_create(
-                            well=well,
-                            label=label,
-                            measured_at=kwargs.get("measurement_date"),
-                            defaults={
-                                "value": value,
-                                "identifier": entry.get("identifier"),
-                                "measurement_assignment": assignment,
-                            },
-                        )
-
-                else:
-                    evaluation_formulas = kwargs.get("evaluation").split(",")
+                measurement_names = None
+                if kwargs.get("measurement_name"):
                     measurement_names = kwargs.get("measurement_name").split(",")
-                    for idx, evaluation_formula in enumerate(evaluation_formulas):
+                for idx, value in enumerate(entry.get("values")):
+                    if measurement_names:
                         label = measurement_names[idx]
-                        result = self.apply_evaluation_formula(
-                            evaluation_formula, plate, well, entry, **kwargs
-                        )
-                        Measurement.objects.update_or_create(
-                            well=well,
-                            label=label,
-                            measured_at=kwargs.get("measurement_date"),
-                            defaults={
-                                "value": result,
-                                "identifier": entry.get("identifier"),
-                                "measurement_assignment": assignment,
-                            },
-                        )
-                        plate_mapping = PlateMapping.objects.get(target_plate=plate)
-                        plate_mapping.evaluation = evaluation_formula
-                        plate_mapping.save()
+                    else:
+                        label = kwargs.get("meta_data")[idx].get("Label")
 
+                    Measurement.objects.update_or_create(
+                        well=well,
+                        label=label,
+                        measured_at=kwargs.get("measurement_date"),
+                        defaults={
+                            "value": value,
+                            "identifier": entry.get("identifier"),
+                            "measurement_assignment": assignment,
+                        },
+                    )
                 mbar.update(1)
 
 
@@ -836,7 +795,7 @@ class DatMapper(BaseMapper):
             )
             plate = Plate.objects.create(
                 barcode=barcode,
-                dimension=PlateDimension.by_num_wells(len(data)),
+                dimension=PlateDimension.by_num_wells(len(data["counts"])),
                 experiment=barcode_specification.experiment,
             )
         with tqdm(

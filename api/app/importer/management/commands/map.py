@@ -10,6 +10,14 @@ from core.config import Config
 from helpers.logger import logger
 
 
+def has_csv_files(directory):
+    for root, dirs, files in os.walk(directory):
+        for file in files:
+            if file.endswith(".csv"):
+                return True
+    return False
+
+
 def die(message):
     raise Exception(message)
 
@@ -44,18 +52,7 @@ class Command(BaseCommand):
         )
 
         parser.add_argument(
-            "--evaluate",
-            "-e",
-            help="A formula which has to be applied to the "
-            "measurement "
-            "values, e. g. --evaluate 'Acceptor/Donor'",
-        )
-        parser.add_argument(
-            "--measurement_name",
-            "-n",
-            help="If an evaluation formula is provided, "
-            "you need to provide a measurement name "
-            "as well'",
+            "--measurement_name", "-n", help="You need to provide a measurement name "
         )
 
         parser.add_argument(
@@ -112,9 +109,10 @@ class Command(BaseCommand):
                     return
             try:
                 mapper = EchoMapper()
-                file_blob = Config.current.importer.echo.default.file_blob
                 # if in the folder which was provided as 'path' arguments there are no .csv files we use xml_blob, otherwise the file_blob
-                if not any(file.endswith(".csv") for file in os.listdir(path)):
+                if has_csv_files(path):
+                    file_blob = Config.current.importer.echo.default.file_blob
+                else:
                     file_blob = Config.current.importer.echo.default.xml_blob
                 mapper.run(
                     join(path, file_blob),
@@ -134,16 +132,11 @@ class Command(BaseCommand):
                         "No experiment name provided. If you would like to add missing "
                         "plates, you need to provide the experiment name."
                     )
-
-                evaluation = options.get("evaluate", None)
                 measurement_name = options.get("measurement_name", None)
-                if evaluation and not measurement_name:
-                    raise ValueError("No measurement name provided")
                 mapper = M1000Mapper()
                 mapper.run(
                     join(path, Config.current.importer.m1000.default.file_blob),
                     debug=options.get("debug", False),
-                    evaluation=evaluation,
                     measurement_name=measurement_name,
                     experiment_name=options.get("experiment_name", None),
                     room_name=options.get("room_name", None),
