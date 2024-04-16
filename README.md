@@ -52,8 +52,27 @@ The structure of the `.csv` file should resemble the following pattern, where `S
 ![control plate](./readme_images/control_plate.png)
 
 
+### Upload Echo Output Files
 
+1. Navigate to the **management page**. 
+2. Select the **"ECHO/M1000"** tab and the Echo machine.
+3. In the expandable menu on the left, click on the file name. The name of the file will then be displayed above the action box.
+4. **Drag and drop** or type the file name into the file name field.
+5. Specify the **name of the experiment**. Note: experiment names should be unique throughout the entire usage of the app.
+6. If the column names in your echo output files differ from the default ones, you should specify a mapping file. 
+7. After uploading, experiment plates will appear in the navigation tree under the corresponding experiment node.
 
+### Upload M1000 Output Files
+
+1. Navigate to the **management page**.
+2. Select the **"ECHO/M1000"** tab and the M1000 machine.
+3. In the expandable menu on the left, click on the file name. The name of the file will then be displayed above the action box.
+4. **Drag and drop** or type the file name into the file name field.
+5. Specify the **name of the experiment**. Note: experiment names should be unique throughout the entire usage of the app.
+6. You can specify the name of the measurement. If not specified, the default name is "label1". If you have several measurements per file, you can specify the names separated by commas.
+7. After uploading the files, you can see the result heat map on a plate's page. Also, the basic QC metrics are calculated and displayed on the experiment page.
+
+![heatmap](./readme_images/heatmap.png)
 
 # How to start the app 
 ## Getting started
