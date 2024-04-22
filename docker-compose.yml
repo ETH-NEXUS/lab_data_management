@@ -4,6 +4,7 @@ volumes:
   web_root:
 services:
   ui:
+    platform: linux/amd64
     build:
       context: ui
     volumes:
@@ -12,8 +13,8 @@ services:
     hostname: ui
     restart: "no"
     env_file: .env
-
   api:
+    platform: linux/amd64
     build:
       context: api
       args:
@@ -45,6 +46,7 @@ services:
     depends_on:
       - db
   db:
+    platform: linux/amd64
     build:
       context: db
     hostname: db
