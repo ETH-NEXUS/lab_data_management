@@ -74,6 +74,9 @@ The structure of the `.csv` file should resemble the following pattern, where `S
 
 ![heatmap](./readme_images/heatmap.png)
 
+## Experiment page
+The experiment page contains several additional tools for data visualization and analysis. 
+
 # How to start the app 
 ## Getting started
 
