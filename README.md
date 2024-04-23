@@ -77,6 +77,21 @@ The structure of the `.csv` file should resemble the following pattern, where `S
 ## Experiment page
 The experiment page contains several additional tools for data visualization and analysis. 
 
+1. The experiment page has a tool for creating barcode specifications for the plates.
+This tool is useful if you need to provide a .csv file with the plate barcode to the Echo device. 
+After specifying details such as barcode-prefix ans the sides of the plate, you can download the .csv file with the barcode specifications.
+
+![barcode_generation](./readme_images/barcode_gen.png)
+
+The generated file will look as follows:
+![barcode_specifications](./readme_images/barcodeSp.png)
+
+2. After the measurement data was uploaded, you can see the heatmaps for all the plates at once by clicking on the **"Show measurement results"** button. The processing might take some time, especially if the number of plates is large.
+The **Smaller map view** slider allows you to adjust the size of the heatmaps for better visibility. On the experiment page, the colors are scaled for the entire experiment, so the same color corresponds to the same value on different plates.
+On an individual plate view, on the other hand, the colors are scaled for this particular plate separately, so the same color can correspond to different values on different plates.
+
+![all_plates_view.png](./readme_images/all_plates_view.png)
+
 # How to start the app 
 ## Getting started
 

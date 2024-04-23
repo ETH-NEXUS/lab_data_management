@@ -56,7 +56,7 @@ const login = async () => {
       <div class="row justify-center q-mt-lg">
         <img src="../assets/nexus_logo.png" />
         <br />
-        <h3>Lab Data Management</h3>
+        <h4 class="title text-primary">Lab Data Management</h4>
       </div>
       <q-card v-if="error" class="bg-red-5 text-black text-bold q-mb-md">
         <q-card-section>
@@ -100,4 +100,8 @@ export default {
 }
 </script>
 
-<style scoped></style>
+<style scoped>
+.title {
+  text-align: center;
+}
+</style>
