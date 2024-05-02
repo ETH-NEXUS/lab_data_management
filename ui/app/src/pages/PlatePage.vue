@@ -320,7 +320,7 @@ const refresh = async () => {
               @refresh="refresh"
               :plate="plate"
               @well-selected="(well_info: WellInfo) => (platePage.selectedWellInfo = well_info)" />
-            <div class="q-mt-md">
+            <div class="q-mt-md q-mb-xl">
               <q-btn
                 class="q-mr-xs"
                 :label="t('action.map_plate')"
@@ -328,25 +328,26 @@ const refresh = async () => {
                 color="secondary"
                 @click="() => (mapPlateDialog = true)" />
               <q-btn
-                class="q-ml-xs"
+                class="q-ml-md"
                 :label="t('action.copy_plate')"
                 icon="o_copy"
                 color="secondary"
                 @click="() => (copyPlateDialog = true)" />
               <q-btn
                 v-if="!plate.template"
-                class="q-ml-xs"
+                class="q-ml-md"
                 :label="t('action.apply_template')"
                 icon="o_layers"
                 color="secondary"
                 @click="() => (applyTemplateDialog = true)" />
-              <q-btn
-                v-if="platePage.showHeatmap"
-                class="q-my-md q-ml-xs"
-                :label="t('action.calculate_measurement')"
-                icon="calculate"
-                color="secondary"
-                @click="bus.emit('openCalculator')" />
+              <!-- there is not much sense in calculating the heatmap for a single plate -->
+              <!--              <q-btn-->
+              <!--                v-if="platePage.showHeatmap"-->
+              <!--                class="q-my-md q-ml-xs"-->
+              <!--                :label="t('action.calculate_measurement')"-->
+              <!--                icon="calculate"-->
+              <!--                color="secondary"-->
+              <!--                @click="bus.emit('openCalculator')" />-->
             </div>
           </div>
         </template>
