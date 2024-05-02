@@ -7,6 +7,7 @@ from datetime import datetime
 from os import environ
 from uuid import uuid4
 import subprocess
+import traceback
 
 from django.conf import settings
 from django.contrib.auth import authenticate, login, logout
@@ -57,6 +58,8 @@ from .serializers import (
     ExperimentDetail,
 )
 
+GLOBAL_NOW = datetime.now().replace(microsecond=0)
+
 
 class CsrfCookieView(View):
     @method_decorator(ensure_csrf_cookie)
@@ -94,11 +97,16 @@ class LogoutView(View):
 
 
 def mean_time_point(dt_strings):
-    dt_array = [datetime.fromisoformat(dt_str) for dt_str in dt_strings]
-    timestamps = [dt.timestamp() for dt in dt_array]
-    avg_timestamp = sum(timestamps) / len(timestamps)
-    avg_datetime = datetime.fromtimestamp(avg_timestamp)
-    return avg_datetime
+    try:
+        dt_array = [datetime.fromisoformat(dt_str) for dt_str in dt_strings]
+        timestamps = [dt.timestamp() for dt in dt_array]
+        avg_timestamp = sum(timestamps) / len(timestamps)
+        avg_datetime = datetime.fromtimestamp(avg_timestamp)
+        return avg_datetime
+    except Exception as e:
+        logger.error(f"Error calculating mean time point: {e}")
+        traceback.print_exc()
+        return GLOBAL_NOW
 
 
 class ProjectViewSet(viewsets.ModelViewSet):

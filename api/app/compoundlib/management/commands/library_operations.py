@@ -112,7 +112,7 @@ class Command(BaseCommand):
         dimension_384 = PlateDimension.objects.get(name="dim_384_16x24")
         new_plates = []
         for barcode in barcodes:
-            new_barcode = f"{barcode}_fixed"
+            new_barcode = f"{barcode}_fixed"  # go to the admin and manually delete the old plates and rename the fixed plates
             plate, _ = Plate.objects.get_or_create(
                 barcode=new_barcode, library=library, dimension=dimension_384
             )

@@ -77,7 +77,8 @@ The structure of the `.csv` file should resemble the following pattern, where `S
 ## Experiment page
 The experiment page contains several additional tools for data visualization and analysis. 
 
-1. The experiment page has a tool for creating barcode specifications for the plates.
+1. Generate a barcode-file
+The experiment page has a tool for creating barcode specifications for the plates.
 This tool is useful if you need to provide a .csv file with the plate barcode to the Echo device. 
 After specifying details such as barcode-prefix ans the sides of the plate, you can download the .csv file with the barcode specifications.
 
@@ -86,11 +87,34 @@ After specifying details such as barcode-prefix ans the sides of the plate, you 
 The generated file will look as follows:
 ![barcode_specifications](./readme_images/barcodeSp.png)
 
-2. After the measurement data was uploaded, you can see the heatmaps for all the plates at once by clicking on the **"Show measurement results"** button. The processing might take some time, especially if the number of plates is large.
+2. All plates view
+After the measurement data was uploaded, you can see the heatmaps for all the plates at once by clicking on the **"Show measurement results"** button. The processing might take some time, especially if the number of plates is large.
 The **Smaller map view** slider allows you to adjust the size of the heatmaps for better visibility. On the experiment page, the colors are scaled for the entire experiment, so the same color corresponds to the same value on different plates.
 On an individual plate view, on the other hand, the colors are scaled for this particular plate separately, so the same color can correspond to different values on different plates.
 
 ![all_plates_view.png](./readme_images/all_plates_view.png)
+
+3. Add a new measurement to the experiment
+You can add a new measurement to the experiment by clicking on the **"Add measurement"** button.
+This will open the measurement calculator where zou can make operations with the existing measurements and create new ones, like, for example, the logarithm of the existing measurement.
+
+![measurement_calculator](./readme_images/calc.png) 
+
+4. Export the experiment data
+
+The **Download csv data** button allows you to download the data from the experiment in a .csv format. 
+The file will contain the plate barcode, the well barcode, the compound name, and the measurement value.
+
+5. Generate report
+
+By clicking the **Generate report** button, you can create a PDF report for the experiment. 
+The report is based upon the Jupyter notebook template which should be previously created in the integrated Notebook tool. 
+  
+## Integrated Jupyter Notebook Tool
+
+Open the Notebook section by clicking on the **Notebook**  item in the menu.
+
+![notebook](./readme_images/menu.png)
 
 # How to start the app 
 ## Getting started

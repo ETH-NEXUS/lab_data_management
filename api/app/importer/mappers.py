@@ -33,22 +33,33 @@ from core.models import (
 )
 from core.config import Config
 from django.core.files import File
-from django.utils import timezone
+from django.utils import timezone as tz
 from .helper import row_col_from_name
 from helpers.logger import logger
 from openpyxl import load_workbook
 
 
+from datetime import timezone
+
+GLOBAL_NOW = dt.now(timezone.utc)
+
+
 def convert_string_to_datetime(date_str, time_str):
     try:
-        formatted_date_str = f"{date_str[:2]}-{date_str[2:4]}-{date_str[4:]}"
+        formatted_date_str = f"{date_str[:4]}-{date_str[4:6]}-{date_str[6:]}"
         formatted_time_str = f"{time_str[:2]}:{time_str[2:4]}:{time_str[4:]}"
         combined_str = f"{formatted_date_str} {formatted_time_str}"
-        datetime_obj = dt.strptime(combined_str, "%d-%m-%y %H:%M:%S")
-        return datetime_obj
-    except ValueError:
-        logger.warning(f"Cannot convert {date_str} {time_str} to datetime")
-        return None
+        datetime_obj = dt.strptime(combined_str, "%Y-%m-%d %H:%M:%S")
+
+        datetime_obj = datetime_obj.replace(tzinfo=timezone.utc)
+
+        return datetime_obj.isoformat()
+    except ValueError as e:
+
+        logger.warning(
+            f"Cannot convert {date_str} {time_str} to datetime: {e}. The current time will be used instead."
+        )
+        return GLOBAL_NOW.isoformat()
 
 
 def convert_sci_to_float(sci_str):
@@ -459,7 +470,7 @@ class M1000Mapper(BaseMapper):
             )
 
         results = []
-        measurement_date = timezone.now()
+        measurement_date = tz.now()
         plate_description = None
         meta_data = [{}]
         meta_data_idx = 0
