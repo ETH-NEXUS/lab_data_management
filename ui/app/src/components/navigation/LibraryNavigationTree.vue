@@ -64,7 +64,6 @@ const addCompoundLibraryNode = (library: CompoundLibrary) => {
     library: library,
   }
   for (const plate of library.plates) {
-    console.log(plate)
     if (!plate.archived) {
       node.children?.push({
         label: `${plate.barcode} (${plate.dimension}) ${plate.status === 'empty_wells' ? '⚠️' : ''}`,

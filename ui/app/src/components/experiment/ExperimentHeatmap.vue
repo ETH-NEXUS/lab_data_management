@@ -4,7 +4,7 @@ import {Plate} from '../models'
 import {useProjectStore} from 'stores/project'
 import PlateTable from 'components/plate/PlateTable.vue'
 import HeatMapSettings from 'components/plate/HeatMapSettings.vue'
-// import ColorLegend from 'components/ColorLegend.vue'
+import ColorLegend from 'components/plate/ColorLegend.vue'
 import {useI18n} from 'vue-i18n'
 import {useRouter} from 'vue-router'
 import {useQuasar} from 'quasar'
@@ -102,9 +102,6 @@ const min = computed(() => {
   <br />
 
   <div class="col-4 q-mb-lg row">
-    <!--    <div class="col-4">-->
-    <!--      <ColorLegend :max="max" :min="min" :selectedMeasurement="selectedMeasurement" />-->
-    <!--    </div>-->
     <div class="col-4 q-ml-lg">
       <q-select
         v-if="measurementOptions.length > 0"
@@ -126,6 +123,7 @@ const min = computed(() => {
         :label="t('label.select_color_palette')"></q-select>
     </div>
   </div>
+  <ColorLegend :max="max" :min="min" :selectedMeasurement="selectedMeasurement" />
   <div class="fit row wrap justify-evenly items-start content-start">
     <div
       :style="{cursor: 'pointer'}"

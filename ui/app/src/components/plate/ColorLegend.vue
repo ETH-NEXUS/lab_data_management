@@ -15,6 +15,7 @@ const props = defineProps({
     required: true,
   },
   selectedMeasurement: {
+    type: String as () => string | null,
     default: null,
   },
 })
