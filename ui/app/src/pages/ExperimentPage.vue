@@ -221,7 +221,7 @@ const downloadCsvData = async () => {
             flat
             color="primary"
             @click="router.push(`/add_data/${experiment.id}`)"
-            v-if="experiment.available_measurement_labels.length > 0">
+            v-if="experiment.details.measurement_labels.length > 0">
             Add Experiment Data
           </q-btn>
         </q-card-section>
