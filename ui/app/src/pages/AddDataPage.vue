@@ -101,17 +101,25 @@ const savePlateInfo = async () => {
             :disable-panel-filter="false"
             :no-mouse-scroll="false">
             <vue-excel-column
+              readonly="true"
               field="measurement_label"
               label="Measurement Label"
               type="string"
               width="150px" />
             <vue-excel-column
+              readonly="true"
               field="measurement_timestamp"
               label="Measurement Timestamps"
               type="string"
               width="200px" />
-            <vue-excel-column field="plate_barcode" label="Plate Barcode" type="string" width="120px" />
             <vue-excel-column
+              field="plate_barcode"
+              label="Plate Barcode"
+              type="string"
+              width="120px"
+              readonly="true" />
+            <vue-excel-column
+              readonly="true"
               field="lib_plate_barcode"
               label="Library Plate Barcode"
               type="string"
