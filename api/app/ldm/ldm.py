@@ -3,7 +3,7 @@ from rest_framework.test import APIClient
 import pandas as pd
 import numpy as np
 from typing import Callable
-from core.models import Project, Experiment, Plate, Well
+from core.models import Project, Experiment, Plate, Well, PlateInfo
 from core.helper import posToAlphaChar
 
 # from scipy.stats import median_abs_deviation as mad
@@ -125,6 +125,35 @@ def projects():
 def experiments():
     for e in Experiment.objects.all():
         print(e.name)
+
+
+def get_experiment_plate_infos(experiment_name: str):
+    """
+    Returns a pd DataFrame of plate infos for a given experiment.
+    """
+    experiment = Experiment.objects.get(name=experiment_name)
+    if not experiment:
+        print(f"Experiment {experiment_name} not found.")
+        return
+    plate_infos = PlateInfo.objects.filter(experiment=experiment)
+    if not plate_infos:
+        print(f"No plate infos found for experiment {experiment_name}")
+        return
+
+    rows = []
+    for pi in plate_infos:
+        rows.append(
+            {
+                "plate": pi.plate.barcode,
+                "lib_plate_barcode": pi.lib_plate_barcode,
+                "label": pi.label,
+                "replicate": pi.replicate,
+                "measurement_time": pi.measurement_time,
+                "cell_type": pi.cell_type,
+                "condition": pi.condition,
+            }
+        )
+    return pd.DataFrame(rows)
 
 
 def get_experiment_measurements(experiment_name: str, label=None):
