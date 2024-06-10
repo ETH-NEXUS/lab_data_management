@@ -816,7 +816,7 @@ def get_new_plate_infos(experiment):
     plate_info = []
     plates = Plate.objects.filter(experiment=experiment)
     for plate in plates:
-        logger.warning(f"Plate: {plate.barcode}")
+        logger.debug(f"Plate: {plate.barcode}")
         plate_details = PlateDetail.objects.get(pk=plate.id)
         measurement_labels = plate_details.measurement_labels
         measurement_timestamps = plate_details.measurement_timestamps
@@ -825,10 +825,12 @@ def get_new_plate_infos(experiment):
             continue
 
         for label in measurement_labels:
+            logger.info(f"Label: {label}")
             timestamps = measurement_timestamps.get(label, [])
             if not timestamps:
                 continue
             for timestamp in timestamps:
+                logger.info(f"Timestamp: {timestamp}")
                 plate_info_obj = {
                     "measurement_label": label,
                     "measurement_timestamp": timestamp,
