@@ -849,7 +849,7 @@ def prefillPlateInfo(request):
                         withdrawals = WellWithdrawal.objects.filter(
                             target_well=middle_well
                         )
-                        lib_plate = withdrawals[i].well.plate
+                        lib_plate = withdrawals[0].well.plate
                         plate_info_obj["plate_barcode"] = plate.barcode
                         plate_info_obj["lib_plate_barcode"] = lib_plate.barcode
                         plate_info.append(plate_info_obj)
