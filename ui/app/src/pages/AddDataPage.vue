@@ -55,7 +55,6 @@ const downloadCSV = () => {
   window.URL.revokeObjectURL(url)
 }
 const savePlateInfo = async () => {
-  alert('savePlateInfo')
   const result = await projectStore.savePlateInfo(
     Number(route.params.experiment_id),
     projectStore.prefilledPlateInfo
