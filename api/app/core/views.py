@@ -800,8 +800,13 @@ def get_existing_plate_infos(experiment_id):
     if plate_infos:
         for item in plate_infos:
             obj = {
-                "plate_barcode": item.plate.barcode, "lib_plate_barcode": item.lib_plate_barcode, "measurement_label": item.label, "replicate": item.replicate,
-                "measurement_timestamp": item.measurement_time, "cell_type": item.cell_type, "condition": item.condition,
+                "plate_barcode": item.plate.barcode,
+                "lib_plate_barcode": item.lib_plate_barcode,
+                "measurement_label": item.label,
+                "replicate": item.replicate,
+                "measurement_timestamp": item.measurement_time,
+                "cell_type": item.cell_type,
+                "condition": item.condition,
             }
             plate_info.append(obj)
     return plate_info
@@ -825,7 +830,11 @@ def get_new_plate_infos(experiment):
                 continue
             for timestamp in timestamps:
                 plate_info_obj = {
-                    "measurement_label": label, "measurement_timestamp": timestamp, "replicate": "", "cell_type": "", "condition": "",
+                    "measurement_label": label,
+                    "measurement_timestamp": timestamp,
+                    "replicate": "",
+                    "cell_type": "",
+                    "condition": "",
                 }
                 middle_well = plate.wells.all()[len(plate.wells.all()) // 2]
                 withdrawals = WellWithdrawal.objects.filter(target_well=middle_well)
