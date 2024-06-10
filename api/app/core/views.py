@@ -848,18 +848,22 @@ def get_new_plate_infos(experiment):
 
 
 def prefillPlateInfo(request):
-    if request.method == "GET":
-        experiment_id = request.GET.get("experiment_id")
-        if not experiment_id:
-            return JsonResponse({"error": "Experiment ID not provided"}, status=400)
+    try:
+        if request.method == "GET":
+            experiment_id = request.GET.get("experiment_id")
+            if not experiment_id:
+                return JsonResponse({"error": "Experiment ID not provided"}, status=400)
 
-        existing_plate_info = get_existing_plate_infos(experiment_id)
-        if existing_plate_info:
-            return JsonResponse({"plate_info": existing_plate_info}, status=200)
+            existing_plate_info = get_existing_plate_infos(experiment_id)
+            if existing_plate_info:
+                return JsonResponse({"plate_info": existing_plate_info}, status=200)
 
-        experiment = get_object_or_404(Experiment, pk=experiment_id)
-        new_plate_info = get_new_plate_infos(experiment)
-        return JsonResponse({"plate_info": new_plate_info}, status=200)
+            experiment = get_object_or_404(Experiment, pk=experiment_id)
+            new_plate_info = get_new_plate_infos(experiment)
+            return JsonResponse({"plate_info": new_plate_info}, status=200)
+    except Exception as e:
+        traceback.print_exc()
+        return JsonResponse({"error": str(e)}, status=500)
 
 
 @csrf_exempt
