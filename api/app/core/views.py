@@ -821,6 +821,7 @@ def prefillPlateInfo(request):
             experiment = Experiment.objects.get(pk=experiment_id)
             plates = Plate.objects.filter(experiment=experiment)
             for plate in plates:
+                logger.warning(f"Plate: {plate.barcode}")
                 plate_details = PlateDetail.objects.get(pk=plate.id)
                 measurement_labels = plate_details.measurement_labels
                 measurement_timestamps = plate_details.measurement_timestamps
@@ -832,6 +833,8 @@ def prefillPlateInfo(request):
                     number_of_timestamps_for_current_measurement = len(
                         measurement_timestamps[measurement_labels[i]]
                     )
+                    if not number_of_timestamps_for_current_measurement:
+                        continue
                     for j in range(number_of_timestamps_for_current_measurement):
                         plate_info_obj = {
                             f"measurement_label": measurement_labels[i],
