@@ -46,6 +46,7 @@ from .models import (
     MeasurementFeature,
     PlateDetail,
     WellDetail,
+    PlateInfo,
 )
 from .serializers import (
     PlateSerializer,
@@ -789,4 +790,104 @@ def download_csv_data(request):
     except Exception as e:
         print("EXCEPTION")
         print(e)
+        return JsonResponse({"error": str(e)}, status=500)
+
+
+def prefillPlateInfo(request):
+    try:
+        if request.method == "GET":
+            experiment_id = request.GET.get("experiment_id")
+            if not experiment_id:
+                return JsonResponse(
+                    {"error": "Experiment ID  not provided"}, status=400
+                )
+            # check if there are existing plateInfos with this experiment id
+            plate_info = []
+            plate_infos = PlateInfo.objects.filter(experiment=experiment_id)
+            if plate_infos:
+                for item in plate_infos:
+                    obj = {
+                        "plate_barcode": item.plate.barcode,
+                        "lib_plate_barcode": item.lib_plate_barcode,
+                        "measurement_label": item.label,
+                        "replicate": item.replicate,
+                        "measurement_timestamp": item.measurement_time,
+                        "cell_type": item.cell_type,
+                        "condition": item.condition,
+                    }
+                    plate_info.append(obj)
+                return JsonResponse({"plate_info": plate_info}, status=200)
+
+            experiment = Experiment.objects.get(pk=experiment_id)
+            plates = Plate.objects.filter(experiment=experiment)
+            for plate in plates:
+                plate_details = PlateDetail.objects.get(pk=plate.id)
+                measurement_labels = plate_details.measurement_labels
+                measurement_timestamps = plate_details.measurement_timestamps
+                number_of_measurement_labels = len(measurement_labels)
+                for i in range(number_of_measurement_labels):
+                    number_of_timestamps_for_current_measurement = len(
+                        measurement_timestamps[measurement_labels[i]]
+                    )
+                    for j in range(number_of_timestamps_for_current_measurement):
+                        plate_info_obj = {
+                            f"measurement_label": measurement_labels[i],
+                            f"measurement_timestamp": measurement_timestamps[
+                                measurement_labels[i]
+                            ][j],
+                            "replicate": "",
+                            "cell_type": "",
+                            "condition": "",
+                        }
+
+                        middle_well = plate.wells.all()[
+                            len(plate.wells.all()) // 2
+                        ]  # get the middle well in order not to get the well filled from a control plate
+                        withdrawals = WellWithdrawal.objects.filter(
+                            target_well=middle_well
+                        )
+                        lib_plate = withdrawals[i].well.plate
+                        plate_info_obj["plate_barcode"] = plate.barcode
+                        plate_info_obj["lib_plate_barcode"] = lib_plate.barcode
+                        plate_info.append(plate_info_obj)
+            return JsonResponse({"plate_info": plate_info}, status=200)
+
+    except Exception as e:
+        print("EXCEPTION")
+        print(e)
+        traceback.print_exc()
+        return JsonResponse({"error": str(e)}, status=500)
+
+
+@csrf_exempt
+def save_plate_info(request):
+    try:
+        if request.method == "POST":
+            data = json.loads(request.body.decode("utf-8"))
+            experiment_id = data.get("experiment_id")
+            plate_info = data.get("plate_info")
+            if not experiment_id:
+                return JsonResponse({"error": "Experiment ID not provided"}, status=400)
+            if not plate_info:
+                return JsonResponse({"error": "Plate info not provided"}, status=400)
+
+            experiment = Experiment.objects.get(pk=experiment_id)
+
+            for item in plate_info:
+                plate = Plate.objects.get(barcode=item["plate_barcode"])
+                defaults = {
+                    "lib_plate_barcode": item["lib_plate_barcode"],
+                    "label": item["measurement_label"],
+                    "replicate": item["replicate"],
+                    "measurement_time": item["measurement_timestamp"],
+                    "cell_type": item["cell_type"],
+                    "condition": item["condition"],
+                }
+                PlateInfo.objects.update_or_create(
+                    plate=plate, experiment=experiment, defaults=defaults
+                )
+
+            return JsonResponse({"status": "Plate info saved successfully"}, status=200)
+    except Exception as e:
+        traceback.print_exc()
         return JsonResponse({"error": str(e)}, status=500)

@@ -23,6 +23,7 @@ from .models import (
     WellDetail,
     ExperimentDetail,
     Threshold,
+    PlateInfo,
 )
 
 

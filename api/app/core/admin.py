@@ -16,6 +16,7 @@ from .models import (
     MeasurementAssignment,
     WellType,
     Threshold,
+    PlateInfo,
 )
 
 
@@ -158,4 +159,17 @@ class ThresholdAdmin(admin.ModelAdmin):
     search_fields = (
         "amount",
         "dmso",
+    )
+
+
+@admin.register(PlateInfo)
+class PlateInfoAdmin(admin.ModelAdmin):
+    list_display = (
+        "plate",
+        "lib_plate_barcode",
+        "label",
+        "replicate",
+        "measurement_time",
+        "cell_type",
+        "condition",
     )

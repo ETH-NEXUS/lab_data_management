@@ -27,6 +27,8 @@ from core.views import (
     list_files,
     download_pdf_report,
     download_csv_data,
+    prefillPlateInfo,
+    save_plate_info,
 )
 from django.conf import settings
 from jupyter.views import JupyterProxyView
@@ -75,6 +77,8 @@ urlpatterns = [
         recalculate_status,
         name="recalculate_status",
     ),
+    path("api/prefillPlateInfo/", prefillPlateInfo, name="prefillPlateInfo"),
+    path("api/save_plate_info/", save_plate_info, name="save_plate_info"),
 ]
 
 if not settings.DISABLE_BROWSABLE_API and not settings.DISABLE_AUTH:

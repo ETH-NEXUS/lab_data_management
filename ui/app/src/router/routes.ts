@@ -33,6 +33,10 @@ const routes: RouteRecordRaw[] = [
         path: '/messages',
         component: () => import('pages/MessagesPage.vue'),
       },
+      {
+        path: '/add_data/:experiment_id',
+        component: () => import('pages/AddDataPage.vue'),
+      },
     ],
   },
   {

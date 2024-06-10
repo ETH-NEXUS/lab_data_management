@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import {useRoute} from 'vue-router'
+import {useRoute, useRouter} from 'vue-router'
 import {onMounted, ref} from 'vue'
 import {useI18n} from 'vue-i18n'
 import {handleError} from 'src/helpers/errorHandling'
@@ -26,6 +26,7 @@ import GenerateReportDialog from 'components/experiment/GenerateReportDialog.vue
 import DownloadCSVDialog from 'components/experiment/DownloadCSVDialog.vue'
 
 const route = useRoute()
+const router = useRouter()
 const projectStore = useProjectStore()
 
 const $q = useQuasar()
@@ -156,6 +157,7 @@ const downloadCsvData = async () => {
       {{ project.name }}: {{ getExperiment(Number(route.params.experiment)).name }}
       <q-btn flat icon="edit" @click="editExperiment('name')" />
     </div>
+
     <div class="q-pa-md row items-start q-gutter-md" v-if="experiment">
       <q-card class="my-card" flat>
         <q-card-section class="q-pt-xs">
@@ -215,6 +217,9 @@ const downloadCsvData = async () => {
               </div>
             </q-list>
           </div>
+          <q-btn flat color="primary" @click="router.push(`/add_data/${experiment.id}`)">
+            Add Experiment Data
+          </q-btn>
         </q-card-section>
 
         <q-card-actions class="q-ml-md">

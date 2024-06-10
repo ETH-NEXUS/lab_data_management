@@ -7,6 +7,7 @@ import {
   ExperimentPayload,
   ProjectPayload,
   CalculatorPayload,
+  PlateInfo,
 } from 'src/components/models'
 
 import {api} from 'src/boot/axios'
@@ -18,6 +19,7 @@ export const useProjectStore = defineStore('project', () => {
   const experiments = ref<Array<Experiment>>([])
   const outputNotebooks = ref<Array<string>>([])
   const inputNotebookPath = ref<string | null>(null)
+  const prefilledPlateInfo = ref<PlateInfo[]>([])
 
   const initialize = async () => {
     const resp_p = await api.get('/api/projects/')
@@ -191,8 +193,29 @@ export const useProjectStore = defineStore('project', () => {
     link.click()
   }
 
+  const getPrefilledPlateInfo = async (experimentId: number) => {
+    const res = await api.get(`/api/prefillPlateInfo/?experiment_id=${experimentId}`)
+    prefilledPlateInfo.value = res.data.plate_info
+  }
+
+  const savePlateInfo = async (experimentId: number, plateInfo: PlateInfo[]) => {
+    const res = await api.post('/api/save_plate_info/', {
+      experiment_id: experimentId,
+      plate_info: plateInfo,
+    })
+    if (res.status === 200) {
+      await getPrefilledPlateInfo(experimentId)
+      return 'success'
+    }
+  }
+
   return {
     projects,
+    plateDimensions,
+    experiments,
+    outputNotebooks,
+    inputNotebookPath,
+    prefilledPlateInfo,
     initialize,
     add,
     addExperiment,
@@ -201,16 +224,14 @@ export const useProjectStore = defineStore('project', () => {
     generateBarcodes,
     updateBarcode,
     deleteBarcode,
-    plateDimensions,
-    experiments,
     updateProject,
     addNewMeasurement,
     getExperimentPlates,
     generateReport,
-    outputNotebooks,
     getNotebookOutputFiles,
     downloadPDFReport,
-    inputNotebookPath,
     downloadCSVData,
+    getPrefilledPlateInfo,
+    savePlateInfo,
   }
 })

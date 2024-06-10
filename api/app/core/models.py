@@ -233,7 +233,7 @@ class Plate(TimeTrackedModel):
                 well.type = template_well.type
                 well.save()
             if well and not template_well:
-                well.type = 'C'
+                well.type = "C"
         # PlateDetail.refresh(concurrently=True)
         # WellDetail.refresh(concurrently=True)
         return self
@@ -606,3 +606,14 @@ class ExperimentDetail(MaterializedViewModel):
     class Meta:
         db_table = "core_experimentdetail"
         managed = False
+
+
+class PlateInfo(models.Model):
+    plate = models.ForeignKey(Plate, on_delete=models.CASCADE)
+    experiment = models.ForeignKey(Experiment, on_delete=models.CASCADE, null=True)
+    lib_plate_barcode = models.TextField()
+    label = models.TextField()
+    replicate = models.TextField()
+    measurement_time = models.DateTimeField()
+    cell_type = models.TextField()
+    condition = models.TextField()

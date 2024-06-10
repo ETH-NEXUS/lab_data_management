@@ -413,3 +413,13 @@ export interface Options {
 export interface GeneralFormData {
   [key: string]: string | boolean
 }
+
+export interface PlateInfo {
+  measurement_label: string
+  measurement_timestamp: string[]
+  plate_barcode: string
+  lib_plate_barcode: string
+  replicate: string
+  cell_type: string
+  condition: string
+}
