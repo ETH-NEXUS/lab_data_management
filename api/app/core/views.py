@@ -840,9 +840,9 @@ def get_new_plate_infos(experiment):
                 }
                 middle_well = plate.wells.all()[len(plate.wells.all()) // 2]
                 withdrawals = WellWithdrawal.objects.filter(target_well=middle_well)
-                lib_plate = withdrawals[0].well.plate if withdrawals else "NA"
+                lib_plate = withdrawals[0].well.plate if withdrawals else None
                 plate_info_obj["plate_barcode"] = plate.barcode
-                plate_info_obj["lib_plate_barcode"] = lib_plate.barcode
+                plate_info_obj["lib_plate_barcode"] = lib_plate.barcode if lib_plate else "NA"
                 plate_info.append(plate_info_obj)
     return plate_info
 
