@@ -17,6 +17,7 @@ from django.db import IntegrityError
 from django.db.models import Prefetch, Q
 from django.http import Http404
 from django.http import HttpResponse
+from django.shortcuts import get_object_or_404
 from django.utils.decorators import method_decorator
 from django.utils.translation import gettext as _
 from django.views.decorators.csrf import ensure_csrf_cookie, csrf_exempt
@@ -793,79 +794,61 @@ def download_csv_data(request):
         return JsonResponse({"error": str(e)}, status=500)
 
 
+def get_existing_plate_infos(experiment_id):
+    plate_info = []
+    plate_infos = PlateInfo.objects.filter(experiment=experiment_id)
+    if plate_infos:
+        for item in plate_infos:
+            obj = {
+                "plate_barcode": item.plate.barcode, "lib_plate_barcode": item.lib_plate_barcode, "measurement_label": item.label, "replicate": item.replicate,
+                "measurement_timestamp": item.measurement_time, "cell_type": item.cell_type, "condition": item.condition,
+            }
+            plate_info.append(obj)
+    return plate_info
+
+
+def get_new_plate_infos(experiment):
+    plate_info = []
+    plates = Plate.objects.filter(experiment=experiment)
+    for plate in plates:
+        logger.warning(f"Plate: {plate.barcode}")
+        plate_details = PlateDetail.objects.get(pk=plate.id)
+        measurement_labels = plate_details.measurement_labels
+        measurement_timestamps = plate_details.measurement_timestamps
+
+        if not measurement_labels or not measurement_timestamps:
+            continue
+
+        for label in measurement_labels:
+            timestamps = measurement_timestamps.get(label, [])
+            if not timestamps:
+                continue
+            for timestamp in timestamps:
+                plate_info_obj = {
+                    "measurement_label": label, "measurement_timestamp": timestamp, "replicate": "", "cell_type": "", "condition": "",
+                }
+                middle_well = plate.wells.all()[len(plate.wells.all()) // 2]
+                withdrawals = WellWithdrawal.objects.filter(target_well=middle_well)
+                lib_plate = withdrawals[0].well.plate if withdrawals else "NA"
+                plate_info_obj["plate_barcode"] = plate.barcode
+                plate_info_obj["lib_plate_barcode"] = lib_plate.barcode
+                plate_info.append(plate_info_obj)
+    return plate_info
+
+
 def prefillPlateInfo(request):
-    try:
-        if request.method == "GET":
-            experiment_id = request.GET.get("experiment_id")
-            if not experiment_id:
-                return JsonResponse(
-                    {"error": "Experiment ID  not provided"}, status=400
-                )
-            # check if there are existing plateInfos with this experiment id
-            plate_info = []
-            plate_infos = PlateInfo.objects.filter(experiment=experiment_id)
-            if plate_infos:
-                for item in plate_infos:
-                    obj = {
-                        "plate_barcode": item.plate.barcode,
-                        "lib_plate_barcode": item.lib_plate_barcode,
-                        "measurement_label": item.label,
-                        "replicate": item.replicate,
-                        "measurement_timestamp": item.measurement_time,
-                        "cell_type": item.cell_type,
-                        "condition": item.condition,
-                    }
-                    plate_info.append(obj)
-                return JsonResponse({"plate_info": plate_info}, status=200)
+    if request.method == "GET":
+        experiment_id = request.GET.get("experiment_id")
+        if not experiment_id:
+            return JsonResponse({"error": "Experiment ID not provided"}, status=400)
 
-            experiment = Experiment.objects.get(pk=experiment_id)
-            plates = Plate.objects.filter(experiment=experiment)
-            for plate in plates:
-                logger.warning(f"Plate: {plate.barcode}")
-                plate_details = PlateDetail.objects.get(pk=plate.id)
-                measurement_labels = plate_details.measurement_labels
-                measurement_timestamps = plate_details.measurement_timestamps
-                number_of_measurement_labels = len(measurement_labels)
-                if (
-                    number_of_measurement_labels == 0
-                    or len(measurement_timestamps) == 0
-                ):
-                    continue
-                for i in range(number_of_measurement_labels):
-                    logger.info(f"Measurement label: {measurement_labels[i]}")
-                    number_of_timestamps_for_current_measurement = len(
-                        measurement_timestamps[measurement_labels[i]]
-                    )
-                    if not number_of_timestamps_for_current_measurement:
-                        continue
-                    for j in range(number_of_timestamps_for_current_measurement):
-                        plate_info_obj = {
-                            f"measurement_label": measurement_labels[i],
-                            f"measurement_timestamp": measurement_timestamps[
-                                measurement_labels[i]
-                            ][j],
-                            "replicate": "",
-                            "cell_type": "",
-                            "condition": "",
-                        }
+        existing_plate_info = get_existing_plate_infos(experiment_id)
+        if existing_plate_info:
+            return JsonResponse({"plate_info": existing_plate_info}, status=200)
 
-                        middle_well = plate.wells.all()[
-                            len(plate.wells.all()) // 2
-                        ]  # get the middle well in order not to get the well filled from a control plate
-                        withdrawals = WellWithdrawal.objects.filter(
-                            target_well=middle_well
-                        )
-                        lib_plate = withdrawals[0].well.plate
-                        plate_info_obj["plate_barcode"] = plate.barcode
-                        plate_info_obj["lib_plate_barcode"] = lib_plate.barcode
-                        plate_info.append(plate_info_obj)
-            return JsonResponse({"plate_info": plate_info}, status=200)
-
-    except Exception as e:
-        print("EXCEPTION")
-        print(e)
-        traceback.print_exc()
-        return JsonResponse({"error": str(e)}, status=500)
+        experiment = get_object_or_404(Experiment, pk=experiment_id)
+        new_plate_info = get_new_plate_infos(experiment)
+        return JsonResponse({"plate_info": new_plate_info}, status=200)
 
 
 @csrf_exempt
