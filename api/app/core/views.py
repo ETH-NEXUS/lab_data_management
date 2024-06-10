@@ -825,7 +825,10 @@ def prefillPlateInfo(request):
                 measurement_labels = plate_details.measurement_labels
                 measurement_timestamps = plate_details.measurement_timestamps
                 number_of_measurement_labels = len(measurement_labels)
+                if number_of_measurement_labels == 0:
+                    continue
                 for i in range(number_of_measurement_labels):
+                    logger.info(f"Measurement label: {measurement_labels[i]}")
                     number_of_timestamps_for_current_measurement = len(
                         measurement_timestamps[measurement_labels[i]]
                     )
