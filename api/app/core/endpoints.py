@@ -50,7 +50,13 @@ class PlateEndpoint(DefaultEndpoint):
     model = Plate
     base_serializer = PlateSerializer
     base_viewset = PlateViewSet
-    filter_fields = ("barcode", "library", "experiment", "is_control_plate")
+    filter_fields = (
+        "barcode",
+        "library",
+        "experiment",
+        "is_control_plate",
+        "use_as_template_to_select",
+    )
     ordering_fields = ("barcode",)
 
 

@@ -212,7 +212,7 @@ export const useProjectStore = defineStore('project', () => {
   }
 
   const getControlPlates = async () => {
-    const res = await api.get('/api/plates/?is_control_plate=true')
+    const res = await api.get('/api/plates/?is_control_plate=true&use_as_template_to_select=true')
     controlPlates.value = res.data.results
   }
 

@@ -161,6 +161,9 @@ class Plate(TimeTrackedModel):
     is_control_plate = models.BooleanField(default=False, null=True, blank=True)
     archived = models.BooleanField(default=False, null=True, blank=True)
     status = models.TextField(null=True, blank=True)
+    use_as_template_to_select = models.BooleanField(
+        default=False, null=True, blank=True
+    )
 
     class Meta:
         ordering = ("-id",)
@@ -212,9 +215,11 @@ class Plate(TimeTrackedModel):
                 return Well.objects.create(plate=self, position=position)
             return None
 
-    def copy(self, target: "Plate", amount: float = 0):
+    def copy(self, target: "Plate", amount: float = 0, map_type: bool = False):
         """Copy a plate. Same as map but 1-to-1"""
-        self.map(MappingList.one_to_one(self.dimension.num_wells, amount), target)
+        self.map(
+            MappingList.one_to_one(self.dimension.num_wells, amount, map_type), target
+        )
 
     def apply_template(self, template_plate: "Plate"):
         """
@@ -247,6 +252,7 @@ class Plate(TimeTrackedModel):
         threshold_dmso = thresholds.dmso
         with transaction.atomic():
             for mapping in mappingList:
+                print(f"Mapping {mapping.map_type}")
 
                 from_well = self.well_at(mapping.from_pos)
                 # We only need to map wells that are not empty
@@ -265,9 +271,14 @@ class Plate(TimeTrackedModel):
                             "status": mapping.status
                         },  # should the well status be taken from mapping status?
                     )
+                    print(well, created)
+
                     if created:  #  To create an id
                         well.save()
                     if mapping.map_type:
+                        print(
+                            f"Mapping type from {from_well} to {well}; {from_well.type}"
+                        )
                         well.type = from_well.type
                         well.save()
                     for compound in from_well.compounds.all():

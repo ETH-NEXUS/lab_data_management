@@ -7,7 +7,9 @@ import {useRoute} from 'vue-router'
 import {api} from 'src/boot/axios'
 import {useI18n} from 'vue-i18n'
 import bus from 'src/eventBus'
+import {useQuasar} from 'quasar'
 
+const $q = useQuasar()
 const {t} = useI18n()
 
 const route = useRoute()
@@ -15,6 +17,7 @@ const projectStore = useProjectStore()
 const project = ref<Project | null>(null)
 const addLayoutDialog = ref<boolean>(false)
 const newBarcode = ref<string>('')
+const oldBarcode = ref<string>('')
 
 onMounted(async () => {
   if (projectStore.projects.length === 0) {
@@ -31,11 +34,32 @@ const getProject = async () => {
 }
 
 const addLayout = async () => {
+  if (!newBarcode.value) {
+    $q.notify({
+      message: 'Please enter a barcode',
+      color: 'warning',
+      position: 'top',
+    })
+    return
+  }
   const payload = {
-    barcode: newBarcode.value,
+    barcode_new: newBarcode.value,
+    barcode_old: oldBarcode.value,
     project_id: project.value?.id,
   }
-  alert('Add layout')
+
+  const res = await api.post('/api/add_control_layout/', payload, {
+    headers: {
+      'Content-Type': 'application/json',
+    },
+  })
+  console.log(res.status)
+  bus.emit('project-updated')
+}
+
+const handleClick = (barcode: string) => {
+  oldBarcode.value = barcode
+  addLayoutDialog.value = true
 }
 </script>
 
@@ -46,7 +70,7 @@ const addLayout = async () => {
       v-for="(plate, index) in projectStore.controlPlates"
       :key="`control_plate_${plate.id}`">
       <div class="text-primary title">Plate {{ index + 1 }}: {{ plate.barcode }}</div>
-      <div @click="addLayoutDialog = true" class="cursor-pointer text-secondary">
+      <div @click="handleClick(plate.barcode)" class="cursor-pointer text-secondary">
         {{ t('action.add_layout') }} {{ project.name }} >>
       </div>
       <DynamicPlate :plate="plate" :min="0" :max="1" />
@@ -54,7 +78,7 @@ const addLayout = async () => {
     <q-dialog v-model="addLayoutDialog">
       <q-card class="dialog-card">
         <q-card-section>
-          <q-input v-model="newBarcode" label="Entr barcode"></q-input>
+          <q-input v-model="newBarcode" label="Enter barcode"></q-input>
         </q-card-section>
         <q-card-actions align="right">
           <q-btn flat label="Add" color="primary" @click="addLayout" />

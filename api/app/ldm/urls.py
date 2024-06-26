@@ -29,6 +29,7 @@ from core.views import (
     download_csv_data,
     prefillPlateInfo,
     save_plate_info,
+    add_control_layout,
 )
 from django.conf import settings
 from jupyter.views import JupyterProxyView
@@ -79,6 +80,7 @@ urlpatterns = [
     ),
     path("api/prefillPlateInfo/", prefillPlateInfo, name="prefillPlateInfo"),
     path("api/save_plate_info/", save_plate_info, name="save_plate_info"),
+    path("api/add_control_layout/", add_control_layout, name="add_control_layout"),
 ]
 
 if not settings.DISABLE_BROWSABLE_API and not settings.DISABLE_AUTH:

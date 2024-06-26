@@ -90,11 +90,12 @@ class MappingList:
         return self.__mappings[item]
 
     @classmethod
-    def one_to_one(cls, n_pos: int, amount: float = 0):
+    def one_to_one(cls, n_pos: int, amount: float = 0, map_type: bool = False):
         """returns a one_to_one mapping for n_pos positions"""
         mappings = cls()
         for p in range(n_pos):
-            mappings.add(Mapping(p, p, amount))
+            print("adding mapping", p)
+            mappings.add(Mapping(p, p, amount, map_type=map_type))
         return mappings
 
     @classmethod
