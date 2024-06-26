@@ -215,6 +215,10 @@ const newProject = async () => {
   }
 }
 
+const selectControlLayout = async (project: Project) => {
+  await router.push(`/control-plates/${project.id}`)
+}
+
 const newExperiment = async (project: Project) => {
   $q.dialog({
     title: t('title.experiment_name'),
@@ -313,6 +317,12 @@ const updateHarvestProjects = async () => {
           <q-item clickable v-close-popup>
             <q-item-section @click="newExperiment(prop.node.project)">
               {{ t('action.new_experiment') }}
+            </q-item-section>
+          </q-item>
+          <q-separator />
+          <q-item clickable v-close-popup>
+            <q-item-section @click="selectControlLayout(prop.node.project)">
+              {{ t('action.select_control_layout') }}
             </q-item-section>
           </q-item>
         </q-list>

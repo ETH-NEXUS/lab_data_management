@@ -80,7 +80,6 @@ const savePlateInfo = async () => {
 <template>
   <q-page class="q-px-md">
     <div class="text-h5 q-mt-lg q-mb-md q-pl-xl text-primary text-center">Add Experiment Data</div>
-    <div>* the measurements added via the calculator in the ui are not shown here</div>
 
     <q-card class="my-card" flat>
       <q-card-section>

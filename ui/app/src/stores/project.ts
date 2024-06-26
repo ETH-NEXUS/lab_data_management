@@ -8,6 +8,7 @@ import {
   ProjectPayload,
   CalculatorPayload,
   PlateInfo,
+  Plate,
 } from 'src/components/models'
 
 import {api} from 'src/boot/axios'
@@ -20,6 +21,7 @@ export const useProjectStore = defineStore('project', () => {
   const outputNotebooks = ref<Array<string>>([])
   const inputNotebookPath = ref<string | null>(null)
   const prefilledPlateInfo = ref<PlateInfo[]>([])
+  const controlPlates = ref<Array<Plate>>([])
 
   const initialize = async () => {
     const resp_p = await api.get('/api/projects/')
@@ -209,6 +211,11 @@ export const useProjectStore = defineStore('project', () => {
     }
   }
 
+  const getControlPlates = async () => {
+    const res = await api.get('/api/plates/?is_control_plate=true')
+    controlPlates.value = res.data.results
+  }
+
   return {
     projects,
     plateDimensions,
@@ -216,6 +223,7 @@ export const useProjectStore = defineStore('project', () => {
     outputNotebooks,
     inputNotebookPath,
     prefilledPlateInfo,
+    controlPlates,
     initialize,
     add,
     addExperiment,
@@ -233,5 +241,6 @@ export const useProjectStore = defineStore('project', () => {
     downloadCSVData,
     getPrefilledPlateInfo,
     savePlateInfo,
+    getControlPlates,
   }
 })

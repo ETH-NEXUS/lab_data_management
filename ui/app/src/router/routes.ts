@@ -37,6 +37,13 @@ const routes: RouteRecordRaw[] = [
         path: '/add_data/:experiment_id',
         component: () => import('pages/AddDataPage.vue'),
       },
+
+      // await router.push(`/control-plates/${project.id}`)
+
+      {
+        path: '/control-plates/:project_id',
+        component: () => import('pages/SelectControlLayoutPage.vue'),
+      },
     ],
   },
   {
