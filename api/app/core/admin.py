@@ -22,10 +22,25 @@ from .models import (
 
 @admin.register(Plate)
 class PlateAdmin(admin.ModelAdmin):
-    list_display = ("barcode", "dimension", "library", "experiment")
+    list_display = (
+        "barcode",
+        "is_control_plate",
+        "dimension",
+        "library",
+        "experiment",
+        "use_as_template_to_select",
+    )
     search_fields = ("barcode",)
 
-    list_filter = ("dimension", "library", "experiment", "template")
+    list_filter = (
+        "dimension",
+        "is_control_plate",
+        "library",
+        "experiment",
+        "project",
+        "template",
+        "use_as_template_to_select",
+    )
 
     def get_wells(self, plate: Plate):
         out = "<table><tr>"
