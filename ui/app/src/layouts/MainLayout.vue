@@ -6,12 +6,15 @@ import {useUserStore} from 'src/stores/user'
 import {useQuasar} from 'quasar'
 import {useI18n} from 'vue-i18n'
 import {api} from 'src/boot/axios'
+import {useProjectStore} from 'src/stores/project'
 
 const $q = useQuasar()
 const route = useRoute()
 const router = useRouter()
 const userStore = useUserStore()
 const leftDrawerOpen = ref(false)
+
+const projectStore = useProjectStore()
 
 const {t} = useI18n()
 
@@ -46,6 +49,15 @@ onMounted(async () => {
 const openDocsPage = () => {
   window.open('/docs/', '_blank')
 }
+
+const refresh = async () => {
+  try {
+    const resp = await api.get('/api/refresh/')
+    await projectStore.initialize()
+  } catch (err) {
+    console.error(err)
+  }
+}
 </script>
 
 <template>
@@ -55,7 +67,9 @@ const openDocsPage = () => {
         <q-btn flat dense round icon="menu" aria-label="Menu" @click="toggleLeftDrawer" />
         <q-toolbar-title class="cursor-pointer" @click="router.push('/')">
           Lab Data Management
+          <q-btn icon="sync" flat @click="refresh"></q-btn>
         </q-toolbar-title>
+
         <span v-if="userStore.user">
           <strong>{{ userStore.user.first_name }} {{ userStore.user.last_name }}</strong>
         </span>

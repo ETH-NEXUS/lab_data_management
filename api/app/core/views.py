@@ -943,3 +943,15 @@ def save_plate_info(request):
     except Exception as e:
         traceback.print_exc()
         return JsonResponse({"error": str(e)}, status=500)
+
+
+def refresh(request):
+    try:
+        if request.method == "GET":
+            PlateDetail.refresh(concurrently=True)
+            WellDetail.refresh(concurrently=True)
+            ExperimentDetail.refresh(concurrently=True)
+            return JsonResponse({"status": "Data refreshed successfully"}, status=200)
+    except Exception as e:
+        traceback.print_exc()
+        return JsonResponse({"error": str(e)}, status=500)
