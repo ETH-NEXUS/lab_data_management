@@ -855,6 +855,20 @@ def get_existing_plate_infos(experiment_id):
     return plate_info
 
 
+def find_withdrawal_well(start_index, wells, total_columns):
+    """
+    If the middle well is empty, we look for the closest well with withdrawals up and down.
+    """
+    for offset in range(total_columns):
+        indices_to_check = [start_index + i * total_columns for i in range(-3, 4)]
+        for idx in indices_to_check:
+            if 0 <= idx < len(wells):
+                withdrawals = WellWithdrawal.objects.filter(target_well=wells[idx])
+                if withdrawals:
+                    return wells[idx], withdrawals
+    return None, []
+
+
 def get_new_plate_infos(experiment):
     plate_info = []
     plates = Plate.objects.filter(experiment=experiment)
@@ -884,8 +898,10 @@ def get_new_plate_infos(experiment):
                 middle_well_index = int(
                     len(plate.wells.all()) // 2
                 )  # we take one in the middle so we don;t get control plate
-                middle_well = plate.wells.all()[middle_well_index]
-                withdrawals = WellWithdrawal.objects.filter(target_well=middle_well)
+
+                middle_well, withdrawals = find_withdrawal_well(
+                    middle_well_index, plate.wells, plate.dimension.cols
+                )
                 lib_plate = withdrawals[0].well.plate if withdrawals else None
                 plate_info_obj["plate_barcode"] = plate.barcode
                 plate_info_obj["lib_plate_barcode"] = (
