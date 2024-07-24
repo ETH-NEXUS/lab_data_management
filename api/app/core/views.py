@@ -930,9 +930,10 @@ def get_new_plate_infos(experiment):
                     len(plate.wells.all()) // 2 + plate.dimension.cols // 2
                 )  # we take one in the middle of the plate (the middle index plus the half number of columns), so we don't get a well filled from a control well.
 
-
                 well_with_donors = find_well_with_donors(
-                    well_to_check_idx, plate.wells.all().order_by("position"), plate.dimension.cols
+                    well_to_check_idx,
+                    plate.wells.all().order_by("position"),
+                    plate.dimension.cols,
                 )
                 logger.debug(f"Well with donors: {well_with_donors}")
                 lib_plate = well_with_donors.donors.all().first().well.plate
