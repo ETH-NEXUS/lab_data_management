@@ -862,6 +862,7 @@ def find_withdrawal_well(start_index, wells, total_columns):
     for offset in range(total_columns):
         indices_to_check = [start_index + i * total_columns for i in range(-3, 4)]
         for idx in indices_to_check:
+            logger.debug(f"Checking index: {idx}")
             if 0 <= idx < len(wells):
                 withdrawals = WellWithdrawal.objects.filter(target_well=wells[idx])
                 if withdrawals:
