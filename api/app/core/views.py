@@ -859,23 +859,18 @@ def find_well_with_donors(start_index, wells, total_columns):
     if len(wells[start_index].donors.all()) > 0:
         logger.debug(f"Number of wells: {len(wells)}")
         logger.debug(f"Starting index: {start_index}")
-        logger.debug(f"Found well with donors: {wells[start_index]}")
+        logger.debug(f"The starting well has donors: {wells[start_index]}")
         return wells[start_index]
-
-    row_index = start_index // total_columns
-
-    for row_offset in range(-3, 4):
-        new_row_index = row_index + row_offset
-        if 0 <= new_row_index < (len(wells) // total_columns):
-            new_index = new_row_index * total_columns + (start_index % total_columns)
-            logger.debug(f"Checking well at index {new_index}")
-            if len(wells[new_index].donors.all()) > 0:
-                logger.debug(f"Checked well at index {new_index}, found donors.")
-                return wells[new_index]
-
-    # If no well with donors is found, return None or handle as needed
+    indices_to_check = [start_index + i * total_columns for i in range(-4, 5)]
+    for idx in indices_to_check:
+        logger.debug(f"Checking index: {idx}")
+        if idx < 0 or idx >= len(wells):
+            continue
+        if len(wells[idx].donors.all()) > 0:
+            return wells[idx]
     logger.debug("No well with donors found in the specified range.")
     return None
+
 
 def find_withdrawal_well(start_index, wells, total_columns):
     """
