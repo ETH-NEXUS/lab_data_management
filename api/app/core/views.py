@@ -859,7 +859,9 @@ def find_well_with_donors(start_index, wells, total_columns):
     logger.debug(f"Number of wells: {len(wells)}")
     logger.debug(f"Starting index: {start_index}")
     if len(wells[start_index].donors.all()) > 0:
-        logger.debug(f"The starting well with index {start_index} has donors: {wells[start_index]}")
+        logger.debug(
+            f"The starting well with index {start_index} has donors: {wells[start_index]}"
+        )
         return wells[start_index]
     indices_to_check = [start_index + i * total_columns for i in range(-4, 5)]
     for idx in indices_to_check:
@@ -930,7 +932,7 @@ def get_new_plate_infos(experiment):
                     well_to_check_idx, plate.wells.all(), plate.dimension.cols
                 )
                 logger.debug(f"Well with donors: {well_with_donors}")
-                print('\n')
+                print("\n")
                 lib_plate = well_with_donors.donors.all().first().well.plate
                 plate_info_obj["plate_barcode"] = plate.barcode
                 plate_info_obj["lib_plate_barcode"] = (
