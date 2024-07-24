@@ -859,6 +859,12 @@ def find_withdrawal_well(start_index, wells, total_columns):
     """
     If the middle well is empty, we look for the closest well with withdrawals up and down.
     """
+    if len(WellWithdrawal.objects.filter(target_well=wells[start_index])) > 0:
+        logger.debug(f"Number of wells: {len(wells)}")
+        logger.debug(f"Starting index: {start_index}")
+        return wells[start_index], WellWithdrawal.objects.filter(
+            target_well=wells[start_index]
+        )
     for offset in range(total_columns):
         indices_to_check = [start_index + i * total_columns for i in range(-3, 4)]
         for idx in indices_to_check:
