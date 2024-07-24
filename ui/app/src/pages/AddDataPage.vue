@@ -119,7 +119,7 @@ const savePlateInfo = async () => {
               width="120px"
               readonly="true" />
             <vue-excel-column
-              readonly="true"
+              readonly="false"
               field="lib_plate_barcode"
               label="Library Plate Barcode"
               type="string"
