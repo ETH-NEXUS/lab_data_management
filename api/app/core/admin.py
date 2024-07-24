@@ -188,3 +188,21 @@ class PlateInfoAdmin(admin.ModelAdmin):
         "cell_type",
         "condition",
     )
+    search_fields = (
+        "plate",
+        "lib_plate_barcode",
+        "label",
+        "replicate",
+        "measurement_time",
+        "cell_type",
+        "condition",
+    )
+    list_filter = (
+        "plate__barcode",
+        "lib_plate_barcode",
+        "label",
+        "replicate",
+        "measurement_time",
+        "cell_type",
+        "condition",
+    )
