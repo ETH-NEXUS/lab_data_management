@@ -903,8 +903,8 @@ def get_new_plate_infos(experiment):
                     "condition": "",
                 }
                 middle_well_index = int(
-                    len(plate.wells.all()) // 2
-                )  # we take one in the middle so we don;t get control plate
+                    len(plate.wells.all()) // 2 + plate.dimension.cols // 2
+                )  # we take one in the middle of the plate (the middle index plus the half number of columns), so we don't get a well filled from a control well.
 
                 middle_well, withdrawals = find_withdrawal_well(
                     middle_well_index, plate.wells.all(), plate.dimension.cols
