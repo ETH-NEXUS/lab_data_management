@@ -855,6 +855,17 @@ def get_existing_plate_infos(experiment_id):
     return plate_info
 
 
+def find_well_with_donors(start_index, wells, total_columns):
+    if (len(wells[start_index].donors.all())) > 0:
+        return wells[start_index]
+    for offset in range(total_columns):
+        indices_to_check = [start_index + i * total_columns for i in range(-3, 4)]
+        for idx in indices_to_check:
+            if 0 <= idx < len(wells):
+                if len(wells[idx].donors.all()) > 0:
+                    return wells[idx]
+
+
 def find_withdrawal_well(start_index, wells, total_columns):
     """
     If the middle well is empty, we look for the closest well with withdrawals up and down.
@@ -902,18 +913,14 @@ def get_new_plate_infos(experiment):
                     "cell_type": "",
                     "condition": "",
                 }
-                middle_well_index = int(
+                well_to_check = int(
                     len(plate.wells.all()) // 2 + plate.dimension.cols // 2
                 )  # we take one in the middle of the plate (the middle index plus the half number of columns), so we don't get a well filled from a control well.
 
-                middle_well, withdrawals = find_withdrawal_well(
-                    middle_well_index, plate.wells.all(), plate.dimension.cols
+                middle_well = find_well_with_donors(
+                    well_to_check, plate.wells.all(), plate.dimension.cols
                 )
-                lib_plate = (
-                    withdrawals[len(withdrawals) - 1].well.plate
-                    if withdrawals
-                    else None
-                )
+                lib_plate = middle_well.donors.all().first().well.plate
                 plate_info_obj["plate_barcode"] = plate.barcode
                 plate_info_obj["lib_plate_barcode"] = (
                     lib_plate.barcode if lib_plate else "NA"
