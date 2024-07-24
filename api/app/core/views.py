@@ -900,7 +900,7 @@ def get_new_plate_infos(experiment):
                 )  # we take one in the middle so we don;t get control plate
 
                 middle_well, withdrawals = find_withdrawal_well(
-                    middle_well_index, plate.wells, plate.dimension.cols
+                    middle_well_index, plate.wells.all(), plate.dimension.cols
                 )
                 lib_plate = withdrawals[0].well.plate if withdrawals else None
                 plate_info_obj["plate_barcode"] = plate.barcode
