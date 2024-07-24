@@ -881,7 +881,10 @@ def get_new_plate_infos(experiment):
                     "cell_type": "",
                     "condition": "",
                 }
-                middle_well = plate.wells.all()[len(plate.wells.all()) // 2]
+                middle_well_index = int(
+                    len(plate.wells.all()) // 2
+                )  # we take one in the middle so we don;t get control plate
+                middle_well = plate.wells.all()[middle_well_index]
                 withdrawals = WellWithdrawal.objects.filter(target_well=middle_well)
                 lib_plate = withdrawals[0].well.plate if withdrawals else None
                 plate_info_obj["plate_barcode"] = plate.barcode
@@ -892,7 +895,7 @@ def get_new_plate_infos(experiment):
     return plate_info
 
 
-def prefillPlateInfo(request):
+def prefill_plate_info(request):
     try:
         if request.method == "GET":
             experiment_id = request.GET.get("experiment_id")
@@ -946,6 +949,12 @@ def save_plate_info(request):
 
 
 def refresh(request):
+    """
+    Hard refresh on the ui side.
+    When we delete measurements in admin, it will not be imeediately reflected on the UI,
+    because we need to refresh materialized views.
+    This function is triggerd by the refresh button on the ui.
+    """
     try:
         if request.method == "GET":
             PlateDetail.refresh(concurrently=True)
