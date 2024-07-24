@@ -856,17 +856,19 @@ def get_existing_plate_infos(experiment_id):
 
 
 def find_well_with_donors(start_index, wells, total_columns):
+    logger.debug(f"Number of wells: {len(wells)}")
+    logger.debug(f"Starting index: {start_index}")
     if len(wells[start_index].donors.all()) > 0:
-        logger.debug(f"Number of wells: {len(wells)}")
-        logger.debug(f"Starting index: {start_index}")
-        logger.debug(f"The starting well has donors: {wells[start_index]}")
+        logger.debug(f"The starting well with index {start_index} has donors: {wells[start_index]}")
         return wells[start_index]
     indices_to_check = [start_index + i * total_columns for i in range(-4, 5)]
     for idx in indices_to_check:
         logger.debug(f"Checking index: {idx}")
         if idx < 0 or idx >= len(wells):
+            logger.debug(f"Index {idx} out of bounds.")
             continue
         if len(wells[idx].donors.all()) > 0:
+            logger.debug(f"Found well with donors: {wells[idx]}, index: {idx}")
             return wells[idx]
     logger.debug("No well with donors found in the specified range.")
     return None
@@ -876,9 +878,10 @@ def find_withdrawal_well(start_index, wells, total_columns):
     """
     If the middle well is empty, we look for the closest well with withdrawals up and down.
     """
+    logger.debug(f"Number of wells: {len(wells)}")
+    logger.debug(f"Starting index: {start_index}")
     if len(WellWithdrawal.objects.filter(target_well=wells[start_index])) > 0:
-        logger.debug(f"Number of wells: {len(wells)}")
-        logger.debug(f"Starting index: {start_index}")
+
         return wells[start_index], WellWithdrawal.objects.filter(
             target_well=wells[start_index]
         )
@@ -897,7 +900,7 @@ def get_new_plate_infos(experiment):
     plate_info = []
     plates = Plate.objects.filter(experiment=experiment)
     for plate in plates:
-        logger.debug(f"Plate: {plate.barcode}")
+        logger.info(f"Plate: {plate.barcode}")
         plate_details = PlateDetail.objects.get(pk=plate.id)
         measurement_labels = plate_details.measurement_labels
         measurement_timestamps = plate_details.measurement_timestamps
@@ -919,14 +922,16 @@ def get_new_plate_infos(experiment):
                     "cell_type": "",
                     "condition": "",
                 }
-                well_to_check = int(
+                well_to_check_idx = int(
                     len(plate.wells.all()) // 2 + plate.dimension.cols // 2
                 )  # we take one in the middle of the plate (the middle index plus the half number of columns), so we don't get a well filled from a control well.
 
-                middle_well = find_well_with_donors(
-                    well_to_check, plate.wells.all(), plate.dimension.cols
+                well_with_donors = find_well_with_donors(
+                    well_to_check_idx, plate.wells.all(), plate.dimension.cols
                 )
-                lib_plate = middle_well.donors.all().first().well.plate
+                logger.debug(f"Well with donors: {well_with_donors}")
+                print('\n')
+                lib_plate = well_with_donors.donors.all().first().well.plate
                 plate_info_obj["plate_barcode"] = plate.barcode
                 plate_info_obj["lib_plate_barcode"] = (
                     lib_plate.barcode if lib_plate else "NA"
