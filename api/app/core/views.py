@@ -871,7 +871,6 @@ def find_well_with_donors(start_index, wells, total_columns):
     return None
 
 
-
 def get_new_plate_infos(experiment):
     plate_info = []
     plates = Plate.objects.filter(experiment=experiment)

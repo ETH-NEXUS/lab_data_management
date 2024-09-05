@@ -33,6 +33,8 @@ class Compound(models.Model):
     #     blank=True,
     # )
     data = models.JSONField(null=True)
+    manufacturer = models.TextField(null=True, blank=True)
+    item_number = models.TextField(null=True, blank=True)
 
     def __str__(self):
         return f"{self.name}"
