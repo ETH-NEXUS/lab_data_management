@@ -188,6 +188,15 @@ def get_experiment_measurements(experiment_name: str, label=None):
             if label is not None:
                 measurements = measurements.filter(label=label)
 
+            compound_data = (
+                well.compounds.first().data if well.compounds.first() else None
+            )
+
+            supplier = None
+            catalog_number = None
+            if compound_data:
+                supplier = compound_data.get("Supplier")
+                catalog_number = compound_data.get("CatalogNumber")
             well_rows = [
                 {
                     "well_coordinate": well.hr_position,
@@ -200,6 +209,8 @@ def get_experiment_measurements(experiment_name: str, label=None):
                     "compound": well.compounds.first().name
                     if well.compounds and well.compounds.first()
                     else None,
+                    "supplier": supplier,
+                    "catalog_number": catalog_number,
                 }
                 for measurement in measurements
             ]

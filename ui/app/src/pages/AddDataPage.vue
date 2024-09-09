@@ -19,7 +19,7 @@ const downloadCSV = () => {
   const columnNames = [
     'measurement_label',
     'measurement_timestamp',
-    'plate_barcode',
+    'plate', // the field is called plate_barcode
     'lib_plate_barcode',
     'replicate',
     'cell_type',
