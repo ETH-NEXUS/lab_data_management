@@ -333,21 +333,13 @@ const refresh = async () => {
                 icon="o_copy"
                 color="secondary"
                 @click="() => (copyPlateDialog = true)" />
-              <q-btn
-                v-if="!plate.template"
-                class="q-ml-md"
-                :label="t('action.apply_template')"
-                icon="o_layers"
-                color="secondary"
-                @click="() => (applyTemplateDialog = true)" />
-              <!-- there is not much sense in calculating the heatmap for a single plate -->
               <!--              <q-btn-->
-              <!--                v-if="platePage.showHeatmap"-->
-              <!--                class="q-my-md q-ml-xs"-->
-              <!--                :label="t('action.calculate_measurement')"-->
-              <!--                icon="calculate"-->
+              <!--                v-if="!plate.template"-->
+              <!--                class="q-ml-md"-->
+              <!--                :label="t('action.apply_template')"-->
+              <!--                icon="o_layers"-->
               <!--                color="secondary"-->
-              <!--                @click="bus.emit('openCalculator')" />-->
+              <!--                @click="() => (applyTemplateDialog = true)" />-->
             </div>
           </div>
         </template>
