@@ -192,13 +192,12 @@ def get_experiment_measurements(experiment_name: str, label=None):
                 well.compounds.first().data if well.compounds.first() else None
             )
 
-            supplier = None
-            catalog_number = None
             if compound_data:
                 supplier = compound_data.get("Supplier")
                 catalog_number = compound_data.get("CatalogNumber")
-            well_rows = [
-                {
+            well_rows = []
+            for measurement in measurements:
+                obj = {
                     "well_coordinate": well.hr_position,
                     "value": measurement.value,
                     "plate": pl.barcode,
@@ -209,11 +208,10 @@ def get_experiment_measurements(experiment_name: str, label=None):
                     "compound": well.compounds.first().name
                     if well.compounds and well.compounds.first()
                     else None,
-                    "supplier": supplier,
-                    "catalog_number": catalog_number,
                 }
-                for measurement in measurements
-            ]
+                if compound_data:
+                    obj.update(compound_data)
+                well_rows.append(obj)
 
             rows.extend(well_rows)
 
