@@ -323,6 +323,7 @@ class PlateViewSet(viewsets.ModelViewSet):
     def __evaluate_expression(self, new_expression):
 
         try:
+            import math  # don't remove this import!!!!!
             result = eval(new_expression)
             if not result:
                 logger.warning(
@@ -333,6 +334,9 @@ class PlateViewSet(viewsets.ModelViewSet):
         except ZeroDivisionError:
             logger.critical("Division by zero occurred. Setting result to 0")
             result = 0
+        except Exception as e:
+            traceback.print_exc()
+            logger.error(f"Error evaluating expression: {e}")
         return result
 
     def __add_new_measurement_to_plate(
