@@ -324,7 +324,10 @@ class PlateViewSet(viewsets.ModelViewSet):
 
         try:
             import math  # don't remove this import!!!!!
-            print(math) # don't remove this print!!!!! we need it so that the IDE don't remove the import by formating code
+
+            print(
+                math
+            )  # don't remove this print!!!!! we need it so that the IDE don't remove the import by formating code
 
             result = eval(new_expression)
             if not result:
