@@ -19,14 +19,16 @@ const downloadCSV = () => {
   const columnNames = [
     'measurement_label',
     'measurement_timestamp',
-    'plate', // the field is called plate_barcode
+    'plate_barcode', // the field is called plate_barcode
     'lib_plate_barcode',
     'replicate',
     'cell_type',
     'condition',
   ]
 
-  const headerString = columnNames.join(',') + '\n'
+  let headerString = columnNames.join(',') + '\n'
+  // replace plate_barcode with plate
+  headerString = headerString.replace('plate_barcode', 'plate')
 
   const csvContent = projectStore.prefilledPlateInfo
     .map((row: PlateInfo) => {
