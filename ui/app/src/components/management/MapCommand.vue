@@ -36,6 +36,7 @@ const onSubmit = async (formData: GeneralFormData) => {
       formData['what'] = props.what
     }
   }
+
   await managementStore.runCommand(formData)
   bus.emit('management-command')
 }

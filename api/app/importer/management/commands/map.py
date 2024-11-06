@@ -154,8 +154,14 @@ class Command(BaseCommand):
                     )
                 print(options.get("machine"))
                 mapper = MicroscopeMapper()
+
+                if path.endswith(".txt"):
+                    _blob = Config.current.importer.microscope.default.file_blob
+                else:
+                    _blob = Config.current.importer.microscope.default.txt_blob
+                    logger.info(f"Using blob: {_blob}")
                 mapper.run(
-                    join(path, Config.current.importer.microscope.default.file_blob),
+                    join(path, _blob),
                     debug=options.get("debug", False),
                     experiment_name=options.get("experiment_name", None),
                     room_name=options.get("room_name", None),

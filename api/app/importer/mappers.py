@@ -92,7 +92,8 @@ class BaseMapper:
                             break
                     detector.close()
                 encoding = detector.result.get("encoding")
-            if filename.endswith(".xlsx"):
+            if filename.endswith(".xlsx") or filename.endswith(".txt"):
+                logger.info(f"Processing {filename} as Excel file")
                 data = self.parse(filename, **kwargs)
             else:
                 xml_file = filename.endswith(".xml")
@@ -591,18 +592,52 @@ class M1000Mapper(BaseMapper):
 
 
 class MicroscopeMapper(BaseMapper):
-    RE_FILENAME = r"(?P<date>[0-9]+)-(?P<time>[0-9]+)[-_](?P<barcode>[^\.]+)\.xlsx"  # 231121-083504-231115AK_1.xlsx
+    RE_FILENAME = (
+        r"(?P<date>\d+)[-_](?P<time>\d+)[-_](?P<barcode>[^\.]+)\.(?P<ext>xlsx|txt)$"
+    )
 
     def parse(self, file, **kwargs):
-        match = re.match(self.RE_FILENAME, os.path.basename(file))
-        date = match.group("date")
-        time = match.group("time")
-        barcode = match.group("barcode")
-        wb = load_workbook(file)
-        sheet = wb.active
-        metadata = self.__parse_metadata(sheet)
-        results = self.__parse_results(sheet)
-        layout = self.__parse_layout(sheet, len(results))
+        filename = file
+        basename = os.path.basename(filename)
+        match = re.match(self.RE_FILENAME, basename)
+        if match:
+            date = match.group("date")
+            time = match.group("time")
+            barcode = match.group("barcode")
+            ext = match.group("ext")
+        else:
+            message(
+                f"Filename {basename} does not match expected pattern.",
+                "error",
+                kwargs.get("room_name", None),
+            )
+            raise ValueError(f"Filename {basename} does not match expected pattern.")
+
+        kwargs.update(
+            {"filename": filename, "barcode": barcode, "date": date, "time": time}
+        )
+
+        if ext == "xlsx":
+            wb = load_workbook(file)
+            sheet = wb.active
+            metadata = self.__parse_metadata(sheet)
+            results = self.__parse_results(sheet)
+            layout = self.__parse_layout(sheet, len(results))
+        elif ext == "txt":
+            content = open(file, "r")
+            lines = [line.strip() for line in content.readlines() if line.strip()]
+            metadata = self.__parse_metadata_txt(lines)
+            results = self.__parse_results_txt(lines)
+            layout = (
+                {}
+            )  # Implement __parse_layout_txt if layout info is present in .txt files
+            # Prefer date and time from metadata if available
+            date = metadata.get("Date", date)
+            time = metadata.get("Time", time)
+            logger.info(f"Date: {date}, Time: {time}")
+            content.close()
+        else:
+            raise ValueError(f"Unsupported file extension: {ext}")
 
         return {
             "metadata": metadata,
@@ -645,11 +680,16 @@ class MicroscopeMapper(BaseMapper):
             total=len(data["results"]),
         ) as mbar:
             for entry in data["results"]:
+                if not entry.get("Well") or entry.get("Well") == "Well":
+                    continue
+
                 position = plate.dimension.position(entry.get("Well"))
+
                 well = plate.well_at(position)
                 if not well:
+
                     well = Well.objects.create(plate=plate, position=position)
-                if entry.get("Well") in data["layout"]:
+                if data["layout"] and entry.get("Well") in data["layout"]:
                     well_type = data["layout"][entry.get("Well")]
                     well.type = WellType.objects.get(name=well_type)
                     well.save()
@@ -725,9 +765,6 @@ class MicroscopeMapper(BaseMapper):
 
         return results_data
 
-    def __parse_reader_mode(self, sheet, barcode, **kwargs):
-        pass
-
     def __parse_layout(self, sheet, plate):
         layout_start_row = None
         layout_end_row = None
@@ -755,6 +792,58 @@ class MicroscopeMapper(BaseMapper):
                         position_type[well_position] = well_type
 
         return position_type
+
+    def __parse_metadata_txt(self, lines):
+        metadata = {}
+        i = 0
+        while i < len(lines):
+            line = lines[i].strip()
+            if line == "Results":
+                break  # Stop parsing metadata when 'Results' is reached
+            if not line:
+                i += 1
+                continue
+            if "\t" in line:
+                parts = line.split("\t", 1)
+                if len(parts) == 2:
+                    key, value = parts
+                    metadata[key.strip()] = value.strip()
+            elif ":" in line:
+                parts = line.split(":", 1)
+                if len(parts) == 2:
+                    key, value = parts
+                    metadata[key.strip()] = value.strip()
+
+            i += 1
+
+        return metadata
+
+    def __parse_results_txt(self, lines):
+        results = []
+        # Find the index where 'Results' section starts
+        i = 0
+        while i < len(lines):
+            if lines[i] == "Results":
+                i += 1  # Skip the 'Results' header
+                break
+            i += 1
+
+        # Now parse the results
+        while i < len(lines):
+            line = lines[i]
+            if line.strip() == "":
+                break
+            parts = line.split("\t")
+            if len(parts) == 2:
+                well, lum = parts
+                if well.strip() == "Well":
+                    i += 1
+                    continue
+                results.append({"Well": well.strip(), "Lum": lum.strip()})
+            i += 1
+
+        print(results[0])
+        return results
 
 
 class DatMapper(BaseMapper):

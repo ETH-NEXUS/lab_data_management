@@ -22,6 +22,7 @@ export const useManagementStore = defineStore({
 
     async runCommand(formData: GeneralFormData) {
       this.startLongPolling(formData['room_name'].toString()) // NB! no await here
+
       await api.post('/api/run_command/', {form_data: formData})
     },
 

@@ -40,7 +40,7 @@ class Config:
                     }
                 },
                 "m1000": {"default": {"file_blob": str}},
-                "microscope": {"default": {"file_blob": str}},
+                "microscope": {"default": {"file_blob": str, "txt_blob": str}},
                 "dat": {"default": {"file_blob": str}},
             }
         }
