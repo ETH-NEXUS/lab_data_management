@@ -275,7 +275,13 @@ LOGGING = {
         "level": LOG_LEVEL,
         "handlers": ["console"],
     },
-    "loggers": {},
+    "loggers": {
+        'django.request': {
+            'handlers': ['console'],
+            'level': LOG_LEVEL,
+            'propagate': True,
+        },        
+    },
 }
 if LOG_SQL:
     LOGGING["loggers"]["django.db.backends"] = {

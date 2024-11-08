@@ -20,13 +20,15 @@ def list_files(start_path):
             "children": [],
             "path": path,
         }
-        for entry in os.scandir(path):
-            if entry.is_file():
-                data["children"].append(
-                    {"type": "file", "name": entry.name, "path": entry.path}
-                )
-            elif entry.is_dir():
-                data["children"].append(walk(entry.path, children))
+        print(f"path: {path}")
+        if not ".snapshots" in path:
+            for entry in os.scandir(path):
+                if entry.is_file():
+                    data["children"].append(
+                        {"type": "file", "name": entry.name, "path": entry.path}
+                    )
+                elif entry.is_dir():
+                    data["children"].append(walk(entry.path, children))
         return data
 
     return walk(start_path)
