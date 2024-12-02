@@ -46,7 +46,6 @@ def run_command(request):
         body_data = json.loads(body_unicode)
         form_data = body_data.get("form_data")
 
-
         if form_data.get("command") == "map":
             machine = form_data.get("machine")
             if machine in ["echo", "m1000", "microscope"]:

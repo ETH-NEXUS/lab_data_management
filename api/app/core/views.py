@@ -916,7 +916,9 @@ def get_new_plate_infos(experiment):
                     plate.dimension.cols,
                 )
 
-                lib_plate = well_with_donors.donors.all().first().well.plate
+                lib_plate = None
+                if well_with_donors:
+                    lib_plate = well_with_donors.donors.all().first().well.plate
                 plate_info_obj["plate_barcode"] = plate.barcode
                 plate_info_obj["lib_plate_barcode"] = (
                     lib_plate.barcode if lib_plate else "NA"
