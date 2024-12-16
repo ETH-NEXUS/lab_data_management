@@ -18,8 +18,6 @@ class CompoundLibraryViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         plates = Prefetch("plates", queryset=Plate.objects.all().order_by("barcode"))
-        for i in CompoundLibrary.objects.all():
-            print(i.name)
         return CompoundLibrary.objects.all().prefetch_related(plates)
 
 

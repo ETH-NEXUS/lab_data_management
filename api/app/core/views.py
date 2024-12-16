@@ -321,14 +321,14 @@ class PlateViewSet(viewsets.ModelViewSet):
         return super().filter_queryset(queryset)
 
     def __evaluate_expression(self, new_expression):
-
+        result = None
         try:
+
             import math  # don't remove this import!!!!!
 
             print(
                 math
             )  # don't remove this print!!!!! we need it so that the IDE don't remove the import by formating code
-
             result = eval(new_expression)
             if not result:
                 logger.warning(
@@ -341,7 +341,10 @@ class PlateViewSet(viewsets.ModelViewSet):
             result = 0
         except Exception as e:
             traceback.print_exc()
-            logger.error(f"Error evaluating expression: {e}")
+            logger.critical(
+                f"Error evaluating expression: {e}. It can be that the value in the expression {new_expression} is <= 0. Setting result to 0"
+            )
+            result = 0
         return result
 
     def __add_new_measurement_to_plate(
