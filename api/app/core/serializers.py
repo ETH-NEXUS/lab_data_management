@@ -2,6 +2,8 @@ from collections import defaultdict
 
 from compoundlib.models import CompoundLibrary, Compound
 from rest_framework import serializers
+import random
+import string
 
 from .models import (
     Well,
@@ -326,6 +328,18 @@ class ProjectSerializer(serializers.ModelSerializer):
     class Meta:
         model = Project
         fields = "__all__"
+
+    def to_representation(self, instance):
+        representation = super().to_representation(instance)
+
+        request = self.context.get("request")
+        if request and request.user.username == "demo":
+            random_suffix = "".join(
+                random.choices(string.ascii_letters + string.digits, k=10)
+            )
+            representation["name"] = f"Project_{random_suffix}"
+
+        return representation
 
 
 class PlateMappingSerializer(UndefinedAffineModelSerializer):
