@@ -69,42 +69,58 @@ const openCalculator = ref<boolean>(false)
 
 const emit = defineEmits(['well-selected', 'refresh'])
 
+//  Two refs for selecting which labels serve as positive and negative
+const selectedPosControl = ref<string | null>(null)
+const selectedNegControl = ref<string | null>(null)
+
+//   computed array of available control labels for the selected measurement.
+// lists out the keys found in stats for that measurement (e. g. "C", "P1", "N1", "R2", )
+
+const controlLabelOptions = computed(() => {
+  if (!selectedMeasurement.value) {
+    return []
+  }
+  const statsForMeasurement = props.plate.details.stats[selectedMeasurement.value]
+  return Object.keys(statsForMeasurement).map(labelKey => ({
+    label: labelKey,
+    value: labelKey,
+  }))
+})
+
 const z_prime = computed(() => {
-  if (selectedMeasurement.value) {
-    if (
-      'P' in props.plate.details.stats[selectedMeasurement.value] &&
-      'N' in props.plate.details.stats[selectedMeasurement.value]
-    ) {
-      const mad_pos =
-        props.plate.details.stats[selectedMeasurement.value]['P'].mad[selectedTimestampIdx.value]
-      const mad_neg =
-        props.plate.details.stats[selectedMeasurement.value]['N'].mad[selectedTimestampIdx.value]
-      const median_pos =
-        props.plate.details.stats[selectedMeasurement.value]['P'].median[selectedTimestampIdx.value]
-      const median_neg =
-        props.plate.details.stats[selectedMeasurement.value]['N'].median[selectedTimestampIdx.value]
-      return 1 - (3 * (mad_pos + mad_neg)) / Math.abs(median_pos - median_neg)
-    }
+  if (!selectedMeasurement.value || !selectedPosControl.value || !selectedNegControl.value) {
+    return null
+  }
+  const measurement = selectedMeasurement.value
+  const pos = selectedPosControl.value // e.g. "P1", "C", "R1"
+  const neg = selectedNegControl.value // e.g. "N1", "P", "R2"
+
+  if (pos in props.plate.details.stats[measurement] && neg in props.plate.details.stats[measurement]) {
+    const mad_pos = props.plate.details.stats[measurement][pos].mad[selectedTimestampIdx.value]
+    const mad_neg = props.plate.details.stats[measurement][neg].mad[selectedTimestampIdx.value]
+    const median_pos = props.plate.details.stats[measurement][pos].median[selectedTimestampIdx.value]
+    const median_neg = props.plate.details.stats[measurement][neg].median[selectedTimestampIdx.value]
+
+    return 1 - (3 * (mad_pos + mad_neg)) / Math.abs(median_pos - median_neg)
   }
   return null
 })
 
 const ssmd = computed(() => {
-  if (selectedMeasurement.value) {
-    if (
-      'P' in props.plate.details.stats[selectedMeasurement.value] &&
-      'N' in props.plate.details.stats[selectedMeasurement.value]
-    ) {
-      const mad_pos =
-        props.plate.details.stats[selectedMeasurement.value]['P'].mad[selectedTimestampIdx.value]
-      const mad_neg =
-        props.plate.details.stats[selectedMeasurement.value]['N'].mad[selectedTimestampIdx.value]
-      const median_pos =
-        props.plate.details.stats[selectedMeasurement.value]['P'].median[selectedTimestampIdx.value]
-      const median_neg =
-        props.plate.details.stats[selectedMeasurement.value]['N'].median[selectedTimestampIdx.value]
-      return Math.abs(median_pos - median_neg) / (0.5 * (mad_pos + mad_neg))
-    }
+  if (!selectedMeasurement.value || !selectedPosControl.value || !selectedNegControl.value) {
+    return null
+  }
+  const measurement = selectedMeasurement.value
+  const pos = selectedPosControl.value
+  const neg = selectedNegControl.value
+
+  if (pos in props.plate.details.stats[measurement] && neg in props.plate.details.stats[measurement]) {
+    const mad_pos = props.plate.details.stats[measurement][pos].mad[selectedTimestampIdx.value]
+    const mad_neg = props.plate.details.stats[measurement][neg].mad[selectedTimestampIdx.value]
+    const median_pos = props.plate.details.stats[measurement][pos].median[selectedTimestampIdx.value]
+    const median_neg = props.plate.details.stats[measurement][neg].median[selectedTimestampIdx.value]
+
+    return Math.abs(median_pos - median_neg) / (0.5 * (mad_pos + mad_neg))
   }
   return null
 })
@@ -123,7 +139,27 @@ onMounted(() => {
   if (props.plate.details.measurement_labels && props.plate.details.measurement_labels.length > 0) {
     measurementOptions.value = props.plate.details.measurement_labels
     selectedMeasurement.value = measurementOptions.value[0]
+
+    //  pick defaults for pos/neg controls once we have measurement data
+    const firstMeasurementKey = measurementOptions.value[0]
+    const possibleLabels = Object.keys(props.plate.details.stats[firstMeasurementKey] || {})
+    // For example, if "C" and "P" or "P1" and "N1" exist, we set them as defaults
+    if (possibleLabels.includes('P')) {
+      selectedPosControl.value = 'P'
+    } else if (possibleLabels.includes('P1')) {
+      selectedPosControl.value = 'P1'
+    } else if (possibleLabels.length > 0) {
+      selectedPosControl.value = possibleLabels[0]
+    }
+    if (possibleLabels.includes('N')) {
+      selectedNegControl.value = 'N'
+    } else if (possibleLabels.includes('N1')) {
+      selectedNegControl.value = 'N1'
+    } else if (possibleLabels.length > 1) {
+      selectedNegControl.value = possibleLabels[1]
+    }
   }
+
   bus.on('openCalculator', () => {
     openCalculator.value = true
   })
@@ -142,7 +178,11 @@ const calculateNewMeasurement = async (expression: string, newLabel: string, use
 </script>
 
 <template>
+  {{ props.plate.details.stats }}
+  <br />
+  <br />
   <HeatMapSettings />
+
   <div class="row no-wrap">
     <PlateTable
       @well-selected="(well_info: WellInfo) => (platePage.selectedWellInfo = well_info)"
@@ -156,6 +196,24 @@ const calculateNewMeasurement = async (expression: string, newLabel: string, use
   </div>
   <div class="row">
     <PlateStats :ssmd="ssmd" :z_prime="z_prime" v-if="ssmd && z_prime" />
+  </div>
+  <div class="row q-mb-md q-my-xl" v-if="measurementOptions && measurementOptions.length > 0">
+    <div class="col-3 q-mr-lg">
+      <q-select
+        v-model="selectedPosControl"
+        :options="controlLabelOptions"
+        :label="t('label.positive_control')"
+        emit-value
+        map-options />
+    </div>
+    <div class="col-3">
+      <q-select
+        v-model="selectedNegControl"
+        :options="controlLabelOptions"
+        :label="t('label.negative_control')"
+        emit-value
+        map-options />
+    </div>
   </div>
 
   <div v-if="!plate.template" class="row">
@@ -199,6 +257,7 @@ const calculateNewMeasurement = async (expression: string, newLabel: string, use
       </div>
     </div>
   </div>
+
   <q-dialog v-model="openCalculator">
     <q-card class="calculator_dialog">
       <q-card-section>

@@ -333,13 +333,6 @@ const refresh = async () => {
                 icon="o_copy"
                 color="secondary"
                 @click="() => (copyPlateDialog = true)" />
-              <!--              <q-btn-->
-              <!--                v-if="!plate.template"-->
-              <!--                class="q-ml-md"-->
-              <!--                :label="t('action.apply_template')"-->
-              <!--                icon="o_layers"-->
-              <!--                color="secondary"-->
-              <!--                @click="() => (applyTemplateDialog = true)" />-->
             </div>
           </div>
         </template>

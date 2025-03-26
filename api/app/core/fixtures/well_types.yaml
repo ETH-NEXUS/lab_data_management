@@ -28,3 +28,46 @@
   fields:
     name: R10
     description: Reference 10
+- model: core.WellType
+  pk: 7
+  fields:
+    name: P1
+    description: Positive Control 1
+- model: core.WellType
+  pk: 8
+  fields:
+    name: P2
+    description: Positive Control 2
+- model: core.WellType
+  pk: 9
+  fields:
+    name: P3
+    description: Positive Control 3
+- model: core.WellType
+  pk: 10
+  fields:
+      name: P4
+      description: Positive Control 4
+- model: core.WellType
+  pk: 11
+  fields:
+      name: N1
+      description: Negative Control 1
+- model: core.WellType
+  pk: 12
+  fields:
+    name: N2
+    description: Negative Control 2
+- model: core.WellType
+  pk: 13
+  fields:
+    name: N3
+    description: Negative Control 3
+- model: core.WellType
+  pk: 14
+  fields:
+    name: N4
+    description: Negative Control 4
+
+
+

@@ -89,6 +89,8 @@ export default {
     label: 'Label',
     plot_view: 'Plot view',
     show_type_as_square: 'Show wells as squares',
+    positive_control: 'Positive control',
+    negative_control: 'Negative control',
   },
   hint: {
     username: 'Enter your ETH username',
