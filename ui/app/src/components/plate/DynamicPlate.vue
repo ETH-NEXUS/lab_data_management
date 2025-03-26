@@ -69,7 +69,7 @@ const openCalculator = ref<boolean>(false)
 
 const emit = defineEmits(['well-selected', 'refresh'])
 
-//  Two refs for selecting which labels serve as positive and negative
+//  selecting which labels serve as positive and negative
 const selectedPosControl = ref<string | null>(null)
 const selectedNegControl = ref<string | null>(null)
 
@@ -178,9 +178,6 @@ const calculateNewMeasurement = async (expression: string, newLabel: string, use
 </script>
 
 <template>
-  {{ props.plate.details.stats }}
-  <br />
-  <br />
   <HeatMapSettings />
 
   <div class="row no-wrap">

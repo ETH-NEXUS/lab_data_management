@@ -29,7 +29,7 @@ const {platePage} = storeToRefs(useSettingsStore())
 const createColorLegend = () => {
   const legend: LegendColor[] = []
   if (props.selectedMeasurement) {
-    const numberOfSteps = 10
+    const numberOfSteps = 20
 
     const step: number = (props.max - props.min) / numberOfSteps
     for (let i = 0; i <= numberOfSteps; i++) {
@@ -54,7 +54,7 @@ const createColorLegend = () => {
       v-for="(color, idx) in legendColors"
       :key="color.value + idx"
       :style="{backgroundColor: color.color}">
-      <span class="legendLabel">{{ [0, 5, 10].includes(idx) ? color.value.toFixed(3) : ' ' }}</span>
+      <span class="legendLabel">{{ [0, 5, 10, 15, 20].includes(idx) ? color.value.toFixed(3) : ' ' }}</span>
     </div>
   </div>
 </template>

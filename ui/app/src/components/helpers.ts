@@ -54,7 +54,23 @@ export const palettes: Array<Palette> = [
   {label: 'Blue', value: {from: '#92c5de', to: '#0b2746'}},
   {label: 'GreenBrown', value: {from: '#b8e186', to: '#662506'}},
   {label: 'Grey', value: {from: '#ffffff', to: '#525252'}},
+  {label: 'Magma', value: {from: '#ffffff', to: '#000000'}},
 ]
+
+function easeInOutCubic(t: number) {
+  return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2
+}
+
+function interpolateHsl(p: number, colorA: string, colorB: string) {
+  const from = hexToRgb(colorA)
+  const to = hexToRgb(colorB)
+  const easedT = easeInOutCubic(p)
+
+  const hue = easedT * (to.h - from.h) + from.h
+  const sat = easedT * (to.s - from.s) + from.s
+  const lig = easedT * (to.l - from.l) + from.l
+  return `hsl(${hue}, ${sat}%, ${lig}%)`
+}
 
 export const percentageToHsl = (percentage: number, fromColor: string, toColor: string) => {
   // if percentage is not given (-1) we return a transparent color
@@ -62,6 +78,68 @@ export const percentageToHsl = (percentage: number, fromColor: string, toColor: 
     return 'rgba(255,255,255,0)'
   }
 
+  // SPECIAL CASE: GreenRed palettewe  want black in the middle
+
+  if (fromColor.toLowerCase() === '#ff0000' && toColor.toLowerCase() === '#00ff00') {
+    const p = Math.max(0, Math.min(1, percentage)) // p в пределах [0..1]
+
+    // ----- 0..10% -----
+    if (p < 0.1) {
+      const localPct = p / 0.1
+      return interpolateHsl(localPct, '#00FF00', '#55FF55')
+    }
+    // ----- 10..20% -----
+    else if (p < 0.2) {
+      const localPct = (p - 0.1) / 0.1
+      return interpolateHsl(localPct, '#55FF55', '#55CC55')
+    }
+    // ----- 20..30% -----
+    else if (p < 0.3) {
+      const localPct = (p - 0.2) / 0.1
+      return interpolateHsl(localPct, '#55CC55', '#33AA33')
+    }
+    // ----- 30..40% -----
+    else if (p < 0.4) {
+      const localPct = (p - 0.3) / 0.1
+      return interpolateHsl(localPct, '#33AA33', '#147514')
+    }
+    // ----- 40..49% (9%) -----
+    else if (p < 0.49) {
+      const localPct = (p - 0.4) / 0.09
+      return interpolateHsl(localPct, '#147514', '#001e00')
+    }
+    // ----- 49..51% →
+    else if (p < 0.51) {
+      return '#000000'
+    }
+    // ----- 51..60% (9%) -----
+    else if (p < 0.6) {
+      const localPct = (p - 0.51) / 0.09
+      return interpolateHsl(localPct, '#330101', '#660000')
+    }
+    // ----- 60..70% -----
+    else if (p < 0.7) {
+      const localPct = (p - 0.6) / 0.1
+      return interpolateHsl(localPct, '#660000', '#993333')
+    }
+    // ----- 70..80% -----
+    else if (p < 0.8) {
+      const localPct = (p - 0.7) / 0.1
+      return interpolateHsl(localPct, '#993333', '#CC3333')
+    }
+    // ----- 80..90% -----
+    else if (p < 0.9) {
+      const localPct = (p - 0.8) / 0.1
+      return interpolateHsl(localPct, '#CC3333', '#ec5050')
+    }
+    // ----- 90..100% -----
+    else {
+      const localPct = (p - 0.9) / 0.1
+      return interpolateHsl(localPct, '#ec5050', '#FF0000')
+    }
+  }
+
+  //  existing single-step interpolation for all other palettes
   const fromRgb = hexToRgb(fromColor)
   const toRgb = hexToRgb(toColor)
 
