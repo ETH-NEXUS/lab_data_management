@@ -146,7 +146,7 @@ const getMaxPerPlate = (plate: Plate) => {
       class="q-mb-md q-ml-sm"
       @click="router.push(`/plate/${plate.barcode}`)">
       <div class="q-mb-xs text-blue-8">{{ plate.barcode }}</div>
-      <div class="fit row items-start content-start">
+      <div class="fit row items-start content-start q-mr-lg">
         <PlateTable
           :plate-index="index"
           :plate="plate"
