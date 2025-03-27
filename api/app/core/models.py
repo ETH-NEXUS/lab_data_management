@@ -238,9 +238,9 @@ class Plate(TimeTrackedModel):
                 well.type = template_well.type
                 well.save()
             if well and not template_well:
-                well.type = "C"
-        # PlateDetail.refresh(concurrently=True)
-        # WellDetail.refresh(concurrently=True)
+                well.type = WellType.by_name("C")
+        PlateDetail.refresh(concurrently=True)
+        WellDetail.refresh(concurrently=True)
         return self
 
     def map(self, mappingList: MappingList, target: "Plate"):

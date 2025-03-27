@@ -91,6 +91,7 @@ export default {
     show_type_as_square: 'Show wells as squares',
     positive_control: 'Positive control',
     negative_control: 'Negative control',
+    show_per_plate: 'Measurements per plate',
   },
   hint: {
     username: 'Enter your ETH username',

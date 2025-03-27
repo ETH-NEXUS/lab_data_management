@@ -49,6 +49,7 @@ export const useSettingsStore = defineStore('settings', {
         heatmapPalette: {label: 'GreenRed', value: {from: '#FF0000', to: '#00FF00'}},
         plotView: false,
         squareCompoundType: false,
+        perPlateView: false,
       },
       navigationTree: {
         filter: '',

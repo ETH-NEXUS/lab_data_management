@@ -256,7 +256,7 @@ const downloadCsvData = async () => {
             color="secondary"
             @click="downloadCsvData" />
         </q-card-actions>
-        <!--  @click="generateReport" />-->
+
         <q-card-section v-if="projectStore.outputNotebooks.length > 0" class="q-ml-md">
           <p class="text-caption subtitle">Available reports:</p>
           <p
@@ -269,11 +269,11 @@ const downloadCsvData = async () => {
         </q-card-section>
 
         <q-card-section
-          class="q-mt-md"
+          class="q-mt-md expansion"
           v-if="experiment.details.measurement_labels && experiment.details.measurement_labels.length > 0">
           <q-expansion-item
             v-model="expanded"
-            class="shadow-1 overflow-hidden"
+            class="shadow-1 overflow-hidden expansion"
             style="border-radius: 30px"
             icon="explore"
             :label="t('action.show_results')"
@@ -330,4 +330,9 @@ const downloadCsvData = async () => {
 
 .subtitle
   font-size: 1.1rem
+
+.expansion
+   width: 100%
+   max-width: 100%
+   margin: 0 auto
 </style>

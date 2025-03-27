@@ -11,6 +11,10 @@ const props = defineProps({
     type: Boolean,
     default: true,
   },
+  showPerPlateView: {
+    type: Boolean,
+    default: false,
+  },
 })
 </script>
 
@@ -30,6 +34,15 @@ const props = defineProps({
     checked-icon="check"
     v-model="platePage.squareCompoundType"
     :label="t('label.show_type_as_square')"
+    right-label
+    color="secondary"></q-toggle>
+  <q-toggle
+    v-if="props.showPerPlateView"
+    class="q-mb-md"
+    size="sm"
+    checked-icon="check"
+    v-model="platePage.perPlateView"
+    :label="t('label.show_per_plate')"
     right-label
     color="secondary"></q-toggle>
 </template>

@@ -55,7 +55,7 @@ const createColorLegend = () => {
       v-for="(color, idx) in legendColors"
       :key="color.value + idx"
       :style="{backgroundColor: color.color}">
-      <span class="legendLabel">{{ [0, 5, 10, 15, 20].includes(idx) ? color.value.toFixed(3) : ' ' }}</span>
+      <span class="legendLabel">{{ [0, 5, 10, 15, 20].includes(idx) ? color.value.toFixed(1) : ' ' }}</span>
     </div>
   </div>
 </template>
@@ -64,7 +64,7 @@ const createColorLegend = () => {
 .legendItem
   position: relative
   width: 30px
-  height: 15px
+  height: 10px
 
 .legendLabel
   position: absolute

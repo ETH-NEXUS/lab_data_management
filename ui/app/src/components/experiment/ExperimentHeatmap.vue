@@ -94,11 +94,25 @@ const min = computed(() => {
   }
   return 0
 })
+
+const getMinPerPlate = (plate: Plate) => {
+  if (selectedMeasurement.value) {
+    return plate.details.overall_stats[selectedMeasurement.value].min[selectedTimestampIdx.value]
+  }
+  return 0
+}
+
+const getMaxPerPlate = (plate: Plate) => {
+  if (selectedMeasurement.value) {
+    return plate.details.overall_stats[selectedMeasurement.value].max[selectedTimestampIdx.value]
+  }
+  return 0
+}
 </script>
 
 <template>
   <br />
-  <HeatMapSettings :showSquareCompoundType="false" />
+  <HeatMapSettings :showSquareCompoundType="false" :show-per-plate-view="true" />
   <br />
 
   <div class="col-4 q-mb-lg row">
@@ -123,7 +137,7 @@ const min = computed(() => {
         :label="t('label.select_color_palette')"></q-select>
     </div>
   </div>
-  <ColorLegend :max="max" :min="min" :selectedMeasurement="selectedMeasurement" />
+
   <div class="fit row wrap justify-evenly items-start content-start">
     <div
       :style="{cursor: 'pointer'}"
@@ -132,13 +146,19 @@ const min = computed(() => {
       class="q-mb-md q-ml-sm"
       @click="router.push(`/plate/${plate.barcode}`)">
       <div class="q-mb-xs text-blue-8">{{ plate.barcode }}</div>
-      <PlateTable
-        :plate-index="index"
-        :plate="plate"
-        :selectedMeasurement="selectedMeasurement"
-        :selectedTimestampIdx="selectedTimestampIdx"
-        :min="min"
-        :max="max" />
+      <div class="fit row items-start content-start">
+        <PlateTable
+          :plate-index="index"
+          :plate="plate"
+          :selectedMeasurement="selectedMeasurement"
+          :selectedTimestampIdx="selectedTimestampIdx"
+          :min="platePage.perPlateView ? getMinPerPlate(plate) : min"
+          :max="platePage.perPlateView ? getMaxPerPlate(plate) : max" />
+        <ColorLegend
+          :max="platePage.perPlateView ? getMaxPerPlate(plate) : max"
+          :min="platePage.perPlateView ? getMinPerPlate(plate) : min"
+          :selectedMeasurement="selectedMeasurement" />
+      </div>
     </div>
   </div>
 </template>
