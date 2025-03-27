@@ -68,7 +68,7 @@ const posToAlphaChar = (pos: number) => {
 const heatmapColor = (well: WellDetails | undefined) => {
   const {from, to} = platePage.value.heatmapPalette.value
 
-  return percentageToHsl(percentage(well), from, to)
+  return percentageToHsl(percentage(well), from, to, platePage.value.heatmapPalette.label)
 }
 
 const typeColor_map: {[key: string]: string} = {

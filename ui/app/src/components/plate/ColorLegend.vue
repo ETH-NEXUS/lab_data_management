@@ -37,7 +37,8 @@ const createColorLegend = () => {
       const color = percentageToHsl(
         (value - props.min) / (props.max - props.min),
         platePage.value.heatmapPalette.value.from,
-        platePage.value.heatmapPalette.value.to
+        platePage.value.heatmapPalette.value.to,
+        platePage.value.heatmapPalette.label
       )
       legend.push({value, color})
     }

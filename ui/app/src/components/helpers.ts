@@ -1,6 +1,37 @@
 import {Barcode} from 'components/models'
 
 export type GeneralObject = {[key: string]: string}
+type Segment =
+  | {start: number; end: number; from: string; to: string}
+  | {start: number; end: number; special: true; value: string; from: string; to: string}
+
+const redGreenSegments: Segment[] = [
+  {start: 0, end: 0.1, from: '#FF0000', to: '#ec5050'},
+  {start: 0.1, end: 0.2, from: '#ec5050', to: '#CC3333'},
+  {start: 0.2, end: 0.3, from: '#CC3333', to: '#993333'},
+  {start: 0.3, end: 0.4, from: '#993333', to: '#660000'},
+  {start: 0.4, end: 0.49, from: '#660000', to: '#330101'},
+  {start: 0.49, end: 0.51, special: true, value: '#000000', from: '', to: ''},
+  {start: 0.51, end: 0.6, from: '#001e00', to: '#0a510a'},
+  {start: 0.6, end: 0.7, from: '#0a510a', to: '#33AA33'},
+  {start: 0.7, end: 0.8, from: '#33AA33', to: '#55CC55'},
+  {start: 0.8, end: 0.9, from: '#55CC55', to: '#55FF55'},
+  {start: 0.9, end: 1.0, from: '#55FF55', to: '#00FF00'},
+]
+
+const greenRedSegments: Segment[] = [
+  {start: 0, end: 0.1, from: '#00FF00', to: '#55FF55'},
+  {start: 0.1, end: 0.2, from: '#55FF55', to: '#55CC55'},
+  {start: 0.2, end: 0.3, from: '#55CC55', to: '#33AA33'},
+  {start: 0.3, end: 0.4, from: '#33AA33', to: '#0a510a'},
+  {start: 0.4, end: 0.49, from: '#0a510a', to: '#001e00'},
+  {start: 0.49, end: 0.51, special: true, value: '#000000', from: '', to: ''},
+  {start: 0.51, end: 0.6, from: '#330101', to: '#660000'},
+  {start: 0.6, end: 0.7, from: '#660000', to: '#993333'},
+  {start: 0.7, end: 0.8, from: '#993333', to: '#CC3333'},
+  {start: 0.8, end: 0.9, from: '#CC3333', to: '#ec5050'},
+  {start: 0.9, end: 1.0, from: '#ec5050', to: '#FF0000'},
+]
 
 export const generateBarcodes = (prefix: string, numberOfPlates: number, sides: string[]) => {
   const shouldIncludeSide: Record<string, boolean> = {}
@@ -54,8 +85,27 @@ export const palettes: Array<Palette> = [
   {label: 'Blue', value: {from: '#92c5de', to: '#0b2746'}},
   {label: 'GreenBrown', value: {from: '#b8e186', to: '#662506'}},
   {label: 'Grey', value: {from: '#ffffff', to: '#525252'}},
-  {label: 'Magma', value: {from: '#ffffff', to: '#000000'}},
+  {label: 'RedGreen', value: {from: '#00FF00', to: '#FF0000'}},
 ]
+
+const getSegmentColor = (p: number, segments: Segment[]): string => {
+  for (const seg of segments) {
+    if (p >= seg.start && p < seg.end) {
+      if ('special' in seg && seg.special) {
+        return seg.value
+      }
+
+      const localPct = (p - seg.start) / (seg.end - seg.start)
+      return interpolateHsl(localPct, seg.from, seg.to)
+    }
+  }
+  const last = segments[segments.length - 1]
+  if ('special' in last && last.special) {
+    return last.value
+  }
+  const localPct = (p - last.start) / (last.end - last.start)
+  return interpolateHsl(localPct, last.from, last.to)
+}
 
 function easeInOutCubic(t: number) {
   return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2
@@ -71,82 +121,28 @@ function interpolateHsl(p: number, colorA: string, colorB: string) {
   const lig = easedT * (to.l - from.l) + from.l
   return `hsl(${hue}, ${sat}%, ${lig}%)`
 }
+const clamp = (n: number) => Math.max(0, Math.min(1, n))
 
-export const percentageToHsl = (percentage: number, fromColor: string, toColor: string) => {
-  // if percentage is not given (-1) we return a transparent color
+export const percentageToHsl = (
+  percentage: number,
+  fromColor: string,
+  toColor: string,
+  label: string
+): string => {
   if (percentage === -1) {
     return 'rgba(255,255,255,0)'
   }
 
-  // SPECIAL CASE: GreenRed palettewe  want black in the middle
-
-  if (fromColor.toLowerCase() === '#ff0000' && toColor.toLowerCase() === '#00ff00') {
-    const p = Math.max(0, Math.min(1, percentage)) // p в пределах [0..1]
-
-    // ----- 0..10% -----
-    if (p < 0.1) {
-      const localPct = p / 0.1
-      return interpolateHsl(localPct, '#00FF00', '#55FF55')
-    }
-    // ----- 10..20% -----
-    else if (p < 0.2) {
-      const localPct = (p - 0.1) / 0.1
-      return interpolateHsl(localPct, '#55FF55', '#55CC55')
-    }
-    // ----- 20..30% -----
-    else if (p < 0.3) {
-      const localPct = (p - 0.2) / 0.1
-      return interpolateHsl(localPct, '#55CC55', '#33AA33')
-    }
-    // ----- 30..40% -----
-    else if (p < 0.4) {
-      const localPct = (p - 0.3) / 0.1
-      return interpolateHsl(localPct, '#33AA33', '#147514')
-    }
-    // ----- 40..49% (9%) -----
-    else if (p < 0.49) {
-      const localPct = (p - 0.4) / 0.09
-      return interpolateHsl(localPct, '#147514', '#001e00')
-    }
-    // ----- 49..51% →
-    else if (p < 0.51) {
-      return '#000000'
-    }
-    // ----- 51..60% (9%) -----
-    else if (p < 0.6) {
-      const localPct = (p - 0.51) / 0.09
-      return interpolateHsl(localPct, '#330101', '#660000')
-    }
-    // ----- 60..70% -----
-    else if (p < 0.7) {
-      const localPct = (p - 0.6) / 0.1
-      return interpolateHsl(localPct, '#660000', '#993333')
-    }
-    // ----- 70..80% -----
-    else if (p < 0.8) {
-      const localPct = (p - 0.7) / 0.1
-      return interpolateHsl(localPct, '#993333', '#CC3333')
-    }
-    // ----- 80..90% -----
-    else if (p < 0.9) {
-      const localPct = (p - 0.8) / 0.1
-      return interpolateHsl(localPct, '#CC3333', '#ec5050')
-    }
-    // ----- 90..100% -----
-    else {
-      const localPct = (p - 0.9) / 0.1
-      return interpolateHsl(localPct, '#ec5050', '#FF0000')
-    }
+  if (label === 'RedGreen' || label === 'GreenRed') {
+    const p = clamp(percentage)
+    const segments = label === 'RedGreen' ? redGreenSegments : greenRedSegments
+    return getSegmentColor(p, segments)
   }
-
-  //  existing single-step interpolation for all other palettes
   const fromRgb = hexToRgb(fromColor)
   const toRgb = hexToRgb(toColor)
-
   const hue = percentage * (toRgb.h - fromRgb.h) + fromRgb.h
   const saturation = percentage * (toRgb.s - fromRgb.s) + fromRgb.s
   const lightness = percentage * (toRgb.l - fromRgb.l) + fromRgb.l
-
   return `hsl(${hue}, ${saturation}%, ${lightness}%)`
 }
 
