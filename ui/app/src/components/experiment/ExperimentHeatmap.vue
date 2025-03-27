@@ -12,6 +12,7 @@ import {storeToRefs} from 'pinia'
 import {useSettingsStore} from 'stores/settings'
 import {palettes} from 'components/helpers'
 import PlateStats from 'components/plate/PlateStats.vue'
+import html2canvas from 'html2canvas'
 
 const router = useRouter()
 const $q = useQuasar()
@@ -161,6 +162,21 @@ const controlLabelOptions = computed(() => {
     value: labelKey,
   }))
 })
+
+const plateRefs = ref<HTMLElement[]>([])
+const downloadPlateImage = async (index: number) => {
+  const plateElement = plateRefs.value[index]
+  if (!plateElement) return
+  try {
+    const canvas = await html2canvas(plateElement)
+    const link = document.createElement('a')
+    link.href = canvas.toDataURL('image/png')
+    link.download = `plate-${index}.png`
+    link.click()
+  } catch (error) {
+    console.error('Error generating image:', error)
+  }
+}
 </script>
 
 <template>
@@ -219,25 +235,28 @@ const controlLabelOptions = computed(() => {
       class="q-mb-md q-ml-sm"
       @click="router.push(`/plate/${plate.barcode}`)">
       <div>
-        <div class="q-mb-xs text-blue-8">{{ plate.barcode }}</div>
-        <div class="fit row items-start content-start q-mr-lg">
-          <PlateTable
-            :plate-index="index"
-            :plate="plate"
-            :selectedMeasurement="selectedMeasurement"
-            :selectedTimestampIdx="selectedTimestampIdx"
-            :min="platePage.perPlateView ? getMinPerPlate(plate) : min"
-            :max="platePage.perPlateView ? getMaxPerPlate(plate) : max" />
-          <ColorLegend
-            :max="platePage.perPlateView ? getMaxPerPlate(plate) : max"
-            :min="platePage.perPlateView ? getMinPerPlate(plate) : min"
-            :selectedMeasurement="selectedMeasurement" />
-        </div>
+        <div ref="plateRefs" class="q-pa-md">
+          <div class="q-mb-xs text-blue-8">{{ plate.barcode }}</div>
+          <div class="fit row items-start content-start q-mr-lg">
+            <PlateTable
+              :plate-index="index"
+              :plate="plate"
+              :selectedMeasurement="selectedMeasurement"
+              :selectedTimestampIdx="selectedTimestampIdx"
+              :min="platePage.perPlateView ? getMinPerPlate(plate) : min"
+              :max="platePage.perPlateView ? getMaxPerPlate(plate) : max" />
+            <ColorLegend
+              :max="platePage.perPlateView ? getMaxPerPlate(plate) : max"
+              :min="platePage.perPlateView ? getMinPerPlate(plate) : min"
+              :selectedMeasurement="selectedMeasurement" />
+          </div>
 
-        <PlateStats
-          :ssmd="ssmdPerPlate(plate)"
-          :z_prime="z_primePerPlate(plate)"
-          v-if="ssmdPerPlate(plate) && z_primePerPlate(plate)" />
+          <PlateStats
+            :ssmd="ssmdPerPlate(plate)"
+            :z_prime="z_primePerPlate(plate)"
+            v-if="ssmdPerPlate(plate) && z_primePerPlate(plate)" />
+        </div>
+        <q-btn color="primary" flat icon="download" @click.stop="downloadPlateImage(index)" class="q-ml-md" />
       </div>
     </div>
   </div>
