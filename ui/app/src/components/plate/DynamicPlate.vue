@@ -92,8 +92,8 @@ const z_prime = computed(() => {
     return null
   }
   const measurement = selectedMeasurement.value
-  const pos = selectedPosControl.value // e.g. "P1", "C", "R1"
-  const neg = selectedNegControl.value // e.g. "N1", "P", "R2"
+  const pos = selectedPosControl.value || 'P' // . "P1", "C", "R1"
+  const neg = selectedNegControl.value || 'N' //. "N1", "P", "R2"
 
   if (pos in props.plate.details.stats[measurement] && neg in props.plate.details.stats[measurement]) {
     const mad_pos = props.plate.details.stats[measurement][pos].mad[selectedTimestampIdx.value]
@@ -111,8 +111,8 @@ const ssmd = computed(() => {
     return null
   }
   const measurement = selectedMeasurement.value
-  const pos = selectedPosControl.value
-  const neg = selectedNegControl.value
+  const pos = selectedPosControl.value || 'P'
+  const neg = selectedNegControl.value || 'N'
 
   if (pos in props.plate.details.stats[measurement] && neg in props.plate.details.stats[measurement]) {
     const mad_pos = props.plate.details.stats[measurement][pos].mad[selectedTimestampIdx.value]

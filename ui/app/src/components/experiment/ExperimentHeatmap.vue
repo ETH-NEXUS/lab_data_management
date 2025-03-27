@@ -11,10 +11,14 @@ import {useQuasar} from 'quasar'
 import {storeToRefs} from 'pinia'
 import {useSettingsStore} from 'stores/settings'
 import {palettes} from 'components/helpers'
+import PlateStats from 'components/plate/PlateStats.vue'
 
 const router = useRouter()
 const $q = useQuasar()
 const {platePage} = storeToRefs(useSettingsStore())
+
+const selectedPosControl = ref<string | null>(null)
+const selectedNegControl = ref<string | null>(null)
 
 onMounted(async () => {
   if (platePage.value.showHeatmap == false) {
@@ -108,12 +112,81 @@ const getMaxPerPlate = (plate: Plate) => {
   }
   return 0
 }
+
+const z_primePerPlate = (plate: Plate) => {
+  if (!selectedMeasurement.value) {
+    return null
+  }
+  const measurement = selectedMeasurement.value
+  const pos = selectedPosControl.value || 'P'
+  const neg = selectedNegControl.value || 'N'
+
+  if (pos in plate.details.stats[measurement] && neg in plate.details.stats[measurement]) {
+    const mad_pos = plate.details.stats[measurement][pos].mad[selectedTimestampIdx.value]
+    const mad_neg = plate.details.stats[measurement][neg].mad[selectedTimestampIdx.value]
+    const median_pos = plate.details.stats[measurement][pos].median[selectedTimestampIdx.value]
+    const median_neg = plate.details.stats[measurement][neg].median[selectedTimestampIdx.value]
+
+    return 1 - (3 * (mad_pos + mad_neg)) / Math.abs(median_pos - median_neg)
+  }
+  return null
+}
+
+const ssmdPerPlate = (plate: Plate) => {
+  if (!selectedMeasurement.value) {
+    return null
+  }
+  const measurement = selectedMeasurement.value
+  const pos = selectedPosControl.value || 'P'
+  const neg = selectedNegControl.value || 'N'
+
+  if (pos in plate.details.stats[measurement] && neg in plate.details.stats[measurement]) {
+    const mad_pos = plate.details.stats[measurement][pos].mad[selectedTimestampIdx.value]
+    const mad_neg = plate.details.stats[measurement][neg].mad[selectedTimestampIdx.value]
+    const median_pos = plate.details.stats[measurement][pos].median[selectedTimestampIdx.value]
+    const median_neg = plate.details.stats[measurement][neg].median[selectedTimestampIdx.value]
+
+    return Math.abs(median_pos - median_neg) / (0.5 * (mad_pos + mad_neg))
+  }
+  return null
+}
+
+const controlLabelOptions = computed(() => {
+  if (!selectedMeasurement.value) {
+    return []
+  }
+  const statsForMeasurement = experimentPlates.value[0].details.stats[selectedMeasurement.value]
+  return Object.keys(statsForMeasurement).map(labelKey => ({
+    label: labelKey,
+    value: labelKey,
+  }))
+})
 </script>
 
 <template>
   <br />
   <HeatMapSettings :showSquareCompoundType="false" :show-per-plate-view="true" />
   <br />
+  <div class="row q-mb-md q-my-xl" v-if="measurementOptions && measurementOptions.length > 0">
+    <div class="col-3 q-mr-lg q-ml-lg">
+      <q-select
+        dense
+        v-model="selectedPosControl"
+        :options="controlLabelOptions"
+        :label="t('label.positive_control')"
+        emit-value
+        map-options />
+    </div>
+    <div class="col-3">
+      <q-select
+        dense
+        v-model="selectedNegControl"
+        :options="controlLabelOptions"
+        :label="t('label.negative_control')"
+        emit-value
+        map-options />
+    </div>
+  </div>
 
   <div class="col-4 q-mb-lg row">
     <div class="col-4 q-ml-lg">
@@ -145,19 +218,26 @@ const getMaxPerPlate = (plate: Plate) => {
       v-for="(plate, index) in experimentPlates"
       class="q-mb-md q-ml-sm"
       @click="router.push(`/plate/${plate.barcode}`)">
-      <div class="q-mb-xs text-blue-8">{{ plate.barcode }}</div>
-      <div class="fit row items-start content-start q-mr-lg">
-        <PlateTable
-          :plate-index="index"
-          :plate="plate"
-          :selectedMeasurement="selectedMeasurement"
-          :selectedTimestampIdx="selectedTimestampIdx"
-          :min="platePage.perPlateView ? getMinPerPlate(plate) : min"
-          :max="platePage.perPlateView ? getMaxPerPlate(plate) : max" />
-        <ColorLegend
-          :max="platePage.perPlateView ? getMaxPerPlate(plate) : max"
-          :min="platePage.perPlateView ? getMinPerPlate(plate) : min"
-          :selectedMeasurement="selectedMeasurement" />
+      <div>
+        <div class="q-mb-xs text-blue-8">{{ plate.barcode }}</div>
+        <div class="fit row items-start content-start q-mr-lg">
+          <PlateTable
+            :plate-index="index"
+            :plate="plate"
+            :selectedMeasurement="selectedMeasurement"
+            :selectedTimestampIdx="selectedTimestampIdx"
+            :min="platePage.perPlateView ? getMinPerPlate(plate) : min"
+            :max="platePage.perPlateView ? getMaxPerPlate(plate) : max" />
+          <ColorLegend
+            :max="platePage.perPlateView ? getMaxPerPlate(plate) : max"
+            :min="platePage.perPlateView ? getMinPerPlate(plate) : min"
+            :selectedMeasurement="selectedMeasurement" />
+        </div>
+
+        <PlateStats
+          :ssmd="ssmdPerPlate(plate)"
+          :z_prime="z_primePerPlate(plate)"
+          v-if="ssmdPerPlate(plate) && z_primePerPlate(plate)" />
       </div>
     </div>
   </div>
