@@ -9,7 +9,6 @@ import os
 
 def generate_report(notebook_path, experiment, label):
     quarto = sh.Command("quarto").bake("render")
-
     input_dir = os.path.dirname(os.path.dirname(notebook_path))
     output_dir = os.path.join(input_dir, "output", experiment)
 

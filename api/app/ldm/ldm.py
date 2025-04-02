@@ -217,8 +217,18 @@ def get_experiment_measurements(experiment_name: str, label=None):
 
     rows = sorted(rows, key=lambda k: k["measurement"])
 
-    # print(f"\nFound {len(rows)} measurements")
-    return pd.DataFrame(rows)
+    df = pd.DataFrame(rows)
+
+    # Clean object columns and mixed types
+    df = df.infer_objects()
+    for col in df.columns:
+        if df[col].dtype == "object":
+            try:
+                pd.to_numeric(df[col])
+            except ValueError:
+                df[col] = df[col].astype(str)
+
+    return df
 
 
 def normalize_values(raw_data, log_value=False, label=None, pos_neg_only=False):
@@ -247,6 +257,11 @@ def normalize_values(raw_data, log_value=False, label=None, pos_neg_only=False):
     result["norm"] = (result["value"] - result["med.n"]) / (
         result["med.p"] - result["med.n"]
     )
+    # we need clean types for R
+    result = result.infer_objects()
+    for col in result.columns:
+        if result[col].dtype == "object":
+            result[col] = result[col].astype(str)
 
     return result
 
