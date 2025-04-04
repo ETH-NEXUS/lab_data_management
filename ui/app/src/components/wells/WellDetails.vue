@@ -352,8 +352,9 @@ const findAmountFromDonors = () => {
         </div>
         <div class="col-4">
           <h4 class="q-ma-none vertical-top">
+            {{ t('title.withdrawals') }} (
             <q-icon name="remove" />
-            {{ t('title.withdrawals') }}
+            )
           </h4>
         </div>
         <div class="col-8">
@@ -382,8 +383,9 @@ const findAmountFromDonors = () => {
         </div>
         <div class="col-4">
           <h4 class="q-ma-none vertical-top">
+            {{ t('title.donors') }} (
             <q-icon name="add" />
-            {{ t('title.donors') }}
+            )
           </h4>
         </div>
         <div class="col-8">
