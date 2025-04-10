@@ -127,13 +127,13 @@ export interface Well {
   amount: number
   type: string
   status: string
+  is_invalid: boolean
   hr_position?: string
   compounds?: Array<Compound>
   measurements?: Array<Measurement>
   withdrawals?: Array<Withdrawal>
   donors?: Array<Withdrawal>
   mixture?: boolean
-  is_invalid?: boolean
   current_info?: {
     current_amount: number
     current_dmso: number

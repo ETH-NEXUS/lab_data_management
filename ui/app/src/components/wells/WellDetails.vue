@@ -32,6 +32,7 @@ const enteredMeasurement = ref<number>(0)
 
 const {wellDetails, platePage} = storeToRefs(useSettingsStore())
 const blurCompound = ref<boolean>(false)
+const wellInvalid = ref<boolean | undefined>(false)
 import TimeSeriesChart from 'components/wells/TimeSeriesChartsContainer.vue'
 
 const props = defineProps({
@@ -74,6 +75,7 @@ onMounted(async () => {
   } finally {
     loading.value = false
   }
+  wellInvalid.value = well.value?.is_invalid
   console.log(well.value?.measurements)
   if (well.value?.measurements && well.value?.measurements.length > 0) {
     const timestamps: string[] | Date[] | (string | Date)[] = []
@@ -106,7 +108,8 @@ const deleteWell = async () => {
   }
 }
 
-const markWellAsInvalid = async () => {
+const markWellAsInvalidOrValid = async () => {
+  wellInvalid.value = !wellInvalid.value
   try {
     await api.get(`/api/wells/${props.wellInfo.well.id}/mark_as_invalid`)
   } catch (err) {
@@ -245,12 +248,26 @@ const findAmountFromDonors = () => {
             <q-icon name="o_water_drop" />
             {{ t('title.amount_dmso') }}
           </h4>
+
+          <div v-if="!wellInvalid" class="text-h6">
+            <q-icon name="done" size="sm" color="green"></q-icon>
+            Valid
+          </div>
+          <div v-else class="text-h6">
+            <q-icon name="close" size="sm" color="red"></q-icon>
+            Invalid
+          </div>
+          <q-btn
+            :label="!wellInvalid ? t('action.mark_as_invalid') : t('action.mark_as_valid')"
+            color="secondary"
+            @click="markWellAsInvalidOrValid"
+            class="q-my-sm" />
           <q-btn
             :label="t('action.delete_well')"
             icon="delete"
             color="secondary"
             @click="deleteWell"
-            class="q-my-lg" />
+            class="q-my-sm" />
         </div>
         <div class="col-8">
           <table>

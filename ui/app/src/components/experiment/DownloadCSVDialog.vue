@@ -21,7 +21,7 @@ const $q = useQuasar()
 const {t} = useI18n()
 const selectedLabel = ref<string | null>(null)
 
-const submit = async () => {
+const submit = async (type: string) => {
   if (!selectedLabel.value) {
     $q.notify({
       message: 'Please select a measurement label to download the data for.',
@@ -32,7 +32,7 @@ const submit = async () => {
       message: t('info.generation_in_progress'),
     })
 
-    await projectStore.downloadCSVData(props.experimentName, selectedLabel.value)
+    await projectStore.downloadCSVData(props.experimentName, selectedLabel.value, type)
     $q.loading.hide()
   }
 }
@@ -49,7 +49,8 @@ const submit = async () => {
     </q-card-section>
     <q-card-actions align="right">
       <q-btn flat label="Cancel" color="primary" v-close-popup />
-      <q-btn flat label="Generate" color="primary" v-close-popup @click="submit" />
+      <q-btn flat label="Chemical Info" color="primary" v-close-popup @click="submit('chemical')" />
+      <q-btn flat label="Main Info" color="primary" v-close-popup @click="submit('main')" />
     </q-card-actions>
   </q-card>
 </template>

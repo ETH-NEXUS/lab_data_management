@@ -245,7 +245,7 @@ class EchoMapper(BaseMapper):
                         "transfer_status": "",
                     }
                 )
-            print(result)
+
             return result
 
         headers = kwargs.get("headers", EchoMapper.DEFAULT_COLUMNS)
@@ -842,7 +842,6 @@ class MicroscopeMapper(BaseMapper):
                 results.append({"Well": well.strip(), "Lum": lum.strip()})
             i += 1
 
-        print(results[0])
         return results
 
 

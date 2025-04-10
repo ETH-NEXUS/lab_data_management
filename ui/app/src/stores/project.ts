@@ -183,10 +183,11 @@ export const useProjectStore = defineStore('project', () => {
     link.click()
   }
 
-  const downloadCSVData = async (experiment: string, label: string) => {
+  const downloadCSVData = async (experiment: string, label: string, type: string) => {
     const res = await api.post('/api/download_csv_data/', {
       label: label,
       experiment: experiment,
+      type: type,
     })
     const link = document.createElement('a')
     link.href = window.URL.createObjectURL(new Blob([res.data]))

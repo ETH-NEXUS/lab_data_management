@@ -156,7 +156,7 @@ def get_experiment_plate_infos(experiment_name: str):
     return pd.DataFrame(rows)
 
 
-def get_experiment_measurements(experiment_name: str, label=None):
+def get_experiment_measurements(experiment_name: str, label=None, type="main"):
     """
     Returns a pd DataFrame of measurements for a given experiment.
     """
@@ -197,7 +197,12 @@ def get_experiment_measurements(experiment_name: str, label=None):
                 catalog_number = compound_data.get("CatalogNumber")
             well_rows = []
             for measurement in measurements:
+                # print as dictionary
+                # print(measurement.__dict__)
+                unique_identifier = f"{well.hr_position}_{pl.barcode}"
+                print(unique_identifier)
                 obj = {
+                    "unique_identifier": unique_identifier,
                     "well_coordinate": well.hr_position,
                     "value": measurement.value,
                     "plate": pl.barcode,
@@ -205,11 +210,13 @@ def get_experiment_measurements(experiment_name: str, label=None):
                     "plate_column": col,
                     "control": well.type.name,
                     "measurement": measurement.label,
+                    "is_invalid": well.is_invalid,
                     "compound": well.compounds.first().name
                     if well.compounds and well.compounds.first()
                     else None,
                 }
-                if compound_data:
+
+                if compound_data and type == "chemical":
                     obj.update(compound_data)
                 well_rows.append(obj)
 

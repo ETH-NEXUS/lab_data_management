@@ -548,11 +548,14 @@ class WellViewSet(viewsets.ModelViewSet):
     @action(detail=True, methods=["get"])
     def mark_as_invalid(self, request, pk=None):
         well = self.get_object()
-        well.is_invalid = True
+        if well.is_invalid:
+            well.is_invalid = False
+        else:
+            well.is_invalid = True
         well.save()
-        PlateDetail.refresh(concurrently=True)
-        WellDetail.refresh(concurrently=True)
-        ExperimentDetail.refresh(concurrently=True)
+        # PlateDetail.refresh(concurrently=True)
+        # WellDetail.refresh(concurrently=True)
+        # ExperimentDetail.refresh(concurrently=True)
         return Response(status=status.HTTP_200_OK)
 
     @action(detail=True, methods=["get"])
@@ -837,9 +840,13 @@ def download_csv_data(request):
             data = json.loads(request.body.decode("utf-8"))
             label = data.get("label")
             experiment = data.get("experiment")
-            df = get_experiment_measurements(experiment, label)
+            type = data.get("type")
+            df = get_experiment_measurements(experiment, label, type)
             response = HttpResponse(content_type="text/csv")
-            response["Content-Disposition"] = f'attachment; filename="{label}.csv"'
+            suffix = "_meas" if type == "main" else "_comp"
+            response[
+                "Content-Disposition"
+            ] = f'attachment; filename="{label}_{suffix}.csv"'
             df.to_csv(response, index=False)
             return response
 

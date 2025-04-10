@@ -152,6 +152,8 @@ export default {
     custom_name: 'Custom name',
   },
   action: {
+    mark_as_invalid: 'Mark as invalid',
+    mark_as_valid: 'Mark as valid',
     update_harvest_projects: 'Update Harvest projects',
     calculate_measurement: 'New measurement',
     add_plates: 'Add paltes',

@@ -233,7 +233,6 @@ class Plate(TimeTrackedModel):
         for position in range(template_plate.num_wells):
             template_well = template_plate.well_at(position)
             well = self.well_at(position, create_if_not_exist=True)
-            # TODO: At the moment we only map the type
             if well and template_well:
                 well.type = template_well.type
                 well.save()
@@ -252,8 +251,6 @@ class Plate(TimeTrackedModel):
         threshold_dmso = thresholds.dmso
         with transaction.atomic():
             for mapping in mappingList:
-                print(f"Mapping {mapping.map_type}")
-
                 from_well = self.well_at(mapping.from_pos)
                 # We only need to map wells that are not empty
                 # TODO: If no from_well a destination well could probably be generated anyway..?..
@@ -271,14 +268,11 @@ class Plate(TimeTrackedModel):
                             "status": mapping.status
                         },  # should the well status be taken from mapping status?
                     )
-                    print(well, created)
 
                     if created:  #  To create an id
                         well.save()
                     if mapping.map_type:
-                        print(
-                            f"Mapping type from {from_well} to {well}; {from_well.type}"
-                        )
+
                         well.type = from_well.type
                         well.save()
                     for compound in from_well.compounds.all():
@@ -339,7 +333,7 @@ class Plate(TimeTrackedModel):
                                 current_amount=mapping.current_amount,
                                 current_dmso=mapping.current_dmso,
                             )
-            return True  # TODO: implement unmap!!!
+            return True
 
 
 class Sample(TimeTrackedModel):
