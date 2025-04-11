@@ -92,6 +92,21 @@ const download = (): void => {
   downloadCSVData(csvColumnsNames, barcodes, 'barcodes.csv')
 }
 
+const downloadDescription = () => {
+  if (experiment.value) {
+    const name = `${experiment.value.name}_description.txt`
+    const content = experiment.value.description || ''
+    const blob = new Blob([content], {type: 'text/plain'})
+    const link = document.createElement('a')
+    link.href = URL.createObjectURL(blob)
+    link.download = name
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+    URL.revokeObjectURL(link.href)
+  }
+}
+
 const editExperiment = async (field: string) => {
   if (experiment.value) {
     $q.dialog({
@@ -168,6 +183,14 @@ const downloadCsvData = async () => {
               <q-btn flat icon="edit" @click="editExperiment('description')" />
             </p>
           </div>
+          <q-btn
+            v-if="experiment.description"
+            dense
+            class="q-my-lg"
+            :label="t('action.download_description')"
+            icon="download"
+            color="secondary"
+            @click="downloadDescription" />
 
           <div class="text-body1 q-pl-md">
             {{ t('experiment.number_plates') }}:
