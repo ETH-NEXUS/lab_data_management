@@ -8,6 +8,7 @@ import {Project, ProjectPayload} from 'src/components/models'
 import {formatDate} from 'src/helpers/dateTime'
 import bus from 'src/eventBus'
 import {useHarvestStore} from 'stores/harvest-store'
+import MergingExperiments from 'components/experiment/MergingExperiments.vue'
 
 import {useQuasar} from 'quasar'
 
@@ -136,6 +137,7 @@ const updateHarvestInfo = async () => {
         </q-card-section>
       </q-card>
     </div>
+    <MergingExperiments :project="{project}" />
   </q-page>
 </template>
 

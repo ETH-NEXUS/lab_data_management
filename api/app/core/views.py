@@ -636,6 +636,28 @@ class ExperimentViewSet(viewsets.ModelViewSet):
     queryset = Experiment.objects.all()
 
     @action(detail=False, methods=["post"])
+    def move_plates(self, request):
+        """Moves selected plates from their original experiment to another experiment"""
+        data = request.data
+        try:
+            experiment = Experiment.objects.get(name=data["experiment"])
+            plate_barcodes = data["plate_barcodes"]
+            for plate_barcode in plate_barcodes:
+                plate = Plate.objects.get(barcode=plate_barcode)
+                plate.experiment = experiment
+                plate.save()
+                logger.info(
+                    f"Moved plate {plate_barcode} to experiment {experiment.id}"
+                )
+            PlateDetail.refresh(concurrently=True)
+            WellDetail.refresh(concurrently=True)
+            ExperimentDetail.refresh(concurrently=True)
+            return Response(status=status.HTTP_200_OK)
+        except Experiment.DoesNotExist:
+            logger.error(f"Experiment {data['experiment']} does not exist")
+            return Response(status=status.HTTP_404_NOT_FOUND)
+
+    @action(detail=False, methods=["post"])
     def barcodes(self, request):
         """Saves a barcode specifications for an experiment"""
         data = request.data

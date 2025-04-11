@@ -33,6 +33,8 @@ export default {
   failed: 'Action failed',
   success: 'Action was successful',
   label: {
+    chose_experiment: 'Chose experiment',
+    move_plates_to_experiment: 'Move plates to experiment',
     username: 'Username',
     password: 'Password',
     login: 'Login',
