@@ -264,10 +264,14 @@ def normalize_values(
         neg_control_name: "med.n",
         pos_control_name: "med.p",
     }
+    keep_cols = ["plate", neg_control_name, pos_control_name, "C"]
 
-    plate_median.columns = ["plate"] + [
-        column_names_map[c] for c in plate_median.columns[1:]
-    ]
+    plate_median = plate_median[[c for c in plate_median.columns if c in keep_cols]]
+    plate_median.rename(columns=column_names_map, inplace=True)
+
+    # plate_median.columns = ["plate"] + [
+    #     column_names_map[c] for c in plate_median.columns[1:]
+    # ]
 
     result = pd.merge(raw_data, plate_median, on=["plate"])
     result["norm"] = (result["value"] - result["med.n"]) / (
