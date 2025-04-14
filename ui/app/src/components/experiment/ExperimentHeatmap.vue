@@ -21,6 +21,22 @@ const {platePage} = storeToRefs(useSettingsStore())
 const selectedPosControl = ref<string | null>(null)
 const selectedNegControl = ref<string | null>(null)
 
+const emit = defineEmits(['updateControls'])
+
+const sendControlsToParent = () => {
+  if (!selectedPosControl.value || !selectedNegControl.value) {
+    $q.notify({
+      message: 'Please select both controls',
+      color: 'negative',
+      position: 'bottom',
+    })
+  }
+  emit('updateControls', {
+    pos: selectedPosControl.value,
+    neg: selectedNegControl.value,
+  })
+}
+
 onMounted(async () => {
   if (platePage.value.showHeatmap == false) {
     platePage.value.showHeatmap = true
@@ -202,6 +218,7 @@ const downloadPlateImage = async (index: number) => {
         emit-value
         map-options />
     </div>
+    <q-btn class="q-ml-md" outline color="secondary" @click="sendControlsToParent">Save controls</q-btn>
   </div>
 
   <div class="col-4 q-mb-lg row">

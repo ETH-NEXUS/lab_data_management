@@ -39,6 +39,8 @@ const addNewMeasurementDialog = ref<boolean>(false)
 const expanded = ref<boolean>(false)
 const generateReportDialog = ref<boolean>(false)
 const downloadCSVDialog = ref<boolean>(false)
+const selectedPosControl = ref<string | null>(null)
+const selectedNegControl = ref<string | null>(null)
 
 const {t} = useI18n()
 const {showExperimentResults} = storeToRefs(useSettingsStore())
@@ -163,6 +165,18 @@ const downloadReport = async (path: string) => {
 
 const downloadCsvData = async () => {
   downloadCSVDialog.value = true
+}
+
+const handleUpdateControls = (data: {pos: string; neg: string}) => {
+  selectedNegControl.value = data.neg
+  selectedPosControl.value = data.pos
+  console.log(selectedNegControl.value)
+  console.log(selectedNegControl.value)
+  $q.notify({
+    message: 'The controls have been saved. They will be used in the report.',
+    color: 'positive',
+    position: 'bottom',
+  })
 }
 </script>
 
@@ -305,6 +319,7 @@ const downloadCsvData = async () => {
             header-class="bg-secondary text-white"
             expand-icon-class="text-white">
             <ExperimentHeatmap
+              @updateControls="handleUpdateControls"
               v-if="showExperimentResults"
               :timestamps="experiment.details.measurement_timestamps"
               :available-measurement-labels="experiment.details.measurement_labels"
@@ -331,6 +346,8 @@ const downloadCsvData = async () => {
         <GenerateReportDialog
           :labels="experiment.available_measurement_labels"
           :label="experiment.available_measurement_labels[0]"
+          :selected-pos="selectedPosControl"
+          :selected-neg="selectedNegControl"
           :experiment-name="experiment.name" />
       </q-dialog>
       <q-dialog v-model="downloadCSVDialog">

@@ -782,6 +782,8 @@ def generate_pdf_report(request):
             notebook_path = data.get("notebook_path")
             experiment = data.get("experiment")
             label = data.get("label")
+            selected_pos = data.get("selected_pos")
+            selected_neg = data.get("selected_neg")
             if not notebook_path:
 
                 notebook_path = "/notebooks/input/general.ipynb"
@@ -795,6 +797,10 @@ def generate_pdf_report(request):
                 experiment,
                 "--label",
                 label,
+                "--pos",
+                selected_pos,
+                "--neg",
+                selected_neg,
             ]
             subprocess.run(cmd, check=True)
             return JsonResponse({"status": "Report generated successfully"})

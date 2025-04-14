@@ -5,6 +5,9 @@ import {useProjectStore} from 'stores/project'
 import {useQuasar} from 'quasar'
 import {useI18n} from 'vue-i18n'
 
+// :selected-pos="selectedPosControl"
+//    :selected-neg="selectedNegControl"
+
 const props = defineProps({
   experimentName: {
     type: String,
@@ -16,6 +19,14 @@ const props = defineProps({
   },
   labels: {
     type: Array,
+    required: true,
+  },
+  selectedPos: {
+    type: String,
+    required: true,
+  },
+  selectedNeg: {
+    type: String,
     required: true,
   },
 })
@@ -56,7 +67,13 @@ const submit = async () => {
       message: t('info.generation_in_progress'),
     })
 
-    await projectStore.generateReport(props.experimentName, selectedLabel.value, inputNotebookPath.value)
+    await projectStore.generateReport(
+      props.experimentName,
+      selectedLabel.value,
+      inputNotebookPath.value,
+      props.selectedPos,
+      props.selectedNeg
+    )
     $q.loading.hide()
   }
 }
@@ -81,9 +98,18 @@ const submit = async () => {
         :options="props.labels"
         v-model="selectedLabel"></q-select>
     </q-card-section>
+    <q-card-section v-if="!selectedNeg || !selectedNeg" class="text-red-5">
+      Please come back and save pos and neg controls in the "Show measurement results" section.
+    </q-card-section>
     <q-card-actions align="right">
       <q-btn flat label="Cancel" color="primary" v-close-popup />
-      <q-btn flat label="Generate" color="primary" v-close-popup @click="submit" />
+      <q-btn
+        flat
+        label="Generate"
+        color="primary"
+        v-close-popup
+        @click="submit"
+        :disabled="!selectedNeg || !selectedNeg" />
     </q-card-actions>
   </q-card>
 </template>

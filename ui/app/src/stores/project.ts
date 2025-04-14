@@ -156,11 +156,19 @@ export const useProjectStore = defineStore('project', () => {
     return res.status
   }
 
-  const generateReport = async (experiment: string, label: string, notebook_path: string) => {
+  const generateReport = async (
+    experiment: string,
+    label: string,
+    notebook_path: string,
+    selectedPos: string,
+    selectedNeg: string
+  ) => {
     const res = await api.post('/api/generate_pdf_report/', {
       label: label,
       experiment: experiment,
       notebook_path: notebook_path,
+      selected_pos: selectedPos,
+      selected_neg: selectedNeg,
     })
     await getNotebookOutputFiles(experiment)
     return res.data

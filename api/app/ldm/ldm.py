@@ -160,7 +160,7 @@ def get_experiment_measurements(experiment_name: str, label=None, type="main"):
     """
     Returns a pd DataFrame of measurements for a given experiment.
     """
-    print(f"Getting measurements for experiment {experiment_name}")
+    # print(f"Getting measurements for experiment {experiment_name}")
     _experiment_plates = Plate.objects.filter(experiment__name=experiment_name)
     # filter out plates that don't have any measurements in their wells
     experiment_plates = []
@@ -197,10 +197,8 @@ def get_experiment_measurements(experiment_name: str, label=None, type="main"):
                 catalog_number = compound_data.get("CatalogNumber")
             well_rows = []
             for measurement in measurements:
-                # print as dictionary
-                # print(measurement.__dict__)
                 unique_identifier = f"{well.hr_position}_{pl.barcode}"
-                print(unique_identifier)
+
                 obj = {
                     "unique_identifier": unique_identifier,
                     "well_coordinate": well.hr_position,
@@ -238,11 +236,17 @@ def get_experiment_measurements(experiment_name: str, label=None, type="main"):
     return df
 
 
-def normalize_values(raw_data, log_value=False, label=None, pos_neg_only=False):
+def normalize_values(
+    raw_data, log_value=False, label=None, pos_neg_only=False, pos="P", neg="N"
+):
     raw_data = raw_data.copy()
+    pos_control_name = pos
+    neg_control_name = neg
 
     if pos_neg_only:
-        raw_data = raw_data[raw_data["control"].isin(["P", "N"])]
+        raw_data = raw_data[
+            raw_data["control"].isin([pos_control_name, neg_control_name])
+        ]
     if label is not None:
         raw_data = raw_data[raw_data["measurement"] == label]
     if log_value:
@@ -255,7 +259,12 @@ def normalize_values(raw_data, log_value=False, label=None, pos_neg_only=False):
         index="plate", columns="control", values="value"
     ).reset_index()
 
-    column_names_map = {"C": "med.c", "N": "med.n", "P": "med.p"}
+    column_names_map = {
+        "C": "med.c",
+        neg_control_name: "med.n",
+        pos_control_name: "med.p",
+    }
+
     plate_median.columns = ["plate"] + [
         column_names_map[c] for c in plate_median.columns[1:]
     ]
@@ -279,8 +288,10 @@ def mad(series, constant=1.4826):
     return constant * (series - series.median()).abs().median()
 
 
-def calculate_z_prime(raw_data, log_value=False):
+def calculate_z_prime(raw_data, log_value=False, pos="P", neg="N"):
     data = raw_data.copy()
+    pos_control_name = pos
+    neg_control_name = neg
 
     if log_value:
         data["value"] = np.log10(data["value"])
@@ -293,7 +304,9 @@ def calculate_z_prime(raw_data, log_value=False):
     )
 
     z_prime = 1 - (
-        3 * (plate_mad["P"] + plate_mad["N"]) / abs(plate_med["P"] - plate_med["N"])
+        3
+        * (plate_mad[pos_control_name] + plate_mad[neg_control_name])
+        / abs(plate_med[pos_control_name] - plate_med[neg_control_name])
     )
 
     result = pd.concat([plate_med["plate"], z_prime], axis=1)

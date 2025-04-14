@@ -7,7 +7,7 @@ from ipylab import JupyterFrontEnd
 import os
 
 
-def generate_report(notebook_path, experiment, label):
+def generate_report(notebook_path, experiment, label, pos, neg):
     quarto = sh.Command("quarto").bake("render")
     input_dir = os.path.dirname(os.path.dirname(notebook_path))
     output_dir = os.path.join(input_dir, "output", experiment)
@@ -19,7 +19,7 @@ def generate_report(notebook_path, experiment, label):
     output_filename = f"{base_filename}_{experiment}_{label}_output.ipynb"
     output_path = os.path.join(output_dir, output_filename)
 
-    parameters = {"experiment": experiment, "label": label}
+    parameters = {"experiment": experiment, "label": label, "pos": pos, "neg": neg}
     pm.execute_notebook(notebook_path, output_path, parameters=parameters or {})
 
     _args = ["--to", "pdf", "-M", "echo:false", "--no-execute"]
@@ -35,6 +35,8 @@ if __name__ == "__main__":
     parser.add_argument("--notebook_path", type=str, help="Path to the notebook")
     parser.add_argument("--experiment", type=str, help="Experiment name")
     parser.add_argument("--label", type=str, help="Label name")
+    parser.add_argument("--pos", type=str, help="Positive control")
+    parser.add_argument("--neg", type=str, help="Negative control")
 
     args = parser.parse_args()
-    generate_report(args.notebook_path, args.experiment, args.label)
+    generate_report(args.notebook_path, args.experiment, args.label, args.pos, args.neg)
