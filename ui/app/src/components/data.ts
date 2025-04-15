@@ -37,10 +37,9 @@ export const sidesData: SideData[] = [
 export const csvColumnsNames = ['NorthBarcode', 'SouthBarcode', 'EastBarcode', 'WestBarcode']
 
 export const mapCommandOptions: Options = {
-  // probably there is a way to get this data dynamically from the backend
   machine: {
     type: 'str',
-    choices: ['echo', 'm1000', 'microscope'],
+    choices: ['echo', 'm1000', 'C10-imager', 'C10-reader'],
     label: 'Machine to map from',
     required: true,
   },

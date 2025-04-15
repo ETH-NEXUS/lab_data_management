@@ -27,7 +27,7 @@ class Command(BaseCommand):
         parser.add_argument(
             "machine",
             type=str,
-            choices=("echo", "m1000", "microscope", "dat"),
+            choices=("echo", "m1000", "microscope", "dat", "C10-reader", "C10-imager"),
             help="Machine to map from",
         )
         parser.add_argument(
@@ -145,7 +145,7 @@ class Command(BaseCommand):
             except Exception as ex:
                 message(f"Error: {ex}", "error", options.get("room_name", None))
                 traceback.print_exc()
-        elif options.get("machine") == "microscope":
+        elif options.get("machine") in ["microscope", "C10-imager", "C10-reader"]:
             try:
                 if not options.get("experiment_name", None):
                     die(

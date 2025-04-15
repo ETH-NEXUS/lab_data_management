@@ -48,7 +48,12 @@ def run_command(request):
 
         if form_data.get("command") == "map":
             machine = form_data.get("machine")
-            if machine in ["echo", "m1000", "microscope"]:
+            if machine in [
+                "echo",
+                "m1000",
+                "C10-imager",
+                "C10-reader",
+            ]:  # ["echo", "m1000", "microscope", "C10-imager", "C10-reader"]
                 kwargs = {
                     "path": form_data.get("path"),
                     "mapping_file": form_data.get("mapping_file"),
