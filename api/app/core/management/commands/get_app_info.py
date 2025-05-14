@@ -8,6 +8,7 @@ from core.models import (
     Compound,
 )
 
+
 class Command(BaseCommand):
     help = "Draws some basic insights from the database."
 
@@ -21,9 +22,13 @@ class Command(BaseCommand):
 
         self.stdout.write(self.style.SUCCESS("===== DATA INSIGHTS ====="))
         self.stdout.write(self.style.SUCCESS(f"Number of Projects: {num_projects}"))
-        self.stdout.write(self.style.SUCCESS(f"Number of Experiments: {num_experiments}"))
+        self.stdout.write(
+            self.style.SUCCESS(f"Number of Experiments: {num_experiments}")
+        )
         self.stdout.write(self.style.SUCCESS(f"Number of Plates: {num_plates}"))
         self.stdout.write(self.style.SUCCESS(f"Number of Wells: {num_wells}"))
-        self.stdout.write(self.style.SUCCESS(f"Number of Compound Libraries: {num_libraries}"))
+        self.stdout.write(
+            self.style.SUCCESS(f"Number of Compound Libraries: {num_libraries}")
+        )
         self.stdout.write(self.style.SUCCESS(f"Number of Compounds: {num_compounds}"))
         self.stdout.write(self.style.SUCCESS("===== END OF INSIGHTS ====="))
