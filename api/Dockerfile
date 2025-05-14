@@ -163,6 +163,7 @@ RUN pip install -r /requirements.txt
 # Install R dependecies
 RUN if [ "${ENABLE_R}" = "True" ]; then R -e 'install.packages(c("ggplot2", "DT", "bioassays", "repr", "tidyverse"), dependencies = TRUE, INSTALL_opts = c("--no-lock"))'; fi
 RUN if [ "${ENABLE_R}" = "True" ]; then R -e 'install.packages(c("car", "ggpubr", "captioner", "lawstat"), dependencies = TRUE, INSTALL_opts = c("--no-lock"))'; fi
+#RUN if [ "${ENABLE_R}" = "True" ]; then R -e 'install.packages(c("RColorBrewer", "gplots", "ggrepel", "cowplot", "ggExtra", "pheatmap", "reshape2", "drc", "knitr", "locfit", "robust", "SLmisc"), dependencies = TRUE, INSTALL_opts = c("--no-lock"))'; fi
 
 # Set working directory
 WORKDIR /app
