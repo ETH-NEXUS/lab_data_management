@@ -20,7 +20,7 @@ def list_files(start_path):
             "children": [],
             "path": path,
         }
-        print(f"path: {path}")
+
         if not ".snapshots" in path:
             for entry in os.scandir(path):
                 if entry.is_file():

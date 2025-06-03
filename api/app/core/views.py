@@ -869,7 +869,7 @@ def download_csv_data(request):
             label = data.get("label")
             experiment = data.get("experiment")
             type = data.get("type")
-            df = get_experiment_measurements(experiment, label, type)
+            df = get_experiment_measurements(experiment, label, type, csv=True)
             response = HttpResponse(content_type="text/csv")
             suffix = "_meas" if type == "main" else "_comp"
             response[
@@ -877,6 +877,7 @@ def download_csv_data(request):
             ] = f'attachment; filename="{label}_{suffix}.csv"'
             df.to_csv(response, index=False)
             return response
+        return None
 
     except Exception as e:
         print("EXCEPTION")

@@ -156,7 +156,9 @@ def get_experiment_plate_infos(experiment_name: str):
     return pd.DataFrame(rows)
 
 
-def get_experiment_measurements(experiment_name: str, label=None, type="main"):
+def get_experiment_measurements(
+    experiment_name: str, label=None, type="main", csv=False
+):
     """
     Returns a pd DataFrame of measurements for a given experiment.
     """
@@ -185,7 +187,7 @@ def get_experiment_measurements(experiment_name: str, label=None, type="main"):
             row, col = plate_dimension.row_col(well.position)
 
             measurements = well.measurements.all()
-            if label is not None:
+            if label is not None and not csv:
                 measurements = measurements.filter(label=label)
 
             compound_data = (
@@ -209,6 +211,7 @@ def get_experiment_measurements(experiment_name: str, label=None, type="main"):
                     "control": well.type.name,
                     "measurement": measurement.label,
                     "is_invalid": well.is_invalid,
+                    "measured_at": measurement.measured_at,
                     "compound": well.compounds.first().name
                     if well.compounds and well.compounds.first()
                     else None,
