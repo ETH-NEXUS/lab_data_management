@@ -166,12 +166,12 @@ RUN if [ "${ENABLE_R}" = "True" ]; then R -e 'install.packages(c("car", "ggpubr"
 RUN if [ "${ENABLE_R}" = "True" ]; then R -e 'install.packages(c("RColorBrewer", "gplots", "ggrepel", "cowplot", "ggExtra", "pheatmap", "reshape2", "drc", "knitr", "locfit", "robust", "SLmisc"), dependencies = TRUE, INSTALL_opts = c("--no-lock"))'; fi
 
 # Install SLmisc from GitHub
-RUN if [ "${ENABLE_R}" = "True" ]; then \
-      Rscript -e "install.packages('https://github.com/ETH-NEXUS/SLmisc/archive/refs/heads/master.tar.gz', \
-                      repos = NULL, \
-                      type = 'source', \
-                      dependencies = TRUE)"; \
-    fi
+#RUN if [ "${ENABLE_R}" = "True" ]; then \
+#      Rscript -e "install.packages('https://github.com/ETH-NEXUS/SLmisc/archive/refs/heads/master.tar.gz', \
+#                      repos = NULL, \
+#                      type = 'source', \
+#                      dependencies = TRUE)"; \
+#    fi
 
 # Set working directory
 WORKDIR /app
