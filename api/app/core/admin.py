@@ -100,9 +100,9 @@ class MeasurementAdmin(admin.ModelAdmin):
         "label",
         "identifier",
         "measured_at",
-        "well__plate",
+
     )
-    list_filter = ("measured_at", "label", "well__plate")
+    list_filter = ("measured_at", "label")
     list_per_page = 1000
 
 
