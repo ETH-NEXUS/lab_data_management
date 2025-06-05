@@ -187,7 +187,7 @@ def get_experiment_measurements(
             row, col = plate_dimension.row_col(well.position)
 
             measurements = well.measurements.all()
-            if label is not None and not csv:
+            if label is not None:  # if label is not None and not csv:
                 measurements = measurements.filter(label=label)
 
             compound_data = (
