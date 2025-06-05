@@ -3,7 +3,7 @@ import traceback
 from os.path import join
 import yaml
 from django.core.management.base import BaseCommand
-from importer.mappers import EchoMapper, M1000Mapper, MicroscopeMapper, DatMapper
+from importer.mappers import EchoMapper, M1000Mapper, MicroscopeMapper
 from core.models import Experiment
 from importer.helper import message
 from core.config import Config
@@ -165,27 +165,28 @@ class Command(BaseCommand):
                     debug=options.get("debug", False),
                     experiment_name=options.get("experiment_name", None),
                     room_name=options.get("room_name", None),
+                    measurement_name=options.get("measurement_name", None),
                 )
 
             except Exception as ex:
                 message(f"Error: {ex}", "error", options.get("room_name", None))
                 traceback.print_exc()
-        elif options.get("machine") == "dat":
-            try:
-                if not options.get("experiment_name", None):
-                    die(
-                        "No experiment name provided. If you would like to add missing "
-                        "plates, you need to provide the experiment name."
-                    )
-
-                mapper = DatMapper()
-                mapper.run(
-                    join(path, Config.current.importer.dat.default.file_blob),
-                    debug=options.get("debug", False),
-                    experiment_name=options.get("experiment_name", None),
-                    room_name=options.get("room_name", None),
-                )
-
-            except Exception as ex:
-                message(f"Error: {ex}", "error", options.get("room_name", None))
-                traceback.print_exc()
+        # elif options.get("machine") == "dat":
+        #     try:
+        #         if not options.get("experiment_name", None):
+        #             die(
+        #                 "No experiment name provided. If you would like to add missing "
+        #                 "plates, you need to provide the experiment name."
+        #             )
+        #
+        #         mapper = DatMapper()
+        #         mapper.run(
+        #             join(path, Config.current.importer.dat.default.file_blob),
+        #             debug=options.get("debug", False),
+        #             experiment_name=options.get("experiment_name", None),
+        #             room_name=options.get("room_name", None),
+        #         )
+        #
+        #     except Exception as ex:
+        #         message(f"Error: {ex}", "error", options.get("room_name", None))
+        #         traceback.print_exc()

@@ -100,7 +100,6 @@ class MeasurementAdmin(admin.ModelAdmin):
         "label",
         "identifier",
         "measured_at",
-
     )
     list_filter = ("measured_at", "label")
     list_per_page = 1000
