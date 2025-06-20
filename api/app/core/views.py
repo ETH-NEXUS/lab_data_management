@@ -634,7 +634,6 @@ class MappingPreviewView(views.APIView):
 class ExperimentViewSet(viewsets.ModelViewSet):
     serializer_class = ExperimentSerializer
     queryset = Experiment.objects.all()
-    pagination_class = None
     paginator = None
 
     @action(detail=False, methods=["post"])
