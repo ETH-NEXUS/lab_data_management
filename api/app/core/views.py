@@ -634,6 +634,7 @@ class MappingPreviewView(views.APIView):
 class ExperimentViewSet(viewsets.ModelViewSet):
     serializer_class = ExperimentSerializer
     queryset = Experiment.objects.all()
+    pagination_class = None
 
     @action(detail=False, methods=["post"])
     def move_plates(self, request):
