@@ -8,7 +8,7 @@ from os import environ
 from uuid import uuid4
 import subprocess
 import traceback
-
+from rest_framework.pagination import PageNumberPagination
 from django.conf import settings
 from django.contrib.auth import authenticate, login, logout
 from django.core.exceptions import ValidationError
@@ -631,10 +631,29 @@ class MappingPreviewView(views.APIView):
         return Response(data, status=status.HTTP_200_OK)
 
 
+# custom pagination class with 1000 items per page
+
+
+class CustomPagination(PageNumberPagination):
+    page_size = 1000
+    page_size_query_param = "page_size"
+    max_page_size = 10000
+
+    def get_paginated_response(self, data):
+        return Response(
+            {
+                "count": self.page.paginator.count,
+                "next": self.get_next_link(),
+                "previous": self.get_previous_link(),
+                "results": data,
+            }
+        )
+
+
 class ExperimentViewSet(viewsets.ModelViewSet):
     serializer_class = ExperimentSerializer
     queryset = Experiment.objects.all()
-    paginator = None
+    pagination_class = CustomPagination
 
     @action(detail=False, methods=["post"])
     def move_plates(self, request):
