@@ -100,7 +100,6 @@ const measurement = (well: WellDetails) => {
 }
 
 const percentage = (well: WellDetails | undefined) => {
-  console.log(well)
   if (well) {
     const value = measurement(well)
     if (value != null) {

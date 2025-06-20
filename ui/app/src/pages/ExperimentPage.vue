@@ -46,18 +46,26 @@ const {t} = useI18n()
 const {showExperimentResults} = storeToRefs(useSettingsStore())
 
 const initialize = async () => {
+  console.log('Initializing ExperimentPage')
   try {
     await projectStore.initialize()
     const {projects, plateDimensions, experiments} = projectStore
+    console.log('Projects:', projects)
+    console.log('Plate Dimensions:', plateDimensions)
+    console.log('Experiments:', experiments)
     project.value = projects?.find((p: Project) => p.id === Number(route.params.project)) ?? null
     options.value = plateDimensions?.map((d: PlateDimension) => ({label: d.name, value: d.id})) ?? []
     experiment.value = experiments?.find((e: Experiment) => e.id === Number(route.params.experiment)) ?? null
+    console.log('Experiment:', experiment.value)
+    console.log('Project:', project.value)
+    console.log('Options:', options.value)
     showExperimentResults.value = false
     if (experiment.value) {
       await projectStore.getNotebookOutputFiles(experiment.value.name)
     }
   } catch (err) {
     handleError(err)
+    console.error(err)
   } finally {
     loading.value = false
   }

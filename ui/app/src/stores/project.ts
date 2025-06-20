@@ -24,6 +24,7 @@ export const useProjectStore = defineStore('project', () => {
   const controlPlates = ref<Array<Plate>>([])
 
   const initialize = async () => {
+    console.log('Initializing project store')
     const resp_p = await api.get('/api/projects/')
     projects.value = resp_p.data.results
 
@@ -183,7 +184,7 @@ export const useProjectStore = defineStore('project', () => {
   const downloadPDFReport = async (path: string) => {
     const res = await api.post('/api/download_pdf_report/', {path: path}, {responseType: 'blob'})
 
-    console.log('download', res)
+    //console.log('download', res)
     const link = document.createElement('a')
     link.href = window.URL.createObjectURL(new Blob([res.data]))
     link.setAttribute('download', path.split('/').pop() as string)
