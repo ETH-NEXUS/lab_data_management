@@ -29,6 +29,7 @@ export const useProjectStore = defineStore('project', () => {
     projects.value = resp_p.data.results
 
     const resp_e = await api.get('/api/experiments/')
+    console.log('Experiments API RESPONSE:', resp_e)
     experiments.value = resp_e.data.results
 
     const res_d = await api.get('/api/platedimensions/')
