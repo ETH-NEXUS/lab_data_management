@@ -634,26 +634,13 @@ class MappingPreviewView(views.APIView):
 # custom pagination class with 1000 items per page
 
 
-class CustomPagination(PageNumberPagination):
-    page_size = 1000
-    page_size_query_param = "page_size"
-    max_page_size = 10000
 
-    def get_paginated_response(self, data):
-        return Response(
-            {
-                "count": self.page.paginator.count,
-                "next": self.get_next_link(),
-                "previous": self.get_previous_link(),
-                "results": data,
-            }
-        )
 
 
 class ExperimentViewSet(viewsets.ModelViewSet):
     serializer_class = ExperimentSerializer
     queryset = Experiment.objects.all()
-    pagination_class = CustomPagination
+    pagination_class = None
 
     @action(detail=False, methods=["post"])
     def move_plates(self, request):
