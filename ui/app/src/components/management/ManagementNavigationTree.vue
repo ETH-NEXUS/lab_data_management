@@ -102,6 +102,10 @@ const handleOpenFile = async (path: string) => {
   viewFileContent.value = res.data.content
   fileContentDialog.value = true
 }
+
+const handleDragStart = (path: string, event: DragEvent) => {
+  event.dataTransfer?.setData('text/plain', path)
+}
 </script>
 
 <template>
@@ -144,7 +148,7 @@ const handleOpenFile = async (path: string) => {
           </q-item>
         </q-list>
       </q-menu>
-      <span class="fileSystemItem">
+      <span :draggable="true" @dragstart="handleDragStart(prop.node.path, $event)" class="fileSystemItem">
         {{ prop.node.label }}
       </span>
     </template>

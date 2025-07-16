@@ -634,9 +634,6 @@ class MappingPreviewView(views.APIView):
 # custom pagination class with 1000 items per page
 
 
-
-
-
 class ExperimentViewSet(viewsets.ModelViewSet):
     serializer_class = ExperimentSerializer
     queryset = Experiment.objects.all()

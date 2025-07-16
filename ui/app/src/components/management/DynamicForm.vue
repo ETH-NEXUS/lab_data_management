@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import {reactive, onMounted} from 'vue'
+import {reactive, onMounted, ref} from 'vue'
 import {Options, GeneralFormData} from 'components/models'
 import {useQuasar} from 'quasar'
 import {useI18n} from 'vue-i18n'
@@ -61,6 +61,8 @@ const onSubmit = () => {
   console.log('Form data:', form)
   emit('submit', form)
 }
+
+const test = ref('')
 </script>
 
 <template>
