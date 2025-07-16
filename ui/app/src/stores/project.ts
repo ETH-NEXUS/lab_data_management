@@ -28,9 +28,18 @@ export const useProjectStore = defineStore('project', () => {
     const resp_p = await api.get('/api/projects/')
     projects.value = resp_p.data.results
 
-    const resp_e = await api.get('/api/experiments/')
-    console.log('Experiments API RESPONSE:', resp_e)
-    experiments.value = resp_e.data.results
+    // Experiments with pagination
+    const experimentsResults = []
+    let nextUrl = '/api/experiments/'
+
+    while (nextUrl) {
+      const resp_e = await api.get(nextUrl)
+      console.log('Experiments API RESPONSE:', resp_e)
+      experimentsResults.push(...resp_e.data.results)
+      nextUrl = resp_e.data.next // this will be null when done
+    }
+
+    experiments.value = experimentsResults
 
     const res_d = await api.get('/api/platedimensions/')
     plateDimensions.value = res_d.data.results
