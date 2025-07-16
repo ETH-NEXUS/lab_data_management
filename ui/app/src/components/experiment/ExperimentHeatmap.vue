@@ -180,11 +180,14 @@ const controlLabelOptions = computed(() => {
 })
 
 const plateRefs = ref<HTMLElement[]>([])
+
 const downloadPlateImage = async (index: number) => {
   const plateElement = plateRefs.value[index]
   if (!plateElement) return
   try {
-    const canvas = await html2canvas(plateElement)
+    const canvas = await html2canvas(plateElement, {
+      scale: 3, // makes it 3x higher resolution
+    })
     const link = document.createElement('a')
     link.href = canvas.toDataURL('image/png')
     link.download = `plate-${index}.png`
