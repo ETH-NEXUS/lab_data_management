@@ -33,6 +33,7 @@ export const useProjectStore = defineStore('project', () => {
     let nextUrl = '/api/experiments/'
 
     while (nextUrl) {
+      nextUrl = nextUrl.replace(/^http:/, 'https:') // Replace http with https
       const resp_e = await api.get(nextUrl)
       console.log('Experiments API RESPONSE:', resp_e)
       experimentsResults.push(...resp_e.data.results)
