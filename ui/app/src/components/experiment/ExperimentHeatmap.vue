@@ -138,7 +138,7 @@ const z_primePerPlate = (plate: Plate) => {
   const pos = selectedPosControl.value || 'P'
   const neg = selectedNegControl.value || 'N'
 
-  if (!plate.details.stats) {
+  if (!plate.details || !plate.details.stats) {
     return null
   }
 
@@ -161,7 +161,7 @@ const ssmdPerPlate = (plate: Plate) => {
   const pos = selectedPosControl.value || 'P'
   const neg = selectedNegControl.value || 'N'
 
-  if (!plate.details.stats) {
+  if (!plate.details || !plate.details.stats) {
     return null
   }
 
