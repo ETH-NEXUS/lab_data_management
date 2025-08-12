@@ -161,7 +161,9 @@ const ssmdPerPlate = (plate: Plate) => {
   const pos = selectedPosControl.value || 'P'
   const neg = selectedNegControl.value || 'N'
 
-  if (!plate.details || !plate.details.stats) {
+  console.log('PLATE DETAILS:', plate.details)
+
+  if (!plate || !plate.details || !plate.details.stats) {
     return null
   }
 
