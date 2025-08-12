@@ -149,6 +149,7 @@ onMounted(() => {
     if (!possibleLabels || possibleLabels.length === 0) {
       selectedPosControl.value = 'P'
       selectedNegControl.value = 'N'
+      return
     }
     // For example, if "C" and "P" or "P1" and "N1" exist, we set them as defaults
     if (possibleLabels.includes('P')) {
