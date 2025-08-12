@@ -138,6 +138,10 @@ const z_primePerPlate = (plate: Plate) => {
   const pos = selectedPosControl.value || 'P'
   const neg = selectedNegControl.value || 'N'
 
+  if (!plate.details.stats) {
+    return null
+  }
+
   if (pos in plate.details.stats[measurement] && neg in plate.details.stats[measurement]) {
     const mad_pos = plate.details.stats[measurement][pos].mad[selectedTimestampIdx.value]
     const mad_neg = plate.details.stats[measurement][neg].mad[selectedTimestampIdx.value]
@@ -156,6 +160,10 @@ const ssmdPerPlate = (plate: Plate) => {
   const measurement = selectedMeasurement.value
   const pos = selectedPosControl.value || 'P'
   const neg = selectedNegControl.value || 'N'
+
+  if (!plate.details.stats) {
+    return null
+  }
 
   if (pos in plate.details.stats[measurement] && neg in plate.details.stats[measurement]) {
     const mad_pos = plate.details.stats[measurement][pos].mad[selectedTimestampIdx.value]
