@@ -142,7 +142,14 @@ onMounted(() => {
 
     //  pick defaults for pos/neg controls once we have measurement data
     const firstMeasurementKey = measurementOptions.value[0]
+    console.log('PLATE STATS')
+    console.log(props.plate.details.stats)
     const possibleLabels = Object.keys(props.plate.details.stats[firstMeasurementKey] || {})
+
+    if (!possibleLabels || possibleLabels.length === 0) {
+      selectedPosControl.value = 'P'
+      selectedNegControl.value = 'N'
+    }
     // For example, if "C" and "P" or "P1" and "N1" exist, we set them as defaults
     if (possibleLabels.includes('P')) {
       selectedPosControl.value = 'P'

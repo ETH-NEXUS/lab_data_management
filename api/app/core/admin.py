@@ -101,7 +101,11 @@ class MeasurementAdmin(admin.ModelAdmin):
         "identifier",
         "measured_at",
     )
-    list_filter = ("measured_at", "label")
+    list_filter = (
+        "measured_at",
+        "label",
+        ("measurement_assignment__plate", admin.RelatedOnlyFieldListFilter),
+    )
     list_per_page = 1000
 
 
