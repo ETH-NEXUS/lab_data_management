@@ -1,87 +1,68 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
 import { useAPI } from '~/composables/useAPI'
-import type { PaginatedResponse } from '~/types/api'
-import { PROJECTS_ENDPOINT, PROJECTS_ERROR_MESSAGE, type Project } from '~/types/projects'
+import {
+  PROJECT_CREATE_ERROR_MESSAGE,
+  PROJECT_UPDATE_ERROR_MESSAGE,
+  type CreateProjectPayload,
+  type Project,
+  type ProjectPayload,
+} from '~/types/projects'
 
-const toRelativeApiEndpoint = (input: string | null | undefined): string | null => {
-  if (!input) return null
+export const useProjectStore = defineStore('projectStore', () => {
+  const isCreatingProject = ref(false)
+  const isUpdatingProject = ref(false)
 
-  let endpoint = input
-  if (endpoint.startsWith('http://') || endpoint.startsWith('https://')) {
+  /**
+   * Creates a new project in the backend.
+   *
+   * Accepted payload examples:
+   * - `{ name: 'Screening 2026', harvest_id: 10, harvest_notes: 'From Harvest' }`
+   * - `{ name: 'Manual project', harvest_id: null, harvest_notes: null }`
+   *
+   * Returned project example:
+   * - `{ id: 15, name: 'Screening 2026', experiments: [] }`
+   */
+  const createProject = async (payload: CreateProjectPayload): Promise<Project> => {
+    isCreatingProject.value = true
     try {
-      const parsed = new URL(endpoint)
-      endpoint = `${parsed.pathname}${parsed.search}`
-    } catch {
-      return null
+      const { data, error } = await useAPI<Project>('projects/', {
+        method: 'POST',
+        body: payload,
+      })
+
+      if (error.value || !data.value) {
+        throw (error.value ?? new Error(PROJECT_CREATE_ERROR_MESSAGE)) as Error
+      }
+
+      return data.value
+    } finally {
+      isCreatingProject.value = false
     }
   }
 
-  return endpoint.replace(/^\/api\//, '').replace(/^\//, '')
-}
-
-export const useProjectStore = defineStore('projectStore', () => {
-  const projects = ref<Project[]>([])
-  const isLoading = ref(false)
-  const initialized = ref(false)
-  const error = ref<string | null>(null)
-
-  const clearProjects = () => {
-    projects.value = []
-    error.value = null
-    initialized.value = false
-  }
-
-  const loadProjects = async (force = false): Promise<Project[]> => {
-    if (isLoading.value) return projects.value
-    if (!force && initialized.value) return projects.value
-
-    isLoading.value = true
-    error.value = null
-
-    const allProjects: Project[] = []
-    const visitedEndpoints = new Set<string>()
-    let nextEndpoint: string | null = PROJECTS_ENDPOINT
-
+  const updateProject = async (projectId: number, payload: ProjectPayload): Promise<Project> => {
+    isUpdatingProject.value = true
     try {
-      while (nextEndpoint) {
-        if (visitedEndpoints.has(nextEndpoint)) break
-        visitedEndpoints.add(nextEndpoint)
+      const { data, error } = await useAPI<Project>(`projects/${projectId}/`, {
+        method: 'PATCH',
+        body: payload,
+      })
 
-        const { data, error: apiError } = await useAPI<PaginatedResponse<Project>>(nextEndpoint, {
-          method: 'GET',
-        })
-
-        if (apiError.value || !data.value) {
-          error.value = apiError.value?.message ?? PROJECTS_ERROR_MESSAGE
-          projects.value = []
-          initialized.value = true
-          return projects.value
-        }
-
-        allProjects.push(...(data.value.results ?? []))
-        nextEndpoint = toRelativeApiEndpoint(data.value.next)
+      if (error.value || !data.value) {
+        throw (error.value ?? new Error(PROJECT_UPDATE_ERROR_MESSAGE)) as Error
       }
 
-      projects.value = allProjects
-      initialized.value = true
-      return projects.value
-    } catch (err: unknown) {
-      error.value = err instanceof Error ? err.message : PROJECTS_ERROR_MESSAGE
-      projects.value = []
-      initialized.value = true
-      return projects.value
+      return data.value
     } finally {
-      isLoading.value = false
+      isUpdatingProject.value = false
     }
   }
 
   return {
-    projects,
-    isLoading,
-    initialized,
-    error,
-    clearProjects,
-    loadProjects,
+    isCreatingProject,
+    isUpdatingProject,
+    createProject,
+    updateProject,
   }
 })
