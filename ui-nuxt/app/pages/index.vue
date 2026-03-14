@@ -1,8 +1,9 @@
-<script setup lang='ts'>
-import BackgroundPageWaves from 'components/common/BackgroundPageWaves.vue'
+<script setup lang="ts">
+import ldmLogo from '~/assets/ldm_logo.png'
 </script>
+
 <template>
-   <BackgroundPageWaves background-src="/assets/double-waves.png">
-  <div>HOME PAGE</div>
-   </BackgroundPageWaves>
+  <section class="flex min-h-[calc(100dvh-4rem)] items-center justify-center p-6">
+    <img :src="ldmLogo" alt="LDM Logo" class="h-auto w-[60%] max-w-[860px] object-contain" />
+  </section>
 </template>
