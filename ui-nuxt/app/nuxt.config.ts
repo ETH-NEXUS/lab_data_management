@@ -2,8 +2,6 @@ import tailwindcss from '@tailwindcss/vite'
 import { fileURLToPath } from 'node:url'
 
 const srcDir = fileURLToPath(new URL('.', import.meta.url))
-const apiBaseURL = process.env.NUXT_PUBLIC_API_URL ? `${process.env.NUXT_PUBLIC_API_URL}/api` : '/api'
-
 
 // https://nuxt.com/docs/api/configuration/nuxt-config
 export default defineNuxtConfig({
@@ -27,6 +25,7 @@ export default defineNuxtConfig({
   runtimeConfig: {
     public: {
       baseURL: process.env.NUXT_PUBLIC_API_URL || '',
+      backendURL: process.env.NUXT_PUBLIC_BACKEND_URL || process.env.VITE_APP_BACKEND_URL || '',
     },
   },
   vite: {
