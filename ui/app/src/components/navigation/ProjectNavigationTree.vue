@@ -33,7 +33,7 @@ onMounted(async () => {
   bus.on('experiment-updated', () => {
     initialize()
   })
-  bus.on('project-updated', () => {
+  bus.on('projects-updated', () => {
     initialize()
   })
   bus.on('management-command', () => {
@@ -62,7 +62,7 @@ const nodeHandler = (node: QTreeNode) => {
   if ('plate' in node) {
     router.push(`/plate/${node.plate.barcode}`)
   } else if ('project' in node) {
-    // TODO: the handler doesn't work for the 'project' node for some reason
+    // TODO: the handler doesn't work for the 'projects' node for some reason
     router.push(`/project/${node.project.id}`)
   } else if ('experiment' in node) {
     router.push(`/project/${node.experiment.project}/experiment/${node.experiment.id}`)
@@ -327,7 +327,7 @@ const updateHarvestProjects = async () => {
           </q-item>
         </q-list>
       </q-menu>
-      <!--      TODO: node handler doesn't work for 'project' nodes for some reason that is why the @click is here-->
+      <!--      TODO: node handler doesn't work for 'projects' nodes for some reason that is why the @click is here-->
       <span @click="router.push(`/project/${prop.node.project.id}`)">{{ prop.node.label }}</span>
     </template>
 
