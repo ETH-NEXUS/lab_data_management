@@ -1,8 +1,8 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
-import { useAPI } from '~/composables/useAPI'
 import {
   EXPERIMENT_BARCODE_CREATE_ERROR_MESSAGE,
+  EXPERIMENT_BARCODE_DELETE_ERROR_MESSAGE,
   EXPERIMENT_CREATE_ERROR_MESSAGE,
   EXPERIMENT_UPDATE_ERROR_MESSAGE,
   type CreateBarcodeSpecificationPayload,
@@ -10,9 +10,11 @@ import {
   type Experiment,
   type ExperimentPayload,
 } from '~/types/experiments'
+import { requestApiData, requestApiVoid } from '~/utils/apiRequests'
 
 export const useExperimentStore = defineStore('experimentStore', () => {
   const isCreatingBarcodeSpecification = ref(false)
+  const isDeletingBarcodeSpecification = ref(false)
   const isCreatingExperiment = ref(false)
   const isUpdatingExperiment = ref(false)
 
@@ -29,16 +31,16 @@ export const useExperimentStore = defineStore('experimentStore', () => {
   const createExperiment = async (payload: CreateExperimentPayload): Promise<Experiment> => {
     isCreatingExperiment.value = true
     try {
-      const { data, error } = await useAPI<Experiment>('experiments/', {
-        method: 'POST',
-        body: payload,
-      })
+      const experiment = await requestApiData<Experiment>(
+        'experiments/',
+        {
+          method: 'POST',
+          body: payload,
+        },
+        EXPERIMENT_CREATE_ERROR_MESSAGE,
+      )
 
-      if (error.value || !data.value) {
-        throw (error.value ?? new Error(EXPERIMENT_CREATE_ERROR_MESSAGE)) as Error
-      }
-
-      return data.value
+      return experiment
     } finally {
       isCreatingExperiment.value = false
     }
@@ -57,17 +59,39 @@ export const useExperimentStore = defineStore('experimentStore', () => {
   const createBarcodeSpecification = async (payload: CreateBarcodeSpecificationPayload): Promise<void> => {
     isCreatingBarcodeSpecification.value = true
     try {
-      const { error } = await useAPI<unknown>('experiments/barcodes/', {
-        method: 'POST',
-        body: payload,
-      })
-
-      // This endpoint is successful even when response body is empty.
-      if (error.value) {
-        throw (error.value ?? new Error(EXPERIMENT_BARCODE_CREATE_ERROR_MESSAGE)) as Error
-      }
+      await requestApiVoid(
+        'experiments/barcodes/',
+        {
+          method: 'POST',
+          body: payload,
+        },
+        EXPERIMENT_BARCODE_CREATE_ERROR_MESSAGE,
+      )
     } finally {
       isCreatingBarcodeSpecification.value = false
+    }
+  }
+
+  /**
+   * Deletes one barcode specification by id.
+   *
+   * Accepted id examples:
+   * - `7`
+   * - `42`
+   *
+   * Endpoint example:
+   * - `DELETE /api/barcodespecifications/7/`
+   */
+  const deleteBarcodeSpecification = async (barcodeSpecificationId: number): Promise<void> => {
+    isDeletingBarcodeSpecification.value = true
+    try {
+      await requestApiVoid(
+        `barcodespecifications/${barcodeSpecificationId}/`,
+        { method: 'DELETE' },
+        EXPERIMENT_BARCODE_DELETE_ERROR_MESSAGE,
+      )
+    } finally {
+      isDeletingBarcodeSpecification.value = false
     }
   }
 
@@ -83,16 +107,16 @@ export const useExperimentStore = defineStore('experimentStore', () => {
   const updateExperiment = async (experimentId: number, payload: ExperimentPayload): Promise<Experiment> => {
     isUpdatingExperiment.value = true
     try {
-      const { data, error } = await useAPI<Experiment>(`experiments/${experimentId}/`, {
-        method: 'PATCH',
-        body: payload,
-      })
+      const experiment = await requestApiData<Experiment>(
+        `experiments/${experimentId}/`,
+        {
+          method: 'PATCH',
+          body: payload,
+        },
+        EXPERIMENT_UPDATE_ERROR_MESSAGE,
+      )
 
-      if (error.value || !data.value) {
-        throw (error.value ?? new Error(EXPERIMENT_UPDATE_ERROR_MESSAGE)) as Error
-      }
-
-      return data.value
+      return experiment
     } finally {
       isUpdatingExperiment.value = false
     }
@@ -100,9 +124,11 @@ export const useExperimentStore = defineStore('experimentStore', () => {
 
   return {
     isCreatingBarcodeSpecification,
+    isDeletingBarcodeSpecification,
     isCreatingExperiment,
     isUpdatingExperiment,
     createBarcodeSpecification,
+    deleteBarcodeSpecification,
     createExperiment,
     updateExperiment,
   }
