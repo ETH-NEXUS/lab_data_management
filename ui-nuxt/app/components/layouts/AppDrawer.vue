@@ -49,7 +49,7 @@ const drawerStyle = computed(() => ({
   <!-- Drawer -->
   <aside
     id="app-navigation-drawer"
-    class="fixed left-0 z-40 shrink-0 border-r bg-white transition-transform duration-200 ease-out md:sticky md:z-30 md:translate-x-0"
+    class="fixed left-0 z-40 shrink-0 border-r border-white/40 bg-white/30 backdrop-blur-md transition-transform duration-200 ease-out md:translate-x-0"
     :style="drawerStyle"
     :class="[props.open ? 'translate-x-0' : '-translate-x-full']"
   >

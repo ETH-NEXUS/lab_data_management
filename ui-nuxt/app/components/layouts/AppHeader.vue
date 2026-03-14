@@ -1,7 +1,9 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
+import { useQueryClient } from '@tanstack/vue-query'
 import { useAPI } from '~/composables/useAPI'
 import { useAuthStore } from '~/stores/auth'
+import { PROJECTS_QUERY_KEY } from '~/types/projects'
 
 type Props = {
   transparent?: boolean
@@ -18,6 +20,7 @@ const emit = defineEmits<{
 }>()
 
 const authStore = useAuthStore()
+const queryClient = useQueryClient()
 const toast = useToast()
 const { t } = useI18n()
 
@@ -63,6 +66,7 @@ const refresh = async () => {
   isRefreshing.value = true
   try {
     await useAPI('refresh/', { method: 'GET' })
+    await queryClient.invalidateQueries({ queryKey: PROJECTS_QUERY_KEY })
   } finally {
     isRefreshing.value = false
   }
