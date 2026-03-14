@@ -1,5 +1,8 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
+import BaseButton from '~/components/common/BaseButton.vue'
+import BaseField from '~/components/common/BaseField.vue'
+import WavesModalWrapper from '~/components/common/WavesModalWrapper.vue'
 import { useHarvestStore } from '~/stores/harvest'
 import { useProjectStore } from '~/stores/projects'
 import type { CreateProjectPayload, Project } from '~/types/projects'
@@ -54,6 +57,29 @@ const selectedHarvestProject = computed(
 )
 
 /**
+ * Keeps native select value in sync with numeric project id state.
+ *
+ * Data examples:
+ * - state `{ selectedHarvestProjectId: 8 }` => select model `'8'`
+ * - select model `''` => state `{ selectedHarvestProjectId: null }`
+ */
+const selectedHarvestProjectIdText = computed({
+  get: (): string => {
+    if (selectedHarvestProjectId.value === null) return ''
+    return String(selectedHarvestProjectId.value)
+  },
+  set: (value: string) => {
+    if (value.trim() === '') {
+      selectedHarvestProjectId.value = null
+      return
+    }
+
+    const parsedValue = Number(value)
+    selectedHarvestProjectId.value = Number.isNaN(parsedValue) ? null : parsedValue
+  },
+})
+
+/**
  * Decides which project name should be sent to the backend.
  *
  * Output examples:
@@ -72,6 +98,9 @@ const resolvedProjectName = computed(() => {
 const canSave = computed(() => resolvedProjectName.value.length > 0 && !projectStore.isCreatingProject)
 
 const close = () => emit('update:open', false)
+
+const customNameInputClassName =
+  'w-full rounded-full border border-slate-300 bg-white px-4 py-3 outline-none ring-offset-0 focus:ring-2 focus:ring-lime-500'
 
 /**
  * Creates payload that mirrors the old behavior:
@@ -139,84 +168,98 @@ const save = async () => {
 </script>
 
 <template>
-  <UModal
+  <WavesModalWrapper
     :open="props.open"
     :title="t('projects.create_modal.title')"
     :description="t('projects.create_modal.description')"
     :dismissible="!projectStore.isCreatingProject"
-    class="w-full sm:max-w-3xl"
+    modal-class="w-full sm:max-w-4xl"
+    body-container-class="w-full max-w-2xl px-8 pt-10"
     @update:open="emit('update:open', $event)"
   >
     <template #body>
-      <div class="space-y-4">
+      <div class="space-y-3">
         <div v-if="!useCustomName && hasHarvestProjects" class="space-y-2">
-          <p class="text-sm font-semibold text-slate-700">{{ t('projects.create_modal.source_harvest_label') }}</p>
+          <label class="mb-1 block pl-4 text-sm font-medium">
+            {{ t('projects.create_modal.source_harvest_label') }}
+          </label>
+          <div class="relative w-full rounded-full bg-white">
+            <span class="pointer-events-none absolute top-1/2 right-0 mr-5 -translate-y-1/2 text-slate-500">
+              <svg width="24" height="24" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M6.4 8.2L10 11.8L13.6 8.2" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" />
+              </svg>
+            </span>
+            <select
+              v-model="selectedHarvestProjectIdText"
+              class="relative w-full cursor-pointer appearance-none rounded-full border border-slate-300 bg-transparent px-4 py-3 pr-14 text-slate-600 ring-offset-0 transition outline-none focus:ring-2 focus:ring-lime-500"
+            >
+              <option value="">{{ t('projects.create_modal.harvest_placeholder') }}</option>
+              <option v-for="project in harvestStore.harvestProjects" :key="project.id" :value="String(project.id)">
+                {{ project.name }}
+              </option>
+            </select>
+          </div>
 
-          <USelectMenu
-            v-model="selectedHarvestProjectId"
-            :items="harvestStore.harvestProjects"
-            value-key="id"
-            label-key="name"
-            :placeholder="t('projects.create_modal.harvest_placeholder')"
-            class="w-full"
-          />
-
-          <UButton
-            size="xs"
-            variant="soft"
-            color="secondary"
-            icon="i-heroicons-arrow-path"
-            :loading="harvestStore.isLoading"
+          <button
+            type="button"
+            class="mt-1 inline-block cursor-pointer text-sm font-medium text-teal-800 transition hover:text-teal-600 hover:underline disabled:cursor-not-allowed disabled:opacity-60"
+            :disabled="harvestStore.isLoading"
             @click="refreshHarvestProjects"
           >
             {{ t('projects.create_modal.refresh_harvest') }}
-          </UButton>
+          </button>
         </div>
 
         <div v-if="useCustomName || !hasHarvestProjects" class="space-y-2">
-          <p class="text-sm font-semibold text-slate-700">{{ t('projects.create_modal.custom_name_label') }}</p>
-          <UInput
+          <BaseField
             v-model="customProjectName"
-            class="w-full"
+            field-class="mb-6"
+            :label="t('projects.create_modal.custom_name_label')"
             :placeholder="t('projects.create_modal.custom_name_placeholder')"
-            autofocus
+            :input-class="customNameInputClassName"
+            :autofocus="true"
           />
         </div>
 
         <div v-if="hasHarvestProjects">
-          <UButton
-            size="xs"
-            variant="ghost"
-            color="neutral"
-            :icon="useCustomName ? 'i-heroicons-list-bullet' : 'i-heroicons-pencil-square'"
-            @click="useCustomName = !useCustomName"
-          >
-            {{
+          <BaseButton
+            :label="
               useCustomName
                 ? t('projects.create_modal.toggle_use_harvest')
                 : t('projects.create_modal.toggle_use_custom')
-            }}
-          </UButton>
+            "
+            :on-click="
+              () => {
+                useCustomName = !useCustomName
+              }
+            "
+            variant="accent"
+            size="sm"
+            width="auto"
+          />
         </div>
       </div>
     </template>
 
     <template #footer>
-      <div class="flex w-full justify-end gap-2">
-        <UButton color="neutral" variant="soft" :disabled="projectStore.isCreatingProject" @click="close">
-          {{ t('common.actions.cancel') }}
-        </UButton>
+      <BaseButton
+        :label="t('common.actions.cancel')"
+        :on-click="close"
+        variant="secondary"
+        size="sm"
+        width="auto"
+        :disabled="projectStore.isCreatingProject"
+      />
 
-        <UButton
-          color="primary"
-          variant="solid"
-          :loading="projectStore.isCreatingProject"
-          :disabled="!canSave"
-          @click="save"
-        >
-          {{ t('projects.create_modal.create_button') }}
-        </UButton>
-      </div>
+      <BaseButton
+        :label="t('projects.create_modal.create_button')"
+        :on-click="save"
+        variant="primary"
+        size="sm"
+        width="auto"
+        :loading="projectStore.isCreatingProject"
+        :disabled="!canSave"
+      />
     </template>
-  </UModal>
+  </WavesModalWrapper>
 </template>

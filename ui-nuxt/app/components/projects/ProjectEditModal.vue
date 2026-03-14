@@ -1,5 +1,8 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
+import BaseButton from '~/components/common/BaseButton.vue'
+import BaseField from '~/components/common/BaseField.vue'
+import WavesModalWrapper from '~/components/common/WavesModalWrapper.vue'
 import { useProjectStore } from '~/stores/projects'
 import type { ProjectPayload } from '~/types/projects'
 import { getErrorMessage } from '~/utils/errors'
@@ -51,6 +54,9 @@ const canSave = computed(() => {
 
 const close = () => emit('update:open', false)
 
+const textAreaInputClassName =
+  'w-full px-4 py-3 bg-white outline-none ring-offset-0 focus:ring-2 focus:ring-lime-500 shadow rounded-2xl'
+
 const save = async () => {
   if (!canSave.value) return
 
@@ -77,55 +83,55 @@ const save = async () => {
 </script>
 
 <template>
-  <UModal
+  <WavesModalWrapper
     :open="props.open"
     :title="title"
     :description="description"
     :dismissible="!projectStore.isUpdatingProject"
-    class="w-full sm:max-w-3xl"
+    modal-class="w-full sm:max-w-3xl"
+    body-container-class="w-full max-w-2xl px-8 pt-10"
     @update:open="emit('update:open', $event)"
   >
     <template #body>
-      <div class="space-y-2">
-        <p class="text-sm text-slate-600">
-          {{
-            props.field === 'name' ? t('projects.edit_modal.field_name') : t('projects.edit_modal.field_description')
-          }}
-        </p>
-
-        <UInput
+      <div class="space-y-6">
+        <BaseField
           v-if="props.field === 'name'"
           v-model="localValue"
-          class="w-full"
+          :label="t('projects.edit_modal.field_name')"
           :placeholder="t('projects.edit_modal.placeholder_name')"
-          autofocus
+          :autofocus="true"
         />
-        <UTextarea
+        <BaseField
           v-else
           v-model="localValue"
-          class="w-full"
+          :label="t('projects.edit_modal.field_description')"
           :placeholder="t('projects.edit_modal.placeholder_description')"
+          :autofocus="true"
+          :multiline="true"
           :rows="5"
-          autofocus
+          :input-class="textAreaInputClassName"
         />
       </div>
     </template>
 
     <template #footer>
-      <div class="flex w-full justify-end gap-2">
-        <UButton color="neutral" variant="soft" :disabled="projectStore.isUpdatingProject" @click="close">
-          {{ t('common.actions.cancel') }}
-        </UButton>
-        <UButton
-          color="primary"
-          variant="solid"
-          :loading="projectStore.isUpdatingProject"
-          :disabled="!canSave"
-          @click="save"
-        >
-          {{ t('common.actions.save') }}
-        </UButton>
-      </div>
+      <BaseButton
+        :label="t('common.actions.cancel')"
+        :on-click="close"
+        variant="secondary"
+        size="sm"
+        width="auto"
+        :disabled="projectStore.isUpdatingProject"
+      />
+      <BaseButton
+        :label="t('common.actions.save')"
+        :on-click="save"
+        variant="primary"
+        size="sm"
+        width="auto"
+        :loading="projectStore.isUpdatingProject"
+        :disabled="!canSave"
+      />
     </template>
-  </UModal>
+  </WavesModalWrapper>
 </template>
