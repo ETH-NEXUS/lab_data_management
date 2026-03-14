@@ -24,7 +24,12 @@ const platesCount = computed(() => props.experiment.plates?.length ?? 0)
 </script>
 
 <template>
-  <UCard class="mx-auto w-[80%]">
+  <UCard
+    class="mx-auto w-[80%]"
+    :ui="{
+      root: 'border border-white/40 bg-white/30 backdrop-blur-md shadow-sm divide-y divide-white/20',
+    }"
+  >
     <div class="space-y-4">
       <div class="max-w-[600px] break-words">
         <p class="text-sm font-semibold text-slate-700">{{ t('experiments.info.description') }}</p>

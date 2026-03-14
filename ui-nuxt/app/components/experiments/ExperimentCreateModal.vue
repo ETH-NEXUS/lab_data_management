@@ -1,5 +1,8 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
+import BaseButton from '~/components/common/BaseButton.vue'
+import BaseField from '~/components/common/BaseField.vue'
+import WavesModalWrapper from '~/components/common/WavesModalWrapper.vue'
 import { useExperimentStore } from '~/stores/experiments'
 import type { Experiment } from '~/types/experiments'
 import { getErrorMessage } from '~/utils/errors'
@@ -79,41 +82,44 @@ const save = async () => {
 </script>
 
 <template>
-  <UModal
+  <WavesModalWrapper
     :open="props.open"
     :title="modalTitle"
     :description="t('experiments.create_modal.description')"
     :dismissible="!experimentStore.isCreatingExperiment"
-    class="w-full sm:max-w-2xl"
+    modal-class="w-full sm:max-w-3xl"
+    body-container-class="w-full max-w-2xl px-8 pt-10"
     @update:open="emit('update:open', $event)"
   >
     <template #body>
-      <div class="space-y-2">
-        <p class="text-sm text-slate-600">{{ t('experiments.create_modal.field_name') }}</p>
-        <UInput
+      <div class="space-y-6">
+        <BaseField
           v-model="experimentName"
-          class="w-full"
+          :label="t('experiments.create_modal.field_name')"
           :placeholder="t('experiments.create_modal.placeholder_name')"
-          autofocus
+          :autofocus="true"
         />
       </div>
     </template>
 
     <template #footer>
-      <div class="flex w-full justify-end gap-2">
-        <UButton color="neutral" variant="soft" :disabled="experimentStore.isCreatingExperiment" @click="close">
-          {{ t('common.actions.cancel') }}
-        </UButton>
-        <UButton
-          color="primary"
-          variant="solid"
-          :loading="experimentStore.isCreatingExperiment"
-          :disabled="!canSave"
-          @click="save"
-        >
-          {{ t('experiments.create_modal.create_button') }}
-        </UButton>
-      </div>
+      <BaseButton
+        :label="t('common.actions.cancel')"
+        :on-click="close"
+        variant="secondary"
+        size="sm"
+        width="auto"
+        :disabled="experimentStore.isCreatingExperiment"
+      />
+      <BaseButton
+        :label="t('experiments.create_modal.create_button')"
+        :on-click="save"
+        variant="primary"
+        size="sm"
+        width="auto"
+        :loading="experimentStore.isCreatingExperiment"
+        :disabled="!canSave"
+      />
     </template>
-  </UModal>
+  </WavesModalWrapper>
 </template>
