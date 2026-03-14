@@ -23,6 +23,7 @@ const authStore = useAuthStore()
 const queryClient = useQueryClient()
 const toast = useToast()
 const { t } = useI18n()
+const runtimeConfig = useRuntimeConfig()
 
 const scrolled = ref(false)
 const version = ref('N/A')
@@ -72,12 +73,61 @@ const refresh = async () => {
   }
 }
 
+/**
+ * Normalizes configured backend base URL for non-Nuxt endpoints.
+ *
+ * Accepted input examples:
+ * - `http://localhost:5090`
+ * - `http://localhost:5090/`
+ * - `http://localhost:5090/api`
+ *
+ * Returned value examples:
+ * - `http://localhost:5090`
+ */
+const normalizeBackendBaseUrl = (value: string): string => {
+  return value.replace(/\/$/, '').replace(/\/api$/, '')
+}
+
+const backendBaseUrl = computed(() => {
+  const explicitBackendUrl = String(runtimeConfig.public?.backendURL ?? '').trim()
+  if (explicitBackendUrl) {
+    return normalizeBackendBaseUrl(explicitBackendUrl)
+  }
+
+  const apiBaseUrl = String(runtimeConfig.public?.baseURL ?? '').trim()
+  if (apiBaseUrl) {
+    return normalizeBackendBaseUrl(apiBaseUrl)
+  }
+
+  return ''
+})
+
+/**
+ * Builds an absolute backend URL for resources not rendered by Nuxt (`/docs`, `/notebook`).
+ *
+ * Behavior:
+ * - If `NUXT_PUBLIC_API_URL` is set, use that backend origin.
+ * - Otherwise, use current origin where dev proxy paths (`/docs`, `/notebook`) are expected.
+ *
+ * Returned URL examples:
+ * - with `backendURL = 'http://localhost:5090'` + `path = '/docs/'` => `http://localhost:5090/docs/`
+ * - with empty `baseURL` + `path = '/notebook/'` => `http://localhost:8091/notebook/`
+ */
+const toBackendUrl = (path: string): string => {
+  const normalizedPath = path.startsWith('/') ? path : `/${path}`
+  if (backendBaseUrl.value) {
+    return `${backendBaseUrl.value}${normalizedPath}`
+  }
+
+  return `${window.location.protocol}//${window.location.host}${normalizedPath}`
+}
+
 const openNotebook = () => {
-  window.open(`${window.location.protocol}//${window.location.host}/notebook/`, '_blank', 'noreferrer')
+  window.open(toBackendUrl('/notebook/'), '_blank', 'noreferrer')
 }
 
 const openDocsPage = () => {
-  window.open('/docs/', '_blank', 'noreferrer')
+  window.open(toBackendUrl('/docs/'), '_blank', 'noreferrer')
 }
 
 const logout = async () => {
@@ -116,7 +166,7 @@ const dropdownItems = computed(() => [
       <div class="flex h-full items-center justify-between">
         <div class="flex items-center gap-2">
           <button
-            class="inline-flex h-9 w-9 items-center justify-center rounded-md transition hover:bg-teal-900/10"
+            class="inline-flex h-9 w-9 cursor-pointer items-center justify-center rounded-md transition hover:bg-teal-900/10"
             aria-label="Toggle navigation"
             aria-controls="app-navigation-drawer"
             :aria-expanded="props.drawerOpen ? 'true' : 'false'"
@@ -127,7 +177,7 @@ const dropdownItems = computed(() => [
           </button>
 
           <button
-            class="text-lg font-semibold text-teal-900 transition hover:text-teal-700"
+            class="cursor-pointer text-lg font-semibold text-teal-900 transition hover:text-teal-700"
             type="button"
             @click="goHome"
           >
@@ -135,7 +185,7 @@ const dropdownItems = computed(() => [
           </button>
 
           <button
-            class="inline-flex h-9 w-9 items-center justify-center rounded-md transition hover:bg-teal-900/10"
+            class="inline-flex h-9 w-9 cursor-pointer items-center justify-center rounded-md transition hover:bg-teal-900/10 disabled:cursor-not-allowed"
             :aria-label="t('app.header.refresh')"
             :disabled="isRefreshing"
             type="button"
@@ -151,7 +201,7 @@ const dropdownItems = computed(() => [
           </span>
 
           <button
-            class="inline-flex h-9 w-9 items-center justify-center rounded-md transition hover:bg-teal-900/10"
+            class="inline-flex h-9 w-9 cursor-pointer items-center justify-center rounded-md transition hover:bg-teal-900/10"
             :aria-label="t('app.header.messages')"
             type="button"
             @click="goMessages"
@@ -163,10 +213,10 @@ const dropdownItems = computed(() => [
             v-if="authStore.isAuthenticated"
             :items="dropdownItems"
             :content="{ side: 'bottom', align: 'end' }"
-            :ui="{ content: 'z-[9999]' }"
+            :ui="{ content: 'z-[9999]', item: 'cursor-pointer', label: 'cursor-pointer' }"
           >
             <button
-              class="inline-flex h-9 w-9 items-center justify-center rounded-md transition hover:bg-teal-900/10"
+              class="inline-flex h-9 w-9 cursor-pointer items-center justify-center rounded-md transition hover:bg-teal-900/10"
               aria-label="User menu"
               type="button"
             >
