@@ -196,8 +196,8 @@ export default {
     delete_well: 'Delete well',
     generate_report: 'Generate report',
     download_csv_data: 'Download CSV data',
-    select_control_layout: 'Select control layout',
-    add_layout: 'Add this layout to the project',
+    select_control_layout: 'Select control layouts',
+    add_layout: 'Add this layouts to the project',
   },
   error: {
     select_plate_dimension: 'Please select a plate dimension.',

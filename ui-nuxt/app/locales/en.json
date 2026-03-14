@@ -1,0 +1,26 @@
+{
+  "app": {
+    "header": {
+      "title": "Lab Data Management",
+      "refresh": "Refresh",
+      "messages": "Messages",
+      "notebook": "Notebook",
+      "help": "Help",
+      "logout": "Logout"
+    }
+  },
+  "auth": {
+    "login": {
+      "title": "Login",
+      "subtitle": "Lab Data Management",
+      "username_label": "Username",
+      "username_placeholder": "Username",
+      "password_label": "Password",
+      "password_placeholder": "••••••••",
+      "forgot_password": "Forgot password?",
+      "submit": "Login",
+      "error_title": "Cannot login",
+      "error_description": "Please check username/password and try again."
+    }
+  }
+}

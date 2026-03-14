@@ -328,3 +328,17 @@ api/notebooks
 *.jupyterlab-workspace
 
 data_temp/
+
+node-compile-cache/
+.pnpm-store/
+
+# Node runtime caches
+.node-compile-cache/
+
+
+# Nuxt
+.nuxt/
+.output/
+
+# Dependencies
+

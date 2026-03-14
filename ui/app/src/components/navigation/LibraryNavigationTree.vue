@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import {ref, onMounted, computed, watchEffect} from 'vue'
-import {handleError} from '../../helpers/errorHandling'
+import {handleError} from 'src/helpers/errorHandling'
 import {CompoundLibrary, Plate} from '../models'
 import {QTreeNode} from 'quasar'
 import {useI18n} from 'vue-i18n'

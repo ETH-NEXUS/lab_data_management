@@ -1,0 +1,96 @@
+@import "tailwindcss";
+@import "@nuxt/ui";
+
+/* Markdown content styling */
+.markdown-content h1 {
+  @apply mt-4 mb-4 border-b border-gray-300 pb-2 text-2xl font-bold dark:border-gray-700;
+}
+
+.markdown-content h2 {
+  @apply mt-4 mb-3 border-b border-gray-200 pb-1 text-xl font-bold dark:border-gray-800;
+}
+
+.markdown-content h3 {
+  @apply mt-3 mb-2 text-lg font-bold;
+}
+
+.markdown-content h4 {
+  @apply mt-3 mb-2 text-base font-bold;
+}
+
+.markdown-content p {
+  @apply my-2 leading-relaxed;
+}
+
+.markdown-content strong {
+  @apply font-bold text-gray-900 dark:text-gray-100;
+}
+
+.markdown-content em {
+  @apply text-gray-700 italic dark:text-gray-300;
+}
+
+.markdown-content del,
+.markdown-content s {
+  @apply text-gray-500 line-through;
+}
+
+.markdown-content a {
+  @apply text-primary-600 dark:text-primary-400 underline underline-offset-2;
+}
+
+.markdown-content a:hover {
+  @apply decoration-2;
+}
+
+.markdown-content code {
+  @apply text-primary-700 dark:text-primary-300 rounded bg-gray-100 px-1.5 py-0.5 font-mono text-sm dark:bg-gray-800;
+}
+
+.markdown-content pre {
+  @apply my-4 overflow-x-auto rounded-lg border border-gray-700 bg-gray-900 p-4 text-gray-100 shadow-lg dark:border-gray-800 dark:bg-gray-950;
+}
+
+.markdown-content pre code {
+  @apply bg-transparent p-0 text-inherit;
+}
+
+.markdown-content blockquote {
+  @apply border-primary-500 my-4 border-l-4 bg-gray-50 py-2 pl-4 text-gray-700 italic dark:bg-gray-900 dark:text-gray-300;
+}
+
+.markdown-content ul {
+  @apply my-3 ml-6 list-disc;
+}
+
+.markdown-content ol {
+  @apply my-3 ml-6 list-decimal;
+}
+
+.markdown-content li {
+  @apply my-1 leading-relaxed;
+}
+
+.markdown-content table {
+  @apply my-4 w-full border-collapse;
+}
+
+.markdown-content thead {
+  @apply border-b-2 border-gray-300 dark:border-gray-700;
+}
+
+.markdown-content th {
+  @apply bg-gray-100 px-4 py-2 text-left font-bold dark:bg-gray-800;
+}
+
+.markdown-content td {
+  @apply border-t border-gray-200 px-4 py-2 dark:border-gray-800;
+}
+
+.markdown-content hr {
+  @apply my-6 border-gray-300 dark:border-gray-700;
+}
+
+.markdown-content img {
+  @apply my-4 max-w-full rounded-lg shadow-md;
+}

@@ -117,36 +117,44 @@ DATABASES = {
 
 # LDAP Authentication
 # https://django-auth-ldap.readthedocs.io/en/latest/authentication.html
+#
+# Use local Django auth by default in DEBUG mode to avoid requiring ETH network/VPN
+# during development. LDAP remains enabled by default outside DEBUG.
+USE_LDAP_AUTH = (
+    environ.get("DJANGO_USE_LDAP", "false" if DEBUG else "true").lower() == "true"
+)
 
-AUTHENTICATION_BACKENDS = [
-    "django_auth_ldap.backend.LDAPBackend",
-    "django.contrib.auth.backends.ModelBackend",
-]
+AUTHENTICATION_BACKENDS = ["django.contrib.auth.backends.ModelBackend"]
+if USE_LDAP_AUTH:
+    AUTHENTICATION_BACKENDS = [
+        "django_auth_ldap.backend.LDAPBackend",
+        "django.contrib.auth.backends.ModelBackend",
+    ]
 
-AUTH_LDAP_GLOBAL_OPTIONS = {ldap.OPT_X_TLS_REQUIRE_CERT: ldap.OPT_X_TLS_NEVER}
-AUTH_LDAP_SERVER_URI = environ.get(
-    "LDAP_SERVER_URI",
-    "ldaps://ldaps-rz-1.ethz.ch,ldaps://ldaps-rz-2.ethz.ch,ldaps://ldaps-hit-2.ethz.ch,ldaps://ldaps-hit-1.ethz.ch",
-)
-AUTH_LDAP_BIND_DN = environ.get(
-    "LDAP_BIND_DN",
-    "cn=nexus-tpreports_proxy,ou=admins,ou=nethz,ou=id,ou=auth,o=ethz,c=ch",
-)
-AUTH_LDAP_BIND_PASSWORD = environ.get("LDAP_PASSWORD")
-AUTH_LDAP_USER_ATTR_MAP = {
-    "username": "cn",
-    "first_name": "givenName",
-    "last_name": "sn",
-    "email": "mail",
-}
-AUTH_LDAP_USER_SEARCH = LDAPSearch(
-    environ.get("LDAP_SEARCH_BASE", "ou=users,ou=nethz,ou=id,ou=auth,o=ethz,c=ch"),
-    ldap.SCOPE_SUBTREE,
-    environ.get(
-        "LDAP_FILTER",
-        "(&(ou=@nexus.ethz.ch)(eduPersonAffiliation=staff)(cn=%(user)s))",
-    ),
-)
+    AUTH_LDAP_GLOBAL_OPTIONS = {ldap.OPT_X_TLS_REQUIRE_CERT: ldap.OPT_X_TLS_NEVER}
+    AUTH_LDAP_SERVER_URI = environ.get(
+        "LDAP_SERVER_URI",
+        "ldaps://ldaps-rz-1.ethz.ch,ldaps://ldaps-rz-2.ethz.ch,ldaps://ldaps-hit-2.ethz.ch,ldaps://ldaps-hit-1.ethz.ch",
+    )
+    AUTH_LDAP_BIND_DN = environ.get(
+        "LDAP_BIND_DN",
+        "cn=nexus-tpreports_proxy,ou=admins,ou=nethz,ou=id,ou=auth,o=ethz,c=ch",
+    )
+    AUTH_LDAP_BIND_PASSWORD = environ.get("LDAP_PASSWORD")
+    AUTH_LDAP_USER_ATTR_MAP = {
+        "username": "cn",
+        "first_name": "givenName",
+        "last_name": "sn",
+        "email": "mail",
+    }
+    AUTH_LDAP_USER_SEARCH = LDAPSearch(
+        environ.get("LDAP_SEARCH_BASE", "ou=users,ou=nethz,ou=id,ou=auth,o=ethz,c=ch"),
+        ldap.SCOPE_SUBTREE,
+        environ.get(
+            "LDAP_FILTER",
+            "(&(ou=@nexus.ethz.ch)(eduPersonAffiliation=staff)(cn=%(user)s))",
+        ),
+    )
 # since we've manually updated some users' names, we need to ensure they don't get overwritten
 # AUTH_LDAP_ALWAYS_UPDATE_USER = False
 # disable auto-creation of users since we're not taking calls for new users anymore

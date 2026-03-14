@@ -1,0 +1,176 @@
+<script setup lang="ts">
+import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
+import { useAPI } from '~/composables/useAPI'
+import { useAuthStore } from '~/stores/auth'
+
+type Props = {
+  transparent?: boolean
+  drawerOpen?: boolean
+}
+
+const props = withDefaults(defineProps<Props>(), {
+  transparent: false,
+  drawerOpen: false,
+})
+
+const emit = defineEmits<{
+  (e: 'toggle-drawer'): void
+}>()
+
+const authStore = useAuthStore()
+const toast = useToast()
+const { t } = useI18n()
+
+const scrolled = ref(false)
+const version = ref('N/A')
+const isRefreshing = ref(false)
+
+const onScroll = () => {
+  scrolled.value = window.scrollY > 8
+}
+
+const loadVersion = async () => {
+  const { data, error } = await useAPI<{ version?: string }>('version/', { method: 'GET' })
+  if (!error.value) {
+    version.value = data.value?.version ?? 'N/A'
+  }
+}
+
+onMounted(async () => {
+  onScroll()
+  window.addEventListener('scroll', onScroll, { passive: true })
+  await loadVersion()
+})
+
+onBeforeUnmount(() => {
+  window.removeEventListener('scroll', onScroll)
+})
+
+const displayName = computed(() => {
+  const u = authStore.user
+  if (!u) return ''
+  const full = `${u.first_name ?? ''} ${u.last_name ?? ''}`.trim()
+  return full || u.username || u.email || ''
+})
+
+const toggleDrawer = () => emit('toggle-drawer')
+const goHome = () => navigateTo('/')
+const goMessages = () => navigateTo('/messages')
+
+const refresh = async () => {
+  if (isRefreshing.value) return
+
+  isRefreshing.value = true
+  try {
+    await useAPI('refresh/', { method: 'GET' })
+  } finally {
+    isRefreshing.value = false
+  }
+}
+
+const openNotebook = () => {
+  window.open(`${window.location.protocol}//${window.location.host}/notebook/`, '_blank', 'noreferrer')
+}
+
+const openDocsPage = () => {
+  window.open('/docs/', '_blank', 'noreferrer')
+}
+
+const logout = async () => {
+  await authStore.logout(false)
+  toast.add({
+    title: t('app.header.logout'),
+    description: 'Logged out',
+    color: 'success',
+    duration: 2000,
+  })
+  await navigateTo('/login')
+}
+
+const dropdownItems = computed(() => [
+  [{ label: `Version ${version.value}`, icon: 'i-heroicons-map-pin' }],
+  [
+    { label: t('app.header.notebook'), icon: 'i-heroicons-pencil-square', onSelect: openNotebook },
+    { label: t('app.header.help'), icon: 'i-heroicons-question-mark-circle', onSelect: openDocsPage },
+  ],
+  [{ label: t('app.header.logout'), icon: 'i-heroicons-arrow-right-on-rectangle', onSelect: logout }],
+])
+</script>
+
+<template>
+  <header
+    class="sticky top-0 z-50 w-full border-b transition-all duration-300"
+    :class="[
+      props.transparent
+        ? scrolled
+          ? 'border-black/5 bg-white/70 backdrop-blur'
+          : 'border-transparent bg-transparent'
+        : 'border-black/5 bg-white',
+    ]"
+  >
+    <div class="mx-auto h-16 w-full px-4">
+      <div class="flex h-full items-center justify-between">
+        <div class="flex items-center gap-2">
+          <button
+            class="inline-flex h-9 w-9 items-center justify-center rounded-md transition hover:bg-teal-900/10"
+            aria-label="Toggle navigation"
+            aria-controls="app-navigation-drawer"
+            :aria-expanded="props.drawerOpen ? 'true' : 'false'"
+            type="button"
+            @click="toggleDrawer"
+          >
+            <UIcon name="i-heroicons-bars-3" class="h-5 w-5" />
+          </button>
+
+          <button
+            class="text-lg font-semibold text-teal-900 transition hover:text-teal-700"
+            type="button"
+            @click="goHome"
+          >
+            {{ t('app.header.title') }}
+          </button>
+
+          <button
+            class="inline-flex h-9 w-9 items-center justify-center rounded-md transition hover:bg-teal-900/10"
+            :aria-label="t('app.header.refresh')"
+            :disabled="isRefreshing"
+            type="button"
+            @click="refresh"
+          >
+            <UIcon name="i-heroicons-arrow-path" :class="['h-5 w-5', isRefreshing && 'animate-spin']" />
+          </button>
+        </div>
+
+        <div class="flex items-center gap-3">
+          <span v-if="authStore.isAuthenticated" class="hidden text-sm font-medium text-teal-900 md:inline">
+            {{ displayName }}
+          </span>
+
+          <button
+            class="inline-flex h-9 w-9 items-center justify-center rounded-md transition hover:bg-teal-900/10"
+            :aria-label="t('app.header.messages')"
+            type="button"
+            @click="goMessages"
+          >
+            <UIcon name="i-heroicons-flag" class="h-5 w-5" />
+          </button>
+
+          <UDropdownMenu
+            v-if="authStore.isAuthenticated"
+            :items="dropdownItems"
+            :content="{ side: 'bottom', align: 'end' }"
+            :ui="{ content: 'z-[9999]' }"
+          >
+            <button
+              class="inline-flex h-9 w-9 items-center justify-center rounded-md transition hover:bg-teal-900/10"
+              aria-label="User menu"
+              type="button"
+            >
+              <UIcon name="i-heroicons-user" class="h-5 w-5" />
+            </button>
+          </UDropdownMenu>
+        </div>
+      </div>
+    </div>
+  </header>
+</template>
