@@ -2,6 +2,8 @@ version: "3"
 volumes:
   pg_data:
   web_root:
+  web_root_nuxt:
+
 services:
   ui:
     platform: linux/amd64
@@ -13,6 +15,21 @@ services:
     hostname: ui
     restart: "no"
     env_file: .env
+
+  #  NEW Nuxt UI
+  ui_nuxt:
+    platform: linux/amd64
+    build:
+      context: ui-nuxt/app
+    volumes:
+      - ./ui-nuxt/app:/app
+    working_dir: /app
+    hostname: ui-nuxt
+    restart: unless-stopped
+    env_file: .env
+    depends_on:
+      - api
+
   api:
     platform: linux/amd64
     build:
