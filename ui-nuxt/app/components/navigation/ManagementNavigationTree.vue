@@ -1,19 +1,12 @@
 <script setup lang="ts">
 import { computed } from 'vue'
-
-type TreeNode = {
-  label: string
-  icon?: string
-  defaultExpanded?: boolean
-  children?: TreeNode[]
-  onSelect?: () => void
-}
+import type { NavigationTreeNode } from '~/types/navigation'
 
 const props = withDefaults(defineProps<{ filter?: string }>(), {
   filter: '',
 })
 
-const rawItems = computed<TreeNode[]>(() => [
+const rawItems = computed<NavigationTreeNode[]>(() => [
   {
     label: 'Management',
     icon: 'i-heroicons-cog-6-tooth',
@@ -38,7 +31,7 @@ const rawItems = computed<TreeNode[]>(() => [
   },
 ])
 
-const filterTree = (items: TreeNode[], query: string): TreeNode[] => {
+const filterTree = (items: NavigationTreeNode[], query: string): NavigationTreeNode[] => {
   const q = query.trim().toLowerCase()
   if (!q) return items
 
@@ -55,20 +48,15 @@ const filterTree = (items: TreeNode[], query: string): TreeNode[] => {
         defaultExpanded: true,
       }
     })
-    .filter((item): item is TreeNode => item !== null)
+    .filter((item): item is NavigationTreeNode => item !== null)
 }
 
-const items = computed<TreeNode[]>(() => filterTree(rawItems.value, props.filter))
+const items = computed<NavigationTreeNode[]>(() => filterTree(rawItems.value, props.filter))
 </script>
 
 <template>
   <section class="space-y-1">
-    <p class="px-2 text-xs font-semibold uppercase tracking-wide text-slate-500">
-      Management
-    </p>
-    <UTree
-      :items="items"
-      :ui="{ link: 'cursor-pointer hover:text-primary transition-colors' }"
-    />
+    <p class="px-2 text-xs font-semibold tracking-wide text-slate-500 uppercase">Management</p>
+    <UTree :items="items" :ui="{ link: 'cursor-pointer hover:text-primary transition-colors' }" />
   </section>
 </template>
