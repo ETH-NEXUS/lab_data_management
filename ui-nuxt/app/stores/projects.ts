@@ -1,6 +1,5 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
-import { useAPI } from '~/composables/useAPI'
 import {
   PROJECT_CREATE_ERROR_MESSAGE,
   PROJECT_UPDATE_ERROR_MESSAGE,
@@ -8,6 +7,7 @@ import {
   type Project,
   type ProjectPayload,
 } from '~/types/projects'
+import { requestApiData } from '~/utils/apiRequests'
 
 export const useProjectStore = defineStore('projectStore', () => {
   const isCreatingProject = ref(false)
@@ -26,16 +26,16 @@ export const useProjectStore = defineStore('projectStore', () => {
   const createProject = async (payload: CreateProjectPayload): Promise<Project> => {
     isCreatingProject.value = true
     try {
-      const { data, error } = await useAPI<Project>('projects/', {
-        method: 'POST',
-        body: payload,
-      })
+      const project = await requestApiData<Project>(
+        'projects/',
+        {
+          method: 'POST',
+          body: payload,
+        },
+        PROJECT_CREATE_ERROR_MESSAGE,
+      )
 
-      if (error.value || !data.value) {
-        throw (error.value ?? new Error(PROJECT_CREATE_ERROR_MESSAGE)) as Error
-      }
-
-      return data.value
+      return project
     } finally {
       isCreatingProject.value = false
     }
@@ -44,16 +44,16 @@ export const useProjectStore = defineStore('projectStore', () => {
   const updateProject = async (projectId: number, payload: ProjectPayload): Promise<Project> => {
     isUpdatingProject.value = true
     try {
-      const { data, error } = await useAPI<Project>(`projects/${projectId}/`, {
-        method: 'PATCH',
-        body: payload,
-      })
+      const project = await requestApiData<Project>(
+        `projects/${projectId}/`,
+        {
+          method: 'PATCH',
+          body: payload,
+        },
+        PROJECT_UPDATE_ERROR_MESSAGE,
+      )
 
-      if (error.value || !data.value) {
-        throw (error.value ?? new Error(PROJECT_UPDATE_ERROR_MESSAGE)) as Error
-      }
-
-      return data.value
+      return project
     } finally {
       isUpdatingProject.value = false
     }

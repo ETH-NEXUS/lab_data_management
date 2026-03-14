@@ -1,11 +1,21 @@
+import type { Experiment } from '~/types/experiments'
+import type { Plate } from '~/types/lab'
+
+/**
+ * Project model used in list/detail queries.
+ *
+ * Data example:
+ * - `{ id: 5, name: 'Screening 2026', experiments: [{ id: 21, name: 'Dose response', project: 5, available_measurement_labels: [], details: { d: 384, project_id: 5, measurement_labels: [], measurement_timestamps: {}, stats: {}, overall_stats: {} }, plates: [] }], description: 'Primary screen', harvest_id: 42, harvest_notes: 'Synced from Harvest', plates: [] }`
+ */
 export type Project = {
   id: number
   name: string
   description?: string | null
   harvest_id?: number | null
   harvest_notes?: string | null
-  created_at?: string | null
-  experiments?: Array<{ id: number; name: string }>
+  created_at?: Date | string | null
+  experiments: Experiment[]
+  plates?: Plate[]
   [key: string]: unknown
 }
 
