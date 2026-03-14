@@ -1,7 +1,6 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
 import { useStorage } from '@vueuse/core'
-import { useAPI } from '~/composables/useAPI'
 import {
   getHarvestUpdateEndpoint,
   HARVEST_PROJECTS_ENDPOINT,
@@ -11,6 +10,7 @@ import {
   type HarvestProjectsResponse,
   type HarvestUpdateResponse,
 } from '~/types/harvest'
+import { requestApiData } from '~/utils/apiRequests'
 
 const sortHarvestProjects = (projects: HarvestProject[]): HarvestProject[] => {
   const currentYear = new Date().getFullYear().toString()
@@ -45,15 +45,13 @@ export const useHarvestStore = defineStore('harvestStore', () => {
     error.value = null
 
     try {
-      const { data, error: apiError } = await useAPI<HarvestProjectsResponse>(HARVEST_PROJECTS_ENDPOINT, {
-        method: 'GET',
-      })
+      const data = await requestApiData<HarvestProjectsResponse>(
+        HARVEST_PROJECTS_ENDPOINT,
+        { method: 'GET' },
+        HARVEST_PROJECTS_ERROR_MESSAGE,
+      )
 
-      if (apiError.value || !data.value) {
-        throw (apiError.value ?? new Error(HARVEST_PROJECTS_ERROR_MESSAGE)) as Error
-      }
-
-      const preparedProjects = mapHarvestProjects(data.value.projects ?? [])
+      const preparedProjects = mapHarvestProjects(data.projects ?? [])
       harvestProjects.value = sortHarvestProjects(preparedProjects)
       return harvestProjects.value
     } catch (err: unknown) {
@@ -68,16 +66,14 @@ export const useHarvestStore = defineStore('harvestStore', () => {
     isUpdatingInfo.value = true
 
     try {
-      const { data, error: apiError } = await useAPI<HarvestUpdateResponse>(getHarvestUpdateEndpoint(projectId), {
-        method: 'GET',
-      })
-
-      if (apiError.value || !data.value) {
-        throw (apiError.value ?? new Error(HARVEST_UPDATE_ERROR_MESSAGE)) as Error
-      }
+      const data = await requestApiData<HarvestUpdateResponse>(
+        getHarvestUpdateEndpoint(projectId),
+        { method: 'GET' },
+        HARVEST_UPDATE_ERROR_MESSAGE,
+      )
 
       await initialize()
-      return data.value
+      return data
     } finally {
       isUpdatingInfo.value = false
     }
