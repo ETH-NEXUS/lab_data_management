@@ -25,6 +25,7 @@ export const PROJECTS_ERROR_MESSAGE = 'Failed to load projects.'
 export const PROJECT_ERROR_MESSAGE = 'Failed to load project.'
 export const PROJECT_CREATE_ERROR_MESSAGE = 'Failed to create project.'
 export const PROJECT_UPDATE_ERROR_MESSAGE = 'Failed to update project.'
+export const PROJECT_MOVE_PLATES_ERROR_MESSAGE = 'Failed to move plates to experiment.'
 
 export const getProjectQueryKey = (projectId: number | string) => ['project', String(projectId)] as const
 
@@ -44,4 +45,16 @@ export type CreateProjectPayload = {
   name: string
   harvest_id?: number | null
   harvest_notes?: string | null
+}
+
+/**
+ * Request payload for moving plates between experiments.
+ *
+ * Accepted payload examples:
+ * - `{ plate_barcodes: ['A001', 'A002'], experiment: 'Dose response' }`
+ * - `{ plate_barcodes: ['CTRL-01'], experiment: 'QC run' }`
+ */
+export type MovePlatesPayload = {
+  plate_barcodes: string[]
+  experiment: string | null
 }
