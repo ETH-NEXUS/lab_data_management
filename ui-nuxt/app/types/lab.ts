@@ -194,9 +194,9 @@ export interface Plate {
   details: PlateDetails
   wells: WellDetails[]
   measurement_labels?: string[]
-  experiment?: number
-  library?: number
-  template?: number
+  experiment?: number | IdName | null
+  library?: number | IdName | null
+  template?: number | IdName | null
   archived?: boolean
   status?: string
 }
@@ -218,7 +218,7 @@ export interface Measurement {
 }
 
 export interface WellInfo {
-  well: WellDetails
+  well: WellDetails | undefined
   position: number
 }
 
