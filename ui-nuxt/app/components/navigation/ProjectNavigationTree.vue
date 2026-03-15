@@ -71,43 +71,148 @@ const formatPlateDimensionLabel = (dimension: unknown): string => {
  * Returned data example:
  * - `[{ label: 'A001 (384)', icon: 'i-heroicons-squares-2x2' }, { label: 'B001 (96)', icon: 'i-heroicons-squares-2x2' }]`
  */
+/**
+ * Creates plate nodes for one experiment.
+ *
+ * Accepted data example:
+ * - `experiment = { id: 21, name: 'Dose response', plates: [{ id: 11, barcode: 'A001', dimension: { name: '384' } }] }`
+ *
+ * Returned data example:
+ * - `[{ label: 'A001 (384)', icon: 'i-heroicons-squares-2x2', onSelect: () => void }]`
+ */
 const mapPlateNodes = (experiment: Experiment): NavigationTreeNode[] => {
-  const sortedPlates = [...(experiment.plates ?? [])].sort((a, b) => a.barcode.localeCompare(b.barcode))
+  // Step 1: build a plain array (avoid compact spread syntax for readability).
+  const plates = experiment.plates ? [...experiment.plates] : []
 
-  return sortedPlates.map((plate) => ({
-    label: `${plate.barcode || t('navigation.projects.plate_fallback', { id: plate.id })} (${formatPlateDimensionLabel(plate.dimension)})`,
-    icon: 'i-heroicons-squares-2x2',
-    /**
-     * Navigates to the migrated plate page.
-     *
-     * Route param examples:
-     * - barcode present: `{ id: 'ABC-0001' }` -> `/plates/ABC-0001`
-     * - barcode missing: `{ id: 17 }` -> `/plates/17`
-     */
-    onSelect: () => navigateTo(`/plates/${encodeURIComponent(plate.barcode || String(plate.id))}`),
-  }))
+  // Step 2: sort by barcode so users see stable ordering.
+  plates.sort((leftPlate, rightPlate) => leftPlate.barcode.localeCompare(rightPlate.barcode))
+
+  // Step 3: map each plate to a tree node.
+  const nodes: NavigationTreeNode[] = []
+  for (const plate of plates) {
+    const plateLabel = plate.barcode || t('navigation.projects.plate_fallback', { id: plate.id })
+    const dimensionLabel = formatPlateDimensionLabel(plate.dimension)
+    const routePlateId = plate.barcode || String(plate.id)
+
+    nodes.push({
+      label: `${plateLabel} (${dimensionLabel})`,
+      icon: 'i-heroicons-squares-2x2',
+      onSelect: () => navigateTo(`/plates/${encodeURIComponent(routePlateId)}`),
+    })
+  }
+
+  return nodes
 }
 
+/**
+ * Creates control-plate nodes for one project.
+ *
+ * Accepted data example:
+ * - `project = { id: 5, name: 'Screening', plates: [{ id: 2, barcode: 'CTRL-001' }] }`
+ *
+ * Returned data example:
+ * - `[{ label: 'Control plate: CTRL-001', icon: 'i-heroicons-squares-2x2', onSelect: () => void }]`
+ */
+const mapControlPlateNodes = (project: Project): NavigationTreeNode[] => {
+  // make an explicit array from optional project.plates.
+  const controlPlates = project.plates ? [...project.plates] : []
+
+  // sort by barcode for predictable order in the tree.
+  controlPlates.sort((leftPlate, rightPlate) => leftPlate.barcode.localeCompare(rightPlate.barcode))
+
+  // : create tree nodes.
+  const nodes: NavigationTreeNode[] = []
+  for (const plate of controlPlates) {
+    const plateLabel = plate.barcode || t('navigation.projects.plate_fallback', { id: plate.id })
+    const routePlateId = plate.barcode || String(plate.id)
+
+    nodes.push({
+      label: t('navigation.projects.control_plate', { barcode: plateLabel }),
+      icon: 'i-heroicons-squares-2x2',
+      onSelect: () => navigateTo(`/plates/${encodeURIComponent(routePlateId)}`),
+    })
+  }
+
+  return nodes
+}
+
+/**
+ * Creates experiment nodes (with plate children) for one project.
+ *
+ * Accepted data example:
+ * - `project = { id: 5, experiments: [{ id: 21, name: 'Dose response', plates: [] }] }`
+ *
+ * Returned data example:
+ * - `[{ label: 'Dose response', icon: 'i-heroicons-beaker', children: [] }]`
+ */
 const mapExperimentNodes = (project: Project): NavigationTreeNode[] => {
-  return (project.experiments ?? []).map((experiment) => ({
-    label: experiment.name || t('navigation.projects.experiment_fallback', { id: experiment.id }),
-    icon: 'i-heroicons-beaker',
-    onSelect: () => navigateTo(`/experiments/${experiment.id}`),
-    children: mapPlateNodes(experiment),
-  }))
+  const experiments = project.experiments ?? []
+  const nodes: NavigationTreeNode[] = []
+
+  for (const experiment of experiments) {
+    const experimentLabel = experiment.name || t('navigation.projects.experiment_fallback', { id: experiment.id })
+
+    nodes.push({
+      label: experimentLabel,
+      icon: 'i-heroicons-beaker',
+      onSelect: () => navigateTo(`/experiments/${experiment.id}`),
+      children: mapPlateNodes(experiment),
+    })
+  }
+
+  return nodes
 }
 
-const projectNodes = computed<NavigationTreeNode[]>(() =>
-  (projectsQuery.data.value ?? []).map((project) => ({
-    label: project.name || t('navigation.projects.project_fallback', { id: project.id }),
-    slot: 'project-node',
-    projectId: project.id,
-    projectName: project.name || t('navigation.projects.project_fallback', { id: project.id }),
-    icon: 'i-heroicons-document-text',
-    onSelect: () => navigateTo(`/projects/${project.id}`),
-    children: mapExperimentNodes(project),
-  })),
-)
+/**
+ * Builds all project children in the same order as legacy UI:
+ * 1. control plates
+ * 2. experiments
+ *
+ * Returned data example:
+ * - `[{ label: 'Control plate: CTRL-001' }, { label: 'Dose response' }]`
+ */
+const mapProjectChildNodes = (project: Project): NavigationTreeNode[] => {
+  const nodes: NavigationTreeNode[] = []
+
+  const controlPlateNodes = mapControlPlateNodes(project)
+  for (const node of controlPlateNodes) {
+    nodes.push(node)
+  }
+
+  const experimentNodes = mapExperimentNodes(project)
+  for (const node of experimentNodes) {
+    nodes.push(node)
+  }
+
+  return nodes
+}
+
+/**
+ * Creates first-level project nodes for UTree.
+ *
+ * Returned data example:
+ * - `[{ label: 'Screening 2026', projectId: 5, children: [...] }]`
+ */
+const projectNodes = computed<NavigationTreeNode[]>(() => {
+  const projects = projectsQuery.data.value ?? []
+  const nodes: NavigationTreeNode[] = []
+
+  for (const project of projects) {
+    const projectLabel = project.name || t('navigation.projects.project_fallback', { id: project.id })
+
+    nodes.push({
+      label: projectLabel,
+      slot: 'project-node',
+      projectId: project.id,
+      projectName: projectLabel,
+      icon: 'i-heroicons-document-text',
+      onSelect: () => navigateTo(`/projects/${project.id}`),
+      children: mapProjectChildNodes(project),
+    })
+  }
+
+  return nodes
+})
 
 const rawItems = computed<NavigationTreeNode[]>(() => [
   {
@@ -123,20 +228,25 @@ const filterTree = (items: NavigationTreeNode[], query: string): NavigationTreeN
   const q = query.trim().toLowerCase()
   if (!q) return items
 
-  return items
-    .map((item) => {
-      const children = item.children ? filterTree(item.children, q) : []
-      const selfMatch = item.label.toLowerCase().includes(q)
+  const filteredItems: NavigationTreeNode[] = []
 
-      if (!selfMatch && children.length === 0) return null
+  for (const item of items) {
+    const filteredChildren = item.children ? filterTree(item.children, q) : []
+    const selfMatches = item.label.toLowerCase().includes(q)
+    const hasMatchingChildren = filteredChildren.length > 0
 
-      return {
-        ...item,
-        children,
-        defaultExpanded: true,
-      }
+    if (!selfMatches && !hasMatchingChildren) {
+      continue
+    }
+
+    filteredItems.push({
+      ...item,
+      children: filteredChildren,
+      defaultExpanded: true,
     })
-    .filter((item): item is NavigationTreeNode => item !== null)
+  }
+
+  return filteredItems
 }
 
 const items = computed<NavigationTreeNode[]>(() => filterTree(rawItems.value, props.filter))
@@ -171,6 +281,13 @@ const getProjectContextMenuItems = (projectId: number, projectName: string) => [
       label: t('navigation.projects.actions.create_experiment'),
       icon: 'i-heroicons-plus-circle',
       onSelect: () => openCreateExperimentModal(projectId, projectName),
+    },
+  ],
+  [
+    {
+      label: t('navigation.projects.actions.select_control_layout'),
+      icon: 'i-heroicons-squares-2x2',
+      onSelect: () => navigateTo(`/layout/${projectId}`),
     },
   ],
 ]
