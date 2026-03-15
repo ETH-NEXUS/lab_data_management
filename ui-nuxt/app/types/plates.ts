@@ -97,6 +97,7 @@ export type PlateViewState = {
   showHeatmap: boolean
   smallerMapView: boolean
   heatmapPalette: PlatePaletteOption
+  perPlateView: boolean
   squareCompoundType: boolean
   plotView: boolean
   showStructure: boolean
