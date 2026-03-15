@@ -41,10 +41,12 @@
       "project_fallback": "Project {id}",
       "experiment_fallback": "Experiment {id}",
       "plate_fallback": "Plate {id}",
+      "control_plate": "Control plate: {barcode}",
       "no_dimension": "No dimension",
       "actions": {
         "create_project": "Create project",
-        "create_experiment": "Create experiment"
+        "create_experiment": "Create experiment",
+        "select_control_layout": "Select control layout"
       }
     }
   },
@@ -71,7 +73,17 @@
     },
     "experiments_card": {
       "title": "Experiments",
-      "placeholder": "Experiment merge/actions UI will be migrated next."
+      "description": "Select plates from one or more experiments and move them into a target experiment.",
+      "no_experiments": "No experiments found in this project.",
+      "no_plates": "No plates in this experiment.",
+      "choose_experiment": "Choose target experiment",
+      "select_experiment_placeholder": "Select experiment",
+      "selected_plates_count": "Selected plates: {count}",
+      "move_button": "Move plates to experiment",
+      "select_plate_warning": "Please select at least one plate.",
+      "select_experiment_warning": "Please choose a target experiment.",
+      "move_success": "Plates moved.",
+      "move_failed": "Failed to move plates."
     },
     "edit_modal": {
       "title_name": "Edit project name",
@@ -176,12 +188,48 @@
   "plates": {
     "page": {
       "title": "Plate {id}",
+      "loading": "Loading plate...",
+      "not_found": "Plate not found.",
       "splitter_hint": "Drag the center divider to resize plate and details panels.",
       "splitter_position": "Left panel width: {value}%",
       "left_title": "Plate View",
+      "left_description": "Interactive dynamic plate view.",
       "left_placeholder": "Dynamic plate visualization will be migrated here next.",
       "right_title": "Well Details",
+      "right_description": "Selected well information and actions.",
+      "well": {
+        "position": "Position",
+        "hr_position": "HR Position",
+        "type": "Type",
+        "status": "Status",
+        "amount": "Amount"
+      },
       "right_placeholder": "Well details and editing panel will be migrated here next."
+    },
+    "dynamic": {
+      "settings": {
+        "smaller_map_view": "Smaller map view",
+        "show_wells_as_squares": "Show wells as squares"
+      },
+      "legend": {
+        "aria": "Heatmap color legend"
+      },
+      "stats": {
+        "z_prime": "z':",
+        "ssmd": "ssmd:"
+      },
+      "controls": {
+        "positive_control": "Positive control",
+        "negative_control": "Negative control",
+        "well_content": "Well content",
+        "show_heatmap": "Show heatmap",
+        "select_label": "Select label",
+        "select_timestamp": "Select timestamp",
+        "select_color_palette": "Select color palette",
+        "hr_position": "HR Position",
+        "well_type": "Well Type",
+        "index_position": "Index Position"
+      }
     }
   },
   "messages_page": {
@@ -217,5 +265,64 @@
       "in_progress": "Recalculating status",
       "in_progress_description": "Recalculating library plate status. This can take some time."
     }
+  },
+  "title": {
+    "status": "Status",
+    "amount_dmso": "Amount / DMSO",
+    "compounds": "Compounds",
+    "measurements": "Measurements",
+    "withdrawals": "Withdrawals",
+    "donors": "Donors",
+    "chain": "Chain"
+  },
+  "action": {
+    "mark_as_invalid": "Mark as invalid",
+    "mark_as_valid": "Mark as valid",
+    "delete_well": "Delete well",
+    "add_compound": "Add compound",
+    "add_measurement": "Add measurement",
+    "create_well": "Create well"
+  },
+  "label": {
+    "name": "Name",
+    "initial_amount": "Initial amount",
+    "structure": "Structure",
+    "label": "Label",
+    "timestamp": "Timestamp",
+    "value": "Value",
+    "amount": "Amount",
+    "target_well": "Target well",
+    "source_well": "Source well",
+    "compound": "Compound",
+    "well": "Well",
+    "measurement_feature": "Measurement feature",
+    "position": "Position",
+    "plot_view": "Plot view",
+    "cancel": "Cancel",
+    "add": "Add",
+    "compounds": "Compounds",
+    "measurements": "Measurements"
+  },
+  "message": {
+    "no_well_information": "No well information",
+    "no_compounds_found": "No compounds found",
+    "no_wells_found": "No wells found",
+    "no_measurement_feature_found": "No measurement feature found"
+  },
+  "hint": {
+    "compound_to_add": "Compound to add",
+    "well_to_transfer_from": "Well to transfer from",
+    "amount_to_transfer": "Amount to transfer",
+    "measurement_feature": "Measurement feature",
+    "measurement_value": "Measurement value"
+  },
+  "unit": {
+    "mikro": "µL",
+    "nL": "nL",
+    "amount": "nL"
+  },
+  "well": {
+    "current_amount": "Current amount",
+    "current_dmso": "Current DMSO"
   }
 }
