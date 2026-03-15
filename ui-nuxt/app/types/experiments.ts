@@ -1,4 +1,4 @@
-import type { BarcodeSpecification, ExperimentDetails, Plate } from '~/types/lab'
+import type { BarcodeSpecification, ExperimentDetails, Plate, PlateInfo } from '~/types/lab'
 
 /**
  * Minimal experiment model used by list/detail queries and store updates.
@@ -27,6 +27,10 @@ export const EXPERIMENT_CREATE_ERROR_MESSAGE = 'Failed to create experiment.'
 export const EXPERIMENT_UPDATE_ERROR_MESSAGE = 'Failed to update experiment.'
 export const EXPERIMENT_BARCODE_CREATE_ERROR_MESSAGE = 'Failed to create barcode specification.'
 export const EXPERIMENT_BARCODE_DELETE_ERROR_MESSAGE = 'Failed to delete barcode specification.'
+export const EXPERIMENT_PREFILL_PLATE_INFO_ERROR_MESSAGE = 'Failed to load prefilled plate info.'
+export const EXPERIMENT_SAVE_PLATE_INFO_ERROR_MESSAGE = 'Failed to save plate info.'
+export const EXPERIMENT_ADD_MEASUREMENT_ERROR_MESSAGE = 'Failed to add new measurement.'
+export const EXPERIMENT_PLATES_FETCH_ERROR_MESSAGE = 'Failed to load experiment plates.'
 
 /**
  * Query key helper for one experiment.
@@ -82,4 +86,16 @@ export type CreateBarcodeSpecificationPayload = {
   prefix: string
   number_of_plates: number
   sides: BarcodeSide[]
+}
+
+/**
+ * Request payload for saving edited experiment plate metadata rows.
+ *
+ * Accepted payload examples:
+ * - `{ experiment_id: 21, plate_info: [{ measurement_label: 'OD600', measurement_timestamp: ['2026-01-01T00:00:00Z'], plate_barcode: 'A001', lib_plate_barcode: 'LIB-1', replicate: '1', cell_type: 'HeLa', condition: 'Control' }] }`
+ * - `{ experiment_id: 22, plate_info: [] }`
+ */
+export type SavePlateInfoPayload = {
+  experiment_id: number
+  plate_info: PlateInfo[]
 }
