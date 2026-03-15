@@ -94,7 +94,7 @@ class MappingList:
         """returns a one_to_one mapping for n_pos positions"""
         mappings = cls()
         for p in range(n_pos):
-            print("adding mapping", p)
+            # print("adding mapping", p)
             mappings.add(Mapping(p, p, amount, map_type=map_type))
         return mappings
 
