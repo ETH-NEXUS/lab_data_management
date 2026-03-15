@@ -116,7 +116,10 @@
   "experiments": {
     "page": {
       "loading": "Loading experiment...",
-      "not_found": "Experiment not found."
+      "not_found": "Experiment not found.",
+      "add_experiment_data": "Add Experiment Data",
+      "add_measurement": "Add measurement",
+      "generate_report": "Generate report"
     },
     "header": {
       "title": "Experiment: {experimentName}",
@@ -183,6 +186,56 @@
         "created": "Barcode specification created",
         "create_failed": "Failed to create barcode specification"
       }
+    },
+    "add_data": {
+      "title": "Add Experiment Data",
+      "invalid_experiment_id": "Invalid experiment id in route.",
+      "loading": "Loading prefilled experiment data...",
+      "empty": "No prefilled rows found.",
+      "save_button": "Save",
+      "download_csv": "Download CSV",
+      "save_success": "Data saved successfully.",
+      "save_failed": "Error saving data."
+    },
+    "measurement_calculator": {
+      "title": "Measurement Calculator",
+      "description": "Build a formula and create a new measurement label.",
+      "labels_all_series": "Calculate on all time series points",
+      "labels_separate_series": "Calculate on separate time series points",
+      "new_measurement_name_label": "New measurement name",
+      "new_measurement_name_placeholder": "Enter new measurement name",
+      "apply_button": "Apply",
+      "success_saved": "Measurement has been added.",
+      "error_calculation_failed": "Failed to calculate measurement.",
+      "error_enter_name": "Please enter a name for the new measurement.",
+      "error_use_different_name": "Please use a different name for the new measurement.",
+      "error_use_existing_measurement": "Please use at least one existing measurement.",
+      "error_mixed_series_selection": "Please calculate either on all time series labels or on separate time series labels. They cannot be combined."
+    },
+    "results": {
+      "show_results": "Show results",
+      "loading": "Loading experiment results...",
+      "no_plates": "No plates found for this experiment.",
+      "save_controls": "Save controls",
+      "controls_saved": "The controls have been saved. They will be used in the report.",
+      "controls_missing": "Please select both controls."
+    },
+    "reports": {
+      "modal_title": "Generate Report",
+      "modal_description": "Select a notebook template and measurement label.",
+      "notebook_template_label": "Notebook Template",
+      "notebook_template_placeholder": "Select notebook template",
+      "measurement_label": "Measurement label",
+      "measurement_placeholder": "Select measurement label",
+      "generate_button": "Generate",
+      "available_reports": "Available reports",
+      "loading_reports": "Loading available reports...",
+      "controls_required": "Please come back and save positive and negative controls in the \"Show results\" section.",
+      "select_template_error": "Please select a notebook template to generate a report from.",
+      "select_label_error": "Please select a measurement label to generate a report for.",
+      "generated_success": "Report generation has started.",
+      "generate_failed": "Failed to generate report.",
+      "download_failed": "Failed to download report."
     }
   },
   "plates": {
@@ -209,7 +262,8 @@
     "dynamic": {
       "settings": {
         "smaller_map_view": "Smaller map view",
-        "show_wells_as_squares": "Show wells as squares"
+        "show_wells_as_squares": "Show wells as squares",
+        "per_plate_view": "Per plate view"
       },
       "legend": {
         "aria": "Heatmap color legend"
