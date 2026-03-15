@@ -138,8 +138,8 @@ const gridTemplateColumns = computed(() => `${leftPercent.value.toFixed(2)}% ${p
 </script>
 
 <template>
-  <section ref="containerRef" class="grid h-full w-full overflow-hidden" :style="{ gridTemplateColumns }">
-    <div class="min-w-0 overflow-auto">
+  <section ref="containerRef" class="grid h-dvh w-full" :style="{ gridTemplateColumns }">
+    <div class="min-w-0">
       <slot name="left" />
     </div>
 
@@ -153,11 +153,11 @@ const gridTemplateColumns = computed(() => `${leftPercent.value.toFixed(2)}% ${p
     >
       <div class="pointer-events-none absolute inset-y-0 left-1/2 w-[1px] -translate-x-1/2 bg-black/35" />
       <div
-        class="pointer-events-none absolute left-1/2 top-1/2 h-12 w-[2px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-teal-900/30 transition-colors group-hover:bg-teal-900/60"
+        class="pointer-events-none absolute top-1/2 left-1/2 h-12 w-[2px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-teal-900/30 transition-colors group-hover:bg-teal-900/60"
       />
     </div>
 
-    <div class="min-w-0 overflow-auto">
+    <div class="min-w-0">
       <slot name="right" />
     </div>
   </section>
