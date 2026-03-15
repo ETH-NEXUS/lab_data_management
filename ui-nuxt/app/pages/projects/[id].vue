@@ -4,6 +4,7 @@ import { useQueryClient } from '@tanstack/vue-query'
 import { useProjectQuery } from '~/composables/useProjectsQuery'
 import { useHarvestStore } from '~/stores/harvest'
 import { getProjectQueryKey, PROJECTS_QUERY_KEY } from '~/types/projects'
+import { EXPERIMENTS_QUERY_KEY } from '~/types/experiments'
 import { formatDateTime } from '~/utils/dateTime'
 import { getErrorMessage } from '~/utils/errors'
 import ProjectHeader from 'components/projects/ProjectHeader.vue'
@@ -48,6 +49,7 @@ const invalidateProjectQueries = async () => {
   await Promise.all([
     queryClient.invalidateQueries({ queryKey: getProjectQueryKey(projectId.value) }),
     queryClient.invalidateQueries({ queryKey: PROJECTS_QUERY_KEY }),
+    queryClient.invalidateQueries({ queryKey: EXPERIMENTS_QUERY_KEY }),
   ])
 }
 
@@ -60,6 +62,10 @@ const openEditModal = (field: 'name' | 'description') => {
 }
 
 const onProjectSaved = async () => {
+  await invalidateProjectQueries()
+}
+
+const onExperimentsMerged = async () => {
   await invalidateProjectQueries()
 }
 
@@ -106,7 +112,7 @@ const updateHarvestInfo = async () => {
         @update-harvest="updateHarvestInfo"
       />
 
-      <ProjectExperimentsCard />
+      <ProjectExperimentsCard :project="project" @moved="onExperimentsMerged" />
 
       <ProjectEditModal
         v-model:open="isEditModalOpen"
