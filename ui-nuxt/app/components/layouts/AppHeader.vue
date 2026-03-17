@@ -1,17 +1,15 @@
 <script setup lang="ts">
-import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import { useQueryClient } from '@tanstack/vue-query'
 import { useAPI } from '~/composables/useAPI'
 import { useAuthStore } from '~/stores/auth'
 import { PROJECTS_QUERY_KEY } from '~/types/projects'
 
 type Props = {
-  transparent?: boolean
   drawerOpen?: boolean
 }
 
 const props = withDefaults(defineProps<Props>(), {
-  transparent: false,
   drawerOpen: false,
 })
 
@@ -24,13 +22,45 @@ const queryClient = useQueryClient()
 const toast = useToast()
 const { t } = useI18n()
 const runtimeConfig = useRuntimeConfig()
+const route = useRoute()
 
-const scrolled = ref(false)
 const version = ref('N/A')
 const isRefreshing = ref(false)
 
-const onScroll = () => {
-  scrolled.value = window.scrollY > 8
+const iconButtonClass =
+  'inline-flex h-10 w-10 cursor-pointer items-center justify-center rounded-xl border border-white/30 text-white transition hover:border-white/70 hover:bg-white/20'
+const iconButtonDisabledClass = 'disabled:cursor-not-allowed disabled:opacity-60'
+const menuButtonClass =
+  'inline-flex h-10 w-10 cursor-pointer items-center justify-center rounded-xl border border-white/40 text-white transition hover:border-white/80 hover:bg-white/20'
+
+const navLinks = computed(() => [
+  { label: 'Projects', to: '/projects' },
+  { label: 'Experiments', to: '/experiments' },
+  { label: t('app.header.messages'), to: '/messages' },
+  { label: 'Management', to: '/management' },
+])
+
+/**
+ * Checks if a navigation item is active for prefixed and nested routes.
+ *
+ * Accepted data examples:
+ * - `{ routePath: '/projects', to: '/projects' }`
+ * - `{ routePath: '/en/projects/42', to: '/projects' }`
+ *
+ * Returned examples:
+ * - `true`
+ * - `false`
+ */
+const isNavActive = (to: string): boolean => {
+  return route.path === to || route.path.endsWith(to) || route.path.includes(`${to}/`)
+}
+
+const navLinkClass = (to: string): string => {
+  if (isNavActive(to)) {
+    return 'inline-flex rounded-full bg-white px-4 py-2 text-xs font-semibold tracking-[0.12em] text-blue-700 uppercase transition'
+  }
+
+  return 'inline-flex rounded-full border border-white/35 bg-white/12 px-4 py-2 text-xs font-semibold tracking-[0.12em] text-white uppercase transition hover:border-blue-100 hover:bg-white hover:text-blue-700'
 }
 
 const loadVersion = async () => {
@@ -41,13 +71,7 @@ const loadVersion = async () => {
 }
 
 onMounted(async () => {
-  onScroll()
-  window.addEventListener('scroll', onScroll, { passive: true })
   await loadVersion()
-})
-
-onBeforeUnmount(() => {
-  window.removeEventListener('scroll', onScroll)
 })
 
 const displayName = computed(() => {
@@ -152,21 +176,19 @@ const dropdownItems = computed(() => [
 </script>
 
 <template>
-  <header
-    class="sticky top-0 z-50 w-full border-b transition-all duration-300"
-    :class="[
-      props.transparent
-        ? scrolled
-          ? 'border-black/5 bg-white/70 backdrop-blur'
-          : 'border-transparent bg-transparent'
-        : 'border-black/5 bg-white',
-    ]"
-  >
-    <div class="mx-auto h-16 w-full px-4">
-      <div class="flex h-full items-center justify-between">
+  <header class="sticky top-0 z-50 w-full shadow-md">
+    <div class="border-b border-blue-400/70 bg-blue-600">
+      <div class="mx-auto flex h-8 w-full items-center justify-center px-3">
+        <UIcon name="i-heroicons-sparkles" class="mr-2 h-3.5 w-3.5 text-blue-50" />
+        <p class="text-[11px] font-semibold tracking-[0.12em] text-blue-50 uppercase">Refresh to sync latest data.</p>
+      </div>
+    </div>
+
+    <nav class="app-nav-surface border-b border-blue-300/60">
+      <div class="mx-auto flex h-16 w-full items-center justify-between gap-3 px-3 sm:px-4 lg:px-6">
         <div class="flex items-center gap-2">
           <button
-            class="inline-flex h-9 w-9 cursor-pointer items-center justify-center rounded-md transition hover:bg-teal-900/10"
+            :class="menuButtonClass"
             aria-label="Toggle navigation"
             aria-controls="app-navigation-drawer"
             :aria-expanded="props.drawerOpen ? 'true' : 'false'"
@@ -177,15 +199,31 @@ const dropdownItems = computed(() => [
           </button>
 
           <button
-            class="cursor-pointer text-lg font-semibold text-teal-900 transition hover:text-teal-700"
+            class="cursor-pointer text-sm font-semibold tracking-[0.08em] text-white uppercase transition hover:text-blue-50 sm:text-base"
             type="button"
             @click="goHome"
           >
             {{ t('app.header.title') }}
           </button>
+        </div>
+
+        <ul class="hidden items-center gap-2 xl:flex">
+          <li v-for="link in navLinks" :key="link.to">
+            <NuxtLink :to="link.to" :class="navLinkClass(link.to)">
+              {{ link.label }}
+            </NuxtLink>
+          </li>
+        </ul>
+
+        <div class="flex items-center gap-2">
+          <span
+            class="hidden rounded-full bg-white/18 px-3 py-1 text-[11px] font-semibold tracking-[0.12em] text-blue-50 uppercase 2xl:inline-flex"
+          >
+            v{{ version }}
+          </span>
 
           <button
-            class="inline-flex h-9 w-9 cursor-pointer items-center justify-center rounded-md transition hover:bg-teal-900/10 disabled:cursor-not-allowed"
+            :class="[iconButtonClass, iconButtonDisabledClass]"
             :aria-label="t('app.header.refresh')"
             :disabled="isRefreshing"
             type="button"
@@ -193,19 +231,8 @@ const dropdownItems = computed(() => [
           >
             <UIcon name="i-heroicons-arrow-path" :class="['h-5 w-5', isRefreshing && 'animate-spin']" />
           </button>
-        </div>
 
-        <div class="flex items-center gap-3">
-          <span v-if="authStore.isAuthenticated" class="hidden text-sm font-medium text-teal-900 md:inline">
-            {{ displayName }}
-          </span>
-
-          <button
-            class="inline-flex h-9 w-9 cursor-pointer items-center justify-center rounded-md transition hover:bg-teal-900/10"
-            :aria-label="t('app.header.messages')"
-            type="button"
-            @click="goMessages"
-          >
+          <button :class="iconButtonClass" :aria-label="t('app.header.messages')" type="button" @click="goMessages">
             <UIcon name="i-heroicons-flag" class="h-5 w-5" />
           </button>
 
@@ -215,16 +242,16 @@ const dropdownItems = computed(() => [
             :content="{ side: 'bottom', align: 'end' }"
             :ui="{ content: 'z-[9999]', item: 'cursor-pointer', label: 'cursor-pointer' }"
           >
-            <button
-              class="inline-flex h-9 w-9 cursor-pointer items-center justify-center rounded-md transition hover:bg-teal-900/10"
-              aria-label="User menu"
-              type="button"
-            >
+            <button :class="iconButtonClass" aria-label="User menu" type="button">
               <UIcon name="i-heroicons-user" class="h-5 w-5" />
             </button>
           </UDropdownMenu>
+
+          <span v-if="authStore.isAuthenticated" class="hidden text-sm font-medium text-blue-50 2xl:inline">
+            {{ displayName }}
+          </span>
         </div>
       </div>
-    </div>
+    </nav>
   </header>
 </template>

@@ -1,0 +1,3 @@
+- [x] Step 1: Add shared core-card style primitives for the new reference pattern
+- [x] Step 2: Apply the core-card style to project and experiment cards
+- [x] Step 3: Apply the core-card style to message cards and run eslint on touched files

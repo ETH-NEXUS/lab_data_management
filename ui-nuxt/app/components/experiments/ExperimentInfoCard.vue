@@ -27,7 +27,7 @@ const platesCount = computed(() => props.experiment.plates?.length ?? 0)
   <UCard
     class="mx-auto w-[80%]"
     :ui="{
-      root: 'border border-white/40 bg-white/30 backdrop-blur-md shadow-sm divide-y divide-white/20',
+      root: 'core-card divide-y divide-slate-200/70',
     }"
   >
     <div class="space-y-4">

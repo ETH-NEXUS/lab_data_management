@@ -7,6 +7,7 @@ type ApiRequestOptions = {
   headers?: Record<string, string>
   body?: unknown
   params?: Record<string, string>
+  responseType?: 'json' | 'text' | 'blob' | 'arrayBuffer'
 }
 
 /**

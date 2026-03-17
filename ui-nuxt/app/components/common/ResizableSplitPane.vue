@@ -6,6 +6,7 @@ type Props = {
   minLeftPercent?: number
   maxLeftPercent?: number
   dividerWidth?: number
+  hideRightPane?: boolean
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -13,6 +14,7 @@ const props = withDefaults(defineProps<Props>(), {
   minLeftPercent: 25,
   maxLeftPercent: 75,
   dividerWidth: 4,
+  hideRightPane: false,
 })
 
 const emit = defineEmits<{
@@ -45,6 +47,15 @@ watch(
     leftPercent.value = clampPercent(value)
   },
   { immediate: true },
+)
+
+watch(
+  () => props.hideRightPane,
+  (isHidden) => {
+    if (isHidden) {
+      stopDragging()
+    }
+  },
 )
 
 /**
@@ -134,7 +145,13 @@ onBeforeUnmount(() => {
   stopDragging()
 })
 
-const gridTemplateColumns = computed(() => `${leftPercent.value.toFixed(2)}% ${props.dividerWidth}px minmax(0, 1fr)`)
+const gridTemplateColumns = computed(() => {
+  if (props.hideRightPane) {
+    return 'minmax(0, 1fr)'
+  }
+
+  return `${leftPercent.value.toFixed(2)}% ${props.dividerWidth}px minmax(0, 1fr)`
+})
 </script>
 
 <template>
@@ -144,6 +161,7 @@ const gridTemplateColumns = computed(() => `${leftPercent.value.toFixed(2)}% ${p
     </div>
 
     <div
+      v-if="!props.hideRightPane"
       role="separator"
       aria-orientation="vertical"
       tabindex="0"
@@ -157,7 +175,7 @@ const gridTemplateColumns = computed(() => `${leftPercent.value.toFixed(2)}% ${p
       />
     </div>
 
-    <div class="min-w-0">
+    <div v-if="!props.hideRightPane" class="min-w-0">
       <slot name="right" />
     </div>
   </section>

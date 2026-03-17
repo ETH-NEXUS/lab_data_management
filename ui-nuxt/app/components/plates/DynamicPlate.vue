@@ -18,6 +18,7 @@ import {
 
 const props = defineProps<{
   plate: Plate
+  minimalView?: boolean
 }>()
 
 const emit = defineEmits<{
@@ -27,6 +28,7 @@ const emit = defineEmits<{
 
 const { t } = useI18n()
 const plateViewStore = usePlateViewStore()
+const isMinimalView = computed(() => props.minimalView === true)
 
 const measurementOptions = computed<string[]>(() => plateViewStore.measurementOptions ?? [])
 const timestampOptions = computed(() => getTimestampOptions(props.plate, plateViewStore.selectedMeasurement))
@@ -115,19 +117,19 @@ const onWellSelected = (wellInfo: WellInfo): void => {
 
 <template>
   <section>
-    <HeatMapSettings />
+    <HeatMapSettings v-if="!isMinimalView" />
 
     <div class="flex flex-nowrap gap-4">
       <div class="min-w-0 overflow-auto">
         <PlateTable :plate="props.plate" :min="minMax.min" :max="minMax.max" @well-selected="onWellSelected" />
       </div>
 
-      <ColorLegend :min="minMax.min" :max="minMax.max" />
+      <ColorLegend v-if="!isMinimalView" :min="minMax.min" :max="minMax.max" />
     </div>
 
-    <PlateStats v-if="ssmd !== null && zPrime !== null" :ssmd="ssmd" :z-prime="zPrime" />
+    <PlateStats v-if="!isMinimalView && ssmd !== null && zPrime !== null" :ssmd="ssmd" :z-prime="zPrime" />
 
-    <div v-if="measurementOptions.length > 0" class="mt-5 grid grid-cols-1 gap-4 lg:grid-cols-2">
+    <div v-if="!isMinimalView && measurementOptions.length > 0" class="mt-5 grid grid-cols-1 gap-4 lg:grid-cols-2">
       <div>
         <label class="mb-1 block pl-1 text-sm font-medium text-slate-700">
           {{ t('plates.dynamic.controls.positive_control') }}
@@ -157,7 +159,7 @@ const onWellSelected = (wellInfo: WellInfo): void => {
       </div>
     </div>
 
-    <div v-if="!props.plate.template" class="mt-6 grid grid-cols-1 gap-4 lg:grid-cols-2">
+    <div v-if="isMinimalView || !props.plate.template" class="mt-6 grid grid-cols-1 gap-4 lg:grid-cols-2">
       <div>
         <label class="mb-1 block pl-1 text-sm font-medium text-slate-700">
           {{ t('plates.dynamic.controls.well_content') }}
@@ -172,7 +174,7 @@ const onWellSelected = (wellInfo: WellInfo): void => {
         </select>
       </div>
 
-      <div v-if="measurementOptions.length > 0">
+      <div v-if="!isMinimalView && measurementOptions.length > 0">
         <label class="inline-flex cursor-pointer items-center gap-2 text-sm text-slate-700">
           <input v-model="plateViewStore.showHeatmap" type="checkbox" class="cursor-pointer" />
           <span>{{ t('plates.dynamic.controls.show_heatmap') }}</span>

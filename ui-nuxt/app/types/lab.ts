@@ -197,6 +197,8 @@ export interface Plate {
   experiment?: number | IdName | null
   library?: number | IdName | null
   template?: number | IdName | null
+  is_control_plate?: boolean
+  use_as_template_to_select?: boolean
   archived?: boolean
   status?: string
 }

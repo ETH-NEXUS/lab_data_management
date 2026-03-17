@@ -37,15 +37,15 @@ const isRunning = ref(false)
  */
 const variantClassMap: Record<ButtonVariant, string> = {
   primary:
-    'text-white hover:text-green-900 border border-green-900 hover:border-green-600 bg-green-900 hover:bg-green-600',
+    'border border-[var(--app-accent)] bg-[var(--app-accent)] text-white hover:border-[var(--app-accent-hover)] hover:bg-[var(--app-accent-hover)]',
   secondary:
-    'text-slate-700 hover:text-slate-900 border border-slate-300 hover:border-slate-400 bg-white hover:bg-slate-100',
-  info: 'text-white hover:text-blue-900 border border-blue-700 hover:border-blue-500 bg-blue-700 hover:bg-blue-500',
-  danger: 'text-white hover:text-red-900 border border-red-700 hover:border-red-500 bg-red-700 hover:bg-red-500',
+    'border border-[var(--app-border)] bg-[var(--app-surface)] text-[var(--app-text-primary)] hover:bg-[var(--app-surface-muted)]',
+  info: 'border border-blue-700 bg-blue-700 text-white hover:border-blue-600 hover:bg-blue-600',
+  danger: 'border border-red-700 bg-red-700 text-white hover:border-red-600 hover:bg-red-600',
   accent:
-    'text-slate-900 hover:text-slate-900 border border-lime-500 hover:border-lime-400 bg-[#BEF264] hover:bg-lime-300',
+    'border border-amber-400 bg-amber-300 text-slate-900 hover:border-amber-300 hover:bg-amber-200',
   outline:
-    'uppercase tracking-wide text-slate-700 border border-transparent bg-transparent hover:bg-slate-100 hover:border-slate-200',
+    'border border-transparent bg-transparent uppercase tracking-wide text-[var(--app-text-muted)] hover:border-[var(--app-border)] hover:bg-[var(--app-surface)]',
 }
 
 const sizeClassMap: Record<ButtonSize, string> = {
@@ -71,7 +71,7 @@ const handleClick = async () => {
 
 const buttonClass = computed(() => {
   return [
-    'inline-flex items-center justify-center font-medium rounded-full transition duration-200 disabled:opacity-60 disabled:cursor-not-allowed',
+    'inline-flex items-center justify-center rounded-xl font-medium transition duration-200 disabled:cursor-not-allowed disabled:opacity-60',
     variantClassMap[props.variant],
     sizeClassMap[props.size],
     widthClassMap[props.width],
@@ -83,6 +83,7 @@ const showSpinner = computed(() => props.loading || isRunning.value)
 const spinnerClass = computed(() => (props.size === 'sm' ? 'h-4 w-4' : 'h-5 w-5'))
 const spinnerColorClass = computed(() => {
   if (props.variant === 'secondary' || props.variant === 'outline') return 'border-slate-500/70'
+  if (props.variant === 'accent') return 'border-slate-700/70'
   return 'border-white/70'
 })
 </script>

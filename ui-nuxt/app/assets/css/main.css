@@ -1,6 +1,164 @@
 @import "tailwindcss";
 @import "@nuxt/ui";
 
+/*
+  Global color tokens for the new neutral layout style.
+  These variables are shared by layouts and base UI components.
+*/
+:root {
+  --app-bg: #f2f3f5;
+  --app-surface: #ffffff;
+  --app-surface-muted: #e7ebf1;
+  --app-border: #d5dbe5;
+  --app-text-primary: #111827;
+  --app-text-muted: #475569;
+  --app-accent: #2563eb;
+  --app-accent-hover: #1d4ed8;
+  --app-accent-soft: #dbeafe;
+  --app-warm: #f59e0b;
+}
+
+body {
+  background: var(--app-bg);
+  color: var(--app-text-primary);
+}
+
+/*
+  Core card primitives for the new reference layout style.
+
+  Card content shape example:
+  { title: 'Project workspace overview', dateLabel: '15 May 2026', tagLabel: 'Projects', imageUrl: '/assets/example.png' }
+*/
+@layer components {
+  .core-card {
+    position: relative;
+    overflow: hidden;
+    border-radius: 1.25rem;
+    border: 1px solid #dbe4ff;
+    background: #ffffff;
+    box-shadow: 0 20px 48px rgb(30 64 175 / 12%);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+  }
+
+  .core-card::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 50%;
+    width: 10rem;
+    height: 2px;
+    transform: translateX(-50%);
+    background: #93c5fd;
+    transition: background-color 0.2s ease;
+  }
+
+  .core-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 24px 56px rgb(30 64 175 / 16%);
+  }
+
+  .core-card:hover::before {
+    background: #fb923c;
+  }
+
+  .core-card-meta {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .core-card-date {
+    font-size: 0.75rem;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: #60a5fa;
+  }
+
+  .core-card-tag {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 0.625rem;
+    border: 1px solid #e2e8f0;
+    background: #ffffff;
+    padding: 0.4rem 0.8rem;
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: #64748b;
+    transition: color 0.2s ease, border-color 0.2s ease;
+  }
+
+  .core-card:hover .core-card-tag {
+    border-color: #fdba74;
+    color: #ea580c;
+  }
+
+  .core-card-split {
+    display: grid;
+    gap: 0;
+  }
+
+  .core-card-media {
+    position: relative;
+    min-height: 10rem;
+    background: linear-gradient(140deg, #dbeafe 0%, #eff6ff 100%);
+  }
+
+  .core-card-media > img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  .core-card-body {
+    padding: 1rem 1rem 1.25rem;
+  }
+
+  .core-card-title {
+    font-size: 1.125rem;
+    line-height: 1.4;
+    font-weight: 700;
+    color: #0f172a;
+  }
+
+  .core-card-text {
+    margin-top: 0.5rem;
+    font-size: 0.875rem;
+    line-height: 1.5;
+    color: #475569;
+  }
+
+  .app-nav-surface {
+    background-image: linear-gradient(to right, #3b82f6, #3b82f6, #60a5fa), url('../cta-lines2.svg');
+    background-position: center, center;
+    background-repeat: no-repeat, repeat-x;
+    background-size: 100% 100%, auto 100%;
+  }
+
+  @media (min-width: 1024px) {
+    .core-card::before {
+      width: 11rem;
+    }
+
+    .core-card-split {
+      grid-template-columns: 34% 66%;
+      min-height: 17rem;
+    }
+
+    .core-card-body {
+      padding: 1.5rem 1.75rem 1.5rem;
+    }
+
+    .core-card-title {
+      font-size: 1.35rem;
+    }
+  }
+}
+
 /* Markdown content styling */
 .markdown-content h1 {
   @apply mt-4 mb-4 border-b border-gray-300 pb-2 text-2xl font-bold dark:border-gray-700;

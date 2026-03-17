@@ -41,7 +41,7 @@ const drawerStyle = computed(() => ({
   <!-- Backdrop (mobile) -->
   <div
     v-if="props.open"
-    class="fixed inset-x-0 bottom-0 z-30 bg-black/30 md:hidden"
+    class="fixed inset-x-0 bottom-0 z-30 bg-slate-900/30 md:hidden"
     :style="{ top: `${props.topOffset}px` }"
     @click="onBackdrop"
   />
@@ -49,7 +49,7 @@ const drawerStyle = computed(() => ({
   <!-- Drawer -->
   <aside
     id="app-navigation-drawer"
-    class="fixed left-0 z-40 shrink-0 border-r border-white/40 bg-white/30 backdrop-blur-md transition-transform duration-200 ease-out md:translate-x-0"
+    class="fixed left-0 z-40 shrink-0 border-r border-[var(--app-border)] bg-[var(--app-surface)]/95 shadow-[8px_0_30px_rgba(15,23,42,0.08)] backdrop-blur-xl transition-transform duration-200 ease-out md:translate-x-0"
     :style="drawerStyle"
     :class="[props.open ? 'translate-x-0' : '-translate-x-full']"
   >

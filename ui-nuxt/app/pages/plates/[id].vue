@@ -42,6 +42,23 @@ const pageTitle = computed(() => {
   return t('plates.page.title', { id: formatPlateBarcodeLabel(barcode) })
 })
 
+/**
+ * Minimal view is used for library/control plates:
+ * - library plate: `plate.library` is set
+ * - control plate: `plate.is_control_plate` or `plate.use_as_template_to_select` is true
+ */
+const shouldUseMinimalDynamicPlateView = computed(() => {
+  const plate = plateStore.currentPlate
+  if (!plate) {
+    return false
+  }
+
+  const isLibraryPlate = plate.library !== null && plate.library !== undefined
+  const isControlPlate = plate.is_control_plate === true || plate.use_as_template_to_select === true
+
+  return isLibraryPlate || isControlPlate
+})
+
 const loadPlatePage = async (): Promise<void> => {
   const barcode = plateRouteBarcode.value
   if (!barcode || barcode === '-') return
@@ -85,6 +102,10 @@ const refreshSelectedWell = async (wellId: number | undefined) => {
 const measurementAdded = async (well: WellInfo['well']) => {
   await refreshSelectedWell(well?.id)
 }
+
+const hasSelectedWell = computed(() => {
+  return Boolean(plateViewStore.selectedWellInfo)
+})
 </script>
 
 <template>
@@ -94,6 +115,7 @@ const measurementAdded = async (well: WellInfo['well']) => {
       :min-left-percent="PLATE_PAGE_MIN_LEFT_PERCENT"
       :max-left-percent="PLATE_PAGE_MAX_LEFT_PERCENT"
       :divider-width="3"
+      :hide-right-pane="!hasSelectedWell"
     >
       <template #left>
         <div class="h-full p-4">
@@ -125,6 +147,7 @@ const measurementAdded = async (well: WellInfo['well']) => {
             <DynamicPlate
               v-else
               :plate="plateStore.currentPlate"
+              :minimal-view="shouldUseMinimalDynamicPlateView"
               @well-selected="onWellSelected"
               @refresh="loadPlatePage"
             />

@@ -28,7 +28,9 @@
       "cancel": "Cancel",
       "save": "Save",
       "create": "Create",
-      "update": "Update"
+      "update": "Update",
+      "delete": "Delete",
+      "close": "Close"
     }
   },
   "navigation": {
@@ -47,6 +49,62 @@
         "create_project": "Create project",
         "create_experiment": "Create experiment",
         "select_control_layout": "Select control layout"
+      }
+    },
+    "libraries": {
+      "title": "Libraries",
+      "root_label": "Compound Libraries",
+      "loading": "Loading libraries...",
+      "empty": "No compound libraries found.",
+      "error": "Failed to load libraries.",
+      "library_fallback": "Library {id}",
+      "plate_fallback": "Plate {id}",
+      "no_dimension": "No dimension",
+      "actions": {
+        "new_plate": "New plate"
+      },
+      "modal": {
+        "title": "Add Library Plate",
+        "description": "Add a new plate to {libraryName}.",
+        "barcode_label": "Plate barcode",
+        "barcode_placeholder": "Enter barcode",
+        "create_button": "Add plate"
+      },
+      "toasts": {
+        "barcode_required": "Please enter a plate barcode.",
+        "created": "Library plate created.",
+        "create_failed": "Failed to create library plate."
+      }
+    },
+    "management": {
+      "title": "Management",
+      "root_label": "Management",
+      "loading": "Loading directory tree...",
+      "empty": "No files or folders found.",
+      "error": "Failed to load management tree.",
+      "actions": {
+        "delete_item": "Delete item",
+        "download_file": "Download file",
+        "view_file_content": "View file content",
+        "upload_file": "Upload file"
+      },
+      "delete_modal": {
+        "title": "Delete item",
+        "description": "Are you sure you want to delete this item: {path}?"
+      },
+      "upload_modal": {
+        "title": "Upload file",
+        "description": "Upload a file to this directory: {path}",
+        "upload_button": "Upload"
+      },
+      "toasts": {
+        "delete_success": "Item deleted.",
+        "delete_failed": "Failed to delete item.",
+        "download_failed": "Failed to download file.",
+        "upload_file_required": "Please select a file to upload.",
+        "upload_success": "File uploaded.",
+        "upload_failed": "Failed to upload file.",
+        "file_content_failed": "Failed to load file content."
       }
     }
   },

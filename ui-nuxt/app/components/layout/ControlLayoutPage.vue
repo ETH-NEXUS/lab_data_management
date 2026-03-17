@@ -123,7 +123,7 @@ const onWellSelected = () => {
         </button>
 
         <div class="mt-4 overflow-auto">
-          <DynamicPlate :plate="plate" @well-selected="onWellSelected" />
+          <DynamicPlate :plate="plate" :minimal-view="true" @well-selected="onWellSelected" />
         </div>
       </section>
     </template>

@@ -3,10 +3,10 @@ import { ref } from 'vue'
 import LibraryNavigationTree from '~/components/navigation/LibraryNavigationTree.vue'
 import ManagementNavigationTree from '~/components/navigation/ManagementNavigationTree.vue'
 import ProjectNavigationTree from '~/components/navigation/ProjectNavigationTree.vue'
-import TemplateNavigationTree from '~/components/navigation/TemplateNavigationTree.vue'
+
 
 const filter = ref('')
-const includeDeprecatedFunctionality = ref(true)
+
 
 const resetFilter = (): void => {
   filter.value = ''
@@ -34,7 +34,6 @@ const resetFilter = (): void => {
 
     <ProjectNavigationTree :filter="filter" />
     <LibraryNavigationTree :filter="filter" />
-    <TemplateNavigationTree v-if="includeDeprecatedFunctionality" :filter="filter" />
     <ManagementNavigationTree :filter="filter" />
   </div>
 </template>

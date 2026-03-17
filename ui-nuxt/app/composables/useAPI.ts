@@ -15,6 +15,7 @@ interface APIOptions {
   headers?: Record<string, string>
   body?: any
   params?: Record<string, string>
+  responseType?: 'json' | 'text' | 'blob' | 'arrayBuffer'
 }
 
 interface APIResponse<T> {
@@ -112,6 +113,7 @@ export const useAPI = async <T = any>(
       headers,
       body: options.body,
       credentials: 'include',
+      responseType: options.responseType,
     })
 
     return {
