@@ -79,6 +79,55 @@ export const useManagementStore = defineStore('managementStore', () => {
   }
 
   /**
+   * Legacy-compatible alias used by old management page/components.
+   *
+   * Returned data example:
+   * - `{ type: 'directory', name: 'data', path: '/data', children: [] }`
+   */
+  const getDataDirectory = async (): Promise<FileSystemItem> => {
+    return fetchDataDirectory()
+  }
+
+  /**
+   * Clears terminal-like output shown in management command cards.
+   */
+  const clearCommandOutput = (): void => {
+    commandOutput.value = ''
+  }
+
+  /**
+   * Adds one selected path to the legacy selected list.
+   *
+   * Accepted data example:
+   * - `'/data/imports/file.csv'`
+   */
+  const addSelectedPath = (path: string): void => {
+    selectedPath.value = path
+    selectedPaths.value.push(path)
+  }
+
+  /**
+   * Removes first matching selected path from the legacy selected list.
+   *
+   * Accepted data example:
+   * - `'/data/imports/file.csv'`
+   */
+  const removeSelectedPath = (path: string): void => {
+    const index = selectedPaths.value.indexOf(path)
+    if (index >= 0) {
+      selectedPaths.value.splice(index, 1)
+    }
+  }
+
+  /**
+   * Clears all selected management paths.
+   */
+  const clearSelectedPaths = (): void => {
+    selectedPath.value = ''
+    selectedPaths.value = []
+  }
+
+  /**
    * Starts one management command and begins long-polling output.
    *
    * Accepted data example:
@@ -137,6 +186,9 @@ export const useManagementStore = defineStore('managementStore', () => {
         setTimeout(() => {
           void startLongPolling(roomName)
         }, 300)
+      } else {
+        // Keep directory tree fresh after command completion.
+        await fetchDataDirectory()
       }
     } catch (err: unknown) {
       // Keep old behavior: only log polling errors, do not throw to UI flow.
@@ -281,7 +333,12 @@ export const useManagementStore = defineStore('managementStore', () => {
     isLoadingFileContent,
     error,
     fetchDataDirectory,
+    getDataDirectory,
     initialize,
+    clearCommandOutput,
+    addSelectedPath,
+    removeSelectedPath,
+    clearSelectedPaths,
     runCommand,
     startLongPolling,
     deleteFile,
