@@ -190,7 +190,7 @@ const submit = async () => {
 
           <select
             v-model="selectedNotebookPath"
-            class="w-full cursor-pointer rounded-full border border-black/15 bg-white/70 px-4 py-2 text-sm ring-offset-0 outline-none focus:ring-2 focus:ring-lime-500"
+            class="w-full cursor-pointer rounded-full border border-black/15 bg-white/70 px-4 py-2 text-sm ring-offset-0 outline-none focus:ring-2 focus:ring-blue-300"
           >
             <option value="">
               {{ t('experiments.reports.notebook_template_placeholder') }}
@@ -212,7 +212,7 @@ const submit = async () => {
 
           <select
             v-model="selectedLabel"
-            class="w-full cursor-pointer rounded-full border border-black/15 bg-white/70 px-4 py-2 text-sm ring-offset-0 outline-none focus:ring-2 focus:ring-lime-500"
+            class="w-full cursor-pointer rounded-full border border-black/15 bg-white/70 px-4 py-2 text-sm ring-offset-0 outline-none focus:ring-2 focus:ring-blue-300"
           >
             <option value="">
               {{ t('experiments.reports.measurement_placeholder') }}

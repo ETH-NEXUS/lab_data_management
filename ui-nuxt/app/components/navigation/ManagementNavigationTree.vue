@@ -367,7 +367,7 @@ const getPathContextMenuItemsFromSlotItem = (item: unknown) => {
       {{ t('navigation.management.empty') }}
     </p>
 
-    <UTree v-else :items="items" :ui="{ link: 'cursor-pointer hover:text-primary transition-colors' }">
+    <UTree v-else :items="items" :ui="{ link: 'cursor-pointer hover:text-blue-700 transition-colors' }">
       <template #management-root-label="{ item }">
         <span class="inline-block w-full">{{ getSlotItemLabel(item) }}</span>
       </template>

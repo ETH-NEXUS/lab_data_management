@@ -22,9 +22,9 @@ const props = withDefaults(defineProps<Props>(), {
   multiline: false,
   rows: 5,
   fieldClass: '',
-  labelClass: 'mb-1 block pl-1 text-sm font-medium text-[var(--app-text-muted)]',
+  labelClass: 'mb-2 block pl-1 text-sm font-semibold tracking-[0.04em] text-slate-600',
   inputClass:
-    'w-full rounded-xl border border-[var(--app-border)] bg-[var(--app-surface)] px-4 py-3 text-[var(--app-text-primary)] outline-none ring-0 transition focus:border-[var(--app-accent)] focus:ring-2 focus:ring-[var(--app-accent-soft)]',
+    'w-full rounded-md border border-slate-200 bg-white px-6 py-4 text-slate-800 shadow-[0_1px_0_rgba(15,23,42,0.02)] outline-none ring-offset-0 transition placeholder:text-slate-400 focus:border-blue-300 focus:ring-2 focus:ring-blue-300/50',
   hasRightSlot: false,
 })
 

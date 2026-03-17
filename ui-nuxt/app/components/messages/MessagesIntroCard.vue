@@ -10,7 +10,7 @@ const { t } = useI18n()
     }"
   >
     <template #header>
-      <p class="text-primary font-semibold">{{ t('messages_page.sections.empty_wells.title') }}</p>
+      <p class="font-semibold text-blue-700">{{ t('messages_page.sections.empty_wells.title') }}</p>
     </template>
 
     <div class="max-w-[900px] space-y-3 text-sm text-slate-700">

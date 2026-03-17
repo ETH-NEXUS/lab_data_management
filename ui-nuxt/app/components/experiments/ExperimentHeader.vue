@@ -27,7 +27,7 @@ const title = computed(() => {
 
 <template>
   <div class="flex items-center justify-center gap-2">
-    <h1 class="text-primary text-center text-4xl font-semibold">{{ title }}</h1>
+    <h1 class="text-center text-4xl font-semibold text-blue-700">{{ title }}</h1>
 
     <UButton
       size="xs"

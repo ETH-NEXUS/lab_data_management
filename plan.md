@@ -1,3 +1,3 @@
-- [x] Step 1: Add shared core-card style primitives for the new reference pattern
-- [x] Step 2: Apply the core-card style to project and experiment cards
-- [x] Step 3: Apply the core-card style to message cards and run eslint on touched files
+- [x] Step 1: Set Nuxt UI primary color to blue globally
+- [x] Step 2: Replace remaining explicit teal/lime classes with blue in projects/experiments/messages flows
+- [x] Step 3: Run lint and verify no green accents remain in the touched flows

@@ -139,7 +139,7 @@ const onWellSelected = () => {
           v-model="newBarcode"
           label="Enter barcode"
           placeholder="New barcode"
-          input-class="w-full px-4 py-3 bg-white/70 backdrop-blur-sm outline-none ring-offset-0 focus:ring-2 focus:ring-lime-500 shadow rounded-full"
+          input-class="w-full px-4 py-3 bg-white/70 backdrop-blur-sm outline-none ring-offset-0 focus:ring-2 focus:ring-blue-300 shadow rounded-full"
         />
       </template>
 
@@ -184,7 +184,7 @@ const onWellSelected = () => {
 
 .layout_link {
   cursor: pointer;
-  color: #0f766e;
+  color: #1d4ed8;
   font-weight: 500;
   background: transparent;
   border: 0;
@@ -203,7 +203,7 @@ const onWellSelected = () => {
 }
 
 .project_name {
-  color: #0f766e;
+  color: #1d4ed8;
   font-weight: 700;
 }
 </style>

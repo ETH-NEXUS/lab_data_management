@@ -1,5 +1,31 @@
-<svg width="1157" height="464" viewBox="0 0 1157 464" fill="none" xmlns="http://www.w3.org/2000/svg">
-<path d="M-140.124 233.321C-130.545 196.01 -111.571 159.958 -83.4575 131.046C-48.9146 95.5236 3.46646 75.2985 53.1366 82.486C109.699 90.6709 151.979 136.6 170.695 184.587" stroke="#F59460" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
-<path d="M757.588 -91.8656C759.724 -53.4046 752.525 -13.3054 734.455 22.7465C712.253 67.0427 668.426 102.143 618.905 110.292C562.512 119.571 508.335 88.5551 476 48.4614" stroke="#5C79DC" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
-<path d="M1110.86 682.562C1073.18 674.584 1036.35 657.168 1006.26 630.314C969.295 597.319 946.852 545.849 951.913 495.917C957.675 439.057 1001.76 394.855 1048.9 374.107" stroke="#A692FF" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+<svg width="320" height="96" viewBox="0 0 320 96" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <g opacity="0.55">
+    <!-- Cell-like forms -->
+    <circle cx="36" cy="49" r="18" stroke="#EAF2FF" stroke-width="2"/>
+    <circle cx="36" cy="49" r="5" fill="#EAF2FF"/>
+    <circle cx="74" cy="30" r="7" stroke="#D7E9FF" stroke-width="2"/>
+    <circle cx="70" cy="67" r="6" stroke="#C9E0FF" stroke-width="2"/>
+
+    <!-- Molecule chain -->
+    <circle cx="111" cy="28" r="4" fill="#D8E9FF"/>
+    <circle cx="130" cy="40" r="4" fill="#D8E9FF"/>
+    <circle cx="149" cy="28" r="4" fill="#D8E9FF"/>
+    <circle cx="168" cy="40" r="4" fill="#D8E9FF"/>
+    <path d="M111 28L130 40L149 28L168 40" stroke="#EAF2FF" stroke-width="2" stroke-linecap="round"/>
+
+    <!-- DNA-inspired strand -->
+    <path d="M193 10C181 22 181 36 193 48C205 60 205 74 193 86" stroke="#EAF2FF" stroke-width="2.25" stroke-linecap="round"/>
+    <path d="M221 10C233 22 233 36 221 48C209 60 209 74 221 86" stroke="#CFE4FF" stroke-width="2.25" stroke-linecap="round"/>
+    <path d="M199 18H215M196 30H218M194 42H220M194 54H220M196 66H218M199 78H215" stroke="#EAF2FF" stroke-width="1.6" stroke-linecap="round"/>
+
+    <!-- Medical cross marker -->
+    <rect x="264" y="22" width="20" height="52" rx="6" fill="#D8E9FF"/>
+    <rect x="248" y="38" width="52" height="20" rx="6" fill="#D8E9FF"/>
+
+    <!-- Small lab particles -->
+    <circle cx="287" cy="18" r="2.5" fill="#EAF2FF"/>
+    <circle cx="247" cy="16" r="2" fill="#D0E4FF"/>
+    <circle cx="304" cy="66" r="2" fill="#D0E4FF"/>
+    <circle cx="12" cy="24" r="2" fill="#D0E4FF"/>
+  </g>
 </svg>

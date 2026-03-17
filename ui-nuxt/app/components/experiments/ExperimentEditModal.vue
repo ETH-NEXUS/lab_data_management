@@ -55,7 +55,7 @@ const canSave = computed(() => {
 const close = () => emit('update:open', false)
 
 const textAreaInputClassName =
-  'w-full px-4 py-3 bg-white outline-none ring-offset-0 focus:ring-2 focus:ring-lime-500 shadow rounded-2xl'
+  'w-full px-4 py-3 bg-white outline-none ring-offset-0 focus:ring-2 focus:ring-blue-300 shadow rounded-2xl'
 
 /**
  * Sends a PATCH payload with one editable field.

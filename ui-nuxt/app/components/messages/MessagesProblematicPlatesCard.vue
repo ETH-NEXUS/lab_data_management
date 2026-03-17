@@ -38,7 +38,7 @@ const getPlateEntries = (platesByBarcode: Record<string, string[]>) => {
     }"
   >
     <template #header>
-      <p class="text-primary font-semibold">{{ t('messages_page.sections.problematic_plates.title') }}</p>
+      <p class="font-semibold text-blue-700">{{ t('messages_page.sections.problematic_plates.title') }}</p>
     </template>
 
     <p v-if="props.isLoading" class="text-sm text-slate-600">
@@ -56,7 +56,7 @@ const getPlateEntries = (platesByBarcode: Record<string, string[]>) => {
         class="group rounded-lg border border-slate-200 bg-slate-100/80 p-3"
       >
         <summary class="flex cursor-pointer list-none items-center justify-between gap-3">
-          <span class="text-primary truncate text-sm font-semibold">{{ libraryName }}</span>
+          <span class="truncate text-sm font-semibold text-blue-700">{{ libraryName }}</span>
           <UIcon
             name="i-heroicons-chevron-right"
             class="size-5 shrink-0 text-slate-500 transition-transform duration-200 group-open:rotate-90"

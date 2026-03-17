@@ -373,7 +373,7 @@ const onExperimentCreated = async (_experiment: Experiment) => {
       {{ t('navigation.projects.empty') }}
     </p>
 
-    <UTree v-else :items="items" :ui="{ link: 'cursor-pointer hover:text-primary transition-colors' }">
+    <UTree v-else :items="items" :ui="{ link: 'cursor-pointer hover:text-blue-700 transition-colors' }">
       <template #projects-root-label="{ item }">
         <UContextMenu :items="projectsRootContextMenuItems">
           <span class="inline-block w-full">{{ getSlotItemLabel(item) }}</span>

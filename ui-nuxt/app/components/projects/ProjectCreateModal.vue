@@ -100,7 +100,7 @@ const canSave = computed(() => resolvedProjectName.value.length > 0 && !projectS
 const close = () => emit('update:open', false)
 
 const customNameInputClassName =
-  'w-full rounded-full border border-slate-300 bg-white px-4 py-3 outline-none ring-offset-0 focus:ring-2 focus:ring-lime-500'
+  'w-full rounded-full border border-slate-300 bg-white px-4 py-3 outline-none ring-offset-0 focus:ring-2 focus:ring-blue-300'
 
 /**
  * Creates payload that mirrors the old behavior:
@@ -191,7 +191,7 @@ const save = async () => {
             </span>
             <select
               v-model="selectedHarvestProjectIdText"
-              class="relative w-full cursor-pointer appearance-none rounded-full border border-slate-300 bg-transparent px-4 py-3 pr-14 text-slate-600 ring-offset-0 transition outline-none focus:ring-2 focus:ring-lime-500"
+              class="relative w-full cursor-pointer appearance-none rounded-full border border-slate-300 bg-transparent px-4 py-3 pr-14 text-slate-600 ring-offset-0 transition outline-none focus:ring-2 focus:ring-blue-300"
             >
               <option value="">{{ t('projects.create_modal.harvest_placeholder') }}</option>
               <option v-for="project in harvestStore.harvestProjects" :key="project.id" :value="String(project.id)">
@@ -202,7 +202,7 @@ const save = async () => {
 
           <button
             type="button"
-            class="mt-1 inline-block cursor-pointer text-sm font-medium text-teal-800 transition hover:text-teal-600 hover:underline disabled:cursor-not-allowed disabled:opacity-60"
+            class="mt-1 inline-block cursor-pointer text-sm font-medium text-blue-700 transition hover:text-blue-600 hover:underline disabled:cursor-not-allowed disabled:opacity-60"
             :disabled="harvestStore.isLoading"
             @click="refreshHarvestProjects"
           >

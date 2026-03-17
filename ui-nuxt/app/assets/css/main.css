@@ -132,11 +132,19 @@ body {
     color: #475569;
   }
 
+  /*
+    The nav pattern uses a thematic medical/lab SVG tile.
+    Layer order example:
+    - `layer[0] = svg pattern`
+    - `layer[1] = blue gradient base`
+  */
   .app-nav-surface {
-    background-image: linear-gradient(to right, #3b82f6, #3b82f6, #60a5fa), url('../cta-lines2.svg');
-    background-position: center, center;
-    background-repeat: no-repeat, repeat-x;
-    background-size: 100% 100%, auto 100%;
+    background-image:
+      url('../cta-lines2.svg'),
+      linear-gradient(to right, rgb(37 99 235 / 97%), rgb(59 130 246 / 97%), rgb(96 165 250 / 97%));
+    background-position: left top, center;
+    background-repeat: repeat-x, no-repeat;
+    background-size: 280px 96px, 100% 100%;
   }
 
   @media (min-width: 1024px) {

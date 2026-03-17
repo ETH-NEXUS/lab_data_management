@@ -25,7 +25,7 @@ const onRecalculateStatus = () => emit('recalculate-status')
     }"
   >
     <template #header>
-      <p class="text-primary font-semibold">{{ t('messages_page.sections.thresholds.title') }}</p>
+      <p class="font-semibold text-blue-700">{{ t('messages_page.sections.thresholds.title') }}</p>
     </template>
 
     <div class="space-y-4">
@@ -47,7 +47,7 @@ const onRecalculateStatus = () => emit('recalculate-status')
           variant="secondary"
           size="sm"
           width="auto"
-          class-name="text-teal-800 hover:text-teal-900 hover:bg-teal-50 hover:border-teal-200"
+          class-name="text-blue-700 hover:text-blue-800 hover:bg-blue-50 hover:border-blue-200"
         />
 
         <BaseButton

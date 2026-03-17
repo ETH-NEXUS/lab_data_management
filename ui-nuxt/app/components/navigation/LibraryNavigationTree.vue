@@ -286,7 +286,7 @@ const createPlateForLibrary = async () => {
       {{ t('navigation.libraries.empty') }}
     </p>
 
-    <UTree v-else :items="items" :ui="{ link: 'cursor-pointer hover:text-primary transition-colors' }">
+    <UTree v-else :items="items" :ui="{ link: 'cursor-pointer hover:text-blue-700 transition-colors' }">
       <template #libraries-root-label="{ item }">
         <span class="inline-block w-full">{{ getSlotItemLabel(item) }}</span>
       </template>
@@ -309,7 +309,7 @@ const createPlateForLibrary = async () => {
           v-model="newPlateBarcode"
           :label="t('navigation.libraries.modal.barcode_label')"
           :placeholder="t('navigation.libraries.modal.barcode_placeholder')"
-          input-class="w-full rounded-full bg-white/70 px-4 py-3 shadow outline-none focus:ring-2 focus:ring-lime-500"
+          input-class="w-full rounded-full bg-white/70 px-4 py-3 shadow outline-none focus:ring-2 focus:ring-blue-300"
         />
       </template>
 

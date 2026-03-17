@@ -203,7 +203,7 @@ const movePlates = async () => {
           variant="outline"
           size="sm"
           width="auto"
-          class-name="text-teal-800 hover:text-teal-900 hover:bg-teal-50 hover:border-teal-200"
+          class-name="text-blue-700 hover:text-blue-800 hover:bg-blue-50 hover:border-blue-200"
           :loading="projectStore.isMovingPlates"
           :disabled="isMoveDisabled"
         />

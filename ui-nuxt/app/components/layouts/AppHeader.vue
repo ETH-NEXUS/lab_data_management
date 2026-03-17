@@ -5,18 +5,6 @@ import { useAPI } from '~/composables/useAPI'
 import { useAuthStore } from '~/stores/auth'
 import { PROJECTS_QUERY_KEY } from '~/types/projects'
 
-type Props = {
-  drawerOpen?: boolean
-}
-
-const props = withDefaults(defineProps<Props>(), {
-  drawerOpen: false,
-})
-
-const emit = defineEmits<{
-  (e: 'toggle-drawer'): void
-}>()
-
 const authStore = useAuthStore()
 const queryClient = useQueryClient()
 const toast = useToast()
@@ -28,14 +16,17 @@ const version = ref('N/A')
 const isRefreshing = ref(false)
 
 const iconButtonClass =
-  'inline-flex h-10 w-10 cursor-pointer items-center justify-center rounded-xl border border-white/30 text-white transition hover:border-white/70 hover:bg-white/20'
+  'inline-flex h-10 w-10 cursor-pointer items-center justify-center rounded-xl border border-blue-100 bg-white text-blue-700 shadow-sm transition hover:border-blue-200 hover:bg-blue-50 hover:text-blue-800'
 const iconButtonDisabledClass = 'disabled:cursor-not-allowed disabled:opacity-60'
-const menuButtonClass =
-  'inline-flex h-10 w-10 cursor-pointer items-center justify-center rounded-xl border border-white/40 text-white transition hover:border-white/80 hover:bg-white/20'
 
-const navLinks = computed(() => [
-  { label: 'Projects', to: '/projects' },
-  { label: 'Experiments', to: '/experiments' },
+type HeaderNavLink = {
+  label: string
+  to?: string
+  onClick?: () => void
+}
+
+const navLinks = computed<HeaderNavLink[]>(() => [
+  { label: 'Jupyter Lab', onClick: openNotebook },
   { label: t('app.header.messages'), to: '/messages' },
   { label: 'Management', to: '/management' },
 ])
@@ -55,12 +46,22 @@ const isNavActive = (to: string): boolean => {
   return route.path === to || route.path.endsWith(to) || route.path.includes(`${to}/`)
 }
 
-const navLinkClass = (to: string): string => {
-  if (isNavActive(to)) {
-    return 'inline-flex rounded-full bg-white px-4 py-2 text-xs font-semibold tracking-[0.12em] text-blue-700 uppercase transition'
+/**
+ * Builds header button style for nav links.
+ *
+ * Accepted data example:
+ * - `{ to: '/messages' }`
+ *
+ * Returned data example:
+ * - `'... bg-blue-700 text-white ...'` for active route
+ * - `'... bg-white text-blue-700 ...'` for inactive route
+ */
+const navLinkClass = (to?: string): string => {
+  if (to && isNavActive(to)) {
+    return 'inline-flex rounded-full border border-blue-700 bg-blue-700 px-4 py-2 text-xs font-semibold tracking-[0.12em] text-white uppercase transition hover:border-blue-800 hover:bg-blue-800'
   }
 
-  return 'inline-flex rounded-full border border-white/35 bg-white/12 px-4 py-2 text-xs font-semibold tracking-[0.12em] text-white uppercase transition hover:border-blue-100 hover:bg-white hover:text-blue-700'
+  return 'inline-flex rounded-full border border-blue-100 bg-white px-4 py-2 text-xs font-semibold tracking-[0.12em] text-blue-700 uppercase transition hover:border-blue-200 hover:bg-blue-50 hover:text-blue-800'
 }
 
 const loadVersion = async () => {
@@ -81,7 +82,6 @@ const displayName = computed(() => {
   return full || u.username || u.email || ''
 })
 
-const toggleDrawer = () => emit('toggle-drawer')
 const goHome = () => navigateTo('/')
 const goMessages = () => navigateTo('/messages')
 
@@ -176,7 +176,7 @@ const dropdownItems = computed(() => [
 </script>
 
 <template>
-  <header class="sticky top-0 z-50 w-full shadow-md">
+  <header class="w-full shadow-md">
     <div class="border-b border-blue-400/70 bg-blue-600">
       <div class="mx-auto flex h-8 w-full items-center justify-center px-3">
         <UIcon name="i-heroicons-sparkles" class="mr-2 h-3.5 w-3.5 text-blue-50" />
@@ -188,18 +188,7 @@ const dropdownItems = computed(() => [
       <div class="mx-auto flex h-16 w-full items-center justify-between gap-3 px-3 sm:px-4 lg:px-6">
         <div class="flex items-center gap-2">
           <button
-            :class="menuButtonClass"
-            aria-label="Toggle navigation"
-            aria-controls="app-navigation-drawer"
-            :aria-expanded="props.drawerOpen ? 'true' : 'false'"
-            type="button"
-            @click="toggleDrawer"
-          >
-            <UIcon name="i-heroicons-bars-3" class="h-5 w-5" />
-          </button>
-
-          <button
-            class="cursor-pointer text-sm font-semibold tracking-[0.08em] text-white uppercase transition hover:text-blue-50 sm:text-base"
+            class="inline-flex cursor-pointer items-center rounded-full border border-blue-100 bg-white px-4 py-2 text-sm font-semibold tracking-[0.12em] text-blue-800 uppercase shadow-sm transition hover:border-blue-200 hover:bg-blue-50 sm:text-base"
             type="button"
             @click="goHome"
           >
@@ -208,16 +197,19 @@ const dropdownItems = computed(() => [
         </div>
 
         <ul class="hidden items-center gap-2 xl:flex">
-          <li v-for="link in navLinks" :key="link.to">
-            <NuxtLink :to="link.to" :class="navLinkClass(link.to)">
+          <li v-for="link in navLinks" :key="link.to ? link.to : `action-${link.label}`">
+            <NuxtLink v-if="link.to" :to="link.to" :class="navLinkClass(link.to)">
               {{ link.label }}
             </NuxtLink>
+            <button v-else type="button" :class="navLinkClass()" @click="link.onClick ? link.onClick() : null">
+              {{ link.label }}
+            </button>
           </li>
         </ul>
 
         <div class="flex items-center gap-2">
           <span
-            class="hidden rounded-full bg-white/18 px-3 py-1 text-[11px] font-semibold tracking-[0.12em] text-blue-50 uppercase 2xl:inline-flex"
+            class="hidden rounded-full border border-blue-100 bg-white px-3 py-1 text-[11px] font-semibold tracking-[0.12em] text-blue-700 uppercase 2xl:inline-flex"
           >
             v{{ version }}
           </span>

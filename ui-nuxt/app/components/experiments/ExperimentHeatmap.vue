@@ -285,7 +285,7 @@ const canShowStats = (plate: Plate) => {
           </label>
           <select
             v-model="plateViewStore.selectedPosControl"
-            class="w-full cursor-pointer rounded-full border border-black/15 bg-white/70 px-4 py-2 text-sm ring-offset-0 outline-none focus:ring-2 focus:ring-lime-500"
+            class="w-full cursor-pointer rounded-full border border-black/15 bg-white/70 px-4 py-2 text-sm ring-offset-0 outline-none focus:ring-2 focus:ring-blue-300"
           >
             <option v-for="option in controlLabelOptions" :key="`pos-${option.value}`" :value="option.value">
               {{ option.label }}
@@ -299,7 +299,7 @@ const canShowStats = (plate: Plate) => {
           </label>
           <select
             v-model="plateViewStore.selectedNegControl"
-            class="w-full cursor-pointer rounded-full border border-black/15 bg-white/70 px-4 py-2 text-sm ring-offset-0 outline-none focus:ring-2 focus:ring-lime-500"
+            class="w-full cursor-pointer rounded-full border border-black/15 bg-white/70 px-4 py-2 text-sm ring-offset-0 outline-none focus:ring-2 focus:ring-blue-300"
           >
             <option v-for="option in controlLabelOptions" :key="`neg-${option.value}`" :value="option.value">
               {{ option.label }}
@@ -322,7 +322,7 @@ const canShowStats = (plate: Plate) => {
           </label>
           <select
             v-model="plateViewStore.selectedMeasurement"
-            class="w-full cursor-pointer rounded-full border border-black/15 bg-white/70 px-4 py-2 text-sm ring-offset-0 outline-none focus:ring-2 focus:ring-lime-500"
+            class="w-full cursor-pointer rounded-full border border-black/15 bg-white/70 px-4 py-2 text-sm ring-offset-0 outline-none focus:ring-2 focus:ring-blue-300"
           >
             <option v-for="label in props.availableMeasurementLabels" :key="`measurement-${label}`" :value="label">
               {{ label }}
@@ -336,7 +336,7 @@ const canShowStats = (plate: Plate) => {
           </label>
           <select
             v-model.number="plateViewStore.selectedTimestampIdx"
-            class="w-full cursor-pointer rounded-full border border-black/15 bg-white/70 px-4 py-2 text-sm ring-offset-0 outline-none focus:ring-2 focus:ring-lime-500"
+            class="w-full cursor-pointer rounded-full border border-black/15 bg-white/70 px-4 py-2 text-sm ring-offset-0 outline-none focus:ring-2 focus:ring-blue-300"
           >
             <option v-for="option in timestampOptions" :key="`timestamp-${option.value}`" :value="option.value">
               {{ option.label }}
@@ -350,7 +350,7 @@ const canShowStats = (plate: Plate) => {
           </label>
           <select
             v-model="selectedPaletteLabel"
-            class="w-full cursor-pointer rounded-full border border-black/15 bg-white/70 px-4 py-2 text-sm ring-offset-0 outline-none focus:ring-2 focus:ring-lime-500"
+            class="w-full cursor-pointer rounded-full border border-black/15 bg-white/70 px-4 py-2 text-sm ring-offset-0 outline-none focus:ring-2 focus:ring-blue-300"
           >
             <option v-for="palette in platePalettes" :key="`palette-${palette.label}`" :value="palette.label">
               {{ palette.label }}

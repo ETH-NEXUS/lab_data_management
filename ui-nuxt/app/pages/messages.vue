@@ -124,7 +124,7 @@ onMounted(async () => {
 
 <template>
   <section class="space-y-5 p-6">
-    <h1 class="text-primary text-center text-4xl font-semibold">
+    <h1 class="text-center text-4xl font-semibold text-blue-700">
       {{ t('messages_page.title') }}
     </h1>
 

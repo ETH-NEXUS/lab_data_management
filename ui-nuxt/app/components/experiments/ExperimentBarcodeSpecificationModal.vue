@@ -89,7 +89,7 @@ const close = () => emit('update:open', false)
  * - white dropdown surface
  */
 const sidesSelectUi = {
-  base: 'w-full rounded-full border border-slate-300 bg-white px-4 py-3 text-slate-600 outline-none ring-offset-0 transition focus-visible:ring-2 focus-visible:ring-lime-500',
+  base: 'w-full rounded-full border border-slate-300 bg-white px-4 py-3 text-slate-600 outline-none ring-offset-0 transition focus-visible:ring-2 focus-visible:ring-blue-300',
   value: 'truncate text-slate-700',
   placeholder: 'truncate text-slate-400',
   trailing: 'pe-4',

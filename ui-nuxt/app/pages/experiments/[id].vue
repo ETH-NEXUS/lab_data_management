@@ -241,7 +241,7 @@ const handleUpdateControls = (data: { pos: string | null; neg: string | null }) 
         <div class="flex flex-wrap gap-2">
           <UButton
             v-if="canAddExperimentData"
-            color="primary"
+            color="secondary"
             variant="solid"
             icon="i-heroicons-table-cells"
             :label="t('experiments.page.add_experiment_data')"

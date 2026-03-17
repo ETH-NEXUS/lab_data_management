@@ -130,7 +130,7 @@ const savePlateInfo = async () => {
     </p>
 
     <template v-else>
-      <h1 class="text-primary text-center text-2xl font-semibold">
+      <h1 class="text-center text-2xl font-semibold text-blue-700">
         {{ t('experiments.add_data.title') }}
       </h1>
 
@@ -205,7 +205,7 @@ const savePlateInfo = async () => {
         <template #footer>
           <div class="flex flex-wrap gap-2">
             <UButton
-              color="primary"
+              color="secondary"
               :label="t('experiments.add_data.save_button')"
               :loading="experimentStore.isSavingPlateInfo"
               @click="savePlateInfo"
