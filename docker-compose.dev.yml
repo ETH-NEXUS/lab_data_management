@@ -1,21 +1,24 @@
 version: "3"
 
 services:
+#  ui:
+#    platform: linux/arm64/v8
+#    ports:
+#      - "8090:8090"
+#    command:
+#      - /bin/sh
+#      - -c
+#      - |
+#        yarn
+#        yarn dev --host 0.0.0.0 --port 8090
+#    restart: unless-stopped
+#    depends_on:
+#      - api
+
   ui:
-    platform: linux/arm64/v8
-    ports:
-      - "8090:8090"
-    command:
-      - /bin/sh
-      - -c
-      - |
-        yarn
-        yarn dev --host 0.0.0.0 --port 8090
     restart: unless-stopped
     depends_on:
       - api
-
-  ui_nuxt:
     platform: linux/arm64/v8
     ports:
       - "8091:3000"

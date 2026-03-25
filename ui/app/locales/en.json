@@ -1,0 +1,459 @@
+{
+  "app": {
+    "header": {
+      "title": "Lab Data Management",
+      "refresh": "Refresh",
+      "messages": "Problematic wells",
+      "notebook": "Notebook",
+      "help": "Help",
+      "logout": "Logout"
+    }
+  },
+  "auth": {
+    "login": {
+      "title": "Login",
+      "subtitle": "Lab Data Management",
+      "username_label": "Username",
+      "username_placeholder": "Username",
+      "password_label": "Password",
+      "password_placeholder": "••••••••",
+      "forgot_password": "Forgot password?",
+      "submit": "Login",
+      "error_title": "Cannot login",
+      "error_description": "Please check username/password and try again."
+    }
+  },
+  "common": {
+    "actions": {
+      "cancel": "Cancel",
+      "save": "Save",
+      "create": "Create",
+      "update": "Update",
+      "delete": "Delete",
+      "close": "Close"
+    }
+  },
+  "navigation": {
+    "projects": {
+      "title": "Projects",
+      "root_label": "Projects",
+      "loading": "Loading projects...",
+      "empty": "No projects found.",
+      "error": "Failed to load projects.",
+      "project_fallback": "Project {id}",
+      "experiment_fallback": "Experiment {id}",
+      "plate_fallback": "Plate {id}",
+      "control_plate": "Control plate: {barcode}",
+      "no_dimension": "No dimension",
+      "actions": {
+        "create_project": "Create project",
+        "create_experiment": "Create experiment",
+        "select_control_layout": "Select control layout"
+      }
+    },
+    "libraries": {
+      "title": "Libraries",
+      "root_label": "Compound Libraries",
+      "loading": "Loading libraries...",
+      "empty": "No compound libraries found.",
+      "error": "Failed to load libraries.",
+      "library_fallback": "Library {id}",
+      "plate_fallback": "Plate {id}",
+      "no_dimension": "No dimension",
+      "actions": {
+        "new_plate": "New plate"
+      },
+      "modal": {
+        "title": "Add Library Plate",
+        "description": "Add a new plate to {libraryName}.",
+        "barcode_label": "Plate barcode",
+        "barcode_placeholder": "Enter barcode",
+        "create_button": "Add plate"
+      },
+      "toasts": {
+        "barcode_required": "Please enter a plate barcode.",
+        "created": "Library plate created.",
+        "create_failed": "Failed to create library plate."
+      }
+    },
+    "management": {
+      "title": "Management",
+      "root_label": "Management",
+      "loading": "Loading directory tree...",
+      "empty": "No files or folders found.",
+      "error": "Failed to load management tree.",
+      "actions": {
+        "delete_item": "Delete item",
+        "download_file": "Download file",
+        "view_file_content": "View file content",
+        "upload_file": "Upload file"
+      },
+      "delete_modal": {
+        "title": "Delete item",
+        "description": "Are you sure you want to delete this item: {path}?"
+      },
+      "upload_modal": {
+        "title": "Upload file",
+        "description": "Upload a file to this directory: {path}",
+        "upload_button": "Upload"
+      },
+      "toasts": {
+        "delete_success": "Item deleted.",
+        "delete_failed": "Failed to delete item.",
+        "download_failed": "Failed to download file.",
+        "upload_file_required": "Please select a file to upload.",
+        "upload_success": "File uploaded.",
+        "upload_failed": "Failed to upload file.",
+        "file_content_failed": "Failed to load file content."
+      }
+    }
+  },
+  "management": {
+    "selected_directories": "Selected directories/files",
+    "no_dirs_selected": "No directories/files selected",
+    "remove_selected_path_aria": "Remove selected path",
+    "management": "Management",
+    "echo": "Echo/M1000/Micro",
+    "import_control_plate": "Import control plate",
+    "import_library_plate": "Import library plate",
+    "import_sdf_library": "Import SDF library",
+    "logs": "Logs",
+    "form": {
+      "select_placeholder": "Select option"
+    },
+    "validation": {
+      "required_title": "Required field is missing",
+      "required_field": "Please fill in: {label}"
+    }
+  },
+  "projects": {
+    "page": {
+      "loading": "Loading project...",
+      "not_found": "Project not found.",
+      "harvest_update_success": "Harvest information updated",
+      "harvest_update_requested": "Harvest update requested",
+      "harvest_update_failed": "Harvest update failed"
+    },
+    "header": {
+      "title": "Project: {name}",
+      "edit_name_aria": "Edit project name"
+    },
+    "overview": {
+      "description": "Description",
+      "no_description": "No description",
+      "edit_description_aria": "Edit project description",
+      "harvest_notes": "Harvest notes",
+      "number_of_experiments": "Number of experiments",
+      "created_at": "Created at",
+      "update_harvest": "Update Harvest information"
+    },
+    "experiments_card": {
+      "title": "Experiments",
+      "description": "Select plates from one or more experiments and move them into a target experiment.",
+      "no_experiments": "No experiments found in this project.",
+      "no_plates": "No plates in this experiment.",
+      "choose_experiment": "Choose target experiment",
+      "select_experiment_placeholder": "Select experiment",
+      "selected_plates_count": "Selected plates: {count}",
+      "move_button": "Move plates to experiment",
+      "select_plate_warning": "Please select at least one plate.",
+      "select_experiment_warning": "Please choose a target experiment.",
+      "move_success": "Plates moved.",
+      "move_failed": "Failed to move plates."
+    },
+    "edit_modal": {
+      "title_name": "Edit project name",
+      "title_description": "Edit project description",
+      "description_name": "Update the project name.",
+      "description_description": "Update the project description.",
+      "field_name": "Project name",
+      "field_description": "Project description",
+      "placeholder_name": "Project name",
+      "placeholder_description": "Project description",
+      "updated": "Project updated",
+      "update_failed": "Update failed"
+    },
+    "create_modal": {
+      "title": "Create project",
+      "description": "Create a new project from Harvest or with a custom name.",
+      "source_harvest_label": "Project name from Harvest",
+      "harvest_placeholder": "Select Harvest project",
+      "refresh_harvest": "Update Harvest projects",
+      "custom_name_label": "Custom project name",
+      "custom_name_placeholder": "Project name",
+      "toggle_use_harvest": "Use Harvest name",
+      "toggle_use_custom": "Use custom name",
+      "create_button": "Create project",
+      "created": "Project created",
+      "create_failed": "Create project failed",
+      "harvest_refresh_failed": "Harvest refresh failed"
+    }
+  },
+  "experiments": {
+    "page": {
+      "loading": "Loading experiment...",
+      "not_found": "Experiment not found.",
+      "add_experiment_data": "Add Experiment Data",
+      "add_measurement": "Add measurement",
+      "generate_report": "Generate report"
+    },
+    "header": {
+      "title": "Experiment: {experimentName}",
+      "title_with_project": "{projectName}: {experimentName}",
+      "edit_name_aria": "Edit experiment name"
+    },
+    "info": {
+      "description": "Description",
+      "no_description": "No description",
+      "edit_description_aria": "Edit experiment description",
+      "number_of_plates": "Number of plates",
+      "created_at": "Created at"
+    },
+    "edit_modal": {
+      "title_name": "Edit experiment name",
+      "title_description": "Edit experiment description",
+      "description_name": "Update the experiment name.",
+      "description_description": "Update the experiment description.",
+      "field_name": "Experiment name",
+      "field_description": "Experiment description",
+      "placeholder_name": "Experiment name",
+      "placeholder_description": "Experiment description",
+      "updated": "Experiment updated",
+      "update_failed": "Update failed"
+    },
+    "create_modal": {
+      "title": "Create experiment",
+      "title_with_project": "Create experiment in {projectName}",
+      "description": "Add a new experiment to the selected project.",
+      "field_name": "Experiment name",
+      "placeholder_name": "Experiment name",
+      "create_button": "Create experiment",
+      "created": "Experiment created",
+      "create_failed": "Create experiment failed"
+    },
+    "barcodes": {
+      "title": "Barcode specifications",
+      "add_button": "Add barcode specification",
+      "download_button": "Download barcode CSV",
+      "delete_button": "Delete specification",
+      "delete_success": "Barcode specification deleted",
+      "delete_failed": "Failed to delete barcode specification",
+      "empty": "No barcode specifications yet.",
+      "fields": {
+        "prefix": "Prefix",
+        "number_of_plates": "Number of plates",
+        "sides": "Sides"
+      },
+      "table": {
+        "columns": {
+          "north": "North barcode",
+          "south": "South barcode",
+          "east": "East barcode",
+          "west": "West barcode"
+        }
+      },
+      "modal": {
+        "title": "Add barcode specification",
+        "description": "Create a barcode specification for this experiment.",
+        "prefix_placeholder": "Prefix",
+        "number_of_plates_placeholder": "Number of plates",
+        "sides_placeholder": "Select sides",
+        "create_button": "Add specification",
+        "created": "Barcode specification created",
+        "create_failed": "Failed to create barcode specification"
+      }
+    },
+    "add_data": {
+      "title": "Add Experiment Data",
+      "invalid_experiment_id": "Invalid experiment id in route.",
+      "loading": "Loading prefilled experiment data...",
+      "empty": "No prefilled rows found.",
+      "save_button": "Save",
+      "download_csv": "Download CSV",
+      "save_success": "Data saved successfully.",
+      "save_failed": "Error saving data."
+    },
+    "measurement_calculator": {
+      "title": "Measurement Calculator",
+      "description": "Build a formula and create a new measurement label.",
+      "labels_all_series": "Calculate on all time series points",
+      "labels_separate_series": "Calculate on separate time series points",
+      "new_measurement_name_label": "New measurement name",
+      "new_measurement_name_placeholder": "Enter new measurement name",
+      "apply_button": "Apply",
+      "success_saved": "Measurement has been added.",
+      "error_calculation_failed": "Failed to calculate measurement.",
+      "error_enter_name": "Please enter a name for the new measurement.",
+      "error_use_different_name": "Please use a different name for the new measurement.",
+      "error_use_existing_measurement": "Please use at least one existing measurement.",
+      "error_mixed_series_selection": "Please calculate either on all time series labels or on separate time series labels. They cannot be combined."
+    },
+    "results": {
+      "show_results": "Show results",
+      "loading": "Loading experiment results...",
+      "no_plates": "No plates found for this experiment.",
+      "save_controls": "Save controls",
+      "controls_saved": "The controls have been saved. They will be used in the report.",
+      "controls_missing": "Please select both controls."
+    },
+    "reports": {
+      "modal_title": "Generate Report",
+      "modal_description": "Select a notebook template and measurement label.",
+      "notebook_template_label": "Notebook Template",
+      "notebook_template_placeholder": "Select notebook template",
+      "measurement_label": "Measurement label",
+      "measurement_placeholder": "Select measurement label",
+      "generate_button": "Generate",
+      "available_reports": "Available reports",
+      "loading_reports": "Loading available reports...",
+      "controls_required": "Please come back and save positive and negative controls in the \"Show results\" section.",
+      "select_template_error": "Please select a notebook template to generate a report from.",
+      "select_label_error": "Please select a measurement label to generate a report for.",
+      "generated_success": "Report generation has started.",
+      "generate_failed": "Failed to generate report.",
+      "download_failed": "Failed to download report."
+    }
+  },
+  "plates": {
+    "page": {
+      "title": "Plate {id}",
+      "loading": "Loading plate...",
+      "not_found": "Plate not found.",
+      "splitter_hint": "Drag the center divider to resize plate and details panels.",
+      "splitter_position": "Left panel width: {value}%",
+      "left_title": "Plate View",
+      "left_description": "Interactive dynamic plate view.",
+      "left_placeholder": "Dynamic plate visualization will be migrated here next.",
+      "right_title": "Well Details",
+      "right_description": "Selected well information and actions.",
+      "well": {
+        "position": "Position",
+        "hr_position": "HR Position",
+        "type": "Type",
+        "status": "Status",
+        "amount": "Amount"
+      },
+      "right_placeholder": "Well details and editing panel will be migrated here next."
+    },
+    "dynamic": {
+      "settings": {
+        "smaller_map_view": "Smaller map view",
+        "show_wells_as_squares": "Show wells as squares",
+        "per_plate_view": "Per plate view"
+      },
+      "legend": {
+        "aria": "Heatmap color legend"
+      },
+      "stats": {
+        "z_prime": "z':",
+        "ssmd": "ssmd:"
+      },
+      "controls": {
+        "positive_control": "Positive control",
+        "negative_control": "Negative control",
+        "well_content": "Well content",
+        "show_heatmap": "Show heatmap",
+        "select_label": "Select label",
+        "select_timestamp": "Select timestamp",
+        "select_color_palette": "Select color palette",
+        "hr_position": "HR Position",
+        "well_type": "Well Type",
+        "index_position": "Index Position"
+      }
+    }
+  },
+  "messages_page": {
+    "title": "Messages and Warnings",
+    "loading": "Loading data...",
+    "sections": {
+      "empty_wells": {
+        "title": "Empty Wells",
+        "paragraph_1": "Here you can see plates with problematic wells (wells with amount or DMSO concentration below the threshold). This information is also shown in the navigation tree as warning indicators. You can change the threshold here and recalculate well and plate status.",
+        "paragraph_2": "This information is derived from echo-transfer files and primarily covers plates recently imported via the echo-import process. For older projects, you can resubmit echo-import in the management tab so status calculations are applied."
+      },
+      "problematic_plates": {
+        "title": "Problematic plates",
+        "empty": "No problematic plates found for the current threshold."
+      },
+      "thresholds": {
+        "title": "Current Thresholds",
+        "dmso": "DMSO",
+        "amount": "Amount",
+        "edit_button": "Edit threshold",
+        "recalculate_button": "Recalculate based on current threshold"
+      }
+    },
+    "modal": {
+      "title": "Edit Threshold",
+      "description": "Update threshold values used for red-flag calculations.",
+      "fields": {
+        "dmso": "DMSO (%)",
+        "amount": "Amount (µL)"
+      }
+    },
+    "recalculate": {
+      "in_progress": "Recalculating status",
+      "in_progress_description": "Recalculating library plate status. This can take some time."
+    }
+  },
+  "title": {
+    "status": "Status",
+    "amount_dmso": "Amount / DMSO",
+    "compounds": "Compounds",
+    "measurements": "Measurements",
+    "withdrawals": "Withdrawals",
+    "donors": "Donors",
+    "chain": "Chain"
+  },
+  "action": {
+    "submit": "Submit",
+    "mark_as_invalid": "Mark as invalid",
+    "mark_as_valid": "Mark as valid",
+    "delete_well": "Delete well",
+    "add_compound": "Add compound",
+    "add_measurement": "Add measurement",
+    "create_well": "Create well"
+  },
+  "label": {
+    "name": "Name",
+    "initial_amount": "Initial amount",
+    "structure": "Structure",
+    "label": "Label",
+    "timestamp": "Timestamp",
+    "value": "Value",
+    "amount": "Amount",
+    "target_well": "Target well",
+    "source_well": "Source well",
+    "compound": "Compound",
+    "well": "Well",
+    "measurement_feature": "Measurement feature",
+    "position": "Position",
+    "plot_view": "Plot view",
+    "cancel": "Cancel",
+    "add": "Add",
+    "compounds": "Compounds",
+    "measurements": "Measurements"
+  },
+  "message": {
+    "no_well_information": "No well information",
+    "no_compounds_found": "No compounds found",
+    "no_wells_found": "No wells found",
+    "no_measurement_feature_found": "No measurement feature found"
+  },
+  "hint": {
+    "compound_to_add": "Compound to add",
+    "well_to_transfer_from": "Well to transfer from",
+    "amount_to_transfer": "Amount to transfer",
+    "measurement_feature": "Measurement feature",
+    "measurement_value": "Measurement value"
+  },
+  "unit": {
+    "mikro": "µL",
+    "nL": "nL",
+    "amount": "nL"
+  },
+  "well": {
+    "current_amount": "Current amount",
+    "current_dmso": "Current DMSO"
+  }
+}

@@ -1,43 +1,21 @@
-# Lab Data Management (ldm)
+# UI (Nuxt)
 
-Manage plates and compounds in the lab
+For the recommended Docker-based workflow, follow the root `README.md`.
 
-## Install the dependencies
+## Local development (without Docker)
 
-```bash
-yarn
-# or
-npm install
-```
-
-### Start the app in development mode (hot-code reloading, error reporting, etc.)
+From `ui/app`:
 
 ```bash
-quasar dev
+pnpm install
+pnpm dev
 ```
 
-### Lint the files
+## Environment
 
-```bash
-yarn lint
-# or
-npm run lint
-```
-
-### Format the files
-
-```bash
-yarn format
-# or
-npm run format
-```
-
-### Build the app for production
-
-```bash
-quasar build
-```
-
-### Customize the configuration
-
-See [Configuring quasar.config.js](https://v2.quasar.dev/quasar-cli-vite/quasar-config-js).
+- `NUXT_PUBLIC_API_URL`:
+  - if set, the UI will talk to `${NUXT_PUBLIC_API_URL}/api/v1`
+  - if empty, it will default to `/api/v1` (intended for the Docker dev proxy)
+- `NUXT_OPENAPI_SCHEMA` (optional):
+  - if set, `nuxt-open-fetch` generates typed `$api` client from that schema URL/path
+  - if unset, typed client generation is skipped and plain `$fetch` can be used

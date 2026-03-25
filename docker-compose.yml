@@ -5,6 +5,18 @@ volumes:
   web_root_nuxt:
 
 services:
+#  ui:
+#    platform: linux/amd64
+#    build:
+#      context: ui
+#    volumes:
+#      - ./ui/app:/app
+#      - "web_root:/app/dist:z"
+#    hostname: ui
+#    restart: "no"
+#    env_file: .env
+
+  #  NEW Nuxt UI
   ui:
     platform: linux/amd64
     build:
@@ -12,17 +24,6 @@ services:
     volumes:
       - ./ui/app:/app
       - "web_root:/app/dist:z"
-    hostname: ui
-    restart: "no"
-    env_file: .env
-
-  #  NEW Nuxt UI
-  ui_nuxt:
-    platform: linux/amd64
-    build:
-      context: ui-nuxt
-    volumes:
-      - ./ui-nuxt/app:/app
     working_dir: /app
     hostname: ui-nuxt
     restart: unless-stopped

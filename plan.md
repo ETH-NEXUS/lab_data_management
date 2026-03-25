@@ -1,5 +1,3 @@
-- [x] Step 1: Add management command option utils and align management store API with legacy behavior
-- [ ] Step 2: Create migrated management components (selected paths, dynamic form, command runner)
-- [ ] Step 3: Implement the new management page layout and tabs in pages/management.vue
-- [ ] Step 4: Add missing management i18n labels used by migrated components
-- [ ] Step 5: Run lint for all new/updated management files and verify imports/types
+- [x] Step 1: Add missing action.submit locale key used by management dynamic form
+- [x] Step 2: Implement native desktop drag-and-drop handling on management form inputs
+- [x] Step 3: Run lint and verify the management drag-and-drop path end-to-end
