@@ -8,7 +8,7 @@ const drawerWidth = 400
 const leftDrawerOpen = ref(false)
 const closeLeftDrawer = () => (leftDrawerOpen.value = false)
 const drawerTopOffset = 96
-const shellClass = 'min-h-[calc(100dvh-6rem)] md:flex md:items-start'
+const shellClass = 'min-h-[calc(100dvh-6rem)] md:flex md:items-stretch'
 const pageContainerClass = 'min-w-0 flex-1 md:border-l md:border-[var(--app-border)]'
 </script>
 

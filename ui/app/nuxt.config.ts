@@ -33,6 +33,12 @@ export default defineNuxtConfig({
   },
   devtools: { enabled: true },
   modules: ['@nuxt/ui', '@nuxt/eslint', '@pinia/nuxt', '@vueuse/nuxt', '@nuxtjs/i18n'],
+  // Force light-only UI and bypass any previously stored dark preference.
+  colorMode: {
+    preference: 'light',
+    fallback: 'light',
+    storageKey: 'nuxt-color-mode-light',
+  },
   i18n: {
     restructureDir: '',
     strategy: 'prefix_except_default',
