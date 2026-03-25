@@ -7,8 +7,10 @@ services:
       - "web_root:/web_root:z"
       - ./api/static:/vol/web/static:z
       - ./api/media:/vol/web/media:z
-      - /etc/pki/tls/certs/DCcerts2025/ldm.nexus.ethz.ch.chain.crt.pem:/etc/letsencrypt/live/ldm.nexus.ethz.ch/fullchain.pem:ro
-      - /etc/pki/tls/private/key2025/ldm.nexus.ethz.ch.privkey.pem:/etc/letsencrypt/live/ldm.nexus.ethz.ch/privkey.pem:ro
+        #- /etc/pki/tls/certs/DCcerts2025/ldm.nexus.ethz.ch.chain.crt.pem:/etc/letsencrypt/live/ldm.nexus.ethz.ch/fullchain.pem:ro
+      - /etc/pki/tls/certs/ldm.nexus.ethz.ch.pem:/etc/letsencrypt/live/ldm.nexus.ethz.ch/fullchain.pem:ro
+        #- /etc/pki/tls/private/key2025/ldm.nexus.ethz.ch.privkey.pem:/etc/letsencrypt/live/ldm.nexus.ethz.ch/privkey.pem:ro
+      - /etc/pki/tls/private/ldm.nexus.ethz.ch.key:/etc/letsencrypt/live/ldm.nexus.ethz.ch/privkey.pem:ro
 
     ports:
       - "8081:80"
