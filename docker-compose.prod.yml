@@ -22,11 +22,22 @@ services:
     volumes:
       - /lab_shared_drive:/data
   ui:
-    command: >
-      bash -c "\
-        yarn install
+    command:
+      - /bin/sh
+      - -c
+      - |
+        set -e
+        mkdir -p /app/dist
         rm -rf /app/dist/*
-        yarn run build
-        mv /app/dist/spa/* /app/dist/.
-        rm -rf /app/dist/spa
-      "
+        pnpm install --frozen-lockfile
+        pnpm run build
+        cp -a /app/.output/public/. /app/dist/
+        rm -rf /app/.output
+#    command: >
+#      bash -c "\
+#        yarn install
+#        rm -rf /app/dist/*
+#        yarn run build
+#        mv /app/dist/spa/* /app/dist/.
+#        rm -rf /app/dist/spa
+#      "

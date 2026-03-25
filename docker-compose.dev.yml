@@ -1,27 +1,42 @@
 version: "3"
 
 services:
+#  ui:
+#    platform: linux/arm64/v8
+#    ports:
+#      - "8090:8090"
+#    command:
+#      - /bin/sh
+#      - -c
+#      - |
+#        yarn
+#        yarn dev --host 0.0.0.0 --port 8090
+#    restart: unless-stopped
+#    depends_on:
+#      - api
+
   ui:
+    restart: unless-stopped
+    depends_on:
+      - api
+    platform: linux/arm64/v8
     ports:
-      # We should use the same port internally and externally, otherwise the dev tools support
-      # of the browser is for almost nothing
-      - "8090:8090"
+      - "8091:3000"
     command:
       - /bin/sh
       - -c
       - |
-        yarn
-        yarn dev --host 0.0.0.0 --port 8090
-    # command: bash -c 'while true; do sleep 5; done'
-    restart: unless-stopped
-    depends_on:
-      - api
+        corepack enable
+        pnpm install --no-frozen-lockfile
+        pnpm dev --host 0.0.0.0 --port 3000
+
   api:
     environment:
       - DJANGO_DEBUG=True
     ports:
       - "5090:5000"
       - "8890:8888"
+
   db:
     ports:
       - "54390:5432"

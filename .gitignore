@@ -107,12 +107,12 @@ target/
 # pdm
 #   Similar to Pipfile.lock, it is generally recommended to include pdm.lock in version control.
 #pdm.lock
-#   pdm stores project-wide configurations in .pdm.toml, but it is recommended to not include it
+#   pdm stores projects-wide configurations in .pdm.toml, but it is recommended to not include it
 #   in version control.
 #   https://pdm.fming.dev/#use-with-ide
 .pdm.toml
 
-# PEP 582; used by e.g. github.com/David-OConnor/pyflow and github.com/pdm-project/pdm
+# PEP 582; used by e.g. github.com/David-OConnor/pyflow and github.com/pdm-projects/pdm
 __pypackages__/
 
 # Celery stuff
@@ -131,11 +131,11 @@ ENV/
 env.bak/
 venv.bak/
 
-# Spyder project settings
+# Spyder projects settings
 .spyderproject
 .spyproject
 
-# Rope project settings
+# Rope projects settings
 .ropeproject
 
 # mypy
@@ -254,7 +254,7 @@ dist
 
 # Gatsby files
 .cache/
-# Comment in the public line in if your project uses Gatsby and not Next.js
+# Comment in the public line in if your projects uses Gatsby and not Next.js
 # https://nextjs.org/blog/next-9-1#public-directory-support
 # public
 
@@ -328,3 +328,18 @@ api/notebooks
 *.jupyterlab-workspace
 
 data_temp/
+
+node-compile-cache/
+.pnpm-store/
+
+# Node runtime caches
+.node-compile-cache/
+
+
+# Nuxt
+.nuxt/
+.output/
+
+# Dependencies
+
+AGENTS.md

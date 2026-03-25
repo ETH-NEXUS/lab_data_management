@@ -1,0 +1,15 @@
+.DS_Store
+.git/
+.gitignore
+.env
+.env.*
+**/node_modules/
+**/.yarn/
+**/.pnpm-store/
+**/.pnp.*
+**/node-compile-cache/
+**/.nuxt/
+**/.output/
+**/dist/
+**/.cache/
+**/*.log
