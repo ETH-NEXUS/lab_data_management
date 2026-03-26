@@ -1,0 +1,10 @@
+.DS_Store
+.git/
+.gitignore
+__pycache__/
+*.pyc
+backups/
+media/
+static/
+notebooks/
+example_notebooks/

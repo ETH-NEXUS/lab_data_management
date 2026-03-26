@@ -15,11 +15,10 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path, include, re_path
-from drf_auto_endpoint.router import router
+from ldm.api_router import router
 from core.views import (
     MappingPreviewView,
     VersionView,
-    DocsView,
     CsrfCookieView,
     LoginView,
     LogoutView,
@@ -55,7 +54,6 @@ urlpatterns = [
     path("api/", include(user_router.urls)),
     path("api/mapping_preview/", MappingPreviewView.as_view()),
     path("api/version/", VersionView.as_view()),
-    re_path(r"^docs/(?P<uri>.*)$", DocsView.as_view(), name="docs"),
     path("api/harvest/", include("harvest.urls")),
     re_path(
         "(?P<path>notebook/.*)$",

@@ -151,7 +151,7 @@ const openNotebook = () => {
 }
 
 const openDocsPage = () => {
-  window.open(toBackendUrl('/docs/'), '_blank', 'noreferrer')
+  window.open('/docs/', '_blank', 'noreferrer')
 }
 
 const logout = async () => {

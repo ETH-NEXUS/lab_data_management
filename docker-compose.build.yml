@@ -1,0 +1,87 @@
+version: "3"
+
+services:
+  api:
+    platform: linux/amd64
+    image: lab_management-api:local
+    build:
+      context: api
+      args:
+        ENABLE_JUPYTER: ${ENABLE_JUPYTER}
+        ENABLE_R: ${ENABLE_R}
+    restart: "no"
+
+  db:
+    platform: linux/amd64
+    image: lab_management-db:local
+    build:
+      context: db
+    restart: "no"
+
+  ui-build:
+    platform: linux/amd64
+    build:
+      context: ui
+    volumes:
+      - ./ui/app:/app
+      - ./ws/web_root:/web_root
+    command:
+      - /bin/sh
+      - -c
+      - |
+        set -e
+        pnpm install --no-frozen-lockfile
+        pnpm run build
+        mkdir -p /web_root
+        rm -rf /web_root/*
+        cp -a /app/.output/public/. /web_root/
+    restart: "no"
+
+  api-static-build:
+    platform: linux/amd64
+    image: lab_management-api:local
+    env_file: .env
+    volumes:
+      - ./ws/static:/vol/web/static
+    entrypoint:
+      - python
+      - manage.py
+      - collectstatic
+      - --noinput
+      - --clear
+    restart: "no"
+
+  docs-build:
+    image: lab_management-docs:local
+    platform: linux/amd64
+    build:
+      context: docs
+    volumes:
+      - ./README.md:/workspace/README.md:ro
+      - ./.git:/docs/.git:ro
+      - ./ws/docs:/docs_out
+    command:
+      - /bin/sh
+      - -c
+      - |
+        set -e
+        ./scripts/generate_changelog.sh
+        cp /workspace/README.md /docs/docs/cl_tools.md
+        mkdocs build --clean
+        mkdir -p /docs_out
+        rm -rf /docs_out/*
+        cp -a /docs/site/. /docs_out/
+    depends_on:
+      - ui-build
+    restart: "no"
+
+  ws:
+    platform: linux/amd64
+    image: lab_management-ws:local
+    build:
+      context: ws
+    depends_on:
+      - ui-build
+      - docs-build
+      - api-static-build
+    restart: "no"

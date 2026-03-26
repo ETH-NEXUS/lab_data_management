@@ -28,3 +28,16 @@ vi .env
 docker compose  -f docker-compose.yml -f  docker-compose.dev.yml  up
 ```
 
+# Production build assets
+
+Before starting the production stack, prebuild `api`, `db`, and `ws` images, and generate UI/docs/static assets:
+
+```bash
+make build-assets
+```
+
+Then start production without building:
+
+```bash
+docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d
+```

@@ -1,0 +1,8 @@
+*
+!Dockerfile
+!web_root/
+!web_root/**
+!docs/
+!docs/**
+!static/
+!static/**

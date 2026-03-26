@@ -1,15 +1,12 @@
 import csv
 import json
-import mimetypes
 import os
-import re
 from datetime import datetime
 from os import environ
 from uuid import uuid4
 import subprocess
 import traceback
 from rest_framework.pagination import PageNumberPagination
-from django.conf import settings
 from django.contrib.auth import authenticate, login, logout
 from django.core.exceptions import ValidationError
 from django.core.handlers.wsgi import WSGIRequest
@@ -755,27 +752,6 @@ class ExperimentViewSet(viewsets.ModelViewSet):
 class VersionView(views.APIView):
     def get(self, request, format=None):
         return Response({"version": environ.get("GIT_VERSION", "N/A")})
-
-
-class DocsView(View):
-    def get(self, request, uri, **kwargs):
-        docs_dir = os.path.join(settings.BASE_DIR, "docs", "site")
-        if uri == "":
-            uri = "index.html"
-        file_path = os.path.join(docs_dir, uri)
-
-        if os.path.isdir(file_path):
-            file_path = os.path.join(file_path, "index.html")
-        if not os.path.isfile(file_path):
-            raise Http404("File not found")
-
-        with open(file_path, "r", encoding="utf8", errors="replace") as f:
-            content = f.read()
-
-        # Replace all emojis with an empty string
-        content = re.sub(r"[^\x00-\x7F]+", "", content)
-        mime_type = mimetypes.guess_type(file_path)
-        return HttpResponse(content, content_type=mime_type[0])
 
 
 @csrf_exempt

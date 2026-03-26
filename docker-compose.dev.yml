@@ -1,27 +1,20 @@
 version: "3"
 
 services:
-#  ui:
-#    platform: linux/arm64/v8
-#    ports:
-#      - "8090:8090"
-#    command:
-#      - /bin/sh
-#      - -c
-#      - |
-#        yarn
-#        yarn dev --host 0.0.0.0 --port 8090
-#    restart: unless-stopped
-#    depends_on:
-#      - api
-
   ui:
+    build:
+      context: ui
+    env_file: .env
+    hostname: ui-nuxt
     restart: unless-stopped
     depends_on:
       - api
+      - docs
     platform: linux/arm64/v8
     ports:
       - "8091:3000"
+    volumes:
+      - ./ui/app:/app
     command:
       - /bin/sh
       - -c
@@ -30,13 +23,50 @@ services:
         pnpm install --no-frozen-lockfile
         pnpm dev --host 0.0.0.0 --port 3000
 
+  docs:
+    build:
+      context: docs
+    working_dir: /docs
+    volumes:
+      - ./docs:/docs
+      - ./.git:/docs/.git:ro
+      - ./README.md:/workspace/README.md:ro
+    command:
+      - /bin/sh
+      - -c
+      - |
+        set -e
+        ./scripts/generate_changelog.sh
+        cp /workspace/README.md /docs/docs/cl_tools.md
+        mkdocs serve -a 0.0.0.0:8000
+    ports:
+      - "8001:8000"
+    restart: unless-stopped
+
   api:
+    build:
+      context: api
+      args:
+        ENABLE_JUPYTER: ${ENABLE_JUPYTER}
+        ENABLE_R: ${ENABLE_R}
+        DEPENDENCIES: dev
     environment:
       - DJANGO_DEBUG=True
     ports:
       - "5090:5000"
       - "8890:8888"
+    volumes:
+      - ./api/app:/app
+      - ./api/notebooks:/notebooks
+      - ./api/backups:/vol/backups
+      - ./api/static:/vol/web/static:z
+      - ./api/media:/vol/web/media:z
+      - ./data:/data
+      - ./conf/jupyter:/root/.jupyter
+      - ./conf/ipython:/root/.ipython
 
   db:
+    build:
+      context: db
     ports:
       - "54390:5432"

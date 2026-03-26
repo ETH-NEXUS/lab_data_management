@@ -10,6 +10,12 @@ export GIT_COMMITHASH=$(git rev-parse HEAD)
 build: env_var
 	@docker-compose -f docker-compose.yml -f docker-compose.dev.yml build
 
+build-assets:
+	@docker compose -f docker-compose.yml -f docker-compose.build.yml build api db
+	@docker compose -f docker-compose.yml -f docker-compose.build.yml up --build --abort-on-container-exit --exit-code-from docs-build docs-build
+	@docker compose -f docker-compose.yml -f docker-compose.build.yml up --abort-on-container-exit --exit-code-from api-static-build api-static-build
+	@docker compose -f docker-compose.yml -f docker-compose.build.yml build ws
+
 up: env_var	
 	@docker-compose -f docker-compose.yml -f docker-compose.dev.yml up -d
 
@@ -28,7 +34,8 @@ maintoff:
 
 redeploy: env_var
 	@git pull
-	@docker compose -f docker-compose.yml -f docker-compose.prod.yml up --build -d
+	@$(MAKE) build-assets
+	@docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d
 
 ps:
 	@docker ps --format "$(FORMAT)"

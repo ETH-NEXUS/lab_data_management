@@ -10,15 +10,6 @@ python manage.py migrate
 python manage.py initadmin
 python manage.py db init
 
-cat README.md > docs/docs/cl_tools.md
-
-cd docs || exit
-[ -x ./scripts/generate_changelog.sh ] || chmod +x ./scripts/generate_changelog.sh
-git config --global --add safe.directory /app/docs
-./scripts/generate_changelog.sh
-mkdocs build --clean
-cd ..
-
 # if [ "$ENABLE_JUPYTER" == "True" ]; then
 #   jupyter notebook --ip 0.0.0.0 --port 8888 --no-browser --allow-root --config notebook/ipython_config.py &
 # fi

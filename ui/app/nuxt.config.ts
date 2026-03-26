@@ -15,7 +15,7 @@ export default defineNuxtConfig({
       '/admin': `http://api:${process.env.DJANGO_PORT || '5000'}/admin`,
       '/media': `http://api:${process.env.DJANGO_PORT || '5000'}/media`,
       '/static': `http://api:${process.env.DJANGO_PORT || '5000'}/static`,
-      '/docs': `http://api:${process.env.DJANGO_PORT || '5000'}/docs`,
+      '/docs': 'http://docs:8000',
       '/notebook': {
         target: `http://api:${process.env.DJANGO_PORT || '5000'}/notebook`,
         ws: true,

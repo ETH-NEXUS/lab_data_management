@@ -1,61 +1,21 @@
 version: "3"
 volumes:
   pg_data:
-  web_root:
-  web_root_nuxt:
+  api_notebooks:
+  api_backups:
+  api_media:
 
 services:
-#  ui:
-#    platform: linux/amd64
-#    build:
-#      context: ui
-#    volumes:
-#      - ./ui/app:/app
-#      - "web_root:/app/dist:z"
-#    hostname: ui
-#    restart: "no"
-#    env_file: .env
-
-  #  NEW Nuxt UI
-  ui:
-    platform: linux/amd64
-    build:
-      context: ui
-    volumes:
-      - ./ui/app:/app
-      - "web_root:/app/dist:z"
-    working_dir: /app
-    hostname: ui-nuxt
-    restart: "no"
-    env_file: .env
-    depends_on:
-      - api
-
   api:
     platform: linux/amd64
-    build:
-      context: api
-      args:
-        ENABLE_JUPYTER: ${ENABLE_JUPYTER}
-        ENABLE_R: ${ENABLE_R}
+    image: lab_management-api:local
     hostname: api
     restart: unless-stopped
-    entrypoint: sh -c '/app/entrypoint.sh'
+    entrypoint: ["/app/entrypoint.sh"]
     volumes:
-      - ./api/app:/app
-      - ./api/notebooks:/notebooks
-      #- ./api/notebooks:/data/notebooks
-      # - ./api/app/notebook/startup:/root/.ipython/profile_default/startup
-      # - ./api/app/notebook/nbextensions/printview:/root/.local/share/jupyter/nbextensions/printview
-      - ./api/backups:/vol/backups
-      - ./api/static:/vol/web/static:z
-      - ./api/media:/vol/web/media:z
-      - ./data:/data
-      - ./README.md:/app/README.md
-      - ./.git:/app/docs/.git
-      # - ./api/notebooks:/data/notebooks
-      - ./conf/jupyter:/root/.jupyter
-      - ./conf/ipython:/root/.ipython
+      - api_notebooks:/notebooks
+      - api_backups:/vol/backups
+      - api_media:/vol/web/media:z
     env_file: .env
     environment:
       - GIT_VERSION=${GIT_VERSION}
@@ -63,10 +23,10 @@ services:
       - GIT_LASTCOMMITDATE=${GIT_LASTCOMMITDATE}
     depends_on:
       - db
+
   db:
     platform: linux/amd64
-    build:
-      context: db
+    image: lab_management-db:local
     hostname: db
     restart: unless-stopped
     env_file: .env

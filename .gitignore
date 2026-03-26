@@ -258,6 +258,10 @@ dist
 # https://nextjs.org/blog/next-9-1#public-directory-support
 # public
 
+# Built web assets staged for ws image build
+ws/web_root/*
+!ws/web_root/.gitkeep
+
 # vuepress build output
 .vuepress/dist
 
@@ -343,3 +347,8 @@ node-compile-cache/
 # Dependencies
 
 AGENTS.md
+
+# WS build artifacts
+ws/web_root/*
+ws/docs/*
+ws/static/*

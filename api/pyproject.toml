@@ -1,0 +1,53 @@
+[project]
+name = "api"
+version = "0.1.0"
+requires-python = ">=3.13,<3.14"
+dependencies = [
+  "channels[daphne] (>=4.3.2,<5.0.0)",
+  "chardet (>=7.3.0,<8.0.0)",
+  "colorful-logger (>=0.2.1,<1.0.0)",
+  "django (>=6.0.3,<7.0.0)",
+  "django-auth-ldap (>=5.3.0,<6.0.0)",
+  "django-cors-headers (>=4.9.0,<5.0.0)",
+  "django-dbbackup (>=5.2.0,<6.0.0)",
+  "django-extensions (>=4.1,<5.0.0)",
+  "django-filter (>=25.2,<26.0.0)",
+  "django-revproxy (>=0.13.0,<1.0.0)",
+  "djangorestframework (>=3.17.1,<4.0.0)",
+  "djangorestframework-csv (>=3.0.2,<4.0.0)",
+  "easydict (>=1.13,<2.0.0)",
+  "gunicorn (>=25.2.0,<26.0.0)",
+  "numpy (>=2.4.3,<3.0.0)",
+  "openpyxl (>=3.1.5,<4.0.0)",
+  "pandas (>=2.2.3,<3.0.0)",
+  "psycopg[binary] (>=3.3.3,<4.0.0)",
+  "pyyaml (>=6.0.3,<7.0.0)",
+  "rdkit (>=2025.9.6,<2026.0.0)",
+  "requests (>=2.33.0,<3.0.0)",
+  "schema (>=0.7.8,<1.0.0)",
+  "tqdm (>=4.67.3,<5.0.0)",
+  "urllib3 (>=2.6.3,<3.0.0)",
+  "uvicorn (>=0.42.0,<1.0.0)",
+  "websockets (>=16.0,<17.0.0)",
+]
+
+[dependency-groups]
+dev = [
+  "autoflake (>=2.3.3,<3.0.0)",
+  "black (>=26.3.1,<27.0.0)",
+  "flake8 (>=7.3.0,<8.0.0)",
+  "isort (>=8.0.1,<9.0.0)",
+  "pur (>=7.3.3,<8.0.0)",
+  "pytest-cov (>=7.1.0,<8.0.0)",
+  "pytest-django (>=4.12.0,<5.0.0)",
+]
+jupyter = [
+  "ipylab (>=1.1.0,<2.0.0)",
+  "ipynbname (>=2025.8.0.0,<2026.0.0.0)",
+  "ipython (>=9.11.0,<10.0.0)",
+  "jupyter (>=1.1.1,<2.0.0)",
+  "jupyterlab (>=4.5.6,<5.0.0)",
+]
+r = [
+  "rpy2[all] (>=3.6.6,<4.0.0)",
+]
