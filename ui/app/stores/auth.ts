@@ -1,6 +1,6 @@
 import { defineStore } from 'pinia'
 import { ref, computed, watch } from 'vue'
-import { useAPI } from '~~/composables/useAPI'
+import { useAPI, type APIOptions } from '~~/composables/useAPI'
 
 export type AuthUser = {
   id?: number
@@ -24,6 +24,7 @@ const ME_URL = 'auth/users/me/'
 
 export const useAuthStore = defineStore('authStore', () => {
   const toast = useToast()
+  const nuxtApp = useNuxtApp()
 
   const user = ref<AuthUser | null>(null)
   const isLoading = ref(false)
@@ -36,6 +37,9 @@ export const useAuthStore = defineStore('authStore', () => {
 
   // CSRF reset state
   const csrfToken = useState<string | null>('csrfToken', () => null)
+
+  const apiRequest = <T = any>(endpoint: string, options: APIOptions = {}) =>
+    nuxtApp.runWithContext(() => useAPI<T>(endpoint, options))
 
   const clearError = () => {
     error.value = null
@@ -68,7 +72,7 @@ export const useAuthStore = defineStore('authStore', () => {
     error.value = null
 
     try {
-      const { data, error: apiError } = await useAPI<AuthUser>(ME_URL, {
+      const { data, error: apiError } = await apiRequest<AuthUser>(ME_URL, {
         method: 'GET',
       })
 
@@ -104,7 +108,7 @@ export const useAuthStore = defineStore('authStore', () => {
     error.value = null
 
     try {
-      const { error: apiError } = await useAPI(LOGIN_URL, {
+      const { error: apiError } = await apiRequest(LOGIN_URL, {
         method: 'POST',
         body: { username, password },
       })
@@ -145,7 +149,7 @@ export const useAuthStore = defineStore('authStore', () => {
     error.value = null
 
     try {
-      await useAPI(LOGOUT_URL, { method: 'GET' })
+      await apiRequest(LOGOUT_URL, { method: 'GET' })
     } finally {
       user.value = null
       csrfToken.value = null

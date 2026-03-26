@@ -10,7 +10,7 @@ type HttpMethod =
   | 'HEAD'
   | 'OPTIONS'
 
-interface APIOptions {
+export interface APIOptions {
   method?: HttpMethod
   headers?: Record<string, string>
   body?: any
