@@ -1,10 +1,12 @@
-FROM python:3.11-bookworm
+FROM ghcr.io/astral-sh/uv:0.9.10-python3.11-bookworm
 
 # Optimise python and debian in docker
 ENV PYTHONUNBUFFERED 1
 ENV PIP_BREAK_SYSTEM_PACKAGES 1
 ENV PIP_DISABLE_PIP_VERSION_CHECK 1
 ENV DEBIAN_FRONTEND noninteractive
+ENV UV_COMPILE_BYTECODE 1
+ENV UV_LINK_MODE copy
 
 # Configure /notebooks as a volume
 VOLUME /notebooks
@@ -19,7 +21,7 @@ RUN mkdir -p /vol/backups
 RUN apt-get update --fix-missing
 
 # Install PostgreSQL client
-RUN apt-get install -y postgresql-client
+RUN apt-get install -y postgresql-client git
 
 # Cleanup
 RUN apt-get clean && rm -rf /var/lib/apt/lists/*
@@ -48,19 +50,10 @@ gpg --armor --export '95C0FAF38DB3CCAD0C080A7BDC78B2DDEABC47B7' | gpg --dearmor 
 echo "deb [signed-by=/usr/share/keyrings/cran.gpg] https://cloud.r-project.org/bin/linux/debian bookworm-cran40/" | tee /etc/apt/sources.list.d/cran.list \
 ;fi
 RUN if [ "${ENABLE_R}" = "True" ]; then apt-get update && apt-get install -y r-base cmake; fi
-# According to this guide: 
-# https://anderfernandez.com/en/blog/how-to-program-with-python-and-r-in-the-same-jupyter-notebook/
-RUN if [ "${ENABLE_R}" = "True" ]; then pip install rpy2[all]==3.5.12; fi
 # R dependencies are installed at the end to avoid rebuild the whole image in case we want to add 
 # an additional R dependency
 
-# Update pip
-RUN pip install --upgrade pip
-
-# Used for Jupyter
-COPY ./requirements.jupyter.txt /
 ARG ENABLE_JUPYTER
-RUN if [ "${ENABLE_JUPYTER}" = "True" ]; then pip install -r /requirements.jupyter.txt; fi
 # RUN if [ "${ENABLE_JUPYTER}" = "True" ]; then python -m sos_notebook.install; fi
 # RUN if [ "${ENABLE_JUPYTER}" = "True" ]; then python -m bash_kernel.install; fi
 
@@ -156,18 +149,53 @@ quarto install tinytex \
 # Used for LDAP authentication
 RUN apt-get install -y libsasl2-dev python-dev-is-python3 libldap2-dev libssl-dev
 
-# Global python requirements
-COPY ./requirements.txt /
-RUN pip install -r /requirements.txt
 
-# Install R dependecies
-RUN if [ "${ENABLE_R}" = "True" ]; then R -e 'install.packages(c("ggplot2", "DT", "bioassays", "repr", "tidyverse"), dependencies = TRUE, INSTALL_opts = c("--no-lock"))'; fi
-RUN if [ "${ENABLE_R}" = "True" ]; then R -e 'install.packages(c("car", "ggpubr", "captioner", "lawstat"), dependencies = TRUE, INSTALL_opts = c("--no-lock"))'; fi
-RUN if [ "${ENABLE_R}" = "True" ]; then R -e 'install.packages(c("RColorBrewer", "gplots", "ggrepel", "cowplot", "ggExtra", "pheatmap", "reshape2", "drc", "knitr", "locfit", "robust"), dependencies = TRUE, INSTALL_opts = c("--no-lock"))'; fi
 
-RUN if [ "${ENABLE_R}" = "True" ]; then \
-       R -e 'install.packages(c("lubridate", "rmarkdown"), dependencies = TRUE, INSTALL_opts = c("--no-lock"))'; \
-   fi
+# 2. Optimized R Layer
+RUN --mount=type=cache,target=/root/.cache/pak \
+    if [ "${ENABLE_R}" = "True" ]; then \
+      R -q -e 'install.packages("pak", repos = "https://r-lib.github.io/p/pak/stable")'; \
+      R -q -e ' \
+        options( \
+          repos = c(CRAN = "https://packagemanager.posit.co/cran/__linux__/bookworm/latest"), \
+          pak.no_extra_messages = TRUE \
+        ); \
+        pkgs <- c("ggplot2", "DT", "BioRssay", "repr", "tidyverse", "car", "ggpubr", "lawstat", "RColorBrewer", "gplots", "ggrepel", "cowplot", "ggExtra", "pheatmap", "reshape2", "drc", "knitr", "locfit", "robust", "lubridate", "rmarkdown"); \
+        pak::pkg_install(pkgs); \
+      '; \
+    fi
+
+# RUN --mount=type=cache,target=/root/.cache/pak \
+#     if [ "${ENABLE_R}" = "True" ]; then \
+#       R -q -e 'install.packages("pak", repos = "https://r-lib.github.io/p/pak/stable")'; \
+#       R -q -e ' \
+#         options(pak.no_extra_messages = TRUE); \
+#         options(pak.num_workers = parallel::detectCores()); \
+#         pkgs <- c("ggplot2", "DT", "BioRssay", "repr", "tidyverse", "car", "ggpubr", "lawstat", "RColorBrewer", "gplots", "ggrepel", "cowplot", "ggExtra", "pheatmap", "reshape2", "drc", "knitr", "locfit", "robust", "lubridate", "rmarkdown"); \
+#         sysreqs <- pak::pkg_sysreqs(pkgs); \
+#         system(paste(c("apt-get update -qq", sysreqs$install_scripts), collapse = " && ")); \
+#         pak::pkg_install(pkgs); \
+#       '; \
+#     fi
+
+
+COPY ./pyproject.toml /pyproject.toml
+ARG DEPENDENCIES=prod
+RUN --mount=type=cache,target=/root/.cache/uv \
+    /bin/sh -eux -c '\
+      UV_ARGS="--no-install-project --no-default-groups"; \
+      if [ "$DEPENDENCIES" = "dev" ]; then \
+        UV_ARGS="$UV_ARGS --group dev"; \
+      fi; \
+      if [ "$ENABLE_JUPYTER" = "True" ]; then \
+        UV_ARGS="$UV_ARGS --group jupyter"; \
+      fi; \
+      if [ "$ENABLE_R" = "True" ]; then \
+        UV_ARGS="$UV_ARGS --group r"; \
+      fi; \
+      uv sync $UV_ARGS; \
+    '
+ENV PATH="/.venv/bin:$PATH"
 
 # Set working directory
 WORKDIR /app

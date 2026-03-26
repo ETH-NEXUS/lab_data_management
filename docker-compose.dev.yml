@@ -1,4 +1,3 @@
-version: "3"
 
 services:
 #  ui:
@@ -31,6 +30,9 @@ services:
         pnpm dev --host 0.0.0.0 --port 3000
 
   api:
+    build:
+      args:
+        DEPENDENCIES: dev
     environment:
       - DJANGO_DEBUG=True
     ports:

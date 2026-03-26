@@ -1,9 +1,0 @@
--r requirements.txt
--r requirements.jupyter.txt
-black
-isort
-flake8
-autoflake
-pur
-pytest-django
-pytest-cov

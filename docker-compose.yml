@@ -1,4 +1,3 @@
-version: "3"
 volumes:
   pg_data:
   web_root:
