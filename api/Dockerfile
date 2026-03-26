@@ -1,10 +1,12 @@
-FROM python:3.11-bookworm
+FROM ghcr.io/astral-sh/uv:0.9.10-python3.11-bookworm
 
 # Optimise python and debian in docker
 ENV PYTHONUNBUFFERED 1
 ENV PIP_BREAK_SYSTEM_PACKAGES 1
 ENV PIP_DISABLE_PIP_VERSION_CHECK 1
 ENV DEBIAN_FRONTEND noninteractive
+ENV UV_COMPILE_BYTECODE 1
+ENV UV_LINK_MODE copy
 
 # Configure /notebooks as a volume
 VOLUME /notebooks
@@ -19,7 +21,7 @@ RUN mkdir -p /vol/backups
 RUN apt-get update --fix-missing
 
 # Install PostgreSQL client
-RUN apt-get install -y postgresql-client
+RUN apt-get install -y postgresql-client git
 
 # Cleanup
 RUN apt-get clean && rm -rf /var/lib/apt/lists/*
@@ -48,126 +50,81 @@ gpg --armor --export '95C0FAF38DB3CCAD0C080A7BDC78B2DDEABC47B7' | gpg --dearmor 
 echo "deb [signed-by=/usr/share/keyrings/cran.gpg] https://cloud.r-project.org/bin/linux/debian bookworm-cran40/" | tee /etc/apt/sources.list.d/cran.list \
 ;fi
 RUN if [ "${ENABLE_R}" = "True" ]; then apt-get update && apt-get install -y r-base cmake; fi
-# According to this guide: 
-# https://anderfernandez.com/en/blog/how-to-program-with-python-and-r-in-the-same-jupyter-notebook/
-RUN if [ "${ENABLE_R}" = "True" ]; then pip install rpy2[all]==3.5.12; fi
 # R dependencies are installed at the end to avoid rebuild the whole image in case we want to add 
 # an additional R dependency
 
-# Update pip
-RUN pip install --upgrade pip
-
-# Used for Jupyter
-COPY ./requirements.jupyter.txt /
 ARG ENABLE_JUPYTER
-RUN if [ "${ENABLE_JUPYTER}" = "True" ]; then pip install -r /requirements.jupyter.txt; fi
-# RUN if [ "${ENABLE_JUPYTER}" = "True" ]; then python -m sos_notebook.install; fi
-# RUN if [ "${ENABLE_JUPYTER}" = "True" ]; then python -m bash_kernel.install; fi
+ARG TARGETARCH
 
-# Build jupyter lab to integrate installed extensions
-# RUN if [ "${ENABLE_JUPYTER}" = "True" ]; then jupyter lab build; fi
-
-# Debian dependencies for Jupyter
-# RUN if [ "${ENABLE_JUPYTER}" = "True" ]; then \
-# cd /tmp && \
-# apt-get update && apt-get install -y \
-# texlive-xetex \
-# gconf-service \
-# libasound2 \
-# libatk1.0-0 \
-# libatk-bridge2.0-0 \
-# libc6 \
-# libcairo2 \
-# libcups2 \
-# libdbus-1-3 \
-# libexpat1 \
-# libfontconfig1 \
-# libgcc1 \
-# libgconf-2-4 \
-# libgdk-pixbuf2.0-0 \
-# libglib2.0-0 \
-# libgtk-3-0 \
-# libnspr4 \
-# libpango-1.0-0 \
-# libpangocairo-1.0-0 \
-# libstdc++6 \
-# libx11-6 \
-# libx11-xcb1 \
-# libxcb1 \
-# libxcomposite1 \
-# libxcursor1 \
-# libxdamage1 \
-# libxext6 \
-# libxfixes3 \
-# libxi6 \
-# libxrandr2 \
-# libxrender1 \
-# libxss1 \
-# libxtst6 \
-# ca-certificates \
-# fonts-liberation \
-# libappindicator1 \
-# libnss3 \
-# lsb-release \
-# xdg-utils \
-# wget \
-# ;fi
-# RUN if [ "${ENABLE_JUPYTER}" = "True" ]; then \
-# wget -q https://github.com/jgm/pandoc/releases/download/3.1.3/pandoc-3.1.3-1-amd64.deb && \
-# dpkg -i pandoc-3.1.3-1-amd64.deb && \
-# ;fi
 RUN if [ "${ENABLE_JUPYTER}" = "True" ]; then \
-wget -q https://github.com/quarto-dev/quarto-cli/releases/download/v1.4.156/quarto-1.4.156-linux-amd64.deb && \
-dpkg -i quarto-1.4.156-linux-amd64.deb && \
-quarto install tinytex \
-;fi
-# RUN if [ "${ENABLE_JUPYTER}" = "True" ]; then \
-# apt-get install -y xfonts-75dpi xfonts-base && \
-# wget -q https://github.com/wkhtmltopdf/packaging/releases/download/0.12.6.1-3/wkhtmltox_0.12.6.1-3.bookworm_amd64.deb && \
-# dpkg -i wkhtmltox_0.12.6.1-3.bookworm_amd64.deb \
-# ;fi
-# RUN if [ "${ENABLE_JUPYTER}" = "True" ]; then pip install hide_code[lab]; fi
-# RUN if [ "${ENABLE_JUPYTER}" = "True" ]; then jupyter labextension install @techrah/text-shortcuts; fi
-# RUN if [ "${ENABLE_JUPYTER}" = "True" ]; then jupyter contrib nbextension install --user; fi
-# RUN if [ "${ENABLE_JUPYTER}" = "True" ]; then jupyter nbextension enable printview/main ; fi
-# RUN if [ "${ENABLE_JUPYTER}" = "True" ]; then jupyter nbextension enable hide_input_all/main ; fi
-# RUN if [ "${ENABLE_JUPYTER}" = "True" ]; then jupyter nbextension enable hide_input/main ; fi
-# RUN if [ "${ENABLE_JUPYTER}" = "True" ]; then jupyter nbextension enable livemdpreview/livemdpreview ; fi
-# # RUN if [ "${ENABLE_JUPYTER}" = "True" ]; then jupyter nbextension enable code_prettify/autopep8 ; fi
-# RUN if [ "${ENABLE_JUPYTER}" = "True" ]; then jupyter nbextension enable varInspector/main ; fi
-
-
-# Jupyter R Kernel
-# ARG ENABLE_RKERNEL
-# RUN if [ "${ENABLE_RKERNEL}" = "True" ]; then apt-get install -y dirmngr gnupg apt-transport-https ca-certificates software-properties-common; fi
-# # The foolowing two lines is to upgrade R to the latest version on bullseye
-# # Reference: https://linux.how2shout.com/install-the-latest-r-programming-language-version-on-debian-11-bullseye/
-# RUN if [ "${ENABLE_RKERNEL}" = "True" ]; then apt-key adv --keyserver keyserver.ubuntu.com --recv-key '95C0FAF38DB3CCAD0C080A7BDC78B2DDEABC47B7'; fi
-# RUN if [ "${ENABLE_RKERNEL}" = "True" ]; then add-apt-repository 'deb http://cloud.r-project.org/bin/linux/debian bullseye-cran40/'; fi
-# RUN if [ "${ENABLE_RKERNEL}" = "True" ]; then apt-get update && apt-get install -y cmake r-base; fi
-# # The following packages are needed the Jupyter Kernel to run
-# RUN if [ "${ENABLE_RKERNEL}" = "True" ]; then R -e 'install.packages("IRkernel")'; fi
-# RUN if [ "${ENABLE_RKERNEL}" = "True" ]; then R -e 'IRkernel::installspec()'; fi
-# RUN if [ "${ENABLE_RKERNEL}" = "True" ]; then R -e 'install.packages("arrow")'; fi
-# # Below the packages that are needed can be configured
-# RUN if [ "${ENABLE_RKERNEL}" = "True" ]; then R -e 'install.packages(c("ggplot", "DT", "bioassays"), dependencies = TRUE, INSTALL_opts = c("--no-lock"))'; fi
-# RUN if [ "${ENABLE_RKERNEL}" = "True" ]; then R -e 'install.packages(c("car", "ggpubr"), dependencies = TRUE, INSTALL_opts = c("--no-lock"))'; fi
+      ARCH="${TARGETARCH:-$(dpkg --print-architecture)}"; \
+      case "${ARCH}" in \
+        amd64) \
+          QUARTO_DEB="quarto-1.4.156-linux-amd64.deb"; \
+          wget -q "https://github.com/quarto-dev/quarto-cli/releases/download/v1.4.156/${QUARTO_DEB}"; \
+          dpkg -i "${QUARTO_DEB}"; \
+          quarto install tinytex; \
+          ;; \
+        arm64) \
+          QUARTO_DEB="quarto-1.4.156-linux-arm64.deb"; \
+          wget -q "https://github.com/quarto-dev/quarto-cli/releases/download/v1.4.156/${QUARTO_DEB}"; \
+          dpkg -i "${QUARTO_DEB}"; \
+          wget -qO- "https://tinytex.yihui.org/install-bin-unix.sh" | sh; \
+          ;; \
+        *) \
+          echo "Unsupported architecture for Quarto: ${ARCH}" >&2; \
+          exit 1; \
+          ;; \
+      esac; \
+    fi
+ENV PATH="/root/bin:/root/.TinyTeX/bin/aarch64-linux:/root/.TinyTeX/bin/x86_64-linux:${PATH}"
 
 # Used for LDAP authentication
 RUN apt-get install -y libsasl2-dev python-dev-is-python3 libldap2-dev libssl-dev
 
-# Global python requirements
-COPY ./requirements.txt /
-RUN pip install -r /requirements.txt
 
-# Install R dependecies
-RUN if [ "${ENABLE_R}" = "True" ]; then R -e 'install.packages(c("ggplot2", "DT", "bioassays", "repr", "tidyverse"), dependencies = TRUE, INSTALL_opts = c("--no-lock"))'; fi
-RUN if [ "${ENABLE_R}" = "True" ]; then R -e 'install.packages(c("car", "ggpubr", "captioner", "lawstat"), dependencies = TRUE, INSTALL_opts = c("--no-lock"))'; fi
-RUN if [ "${ENABLE_R}" = "True" ]; then R -e 'install.packages(c("RColorBrewer", "gplots", "ggrepel", "cowplot", "ggExtra", "pheatmap", "reshape2", "drc", "knitr", "locfit", "robust"), dependencies = TRUE, INSTALL_opts = c("--no-lock"))'; fi
 
+# 2. Optimized R Layer
 RUN if [ "${ENABLE_R}" = "True" ]; then \
-       R -e 'install.packages(c("lubridate", "rmarkdown"), dependencies = TRUE, INSTALL_opts = c("--no-lock"))'; \
-   fi
+      R -q -e 'options(repos = c(CRAN = "https://packagemanager.posit.co/cran/latest")); install.packages(c( \
+        "ggplot2", "DT", "BioRssay", "repr", "tidyverse", "car", \
+        "ggpubr", "lawstat", "RColorBrewer", "gplots", "ggrepel", \
+        "cowplot", "ggExtra", "pheatmap", "reshape2", "drc", \
+        "knitr", "locfit", "robust", "lubridate", "rmarkdown" \
+      ), Ncpus = max(1L, parallel::detectCores() - 1L))'; \
+    fi
+
+# RUN --mount=type=cache,target=/root/.cache/pak \
+#     if [ "${ENABLE_R}" = "True" ]; then \
+#       R -q -e 'install.packages("pak", repos = "https://r-lib.github.io/p/pak/stable")'; \
+#       R -q -e ' \
+#         options(pak.no_extra_messages = TRUE); \
+#         options(pak.num_workers = parallel::detectCores()); \
+#         pkgs <- c("ggplot2", "DT", "BioRssay", "repr", "tidyverse", "car", "ggpubr", "lawstat", "RColorBrewer", "gplots", "ggrepel", "cowplot", "ggExtra", "pheatmap", "reshape2", "drc", "knitr", "locfit", "robust", "lubridate", "rmarkdown"); \
+#         sysreqs <- pak::pkg_sysreqs(pkgs); \
+#         system(paste(c("apt-get update -qq", sysreqs$install_scripts), collapse = " && ")); \
+#         pak::pkg_install(pkgs); \
+#       '; \
+#     fi
+
+
+COPY ./pyproject.toml /pyproject.toml
+ARG DEPENDENCIES=prod
+RUN --mount=type=cache,target=/root/.cache/uv \
+    /bin/sh -eux -c '\
+      UV_ARGS="--no-install-project --no-default-groups"; \
+      if [ "$DEPENDENCIES" = "dev" ]; then \
+        UV_ARGS="$UV_ARGS --group dev"; \
+      fi; \
+      if [ "$ENABLE_JUPYTER" = "True" ]; then \
+        UV_ARGS="$UV_ARGS --group jupyter"; \
+      fi; \
+      if [ "$ENABLE_R" = "True" ]; then \
+        UV_ARGS="$UV_ARGS --group r"; \
+      fi; \
+      uv sync $UV_ARGS; \
+    '
+ENV PATH="/.venv/bin:$PATH"
 
 # Set working directory
 WORKDIR /app

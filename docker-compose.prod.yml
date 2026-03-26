@@ -1,7 +1,5 @@
-version: "3"
 services:
   ws:
-    platform: linux/amd64
     image: ethnexus/smnrp:2.5.1
     volumes:
       - "web_root:/web_root:z"
@@ -21,6 +19,9 @@ services:
       - api
       - db
   api:
+    build:
+      args:
+        DEPENDENCIES: prod
     volumes:
       - /lab_shared_drive:/data
   ui:

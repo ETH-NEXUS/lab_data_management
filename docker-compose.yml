@@ -1,4 +1,3 @@
-version: "3"
 volumes:
   pg_data:
   web_root:
@@ -6,7 +5,6 @@ volumes:
 
 services:
 #  ui:
-#    platform: linux/amd64
 #    build:
 #      context: ui
 #    volumes:
@@ -18,7 +16,6 @@ services:
 
   #  NEW Nuxt UI
   ui:
-    platform: linux/amd64
     build:
       context: ui
     volumes:
@@ -32,7 +29,6 @@ services:
       - api
 
   api:
-    platform: linux/amd64
     build:
       context: api
       args:
@@ -64,7 +60,6 @@ services:
     depends_on:
       - db
   db:
-    platform: linux/amd64
     build:
       context: db
     hostname: db

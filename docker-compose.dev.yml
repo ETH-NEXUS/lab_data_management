@@ -1,8 +1,6 @@
-version: "3"
 
 services:
 #  ui:
-#    platform: linux/arm64/v8
 #    ports:
 #      - "8090:8090"
 #    command:
@@ -19,7 +17,6 @@ services:
     restart: unless-stopped
     depends_on:
       - api
-    platform: linux/arm64/v8
     ports:
       - "8091:3000"
     command:
@@ -31,6 +28,9 @@ services:
         pnpm dev --host 0.0.0.0 --port 3000
 
   api:
+    build:
+      args:
+        DEPENDENCIES: dev
     environment:
       - DJANGO_DEBUG=True
     ports:
