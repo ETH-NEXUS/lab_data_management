@@ -54,6 +54,7 @@ RUN if [ "${ENABLE_R}" = "True" ]; then apt-get update && apt-get install -y r-b
 # an additional R dependency
 
 ARG ENABLE_JUPYTER
+ARG TARGETARCH
 # RUN if [ "${ENABLE_JUPYTER}" = "True" ]; then python -m sos_notebook.install; fi
 # RUN if [ "${ENABLE_JUPYTER}" = "True" ]; then python -m bash_kernel.install; fi
 
@@ -110,10 +111,19 @@ ARG ENABLE_JUPYTER
 # dpkg -i pandoc-3.1.3-1-amd64.deb && \
 # ;fi
 RUN if [ "${ENABLE_JUPYTER}" = "True" ]; then \
-wget -q https://github.com/quarto-dev/quarto-cli/releases/download/v1.4.156/quarto-1.4.156-linux-amd64.deb && \
-dpkg -i quarto-1.4.156-linux-amd64.deb && \
-quarto install tinytex \
-;fi
+      ARCH="${TARGETARCH:-$(dpkg --print-architecture)}"; \
+      case "${ARCH}" in \
+        amd64) QUARTO_DEB="quarto-1.4.156-linux-amd64.deb" ;; \
+        arm64) QUARTO_DEB="quarto-1.4.156-linux-arm64.deb" ;; \
+        *) \
+          echo "Unsupported architecture for Quarto: ${ARCH}" >&2; \
+          exit 1; \
+          ;; \
+      esac; \
+      wget -q "https://github.com/quarto-dev/quarto-cli/releases/download/v1.4.156/${QUARTO_DEB}"; \
+      dpkg -i "${QUARTO_DEB}"; \
+      quarto install tinytex; \
+    fi
 # RUN if [ "${ENABLE_JUPYTER}" = "True" ]; then \
 # apt-get install -y xfonts-75dpi xfonts-base && \
 # wget -q https://github.com/wkhtmltopdf/packaging/releases/download/0.12.6.1-3/wkhtmltox_0.12.6.1-3.bookworm_amd64.deb && \

@@ -1,6 +1,5 @@
 services:
   ws:
-    platform: linux/amd64
     image: ethnexus/smnrp:2.5.1
     volumes:
       - "web_root:/web_root:z"

@@ -1,7 +1,6 @@
 
 services:
 #  ui:
-#    platform: linux/arm64/v8
 #    ports:
 #      - "8090:8090"
 #    command:
@@ -18,7 +17,6 @@ services:
     restart: unless-stopped
     depends_on:
       - api
-    platform: linux/arm64/v8
     ports:
       - "8091:3000"
     command:
