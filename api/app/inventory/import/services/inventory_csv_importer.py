@@ -2,6 +2,9 @@ import csv
 from decimal import Decimal
 from pathlib import Path
 
+from django.contrib.auth import get_user_model
+
+from helpers.logger import logger
 from inventory.dynamic_models import InventoryStock, Order, Room, Sector
 from inventory.static_models import (
     Brand,
@@ -34,6 +37,49 @@ from ..utils.parsing import (
 )
 
 
+def _detect_csv_encoding(csv_path):
+    """
+    Detect the CSV encoding from a small byte sample.
+    """
+    raw_sample = csv_path.read_bytes()[:65536]
+
+    for encoding in ("utf-8-sig", "utf-8", "cp1252", "latin-1"):
+        try:
+            raw_sample.decode(encoding)
+            return encoding
+        except UnicodeDecodeError:
+            continue
+
+    return "utf-8"
+
+
+def _detect_csv_delimiter(sample_text):
+    """
+    Detect delimiter from text sample; fall back to a simple heuristic.
+    """
+    try:
+        dialect = csv.Sniffer().sniff(sample_text, delimiters=",;\t|")
+        return dialect.delimiter
+    except csv.Error:
+        if sample_text.count(";") > sample_text.count(","):
+            return ";"
+        return ","
+
+
+def _normalize_row_keys(row):
+    """
+    Normalize row keys by stripping whitespace from column names.
+    """
+    normalized = {}
+
+    for key, value in row.items():
+        if isinstance(key, str):
+            key = key.strip()
+        normalized[key] = value
+
+    return normalized
+
+
 def should_skip_inventory_row(row):
     """
     Decide whether a CSV row should be skipped.
@@ -55,7 +101,212 @@ def should_skip_inventory_row(row):
     return any(phrase in lower_name for phrase in helper_phrases)
 
 
-def import_inventory_row(row, *, update_existing_stock=False):
+def _get_or_create_or_update_base_unit(material, base_uom, stock_unit_name, base_unit_name):
+    """
+    Ensure the material has a base unit row.
+    """
+    material_base_unit, created = MaterialUnit.objects.get_or_create(
+        material=material,
+        unit=base_uom,
+        defaults={
+            "is_base_unit": True,
+            "is_stock_unit": stock_unit_name == base_unit_name,
+            "is_order_unit": False,
+            "base_units_per_unit": Decimal("1"),
+        },
+    )
+
+    fields_to_update = []
+
+    if not material_base_unit.is_base_unit:
+        material_base_unit.is_base_unit = True
+        fields_to_update.append("is_base_unit")
+
+    expected_is_stock_unit = stock_unit_name == base_unit_name
+    if material_base_unit.is_stock_unit != expected_is_stock_unit:
+        material_base_unit.is_stock_unit = expected_is_stock_unit
+        fields_to_update.append("is_stock_unit")
+
+    if material_base_unit.base_units_per_unit != Decimal("1"):
+        material_base_unit.base_units_per_unit = Decimal("1")
+        fields_to_update.append("base_units_per_unit")
+
+    if fields_to_update:
+        material_base_unit.save(update_fields=fields_to_update)
+
+    return material_base_unit
+
+
+def _get_or_create_or_update_stock_unit(
+    material,
+    stock_uom,
+    stock_unit_name,
+    base_unit_name,
+    base_units_per_stock_unit,
+    single_pieces,
+    units_per_box,
+):
+    """
+    Ensure the material has a stock unit row and keep the conversion factor updated.
+    """
+    material_stock_unit, created = MaterialUnit.objects.get_or_create(
+        material=material,
+        unit=stock_uom,
+        defaults={
+            "is_base_unit": stock_unit_name == base_unit_name,
+            "is_stock_unit": True,
+            "is_order_unit": True,
+            "base_units_per_unit": base_units_per_stock_unit,
+            "notes": (
+                f"Imported from Excel packaging. "
+                f"single_pieces={single_pieces}, units_per_box={units_per_box}"
+            ),
+        },
+    )
+
+    fields_to_update = []
+
+    expected_is_base_unit = stock_unit_name == base_unit_name
+    if material_stock_unit.is_base_unit != expected_is_base_unit:
+        material_stock_unit.is_base_unit = expected_is_base_unit
+        fields_to_update.append("is_base_unit")
+
+    if not material_stock_unit.is_stock_unit:
+        material_stock_unit.is_stock_unit = True
+        fields_to_update.append("is_stock_unit")
+
+    if not material_stock_unit.is_order_unit:
+        material_stock_unit.is_order_unit = True
+        fields_to_update.append("is_order_unit")
+
+    if material_stock_unit.base_units_per_unit != base_units_per_stock_unit:
+        material_stock_unit.base_units_per_unit = base_units_per_stock_unit
+        fields_to_update.append("base_units_per_unit")
+
+    if not material_stock_unit.notes:
+        material_stock_unit.notes = (
+            f"Imported from Excel packaging. "
+            f"single_pieces={single_pieces}, units_per_box={units_per_box}"
+        )
+        fields_to_update.append("notes")
+
+    if fields_to_update:
+        material_stock_unit.save(update_fields=fields_to_update)
+
+    return material_stock_unit
+
+
+def _upsert_inventory_stock(
+    *,
+    material,
+    sector,
+    stock_unit,
+    quantity,
+    minimum_quantity,
+    lot_number,
+    expiry_date,
+    notes,
+    is_favorite,
+):
+    """
+    Create or update a stock row.
+
+    This makes the import idempotent:
+    running the same import again updates the same stock row
+    instead of creating duplicates.
+    """
+    stock, created = InventoryStock.objects.update_or_create(
+        material=material,
+        sector=sector,
+        stock_unit=stock_unit,
+        lot_number=lot_number,
+        expiry_date=expiry_date,
+        defaults={
+            "quantity": quantity,
+            "minimum_quantity": minimum_quantity,
+            "notes": notes,
+            "is_favorite": is_favorite,
+        },
+    )
+
+    # Preserve old notes / favorite if row already existed and new import is partial
+    if not created:
+        updated_fields = []
+
+        merged_notes = merge_notes(stock.notes, notes)
+        if stock.notes != merged_notes:
+            stock.notes = merged_notes
+            updated_fields.append("notes")
+
+        if is_favorite and not stock.is_favorite:
+            stock.is_favorite = True
+            updated_fields.append("is_favorite")
+
+        if updated_fields:
+            stock.save(update_fields=updated_fields)
+
+    return stock
+
+
+def _find_user_by_username(username):
+    """
+    Resolve the order owner to a user if possible.
+    """
+    if not username:
+        return None
+
+    user_model = get_user_model()
+    user = user_model.objects.filter(username=username).first()
+
+    if not user:
+        logger.warning(
+            f"No user found for order owner '{username}'. Storing null user."
+        )
+
+    return user
+
+
+def _upsert_order(
+    *,
+    material,
+    order_unit,
+    amount,
+    order_date,
+    status,
+    who_ordered,
+    project,
+    notes,
+):
+    """
+    Create or update an order row.
+
+    Since the model currently has no dedicated external import ID,
+    we use a stable business key that should remain identical
+    across repeated imports of the same CSV.
+    """
+    order, created = Order.objects.update_or_create(
+        material=material,
+        order_unit=order_unit,
+        amount=amount,
+        order_date=order_date,
+        status=status,
+        who_ordered=who_ordered,
+        project=project,
+        defaults={
+            "notes": notes,
+        },
+    )
+
+    if not created:
+        merged_notes = merge_notes(order.notes, notes)
+        if order.notes != merged_notes:
+            order.notes = merged_notes
+            order.save(update_fields=["notes"])
+
+    return order
+
+
+def import_inventory_row(row):
     """
     Import one CSV row into the database.
 
@@ -125,15 +376,11 @@ def import_inventory_row(row, *, update_existing_stock=False):
     stock_uom = get_or_create_named(UnitOfMeasure, stock_unit_name)
     base_uom = get_or_create_named(UnitOfMeasure, base_unit_name)
 
-    MaterialUnit.objects.get_or_create(
+    _get_or_create_or_update_base_unit(
         material=material,
-        unit=base_uom,
-        defaults={
-            "is_base_unit": True,
-            "is_stock_unit": stock_unit_name == base_unit_name,
-            "is_order_unit": False,
-            "base_units_per_unit": Decimal("1"),
-        },
+        base_uom=base_uom,
+        stock_unit_name=stock_unit_name,
+        base_unit_name=base_unit_name,
     )
 
     base_units_per_stock_unit = calculate_base_units_per_stock_unit(
@@ -141,24 +388,15 @@ def import_inventory_row(row, *, update_existing_stock=False):
         units_per_box=units_per_box,
     )
 
-    material_stock_unit, _ = MaterialUnit.objects.get_or_create(
+    material_stock_unit = _get_or_create_or_update_stock_unit(
         material=material,
-        unit=stock_uom,
-        defaults={
-            "is_base_unit": stock_unit_name == base_unit_name,
-            "is_stock_unit": True,
-            "is_order_unit": True,
-            "base_units_per_unit": base_units_per_stock_unit,
-            "notes": (
-                f"Imported from Excel packaging. "
-                f"single_pieces={single_pieces}, units_per_box={units_per_box}"
-            ),
-        },
+        stock_uom=stock_uom,
+        stock_unit_name=stock_unit_name,
+        base_unit_name=base_unit_name,
+        base_units_per_stock_unit=base_units_per_stock_unit,
+        single_pieces=single_pieces,
+        units_per_box=units_per_box,
     )
-
-    if material_stock_unit.base_units_per_unit in [None, Decimal("0")]:
-        material_stock_unit.base_units_per_unit = base_units_per_stock_unit
-        material_stock_unit.save(update_fields=["base_units_per_unit"])
 
     room = get_or_create_named(Room, room_name) if room_name else None
     sector = None
@@ -172,57 +410,30 @@ def import_inventory_row(row, *, update_existing_stock=False):
     if sector:
         is_favorite = to_bool(favorites_raw)
 
-        if update_existing_stock:
-            stock = InventoryStock.objects.filter(
-                material=material,
-                sector=sector,
-                stock_unit=material_stock_unit,
-                lot_number=lot_number,
-                expiry_date=expiry_date,
-            ).first()
-
-            if stock:
-                stock.quantity = boxes_in_stock
-                stock.minimum_quantity = minimum_amount
-                stock.notes = merge_notes(stock.notes, notes)
-                stock.is_favorite = stock.is_favorite or is_favorite
-                stock.save()
-            else:
-                InventoryStock.objects.create(
-                    material=material,
-                    sector=sector,
-                    stock_unit=material_stock_unit,
-                    quantity=boxes_in_stock,
-                    minimum_quantity=minimum_amount,
-                    lot_number=lot_number,
-                    expiry_date=expiry_date,
-                    notes=notes,
-                    is_favorite=is_favorite,
-                )
-        else:
-            InventoryStock.objects.create(
-                material=material,
-                sector=sector,
-                stock_unit=material_stock_unit,
-                quantity=boxes_in_stock,
-                minimum_quantity=minimum_amount,
-                lot_number=lot_number,
-                expiry_date=expiry_date,
-                notes=notes,
-                is_favorite=is_favorite,
-            )
+        _upsert_inventory_stock(
+            material=material,
+            sector=sector,
+            stock_unit=material_stock_unit,
+            quantity=boxes_in_stock,
+            minimum_quantity=minimum_amount,
+            lot_number=lot_number,
+            expiry_date=expiry_date,
+            notes=notes,
+            is_favorite=is_favorite,
+        )
 
     if order_status_raw or who_ordered or assigned_project_name or order_date_raw:
         project = find_project_by_name(assigned_project_name)
         order_status = normalize_order_status(order_status_raw)
+        who_ordered_user = _find_user_by_username(who_ordered)
 
-        Order.objects.create(
+        _upsert_order(
             material=material,
             order_unit=material_stock_unit,
             amount=boxes_in_stock if boxes_in_stock > 0 else Decimal("1"),
             order_date=order_date,
             status=order_status,
-            who_ordered=who_ordered,
+            who_ordered=who_ordered_user,
             project=project,
             notes=notes,
         )
@@ -230,7 +441,7 @@ def import_inventory_row(row, *, update_existing_stock=False):
     return True
 
 
-def import_inventory_csv(csv_path, *, update_existing_stock=False):
+def import_inventory_csv(csv_path):
     """
     Import a whole CSV file.
 
@@ -242,14 +453,30 @@ def import_inventory_csv(csv_path, *, update_existing_stock=False):
     imported_rows = 0
     skipped_rows = 0
 
-    with csv_path.open("r", encoding="utf-8-sig", newline="") as csv_file:
-        reader = csv.DictReader(csv_file)
+    encoding = _detect_csv_encoding(csv_path)
+
+    with csv_path.open("r", encoding=encoding, newline="") as csv_file:
+        sample = csv_file.read(8192)
+        csv_file.seek(0)
+
+        delimiter = _detect_csv_delimiter(sample)
+        reader = csv.DictReader(csv_file, delimiter=delimiter)
+
+        fieldnames = [name.strip() for name in (reader.fieldnames or []) if name]
+
+        logger.info(
+            f"Detected CSV format for {csv_path}: encoding={encoding}, delimiter='{delimiter}'."
+        )
+
+        if "Product Name" not in fieldnames:
+            raise ValueError(
+                "CSV header is missing required column 'Product Name'. "
+                "Make sure you pass the inventory CSV file (not the JSON seed file)."
+            )
 
         for row in reader:
-            imported = import_inventory_row(
-                row,
-                update_existing_stock=update_existing_stock,
-            )
+            row = _normalize_row_keys(row)
+            imported = import_inventory_row(row)
 
             if imported:
                 imported_rows += 1
