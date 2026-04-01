@@ -1,6 +1,7 @@
 from datetime import datetime
 from django.utils import timezone
 
+from helpers.logger import logger
 from .parsing import clean_value
 
 
@@ -19,6 +20,7 @@ def parse_flexible_date(value):
     """
     value = clean_value(value)
     if not value:
+        logger.debug("No date value provided; returning None.")
         return None
 
     replacements = {
@@ -52,6 +54,7 @@ def parse_flexible_date(value):
         except ValueError:
             continue
 
+    logger.debug(f"Could not parse date value: {value!r}")
     return None
 
 
@@ -61,6 +64,7 @@ def parse_flexible_datetime(value):
     """
     value = clean_value(value)
     if not value:
+        logger.debug("No datetime value provided; using current time.")
         return timezone.now()
 
     datetime_formats = [
@@ -77,4 +81,5 @@ def parse_flexible_datetime(value):
         except ValueError:
             continue
 
+    logger.debug(f"Could not parse datetime value: {value!r}; using current time.")
     return timezone.now()
