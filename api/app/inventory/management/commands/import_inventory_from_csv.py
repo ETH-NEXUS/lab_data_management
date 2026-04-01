@@ -1,0 +1,57 @@
+from importlib import import_module
+from pathlib import Path
+
+from django.core.management.base import BaseCommand, CommandError
+from django.db import transaction
+
+import_inventory_csv = import_module(
+    "inventory.import.services.inventory_csv_importer"
+).import_inventory_csv
+
+
+class Command(BaseCommand):
+    help = "Import inventory data from a CSV file exported from the Excel inventory."
+
+    def add_arguments(self, parser):
+        parser.add_argument(
+            "csv_path",
+            type=str,
+            help="Path to the CSV file.",
+        )
+        parser.add_argument(
+            "--dry-run",
+            action="store_true",
+            help="Parse the CSV without saving anything to the database.",
+        )
+        parser.add_argument(
+            "--update-existing-stock",
+            action="store_true",
+            help="Try to update matching stock entries instead of always creating new ones.",
+        )
+
+    @transaction.atomic
+    def handle(self, *args, **options):
+        csv_path = Path(options["csv_path"])
+        dry_run = options["dry_run"]
+        update_existing_stock = options["update_existing_stock"]
+
+        if not csv_path.exists():
+            raise CommandError(f"CSV file does not exist: {csv_path}")
+
+        self.stdout.write(f"Reading CSV from: {csv_path}")
+
+        summary = import_inventory_csv(
+            csv_path=csv_path,
+            update_existing_stock=update_existing_stock,
+        )
+
+        self.stdout.write(
+            self.style.SUCCESS(
+                f"Finished parsing CSV. "
+                f"Imported rows: {summary['imported_rows']}. "
+                f"Skipped rows: {summary['skipped_rows']}."
+            )
+        )
+
+        if dry_run:
+            raise CommandError("Dry run completed successfully. Transaction rolled back.")
