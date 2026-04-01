@@ -431,6 +431,26 @@ class MaterialUnit(models.Model):
         default=False,
         help_text="Marks the unit usually used when ordering from suppliers.",
     )
+    # NOTE:
+    # This field stores how many base units are contained inside one packaging unit.
+    #
+    # Example conversions:
+    # - 1 tip       = 1 base unit
+    # - 1 tip box   = 96 tips
+    # - 1 carton    = 960 tips
+    # - 1 glove box = 100 gloves
+    #
+    # We intentionally use DecimalField instead of IntegerField because:
+    # - inventory quantities can be fractional (e.g. 0.8 open boxes remaining)
+    # - Excel source data already contains fractional packaging values
+    # - some packaging conversions are not whole numbers
+    # - float values would introduce rounding errors (bad for inventory/accounting)
+    #
+    # Example:
+    # 2.041667 boxes × 96 tips = 196 tips exactly
+    #
+    # decimal_places=6 matches the precision observed in the original Excel inventory
+    # and ensures conversions remain accurate during stock tracking and billing.
 
     base_units_per_unit = models.DecimalField(
         max_digits=12,
