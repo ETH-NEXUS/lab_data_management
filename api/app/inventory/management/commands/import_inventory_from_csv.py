@@ -4,6 +4,8 @@ from pathlib import Path
 from django.core.management.base import BaseCommand, CommandError
 from django.db import transaction
 
+from helpers.logger import logger
+
 import_inventory_csv = import_module(
     "inventory.import.services.inventory_csv_importer"
 ).import_inventory_csv
@@ -36,22 +38,22 @@ class Command(BaseCommand):
         update_existing_stock = options["update_existing_stock"]
 
         if not csv_path.exists():
+            logger.error(f"CSV file does not exist: {csv_path}")
             raise CommandError(f"CSV file does not exist: {csv_path}")
 
-        self.stdout.write(f"Reading CSV from: {csv_path}")
+        logger.info(f"Reading CSV from: {csv_path}")
 
         summary = import_inventory_csv(
             csv_path=csv_path,
             update_existing_stock=update_existing_stock,
         )
 
-        self.stdout.write(
-            self.style.SUCCESS(
-                f"Finished parsing CSV. "
-                f"Imported rows: {summary['imported_rows']}. "
-                f"Skipped rows: {summary['skipped_rows']}."
-            )
+        logger.info(
+            f"Finished parsing CSV. "
+            f"Imported rows: {summary['imported_rows']}. "
+            f"Skipped rows: {summary['skipped_rows']}."
         )
 
         if dry_run:
-            raise CommandError("Dry run completed successfully. Transaction rolled back.")
+            logger.info("Dry run completed successfully. Transaction rolled back.")
+            transaction.set_rollback(True)
