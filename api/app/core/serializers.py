@@ -427,3 +427,13 @@ class ThresholdSerializer(serializers.ModelSerializer):
     class Meta:
         model = Threshold
         fields = "__all__"
+
+class SimpleExperimentSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Experiment
+        fields = ("id", "name")
+
+class SimpleProjectSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Project
+        fields = ("id", "name")
