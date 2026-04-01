@@ -3,6 +3,7 @@ from pathlib import Path
 
 from django.core.management.base import BaseCommand, CommandError
 
+from helpers.logger import logger
 from inventory.static_models import (
     Brand,
     DeviceType,
@@ -39,8 +40,10 @@ class Command(BaseCommand):
         file_path = Path(options["file"]) if options["file"] else default_file
 
         if not file_path.exists():
+            logger.error(f"Seed file does not exist: {file_path}")
             raise CommandError(f"Seed file does not exist: {file_path}")
 
+        logger.info(f"Loading static inventory seed data from: {file_path}")
         data = load_json_file(file_path)
 
         created_manufacturers = bulk_seed_named_values(
@@ -65,11 +68,11 @@ class Command(BaseCommand):
             UnitOfMeasure, data.get("units_of_measure", [])
         )
 
-        self.stdout.write(f"Created {created_manufacturers} manufacturers.")
-        self.stdout.write(f"Created {created_brands} brands.")
-        self.stdout.write(f"Created {created_vendors} vendors.")
-        self.stdout.write(f"Created {created_device_types} device types.")
-        self.stdout.write(f"Created {created_item_types} item types.")
-        self.stdout.write(f"Created {created_attributes} material attributes.")
-        self.stdout.write(f"Created {created_units} units of measure.")
-        self.stdout.write(self.style.SUCCESS("Static inventory data seeded successfully."))
+        logger.info(f"Created {created_manufacturers} manufacturers.")
+        logger.info(f"Created {created_brands} brands.")
+        logger.info(f"Created {created_vendors} vendors.")
+        logger.info(f"Created {created_device_types} device types.")
+        logger.info(f"Created {created_item_types} item types.")
+        logger.info(f"Created {created_attributes} material attributes.")
+        logger.info(f"Created {created_units} units of measure.")
+        logger.info("Static inventory data seeded successfully.")
