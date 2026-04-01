@@ -34,7 +34,7 @@ class Command(BaseCommand):
         default_file = (
             Path(__file__).resolve().parents[2]
             / "import"
-            / "data"
+            / "initial_data"
             / "inventory_static_seed.json"
         )
         file_path = Path(options["file"]) if options["file"] else default_file

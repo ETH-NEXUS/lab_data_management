@@ -1,3 +1,4 @@
+import inspect
 from importlib import import_module
 from pathlib import Path
 
@@ -43,10 +44,22 @@ class Command(BaseCommand):
 
         logger.info(f"Reading CSV from: {csv_path}")
 
-        summary = import_inventory_csv(
-            csv_path=csv_path,
-            update_existing_stock=update_existing_stock,
+        call_kwargs = {"csv_path": csv_path}
+        accepts_update_existing_stock = (
+            "update_existing_stock" in inspect.signature(import_inventory_csv).parameters
         )
+        if accepts_update_existing_stock:
+            call_kwargs["update_existing_stock"] = update_existing_stock
+        elif update_existing_stock:
+            logger.warning(
+                "Importer does not accept 'update_existing_stock'; option is ignored."
+            )
+
+        try:
+            summary = import_inventory_csv(**call_kwargs)
+        except Exception as exc:
+            logger.error(f"Failed to import CSV: {exc}")
+            raise CommandError(str(exc)) from exc
 
         logger.info(
             f"Finished parsing CSV. "
