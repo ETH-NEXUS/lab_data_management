@@ -121,6 +121,19 @@ class InventoryStock(models.Model):
         ),
     )
 
+    # Minimum desired stock threshold expressed in the same unit as `quantity`.
+    #
+    # This is intentionally a DecimalField (not IntegerField) because:
+    # - stock quantities may be fractional (e.g. 0.8 open boxes remaining)
+    # - lab can define reorder thresholds below one full package (e.g. 0.5 box)
+    # - comparisons with `quantity` must remain precise
+    # - FloatField would introduce rounding errors in inventory logic
+    #
+    # Example:
+    # quantity = 0.8 boxes
+    # minimum_quantity = 1 box
+    # → inventory_status = "low"
+
     minimum_quantity = models.DecimalField(
         max_digits=12,
         decimal_places=6,
@@ -146,7 +159,7 @@ class InventoryStock(models.Model):
 
     is_favorite = models.BooleanField(
         default=False,
-        help_text="Optional flag if the lab wants to mark favorite / pinned stock items.",
+        help_text="Optional flag if we want to mark favorite / pinned stock items.",
     )
 
     notes = models.TextField(
@@ -209,7 +222,7 @@ class Order(models.Model):
     Purchase / ordering record for a material.
 
     This is not stock itself.
-    It records an ordering event and can optionally be linked to a project.
+    It records an ordering event and can be linked to a project.
 
     Examples of statuses from Excel:
     - ordered
@@ -297,9 +310,7 @@ class MaterialUsage(models.Model):
     """
     Material consumption / assignment to a project or experiment.
 
-    This replaces the old MaterialByExperiment model.
 
-    Important improvement:
     usage is stored with an explicit unit, so the lab can record:
     - 2 boxes
     - 12 plates
