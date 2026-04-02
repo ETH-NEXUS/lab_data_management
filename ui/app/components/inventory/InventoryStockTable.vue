@@ -22,53 +22,30 @@ const emit = defineEmits<{
 const { t } = useI18n()
 
 /**
- * Resolves one location label from room + sector values.
+ * Resolves location label using API-provided combined value.
  *
  * Accepted stock example:
- * - `{ room: { label: 'Room A' }, sector: { label: 'Shelf 3' } }`
+ * - `{ location_label: 'Room A / Shelf 3' }`
  *
  * Returned data examples:
  * - `'Room A / Shelf 3'`
  * - `'Unknown location'`
  */
 const formatLocationLabel = (stock: InventoryStockListItem): string => {
-  const roomLabel = stock.room?.label ?? stock.room?.name ?? stock.sector?.room?.label ?? stock.sector?.room?.name ?? ''
-  const sectorLabel = stock.sector?.label ?? stock.sector?.name ?? ''
-
-  if (roomLabel !== '' && sectorLabel !== '') {
-    return `${roomLabel} / ${sectorLabel}`
-  }
-
-  if (roomLabel !== '') {
-    return roomLabel
-  }
-
-  if (sectorLabel !== '') {
-    return sectorLabel
-  }
-
-  return t('inventory.stock_table.values.unknown_location')
+  return stock.location_label?.trim() || t('inventory.stock_table.values.unknown_location')
 }
 
 /**
- * Builds one quantity label that includes stock unit name.
+ * Builds quantity label using API-provided stock label.
  *
  * Input example:
- * - `{ quantity: '2.5', stock_unit: { display_name: 'L' } }`
+ * - `{ stock_label: '2.5 L' }`
  *
  * Returned example:
  * - `'2.5 L'`
  */
 const formatQuantityWithStockUnit = (stock: InventoryStockListItem): string => {
-  const quantityValue = stock.quantity?.trim() || t('inventory.stock_table.values.none')
-  const stockUnitLabel =
-    stock.stock_unit?.display_name || stock.stock_unit?.unit?.label || stock.stock_unit?.unit?.name || ''
-
-  if (stockUnitLabel === '') {
-    return quantityValue
-  }
-
-  return `${quantityValue} ${stockUnitLabel}`
+  return stock.stock_label?.trim() || t('inventory.stock_table.values.none')
 }
 
 /**
@@ -99,19 +76,13 @@ const getInventoryStatusLabel = (status: InventoryStockListItem['inventory_statu
  * - `[{ productName: 'PBS', quantityWithStockUnit: '3 mL', ... }]`
  */
 const tableRows = computed<InventoryStockTableRow[]>(() => {
-  const rows: InventoryStockTableRow[] = []
+  return props.stocks.map((stock) => {
+    const attributeLabels = (stock.material.attributes ?? [])
+      .map((attribute) => attribute.label || attribute.name || '')
+      .map((label) => label.trim())
+      .filter((label) => label !== '')
 
-  for (const stock of props.stocks) {
-    const attributeLabels: string[] = []
-
-    for (const attribute of stock.material.attributes ?? []) {
-      const label = attribute.label || attribute.name
-      if (label && label.trim() !== '') {
-        attributeLabels.push(label)
-      }
-    }
-
-    rows.push({
+    return {
       stock,
       favoriteFlag: stock.is_favorite,
       inventoryStatusCode: stock.inventory_status,
@@ -130,10 +101,8 @@ const tableRows = computed<InventoryStockTableRow[]>(() => {
         ? formatDateTime(stock.expiry_date, { dateStyle: 'medium' }, t('inventory.stock_table.values.none'))
         : t('inventory.stock_table.values.none'),
       notes: stock.notes || t('inventory.stock_table.values.no_notes'),
-    })
-  }
-
-  return rows
+    }
+  })
 })
 
 const tableColumns = computed(() => createInventoryStockTableColumns(t))
