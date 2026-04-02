@@ -457,6 +457,123 @@
         }
       },
       "placeholder_suffix": "to be implemented"
+    },
+    "stock_workspace": {
+      "title": "Inventory stock",
+      "description": "Operational overview optimized for quick scanning, low-stock checks, and physical lookup.",
+      "loading": "Loading inventory stock items...",
+      "empty": "No inventory stock items found.",
+      "error": "Failed to load inventory stock items."
+    },
+    "stock_table": {
+      "groups": {
+        "operational": "Operational",
+        "identity": "Identity",
+        "lifecycle": "Lifecycle"
+      },
+      "columns": {
+        "favorite": "Favorite",
+        "inventory_status": "Status",
+        "product_name": "Product name",
+        "quantity_with_stock_unit": "Quantity",
+        "minimum_quantity": "Minimum quantity",
+        "location": "Location",
+        "device_type": "Device type",
+        "item_type": "Item type",
+        "attributes": "Attributes",
+        "lot_number": "Lot number",
+        "expiry_date": "Expiry date",
+        "notes": "Notes"
+      },
+      "status_labels": {
+        "in_stock": "In stock",
+        "low": "Low stock"
+      },
+      "values": {
+        "yes": "Yes",
+        "no": "No",
+        "none": "—",
+        "no_notes": "No notes",
+        "unknown_location": "Unknown location"
+      }
+    },
+    "stock_drawer": {
+      "title": "Stock item details",
+      "subtitle": "Stock item #{id}",
+      "sections": {
+        "operational": "Operational overview",
+        "unit_conversion": "Unit conversion",
+        "material_identity": "Material identity",
+        "supplier": "Supplier and catalog",
+        "usage": "Usage",
+        "order": "Order information",
+        "metadata": "Metadata"
+      },
+      "fields": {
+        "product_name": "Product name",
+        "inventory_status": "Inventory status",
+        "quantity": "Quantity",
+        "minimum_quantity": "Minimum quantity",
+        "location": "Location",
+        "lot_number": "Lot number",
+        "expiry_date": "Expiry date",
+        "notes": "Notes",
+        "stock_unit": "Stock unit",
+        "base_unit": "Base unit",
+        "base_units_per_unit": "Base units per stock unit",
+        "device_type": "Device type",
+        "item_type": "Item type",
+        "attributes": "Attributes",
+        "capacity_value": "Capacity value",
+        "capacity_unit": "Capacity unit",
+        "description": "Description",
+        "manufacturer": "Manufacturer",
+        "vendor": "Vendor",
+        "manufacturer_catalog_number": "Manufacturer catalog number",
+        "vendor_catalog_number": "Vendor catalog number",
+        "brand": "Brand",
+        "default_cost": "Default cost",
+        "recent_usages": "Recent usages",
+        "linked_experiments_projects": "Linked experiments/projects",
+        "order_history": "Order history",
+        "responsible_user": "Responsible user",
+        "created_at": "Created at",
+        "updated_at": "Updated at",
+        "serial_number": "Serial number",
+        "order_number": "Order number",
+        "lifetime_days": "Lifetime (days)"
+      },
+      "values": {
+        "none": "—",
+        "no_notes": "No notes",
+        "no_attributes": "No attributes",
+        "no_usage": "No usage entries found.",
+        "no_linked_items": "No linked experiments or projects.",
+        "no_order_history": "No order history entries found.",
+        "no_responsible_user": "No responsible user available."
+      },
+      "metadata_toggle": {
+        "show": "Show metadata",
+        "hide": "Hide metadata"
+      },
+      "actions": {
+        "close": "Close details"
+      }
+    }
+  },
+  "table": {
+    "general": {
+      "search_placeholder": "Search table",
+      "rows": "{count} rows",
+      "clear_all": "Clear all",
+      "sort_asc": "Sort ascending",
+      "sort_desc": "Sort descending",
+      "clear_sort": "Clear sort",
+      "filter_options_placeholder": "Filter options",
+      "no_filter_options": "No matching options",
+      "apply_filter": "Apply filter",
+      "clear_filter": "Clear filter",
+      "no_rows": "No rows found."
     }
   },
   "title": {
