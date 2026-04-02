@@ -2,31 +2,38 @@ import { h } from 'vue'
 import type { ColumnDef } from '@tanstack/vue-table'
 import type { TableRow } from '~/components/tables/base-data-table.utils'
 import type { InventoryStockListItem } from '~/types/inventory'
-
-export type InventoryStockTableRow = TableRow & {
-  stock: InventoryStockListItem
-  favoriteFlag: boolean
-  inventoryStatusCode: InventoryStockListItem['inventory_status']
-  inventoryStatusLabel: string
-  productName: string
-  quantityWithStockUnit: string
-  minimumQuantity: string
-  location: string
-  deviceType: string
-  itemType: string
-  attributes: string[]
-  lotNumber: string
-  expiryDate: string
-  notes: string
-}
+import { formatDateTime } from '~/utils/dateTime'
 
 type TranslateFn = (key: string, named?: Record<string, unknown>) => string
+
+const toLabel = (value: string | null | undefined, fallback: string): string => {
+  return value?.trim() || fallback
+}
+
+const getStock = (row: TableRow): InventoryStockListItem => {
+  return row as InventoryStockListItem
+}
+
+const getStatusLabel = (t: TranslateFn, status: InventoryStockListItem['inventory_status']): string => {
+  return status === 'low'
+    ? t('inventory.stock_table.status_labels.low')
+    : t('inventory.stock_table.status_labels.in_stock')
+}
+
+const getAttributes = (stock: InventoryStockListItem, t: TranslateFn): string[] => {
+  const labels = (stock.material.attributes ?? [])
+    .map((attribute) => attribute.label || attribute.name || '')
+    .map((label) => label.trim())
+    .filter((label) => label !== '')
+
+  return labels.length > 0 ? labels : [t('inventory.stock_drawer.values.no_attributes')]
+}
 
 /**
  * Creates all visible stock table columns used for operational scanning.
  *
  * Returned data example:
- * - `[{ accessorKey: 'favoriteFlag', header: 'Favorite' }, { accessorKey: 'inventoryStatusLabel', header: 'Status' }]`
+ * - `[{ id: 'productName', header: 'Product' }, { id: 'inventoryStatus', header: 'Status' }]`
  */
 export const createInventoryStockTableColumns = (t: TranslateFn): ColumnDef<TableRow, unknown>[] => {
   const lowStockBadgeClass =
@@ -37,72 +44,84 @@ export const createInventoryStockTableColumns = (t: TranslateFn): ColumnDef<Tabl
   const lifecycleMeta = { semanticGroup: 'lifecycle' } as unknown as Record<string, unknown>
   const identityMeta = { semanticGroup: 'identity' } as unknown as Record<string, unknown>
 
-  const columns: ColumnDef<InventoryStockTableRow, unknown>[] = [
+  const columns: ColumnDef<TableRow, unknown>[] = [
     {
-      accessorKey: 'favoriteFlag',
-      header: t('inventory.stock_table.columns.favorite'),
+      id: 'productName',
+      accessorFn: (row) => toLabel(getStock(row).material.product_name, t('inventory.stock_table.values.none')),
+      header: t('inventory.stock_table.columns.product_name'),
       enableSorting: true,
       enableColumnFilter: true,
-      size: 78,
+      size: 260,
       cell: ({ row }) => {
-        const isFavorite = row.original.favoriteFlag
+        const stock = getStock(row.original)
+        const productName = toLabel(stock.material.product_name, t('inventory.stock_table.values.none'))
+        if (!stock.is_favorite) {
+          return productName
+        }
+
         return h(
           'span',
           {
-            class: isFavorite ? 'text-amber-500' : 'text-slate-300',
-            title: isFavorite ? t('inventory.stock_table.values.yes') : t('inventory.stock_table.values.no'),
+            class:
+              'block w-full rounded-md border border-amber-300 bg-amber-100 px-2 py-1 font-semibold text-amber-900',
+            title: t('inventory.stock_table.values.yes'),
           },
-          isFavorite ? '★' : '☆',
+          `★ ${productName}`,
         )
       },
     },
     {
-      accessorKey: 'inventoryStatusLabel',
+      id: 'inventoryStatus',
+      accessorFn: (row) => getStatusLabel(t, getStock(row).inventory_status),
       header: t('inventory.stock_table.columns.inventory_status'),
       enableSorting: true,
       enableColumnFilter: true,
       size: 132,
       cell: ({ row }) => {
-        const isLowStock = row.original.inventoryStatusCode === 'low'
+        const stock = getStock(row.original)
+        const isLowStock = stock.inventory_status === 'low'
         return h(
           'span',
           {
             class: isLowStock ? lowStockBadgeClass : inStockBadgeClass,
           },
-          row.original.inventoryStatusLabel,
+          getStatusLabel(t, stock.inventory_status),
         )
       },
     },
     {
-      accessorKey: 'productName',
-      header: t('inventory.stock_table.columns.product_name'),
-      enableSorting: true,
-      enableColumnFilter: true,
-      size: 260,
-    },
-    {
-      accessorKey: 'quantityWithStockUnit',
+      id: 'quantityWithStockUnit',
+      accessorFn: (row) => toLabel(getStock(row).stock_label, t('inventory.stock_table.values.none')),
       header: t('inventory.stock_table.columns.quantity_with_stock_unit'),
       enableSorting: true,
       enableColumnFilter: true,
       size: 190,
     },
     {
-      accessorKey: 'location',
-      header: t('inventory.stock_table.columns.location'),
-      enableSorting: true,
-      enableColumnFilter: true,
-      size: 220,
-    },
-    {
-      accessorKey: 'minimumQuantity',
+      id: 'minimumQuantity',
+      accessorFn: (row) => toLabel(getStock(row).minimum_quantity, t('inventory.stock_table.values.none')),
       header: t('inventory.stock_table.columns.minimum_quantity'),
       enableSorting: true,
       enableColumnFilter: true,
       size: 170,
     },
     {
-      accessorKey: 'deviceType',
+      id: 'location',
+      accessorFn: (row) => toLabel(getStock(row).location_label, t('inventory.stock_table.values.unknown_location')),
+      header: t('inventory.stock_table.columns.location'),
+      enableSorting: true,
+      enableColumnFilter: true,
+      size: 220,
+    },
+    {
+      id: 'deviceType',
+      accessorFn: (row) => {
+        const stock = getStock(row)
+        return toLabel(
+          stock.material.device_type?.label || stock.material.device_type?.name,
+          t('inventory.stock_table.values.none'),
+        )
+      },
       header: t('inventory.stock_table.columns.device_type'),
       enableSorting: true,
       enableColumnFilter: true,
@@ -110,7 +129,14 @@ export const createInventoryStockTableColumns = (t: TranslateFn): ColumnDef<Tabl
       meta: identityMeta,
     },
     {
-      accessorKey: 'itemType',
+      id: 'itemType',
+      accessorFn: (row) => {
+        const stock = getStock(row)
+        return toLabel(
+          stock.material.item_type?.label || stock.material.item_type?.name,
+          t('inventory.stock_table.values.none'),
+        )
+      },
       header: t('inventory.stock_table.columns.item_type'),
       enableSorting: true,
       enableColumnFilter: true,
@@ -118,7 +144,8 @@ export const createInventoryStockTableColumns = (t: TranslateFn): ColumnDef<Tabl
       meta: identityMeta,
     },
     {
-      accessorKey: 'attributes',
+      id: 'attributes',
+      accessorFn: (row) => getAttributes(getStock(row), t),
       header: t('inventory.stock_table.columns.attributes'),
       enableSorting: true,
       enableColumnFilter: true,
@@ -126,7 +153,8 @@ export const createInventoryStockTableColumns = (t: TranslateFn): ColumnDef<Tabl
       meta: identityMeta,
     },
     {
-      accessorKey: 'lotNumber',
+      id: 'lotNumber',
+      accessorFn: (row) => toLabel(getStock(row).lot_number, t('inventory.stock_table.values.none')),
       header: t('inventory.stock_table.columns.lot_number'),
       enableSorting: true,
       enableColumnFilter: true,
@@ -134,7 +162,14 @@ export const createInventoryStockTableColumns = (t: TranslateFn): ColumnDef<Tabl
       meta: lifecycleMeta,
     },
     {
-      accessorKey: 'expiryDate',
+      id: 'expiryDate',
+      accessorFn: (row) => {
+        const expiryDate = getStock(row).expiry_date
+        if (!expiryDate) {
+          return t('inventory.stock_table.values.none')
+        }
+        return formatDateTime(expiryDate, { dateStyle: 'medium' }, t('inventory.stock_table.values.none'))
+      },
       header: t('inventory.stock_table.columns.expiry_date'),
       enableSorting: true,
       enableColumnFilter: true,
@@ -142,7 +177,8 @@ export const createInventoryStockTableColumns = (t: TranslateFn): ColumnDef<Tabl
       meta: lifecycleMeta,
     },
     {
-      accessorKey: 'notes',
+      id: 'notes',
+      accessorFn: (row) => toLabel(getStock(row).notes, t('inventory.stock_table.values.no_notes')),
       header: t('inventory.stock_table.columns.notes'),
       enableSorting: true,
       enableColumnFilter: true,
@@ -151,5 +187,5 @@ export const createInventoryStockTableColumns = (t: TranslateFn): ColumnDef<Tabl
     },
   ]
 
-  return columns as unknown as ColumnDef<TableRow, unknown>[]
+  return columns
 }
