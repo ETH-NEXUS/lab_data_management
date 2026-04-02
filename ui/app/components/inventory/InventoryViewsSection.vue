@@ -16,7 +16,7 @@ const emit = defineEmits<{
 const { t } = useI18n()
 
 /**
- * Creates inventory view cards shown in the main inventory grid.
+ * Creates lower-grid actions in the existing card visual style.
  *
  * Returned data example:
  * - `[{ id: 'devices', title: 'Devices', description: 'Manage equipment...', icon: 'i-heroicons-computer-desktop' }]`
@@ -60,12 +60,6 @@ const inventoryViews = computed<InventoryActionItem[]>(() => [
   },
 ])
 
-/**
- * Forwards one selected inventory view id to the parent inventory layout.
- *
- * Input example:
- * - `actionId = 'archived_items'`
- */
 const onSelectAction = (actionId: string): void => {
   emit('select-action', actionId)
 }
@@ -73,8 +67,6 @@ const onSelectAction = (actionId: string): void => {
 
 <template>
   <section class="space-y-3">
-    <p class="inventory-section-title">{{ t('inventory.page.section_labels.inventory_views') }}</p>
-
     <div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
       <InventoryActionCard
         v-for="action in inventoryViews"
