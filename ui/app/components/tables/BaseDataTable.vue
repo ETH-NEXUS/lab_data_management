@@ -3,11 +3,13 @@ import {
   FlexRender,
   getCoreRowModel,
   getFilteredRowModel,
+  getPaginationRowModel,
   getSortedRowModel,
   useVueTable,
   type Column,
   type ColumnDef,
   type ColumnFiltersState,
+  type PaginationState,
   type SortingState,
 } from '@tanstack/vue-table'
 import {
@@ -29,6 +31,8 @@ type BaseDataTableProps = {
   dense?: boolean
   rowClickable?: boolean
   hideToolbar?: boolean
+  enablePagination?: boolean
+  pageSize?: number
 }
 
 const props = withDefaults(defineProps<BaseDataTableProps>(), {
@@ -37,6 +41,8 @@ const props = withDefaults(defineProps<BaseDataTableProps>(), {
   dense: false,
   rowClickable: false,
   hideToolbar: false,
+  enablePagination: false,
+  pageSize: 50,
 })
 
 const emit = defineEmits<{
@@ -48,6 +54,10 @@ const { t } = useI18n()
 const sorting = ref<SortingState>([])
 const globalFilter = ref('')
 const columnFilters = ref<ColumnFiltersState>([])
+const pagination = ref<PaginationState>({
+  pageIndex: 0,
+  pageSize: props.pageSize,
+})
 
 const filterDraft = ref<Record<string, string[]>>({})
 const filterSearch = ref<Record<string, string>>({})
@@ -72,6 +82,9 @@ const table = useVueTable({
     get columnFilters() {
       return columnFilters.value
     },
+    get pagination() {
+      return pagination.value
+    },
   },
   filterFns: {
     multiValue: multiValueFilter,
@@ -85,9 +98,13 @@ const table = useVueTable({
   onColumnFiltersChange: (updater) => {
     columnFilters.value = applyUpdater(updater, columnFilters.value)
   },
+  onPaginationChange: (updater) => {
+    pagination.value = applyUpdater(updater, pagination.value)
+  },
   getCoreRowModel: getCoreRowModel(),
   getFilteredRowModel: getFilteredRowModel(),
   getSortedRowModel: getSortedRowModel(),
+  getPaginationRowModel: props.enablePagination ? getPaginationRowModel() : undefined,
 })
 
 /**
@@ -168,7 +185,18 @@ const clearAllFilters = (): void => {
   columnFilters.value = []
   filterDraft.value = {}
   filterSearch.value = {}
+  pagination.value.pageIndex = 0
 }
+
+watch(
+  () => props.pageSize,
+  (pageSize) => {
+    pagination.value = {
+      pageIndex: 0,
+      pageSize,
+    }
+  },
+)
 
 /**
  * Returns the matching sort icon name for a given sorting state.
@@ -300,6 +328,10 @@ const emitRowClick = (row: TableRow): void => {
 const hasCustomCellRenderer = (column: Column<TableRow, unknown>): boolean => {
   return typeof column.columnDef.cell !== 'undefined'
 }
+
+const totalRowsCount = computed<number>(() => {
+  return props.enablePagination ? table.getFilteredRowModel().rows.length : table.getRowModel().rows.length
+})
 </script>
 
 <template>
@@ -314,7 +346,7 @@ const hasCustomCellRenderer = (column: Column<TableRow, unknown>): boolean => {
 
       <div class="flex items-center gap-2">
         <UBadge color="neutral" variant="soft" class="font-medium">
-          {{ t('table.general.rows', { count: table.getRowModel().rows.length }) }}
+          {{ t('table.general.rows', { count: totalRowsCount }) }}
         </UBadge>
         <UButton
           variant="ghost"
@@ -504,6 +536,28 @@ const hasCustomCellRenderer = (column: Column<TableRow, unknown>): boolean => {
           </tr>
         </tbody>
       </table>
+    </div>
+
+    <div v-if="props.enablePagination && totalRowsCount > 0" class="flex items-center justify-end gap-2">
+      <span class="text-xs text-slate-600">
+        {{ table.getState().pagination.pageIndex + 1 }} / {{ table.getPageCount() }}
+      </span>
+      <UButton
+        size="xs"
+        color="neutral"
+        variant="ghost"
+        icon="i-heroicons-chevron-left"
+        :disabled="!table.getCanPreviousPage()"
+        @click="table.previousPage()"
+      />
+      <UButton
+        size="xs"
+        color="neutral"
+        variant="ghost"
+        icon="i-heroicons-chevron-right"
+        :disabled="!table.getCanNextPage()"
+        @click="table.nextPage()"
+      />
     </div>
   </div>
 </template>

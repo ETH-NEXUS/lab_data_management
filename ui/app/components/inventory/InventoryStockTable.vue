@@ -35,6 +35,8 @@ const onRowClick = (row: TableRow): void => {
     :data="props.stocks as unknown as TableRow[]"
     :columns="tableColumns"
     :frozen-column-count="5"
+    enable-pagination
+    :page-size="50"
     row-clickable
     :global-filter-placeholder="t('table.general.search_placeholder')"
     @row-click="onRowClick"
