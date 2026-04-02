@@ -1,6 +1,6 @@
 import { h } from 'vue'
 import type { ColumnDef } from '@tanstack/vue-table'
-import type { DataTableColumnMeta, TableRow } from '~/components/tables/base-data-table.utils'
+import type { TableRow } from '~/components/tables/base-data-table.utils'
 import type { InventoryStockListItem } from '~/types/inventory'
 
 export type InventoryStockTableRow = TableRow & {
@@ -34,8 +34,8 @@ export const createInventoryStockTableColumns = (t: TranslateFn): ColumnDef<Tabl
   const inStockBadgeClass =
     'inline-flex items-center rounded-full border border-emerald-300 bg-emerald-100 px-2 py-0.5 text-[11px] font-semibold text-emerald-900'
 
-  const lifecycleMeta: DataTableColumnMeta = { semanticGroup: 'lifecycle' }
-  const identityMeta: DataTableColumnMeta = { semanticGroup: 'identity' }
+  const lifecycleMeta = { semanticGroup: 'lifecycle' } as unknown as Record<string, unknown>
+  const identityMeta = { semanticGroup: 'identity' } as unknown as Record<string, unknown>
 
   const columns: ColumnDef<InventoryStockTableRow, unknown>[] = [
     {
