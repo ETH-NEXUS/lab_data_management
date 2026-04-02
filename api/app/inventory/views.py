@@ -1,5 +1,5 @@
 from datetime import timedelta
-
+from django.db import models
 from django.db.models import Prefetch, Q
 from django.utils import timezone
 from rest_framework import viewsets
