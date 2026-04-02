@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import InventoryIntroCard from '~/components/inventory/InventoryIntroCard.vue'
 import InventoryQuickActionsSection from '~/components/inventory/InventoryQuickActionsSection.vue'
 import InventoryViewsSection from '~/components/inventory/InventoryViewsSection.vue'
 
@@ -23,8 +22,7 @@ const onSelectAction = (actionId: string): void => {
 
 <template>
   <section class="inventory-shell px-4 sm:px-6 lg:px-8">
-    <div class="mx-auto w-full max-w-6xl space-y-8">
-      <InventoryIntroCard />
+    <div class="mx-auto w-full max-w-6xl space-y-7">
       <InventoryQuickActionsSection @select-action="onSelectAction" />
       <InventoryViewsSection @select-action="onSelectAction" />
     </div>
