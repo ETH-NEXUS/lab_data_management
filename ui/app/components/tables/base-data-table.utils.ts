@@ -75,7 +75,7 @@ export const normalizeColumnDef = (column: ColumnDef<TableRow, unknown>): Column
   if (hasAccessor && column.enableColumnFilter !== false && !column.filterFn) {
     return {
       ...column,
-      filterFn: 'multiValue',
+      filterFn: multiValueFilter,
     }
   }
 
