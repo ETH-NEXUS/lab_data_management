@@ -18,7 +18,6 @@ import {
   getColumnSemanticGroup,
   getUniqueColumnValues,
   multiValueFilter,
-  normalizeColumnDef,
   type TableRow,
 } from '~/components/tables/base-data-table.utils'
 
@@ -53,22 +52,15 @@ const columnFilters = ref<ColumnFiltersState>([])
 const filterDraft = ref<Record<string, string[]>>({})
 const filterSearch = ref<Record<string, string>>({})
 
-/**
- * Normalizes columns so every accessor column gets default multi-select filtering.
- *
- * Returned data example:
- * - `[{ accessorKey: 'product_name', filterFn: 'multiValue' }]`
- */
-const normalizedColumns = computed<ColumnDef<TableRow, unknown>[]>(() => {
-  return props.columns.map((column) => normalizeColumnDef(column))
-})
-
 const table = useVueTable({
   get data() {
     return props.data
   },
   get columns() {
-    return normalizedColumns.value
+    return props.columns
+  },
+  defaultColumn: {
+    filterFn: multiValueFilter,
   },
   state: {
     get sorting() {

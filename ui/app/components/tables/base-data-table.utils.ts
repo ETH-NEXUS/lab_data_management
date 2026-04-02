@@ -1,4 +1,4 @@
-import type { Column, ColumnDef, FilterFn, Row } from '@tanstack/vue-table'
+import type { Column, FilterFn, Row } from '@tanstack/vue-table'
 
 export type TableRow = Record<string, unknown>
 
@@ -25,12 +25,6 @@ export const applyUpdater = <T>(updater: T | ((oldState: T) => T), previous: T):
   return updater
 }
 
-const normalizeFilterToken = (value: unknown): string | null => {
-  if (value == null) return null
-  const token = String(value).trim()
-  return token === '' ? null : token
-}
-
 /**
  * Multi-select column filter that supports scalar and array cell values.
  *
@@ -55,34 +49,6 @@ export const multiValueFilter: FilterFn<TableRow> = (row, columnId, filterValue)
 }
 
 /**
- * Ensures all accessor columns automatically get `multiValue` filter support.
- *
- * Accepted column example:
- * - `{ accessorKey: 'status', header: 'Status' }`
- *
- * Returned column example:
- * - `{ accessorKey: 'status', header: 'Status', filterFn: 'multiValue' }`
- */
-export const normalizeColumnDef = (column: ColumnDef<TableRow, unknown>): ColumnDef<TableRow, unknown> => {
-  if ('columns' in column && Array.isArray(column.columns)) {
-    return {
-      ...column,
-      columns: column.columns.map((nestedColumn) => normalizeColumnDef(nestedColumn as ColumnDef<TableRow, unknown>)),
-    }
-  }
-
-  const hasAccessor = 'accessorKey' in column || 'accessorFn' in column
-  if (hasAccessor && column.enableColumnFilter !== false && !column.filterFn) {
-    return {
-      ...column,
-      filterFn: multiValueFilter,
-    }
-  }
-
-  return column
-}
-
-/**
  * Collects distinct, non-empty string values for a column filter menu.
  *
  * Returned data example:
@@ -96,17 +62,21 @@ export const getUniqueColumnValues = (rows: Row<TableRow>[], column: Column<Tabl
 
     if (Array.isArray(rawValue)) {
       for (const value of rawValue) {
-        const token = normalizeFilterToken(value)
-        if (token) {
-          values.add(token)
+        if (value != null) {
+          const token = String(value).trim()
+          if (token !== '') {
+            values.add(token)
+          }
         }
       }
       continue
     }
 
-    const token = normalizeFilterToken(rawValue)
-    if (token) {
-      values.add(token)
+    if (rawValue != null) {
+      const token = String(rawValue).trim()
+      if (token !== '') {
+        values.add(token)
+      }
     }
   }
 
