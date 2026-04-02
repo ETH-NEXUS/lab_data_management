@@ -396,6 +396,69 @@
       "in_progress_description": "Recalculating library plate status. This can take some time."
     }
   },
+  "inventory": {
+    "page": {
+      "eyebrow": "Laboratory workspace",
+      "title": "Inventory",
+      "description": "Manage stock, devices, reserved materials, and activity from one place.",
+      "helper": "This landing page is a visual shell. Actions are placeholders and will be connected to real inventory modules next.",
+      "section_labels": {
+        "quick_actions": "Quick actions",
+        "inventory_views": "Inventory views"
+      },
+      "actions": {
+        "all_items": {
+          "title": "All items",
+          "description": "Browse all inventory entries."
+        },
+        "search": {
+          "title": "Search",
+          "description": "Find items by name, barcode, or tag."
+        },
+        "advanced_search": {
+          "title": "Advanced search",
+          "description": "Filter by status, dates, and metadata."
+        },
+        "order": {
+          "title": "Order",
+          "description": "Open ordering and replenishment workflows."
+        },
+        "add_new_item": {
+          "title": "Add new item",
+          "description": "Create a new inventory entry."
+        },
+        "favorite_items": {
+          "title": "Favorite items",
+          "description": "Open frequently used entries."
+        },
+        "expired_items": {
+          "title": "Expired items",
+          "description": "Review items past expiration date."
+        },
+        "devices": {
+          "title": "Devices",
+          "description": "Manage registered devices and equipment."
+        },
+        "recent_activities": {
+          "title": "Recent activities",
+          "description": "Inspect latest inventory changes."
+        },
+        "recently_linked_items": {
+          "title": "Recently linked items",
+          "description": "See recently connected records."
+        },
+        "reserved_items": {
+          "title": "Reserved items",
+          "description": "Track currently reserved stock."
+        },
+        "archived_items": {
+          "title": "Archived items",
+          "description": "Access archived inventory records."
+        }
+      },
+      "placeholder_suffix": "to be implemented"
+    }
+  },
   "title": {
     "status": "Status",
     "amount_dmso": "Amount / DMSO",
