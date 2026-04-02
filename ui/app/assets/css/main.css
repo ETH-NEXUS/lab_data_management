@@ -290,6 +290,17 @@ body {
     box-shadow: 0 16px 30px rgb(30 64 175 / 12%);
   }
 
+  .inventory-toolbar-card--primary {
+    border-color: var(--app-accent);
+    background: var(--app-accent);
+    color: #ffffff;
+  }
+
+  .inventory-toolbar-card--primary:hover {
+    border-color: var(--app-accent-hover);
+    background: var(--app-accent-hover);
+  }
+
   .inventory-side-card {
     display: inline-flex;
     width: 100%;
