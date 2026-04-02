@@ -25,6 +25,26 @@ from inventory.serializers.static_models_serializers import (
 User = get_user_model()
 
 
+def get_current_date_safe():
+    """
+    Returns today's date safely for both timezone-aware and naive datetime setups.
+
+    Context:
+    - In some deployments `USE_TZ=False`, so `timezone.now()` is naive.
+    - `timezone.localdate()` raises `ValueError` for naive datetime values.
+
+    Returned data examples:
+    - aware setup: local calendar date in configured timezone
+    - naive setup: `timezone.now().date()`
+    """
+    now_value = timezone.now()
+
+    if timezone.is_naive(now_value):
+        return now_value.date()
+
+    return timezone.localdate(now_value)
+
+
 class RoomSerializer(serializers.ModelSerializer):
     label = serializers.SerializerMethodField()
 
@@ -141,13 +161,13 @@ class InventoryStockListSerializer(serializers.ModelSerializer):
     def get_is_expired(self, obj):
         if not obj.expiry_date:
             return False
-        return obj.expiry_date < timezone.localdate()
+        return obj.expiry_date < get_current_date_safe()
 
     def get_is_expiring_soon(self, obj):
         if not obj.expiry_date:
             return False
 
-        today = timezone.localdate()
+        today = get_current_date_safe()
         soon_date = today + timedelta(days=30)
 
         return today <= obj.expiry_date <= soon_date
