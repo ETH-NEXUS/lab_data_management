@@ -14,16 +14,23 @@ const emit = defineEmits<{
 const { t } = useI18n()
 
 /**
+ * Primary "all items" action rendered as direct link button.
+ *
+ * Returned data example:
+ * - `{ id: 'all_items', title: 'All items' }`
+ */
+const allItemsAction = computed<InventoryActionItem>(() => ({
+  id: 'all_items',
+  title: t('inventory.page.actions.all_items.title'),
+}))
+
+/**
  * Top-row operational actions (compact card style).
  *
  * Returned data example:
- * - `[{ id: 'all_items', title: 'All items' }, { id: 'search', title: 'Search', icon: 'i-heroicons-magnifying-glass' }]`
+ * - `[{ id: 'search', title: 'Search', icon: 'i-heroicons-magnifying-glass' }]`
  */
 const topRowActions = computed<InventoryActionItem[]>(() => [
-  {
-    id: 'all_items',
-    title: t('inventory.page.actions.all_items.title'),
-  },
   {
     id: 'search',
     title: t('inventory.page.actions.search.title'),
@@ -76,6 +83,10 @@ const onSelectAction = (actionId: string): void => {
 
     <div class="grid gap-4 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-start">
       <div class="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+        <NuxtLink to="/inventory/all" class="inventory-toolbar-card inventory-toolbar-card--primary">
+          <span class="truncate">{{ allItemsAction.title }}</span>
+        </NuxtLink>
+
         <button
           v-for="action in topRowActions"
           :key="action.id"
