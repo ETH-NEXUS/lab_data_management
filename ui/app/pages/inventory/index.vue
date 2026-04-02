@@ -13,6 +13,11 @@ const { t } = useI18n()
  * - `window.alert('Devices: to be implemented')`
  */
 const onSelectAction = (actionId: string): void => {
+  if (actionId === 'all_items') {
+    navigateTo('/inventory/all')
+    return
+  }
+
   const titleKey = `inventory.page.actions.${actionId}.title`
   const actionTitle = t(titleKey)
   const placeholderSuffix = t('inventory.page.placeholder_suffix')
