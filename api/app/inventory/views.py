@@ -42,6 +42,22 @@ from .static_models import (
 from .serializers.static_models_serializers import VendorSerializer
 
 
+def get_current_date_safe():
+    """
+    Returns today's date safely for both timezone-aware and naive datetime setups.
+
+    Returned data examples:
+    - aware setup: `timezone.localdate(now)`
+    - naive setup: `timezone.now().date()`
+    """
+    now_value = timezone.now()
+
+    if timezone.is_naive(now_value):
+        return now_value.date()
+
+    return timezone.localdate(now_value)
+
+
 # =========================================================
 # Static lookup viewsets
 # =========================================================
@@ -344,7 +360,7 @@ class InventoryStockViewSet(viewsets.ModelViewSet):
 
     @action(detail=False, methods=["get"])
     def expiring_soon(self, request):
-        today = timezone.localdate()
+        today = get_current_date_safe()
         soon_date = today + timedelta(days=30)
 
         queryset = self.get_queryset().filter(
@@ -357,7 +373,7 @@ class InventoryStockViewSet(viewsets.ModelViewSet):
 
     @action(detail=False, methods=["get"])
     def expired(self, request):
-        today = timezone.localdate()
+        today = get_current_date_safe()
 
         queryset = self.get_queryset().filter(
             expiry_date__isnull=False,
