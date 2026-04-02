@@ -256,6 +256,74 @@ body {
   }
 
   /*
+    Worksheet table primitives used by modular data-table components.
+
+    Accepted shape example:
+    {
+      frozenColumns: ['favorite', 'inventory_status', 'product_name'],
+      semanticGroups: { identity: ['device_type'], lifecycle: ['expiry_date'] }
+    }
+
+    Returned visual behavior example:
+    - frozen columns stay white and sticky on horizontal scroll
+    - identity group uses very light blue tint
+    - lifecycle group uses very light amber tint
+  */
+  .worksheet-table-scroll {
+    position: relative;
+    scrollbar-color: #94a3b8 #e2e8f0;
+  }
+
+  .worksheet-table-grid {
+    border-collapse: separate;
+    border-spacing: 0;
+  }
+
+  .worksheet-header-cell,
+  .worksheet-cell {
+    position: relative;
+    vertical-align: top;
+    border-right: 1px solid rgb(226 232 240);
+  }
+
+  .worksheet-header-cell:last-child,
+  .worksheet-cell:last-child {
+    border-right: 0;
+  }
+
+  .worksheet-sticky-header,
+  .worksheet-sticky-cell {
+    background-clip: padding-box;
+  }
+
+  .worksheet-sticky-header::after,
+  .worksheet-sticky-cell::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    right: -1px;
+    width: 1px;
+    height: 100%;
+    background: rgb(203 213 225 / 80%);
+  }
+
+  .worksheet-header-group-identity {
+    background: rgb(238 248 255);
+  }
+
+  .worksheet-cell-group-identity {
+    background: rgb(247 251 255);
+  }
+
+  .worksheet-header-group-lifecycle {
+    background: rgb(255 246 232);
+  }
+
+  .worksheet-cell-group-lifecycle {
+    background: rgb(255 251 242);
+  }
+
+  /*
     The nav pattern uses a thematic medical/lab SVG tile.
     Layer order example:
     - `layer[0] = svg pattern`
