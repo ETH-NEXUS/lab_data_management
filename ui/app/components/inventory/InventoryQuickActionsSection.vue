@@ -1,12 +1,10 @@
 <script setup lang="ts">
 import { computed } from 'vue'
-import InventoryActionCard from '~/components/inventory/InventoryActionCard.vue'
 
 type InventoryActionItem = {
   id: string
   title: string
-  description: string
-  icon: string
+  icon?: string
 }
 
 const emit = defineEmits<{
@@ -16,55 +14,56 @@ const emit = defineEmits<{
 const { t } = useI18n()
 
 /**
- * Creates quick-action cards shown in the first inventory action row.
+ * Top-row operational actions (compact card style).
  *
  * Returned data example:
- * - `[{ id: 'search', title: 'Search', description: 'Find items...', icon: 'i-heroicons-magnifying-glass' }]`
+ * - `[{ id: 'all_items', title: 'All items' }, { id: 'search', title: 'Search', icon: 'i-heroicons-magnifying-glass' }]`
  */
-const quickActions = computed<InventoryActionItem[]>(() => [
+const topRowActions = computed<InventoryActionItem[]>(() => [
   {
     id: 'all_items',
     title: t('inventory.page.actions.all_items.title'),
-    description: t('inventory.page.actions.all_items.description'),
-    icon: 'i-heroicons-squares-2x2',
   },
   {
     id: 'search',
     title: t('inventory.page.actions.search.title'),
-    description: t('inventory.page.actions.search.description'),
     icon: 'i-heroicons-magnifying-glass',
   },
   {
     id: 'advanced_search',
     title: t('inventory.page.actions.advanced_search.title'),
-    description: t('inventory.page.actions.advanced_search.description'),
-    icon: 'i-heroicons-adjustments-horizontal',
+    icon: 'i-heroicons-magnifying-glass',
   },
   {
     id: 'order',
     title: t('inventory.page.actions.order.title'),
-    description: t('inventory.page.actions.order.description'),
-    icon: 'i-heroicons-shopping-cart',
   },
+])
+
+/**
+ * Secondary icon actions shown separately to the right.
+ *
+ * Returned data example:
+ * - `[{ id: 'add_new_item', title: 'Add new item', icon: 'i-heroicons-plus' }]`
+ */
+const sideActions = computed<InventoryActionItem[]>(() => [
   {
     id: 'add_new_item',
     title: t('inventory.page.actions.add_new_item.title'),
-    description: t('inventory.page.actions.add_new_item.description'),
-    icon: 'i-heroicons-plus-circle',
+    icon: 'i-heroicons-plus',
   },
   {
     id: 'favorite_items',
     title: t('inventory.page.actions.favorite_items.title'),
-    description: t('inventory.page.actions.favorite_items.description'),
     icon: 'i-heroicons-star',
   },
 ])
 
 /**
- * Forwards a selected quick-action id to the parent inventory layout.
+ * Forwards selected quick action id to parent layout.
  *
  * Input example:
- * - `actionId = 'order'`
+ * - `actionId = 'all_items'`
  */
 const onSelectAction = (actionId: string): void => {
   emit('select-action', actionId)
@@ -72,17 +71,37 @@ const onSelectAction = (actionId: string): void => {
 </script>
 
 <template>
-  <section class="space-y-3">
-    <p class="inventory-section-title">{{ t('inventory.page.section_labels.quick_actions') }}</p>
+  <section class="space-y-4">
+    <h2 class="inventory-compact-title">{{ t('inventory.page.title') }}</h2>
 
-    <div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-      <InventoryActionCard
-        v-for="action in quickActions"
-        :key="action.id"
-        :item="action"
-        size="quick"
-        @select="onSelectAction"
-      />
+    <div class="grid gap-4 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-start">
+      <div class="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+        <button
+          v-for="action in topRowActions"
+          :key="action.id"
+          type="button"
+          class="inventory-toolbar-card"
+          @click="onSelectAction(action.id)"
+        >
+          <span class="truncate">{{ action.title }}</span>
+          <UIcon v-if="action.icon" :name="action.icon" class="size-5 shrink-0 text-slate-600" />
+        </button>
+      </div>
+
+      <div class="flex gap-3 lg:flex-col">
+        <button
+          v-for="action in sideActions"
+          :key="action.id"
+          type="button"
+          class="inventory-side-card"
+          @click="onSelectAction(action.id)"
+        >
+          <span class="inventory-side-card-icon">
+            <UIcon :name="action.icon || 'i-heroicons-circle-stack'" class="size-5 text-slate-700" />
+          </span>
+          <span class="text-sm text-slate-700">{{ action.title }}</span>
+        </button>
+      </div>
     </div>
   </section>
 </template>
