@@ -1,0 +1,63 @@
+import { computed, type ComputedRef } from 'vue'
+import { useQuery } from '@tanstack/vue-query'
+import { useAPI } from '~/composables/useAPI'
+import type { PaginatedResponse } from '~/types/api'
+import { toRelativeApiEndpoint } from '~/utils/apiEndpoint'
+import {
+  INVENTORY_USAGES_ENDPOINT,
+  INVENTORY_USAGES_ERROR_MESSAGE,
+  INVENTORY_USAGE_ERROR_MESSAGE,
+  INVENTORY_USAGES_QUERY_KEY,
+  getInventoryUsageQueryKey,
+  type InventoryUsageDetail,
+  type InventoryUsageListItem,
+} from '~/types/inventory'
+
+const fetchInventoryUsages = async (): Promise<InventoryUsageListItem[]> => {
+  const allItems: InventoryUsageListItem[] = []
+  const visitedEndpoints = new Set<string>()
+  let nextEndpoint: string | null = INVENTORY_USAGES_ENDPOINT
+
+  while (nextEndpoint) {
+    if (visitedEndpoints.has(nextEndpoint)) break
+    visitedEndpoints.add(nextEndpoint)
+
+    const { data, error } = await useAPI<PaginatedResponse<InventoryUsageListItem>>(nextEndpoint, {
+      method: 'GET',
+    })
+
+    if (error.value || !data.value) {
+      throw (error.value ?? new Error(INVENTORY_USAGES_ERROR_MESSAGE)) as Error
+    }
+
+    allItems.push(...(data.value.results ?? []))
+    nextEndpoint = toRelativeApiEndpoint(data.value.next)
+  }
+
+  return allItems
+}
+
+const fetchInventoryUsage = async (usageId: number): Promise<InventoryUsageDetail> => {
+  const { data, error } = await useAPI<InventoryUsageDetail>(`inventory/material-usages/${usageId}/`, {
+    method: 'GET',
+  })
+
+  if (error.value || !data.value) {
+    throw (error.value ?? new Error(INVENTORY_USAGE_ERROR_MESSAGE)) as Error
+  }
+
+  return data.value
+}
+
+export const useInventoryUsagesQuery = () =>
+  useQuery({
+    queryKey: INVENTORY_USAGES_QUERY_KEY,
+    queryFn: fetchInventoryUsages,
+  })
+
+export const useInventoryUsageQuery = (usageIdRef: ComputedRef<number>) =>
+  useQuery({
+    queryKey: computed(() => getInventoryUsageQueryKey(usageIdRef.value)),
+    enabled: computed(() => Number.isInteger(usageIdRef.value) && usageIdRef.value > 0),
+    queryFn: () => fetchInventoryUsage(usageIdRef.value),
+  })
