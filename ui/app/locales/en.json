@@ -420,7 +420,7 @@
           "description": "Filter by status, dates, and metadata."
         },
         "order": {
-          "title": "Order",
+          "title": "Orders",
           "description": "Open ordering and replenishment workflows."
         },
         "add_new_item": {
