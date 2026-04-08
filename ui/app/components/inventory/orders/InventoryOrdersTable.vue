@@ -5,9 +5,13 @@ import { formatDateTime } from '~/utils/dateTime'
 
 type Props = {
   orders: InventoryOrderListItem[]
+  selectedOrderId?: number | null
 }
 
 const props = defineProps<Props>()
+const emit = defineEmits<{
+  (e: 'select-order', orderId: number): void
+}>()
 
 /**
  * Sorts orders by order date descending for newest-first scanning.
@@ -71,10 +75,19 @@ const statusBadgeClass = (status: string): string => {
         <tr
           v-for="order in sortedOrders"
           :key="order.id"
-          class="border-b border-slate-100 transition-colors hover:bg-slate-50"
+          :class="[
+            'border-b border-slate-100 transition-colors hover:bg-slate-50',
+            props.selectedOrderId === order.id ? 'bg-blue-50/50' : '',
+          ]"
         >
           <td class="px-3 py-2 text-slate-700">
-            {{ toDisplayValue(order.material.label || order.material.product_name) }}
+            <button
+              type="button"
+              class="cursor-pointer text-left text-sky-700 hover:text-sky-800 hover:underline"
+              @click="emit('select-order', order.id)"
+            >
+              {{ toDisplayValue(order.material.label || order.material.product_name) }}
+            </button>
           </td>
           <td class="px-3 py-2 text-slate-700">
             {{ formatDateTime(order.order_date, { dateStyle: 'medium' }, '—') }}

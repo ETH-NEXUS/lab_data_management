@@ -82,6 +82,39 @@ const sortedMaterials = computed<InventoryMaterialListItem[]>(() => {
   return materials
 })
 
+/**
+ * Determines whether all required fields are valid for submission.
+ *
+ * Checked values:
+ * - materialId: positive integer
+ * - orderUnitId: positive integer
+ * - amount: finite number > 0
+ * - orderDate: non-empty YYYY-MM-DD
+ * - status: non-empty
+ */
+const canSubmit = computed<boolean>(() => {
+  if (props.isSubmitting || props.isOrderUnitsLoading) {
+    return false
+  }
+
+  const materialId = Number.parseInt(formState.value.materialId, 10)
+  const orderUnitId = Number.parseInt(formState.value.orderUnitId, 10)
+  const amountValue = Number(formState.value.amount)
+  const orderDate = formState.value.orderDate.trim()
+  const status = formState.value.status.trim()
+
+  return (
+    Number.isInteger(materialId) &&
+    materialId > 0 &&
+    Number.isInteger(orderUnitId) &&
+    orderUnitId > 0 &&
+    Number.isFinite(amountValue) &&
+    amountValue > 0 &&
+    orderDate !== '' &&
+    status !== ''
+  )
+})
+
 watch(
   () => props.open,
   (isOpen) => {
@@ -297,7 +330,7 @@ const submitForm = (): void => {
           color="primary"
           label="Register order"
           :loading="props.isSubmitting"
-          :disabled="props.isSubmitting"
+          :disabled="!canSubmit"
           @click="submitForm"
         />
       </div>
