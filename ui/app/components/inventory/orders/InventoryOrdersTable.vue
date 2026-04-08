@@ -56,8 +56,8 @@ const statusBadgeClass = (status: string): string => {
     <table class="min-w-full text-sm">
       <thead class="border-b border-[var(--app-border)] bg-slate-50">
         <tr>
-          <th class="px-3 py-2 text-left font-semibold text-slate-800">Date</th>
           <th class="px-3 py-2 text-left font-semibold text-slate-800">Product</th>
+          <th class="px-3 py-2 text-left font-semibold text-slate-800">Date</th>
           <th class="px-3 py-2 text-left font-semibold text-slate-800">Amount</th>
           <th class="px-3 py-2 text-left font-semibold text-slate-800">Unit</th>
           <th class="px-3 py-2 text-left font-semibold text-slate-800">Status</th>
@@ -74,11 +74,12 @@ const statusBadgeClass = (status: string): string => {
           class="border-b border-slate-100 transition-colors hover:bg-slate-50"
         >
           <td class="px-3 py-2 text-slate-700">
-            {{ formatDateTime(order.order_date, { dateStyle: 'medium' }, '—') }}
-          </td>
-          <td class="px-3 py-2 text-slate-700">
             {{ toDisplayValue(order.material.label || order.material.product_name) }}
           </td>
+          <td class="px-3 py-2 text-slate-700">
+            {{ formatDateTime(order.order_date, { dateStyle: 'medium' }, '—') }}
+          </td>
+
           <td class="px-3 py-2 text-slate-700">
             {{ toDisplayValue(order.amount) }}
           </td>
