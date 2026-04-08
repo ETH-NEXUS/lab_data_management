@@ -570,6 +570,16 @@
         "select_sector": "Select sector",
         "no_sectors_available": "No sectors available"
       },
+      "record_usage": {
+        "stock_item": "Stock item: {label}",
+        "project": "Project",
+        "experiment_optional": "Experiment (optional)",
+        "quantity_used": "Quantity used",
+        "usage_unit": "Usage unit",
+        "select_project": "Select project",
+        "no_experiment": "No experiment",
+        "select_usage_unit": "Select usage unit"
+      },
       "quick_adjust": {
         "toasts": {
           "quantity_required": "Quantity and minimum quantity are required",
