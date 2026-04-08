@@ -67,17 +67,21 @@ const usageNotesModel = computed<string>({
 
 <template>
   <div v-if="props.open" class="space-y-3 rounded-lg border border-slate-200 bg-slate-50 p-3">
-    <p class="text-xs text-slate-600">Stock item: {{ props.stockItemLabel }}</p>
+    <p class="text-xs text-slate-600">
+      {{ t('inventory.stock_drawer.record_usage.stock_item', { label: props.stockItemLabel }) }}
+    </p>
 
     <div class="grid gap-3 sm:grid-cols-2">
       <div class="space-y-1 sm:col-span-2">
-        <label class="block text-sm font-medium text-slate-700">Project</label>
+        <label class="block text-sm font-medium text-slate-700">{{
+          t('inventory.stock_drawer.record_usage.project')
+        }}</label>
         <select
           v-model="selectedProjectIdModel"
           class="w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 outline-none focus:border-blue-300 focus:ring-2 focus:ring-blue-300/50"
           :disabled="props.isSavingUsage"
         >
-          <option value="">Select project</option>
+          <option value="">{{ t('inventory.stock_drawer.record_usage.select_project') }}</option>
           <option v-for="project in props.projects" :key="project.id" :value="String(project.id)">
             {{ project.name }}
           </option>
@@ -85,13 +89,15 @@ const usageNotesModel = computed<string>({
       </div>
 
       <div class="space-y-1 sm:col-span-2">
-        <label class="block text-sm font-medium text-slate-700">Experiment (optional)</label>
+        <label class="block text-sm font-medium text-slate-700">{{
+          t('inventory.stock_drawer.record_usage.experiment_optional')
+        }}</label>
         <select
           v-model="selectedExperimentIdModel"
           class="w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 outline-none focus:border-blue-300 focus:ring-2 focus:ring-blue-300/50"
           :disabled="props.isSavingUsage"
         >
-          <option value="">No experiment</option>
+          <option value="">{{ t('inventory.stock_drawer.record_usage.no_experiment') }}</option>
           <option v-for="experiment in props.filteredExperiments" :key="experiment.id" :value="String(experiment.id)">
             {{ experiment.name }}
           </option>
@@ -99,7 +105,9 @@ const usageNotesModel = computed<string>({
       </div>
 
       <div class="space-y-1">
-        <label class="block text-sm font-medium text-slate-700">Quantity used</label>
+        <label class="block text-sm font-medium text-slate-700">{{
+          t('inventory.stock_drawer.record_usage.quantity_used')
+        }}</label>
         <input
           v-model="quantityUsedModel"
           type="text"
@@ -109,13 +117,15 @@ const usageNotesModel = computed<string>({
       </div>
 
       <div class="space-y-1">
-        <label class="block text-sm font-medium text-slate-700">Usage unit</label>
+        <label class="block text-sm font-medium text-slate-700">{{
+          t('inventory.stock_drawer.record_usage.usage_unit')
+        }}</label>
         <select
           v-model="selectedUsageUnitIdModel"
           class="w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 outline-none focus:border-blue-300 focus:ring-2 focus:ring-blue-300/50"
           :disabled="props.isSavingUsage"
         >
-          <option value="">Select usage unit</option>
+          <option value="">{{ t('inventory.stock_drawer.record_usage.select_usage_unit') }}</option>
           <option v-for="unitOption in props.usageUnitOptions" :key="unitOption.id" :value="String(unitOption.id)">
             {{ unitOption.label }}
           </option>
