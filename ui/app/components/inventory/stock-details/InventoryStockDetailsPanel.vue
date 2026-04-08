@@ -6,6 +6,7 @@ import InventoryStockMovePanel from '~/components/inventory/stock-details/Invent
 import InventoryStockMetadataSection from '~/components/inventory/stock-details/InventoryStockMetadataSection.vue'
 import InventoryStockOperationalSection from '~/components/inventory/stock-details/InventoryStockOperationalSection.vue'
 import InventoryStockOrderSection from '~/components/inventory/stock-details/InventoryStockOrderSection.vue'
+import InventoryStockQuickActionsBar from '~/components/inventory/stock-details/InventoryStockQuickActionsBar.vue'
 import InventoryStockRecordUsagePanel from '~/components/inventory/stock-details/InventoryStockRecordUsagePanel.vue'
 import InventoryStockSupplierSection from '~/components/inventory/stock-details/InventoryStockSupplierSection.vue'
 import InventoryStockUnitConversionSection from '~/components/inventory/stock-details/InventoryStockUnitConversionSection.vue'
@@ -107,36 +108,14 @@ const {
 
     <div class="space-y-5 overflow-y-auto px-5 py-4">
       <section class="space-y-3 rounded-xl border border-slate-200 bg-white p-4">
-        <div class="flex items-center justify-between gap-3">
-          <p class="text-xs font-semibold tracking-[0.12em] text-slate-500 uppercase">
-            {{ t('inventory.page.section_labels.quick_actions') }}
-          </p>
-          <div class="flex items-center gap-2">
-            <UButton
-              color="primary"
-              size="xs"
-              :label="t('inventory.stock_drawer.actions.adjust_stock')"
-              :disabled="isEditingStock"
-              @click="openEditMode"
-            />
-            <UButton
-              color="neutral"
-              variant="soft"
-              size="xs"
-              :label="t('inventory.stock_drawer.actions.move_item')"
-              :disabled="isMovingStock"
-              @click="openMoveMode"
-            />
-            <UButton
-              color="neutral"
-              variant="soft"
-              size="xs"
-              label="Record usage"
-              :disabled="isRecordingUsage"
-              @click="openUsageMode"
-            />
-          </div>
-        </div>
+        <InventoryStockQuickActionsBar
+          :is-editing-stock="isEditingStock"
+          :is-moving-stock="isMovingStock"
+          :is-recording-usage="isRecordingUsage"
+          @adjust-stock="openEditMode"
+          @move-item="openMoveMode"
+          @record-usage="openUsageMode"
+        />
 
         <div v-if="isEditingStock" class="space-y-3 rounded-lg border border-slate-200 bg-slate-50 p-3">
           <div class="grid gap-3 sm:grid-cols-2">
