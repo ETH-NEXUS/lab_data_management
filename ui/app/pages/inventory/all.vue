@@ -9,8 +9,8 @@ const goBackToInventory = (): void => {
 </script>
 
 <template>
-  <section class="inventory-shell px-4 pb-12 sm:px-6 lg:px-8">
-    <div class="mx-auto w-full max-w-6xl space-y-5">
+  <section class="inventory-shell px-2 pb-12 sm:px-3 lg:px-4">
+    <div class="w-full space-y-5">
       <UButton
         variant="ghost"
         color="neutral"
