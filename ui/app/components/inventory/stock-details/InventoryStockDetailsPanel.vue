@@ -2,6 +2,7 @@
 import type { InventoryStockDetailsPanelProps } from '~/components/inventory/stock-details/useInventoryStockDetailsPanel'
 import { useInventoryStockDetailsPanel } from '~/components/inventory/stock-details/useInventoryStockDetailsPanel'
 import { useInventoryStockQuickAdjust } from '~/components/inventory/stock-details/useInventoryStockQuickAdjust'
+import { useInventoryStockMoveItem } from '~/components/inventory/stock-details/useInventoryStockMoveItem'
 import { formatDateTime } from '~/utils/dateTime'
 
 type Props = InventoryStockDetailsPanelProps & {
@@ -49,6 +50,21 @@ const {
   cancelEditMode,
   saveStockAdjustment,
 } = useInventoryStockQuickAdjust(props)
+
+const {
+  isMovingStock,
+  isSavingMove,
+  selectedRoomId,
+  selectedSectorId,
+  rooms,
+  filteredSectors,
+  isLookupsLoading,
+  lookupsErrorMessage,
+  isMoveSaveDisabled,
+  openMoveMode,
+  cancelMoveMode,
+  saveMove,
+} = useInventoryStockMoveItem(props)
 </script>
 
 <template>
@@ -85,7 +101,17 @@ const {
           <p class="text-xs font-semibold tracking-[0.12em] text-slate-500 uppercase">
             {{ t('inventory.page.section_labels.quick_actions') }}
           </p>
-          <UButton color="primary" size="xs" label="Adjust stock" :disabled="isEditingStock" @click="openEditMode" />
+          <div class="flex items-center gap-2">
+            <UButton color="primary" size="xs" label="Adjust stock" :disabled="isEditingStock" @click="openEditMode" />
+            <UButton
+              color="neutral"
+              variant="soft"
+              size="xs"
+              label="Move item"
+              :disabled="isMovingStock"
+              @click="openMoveMode"
+            />
+          </div>
         </div>
 
         <div v-if="isEditingStock" class="space-y-3 rounded-lg border border-slate-200 bg-slate-50 p-3">
@@ -141,6 +167,62 @@ const {
               :loading="isSavingStockAdjustment"
               :disabled="isSavingStockAdjustment"
               @click="saveStockAdjustment"
+            />
+          </div>
+        </div>
+
+        <div v-if="isMovingStock" class="space-y-3 rounded-lg border border-slate-200 bg-slate-50 p-3">
+          <div class="grid gap-3 sm:grid-cols-2">
+            <div class="space-y-1">
+              <label class="block text-sm font-medium text-slate-700">Room</label>
+              <select
+                v-model="selectedRoomId"
+                class="w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 outline-none focus:border-blue-300 focus:ring-2 focus:ring-blue-300/50"
+                :disabled="isSavingMove || isLookupsLoading"
+              >
+                <option value="">{{ isLookupsLoading ? 'Loading rooms...' : 'Select room' }}</option>
+                <option v-for="room in rooms" :key="room.id" :value="String(room.id)">
+                  {{ room.label || room.name }}
+                </option>
+              </select>
+            </div>
+            <div class="space-y-1">
+              <label class="block text-sm font-medium text-slate-700">Sector</label>
+              <select
+                v-model="selectedSectorId"
+                class="w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 outline-none focus:border-blue-300 focus:ring-2 focus:ring-blue-300/50"
+                :disabled="isSavingMove || isLookupsLoading || selectedRoomId === ''"
+              >
+                <option value="">
+                  {{
+                    selectedRoomId === ''
+                      ? 'Select room first'
+                      : filteredSectors.length > 0
+                        ? 'Select sector'
+                        : 'No sectors available'
+                  }}
+                </option>
+                <option v-for="sector in filteredSectors" :key="sector.id" :value="String(sector.id)">
+                  {{ sector.label || sector.name }}
+                </option>
+              </select>
+            </div>
+          </div>
+          <p v-if="lookupsErrorMessage" class="text-xs text-red-600">{{ lookupsErrorMessage }}</p>
+          <div class="flex justify-end gap-2">
+            <UButton
+              variant="ghost"
+              color="neutral"
+              :label="t('common.actions.cancel')"
+              :disabled="isSavingMove"
+              @click="cancelMoveMode"
+            />
+            <UButton
+              color="primary"
+              :label="t('common.actions.save')"
+              :loading="isSavingMove"
+              :disabled="isMoveSaveDisabled"
+              @click="saveMove"
             />
           </div>
         </div>
