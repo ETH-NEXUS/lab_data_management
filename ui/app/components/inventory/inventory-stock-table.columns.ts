@@ -70,7 +70,10 @@ const getFormattedQuantityWithUnit = (stock: InventoryStockListItem, fallback: s
  * Returned data example:
  * - `[{ id: 'productName', header: 'Product' }, { id: 'inventoryStatus', header: 'Status' }]`
  */
-export const createInventoryStockTableColumns = (t: TranslateFn): ColumnDef<TableRow, unknown>[] => {
+export const createInventoryStockTableColumns = (
+  t: TranslateFn,
+  onSelectStock: (stock: InventoryStockListItem) => void,
+): ColumnDef<TableRow, unknown>[] => {
   const lowStockBadgeClass =
     'inline-flex items-center rounded-full border border-amber-300 bg-amber-100 px-2 py-0.5 text-[11px] font-semibold text-amber-900'
   const inStockBadgeClass =
@@ -90,18 +93,18 @@ export const createInventoryStockTableColumns = (t: TranslateFn): ColumnDef<Tabl
       cell: ({ row }) => {
         const stock = getStock(row.original)
         const productName = toLabel(stock.material.product_name, t('inventory.stock_table.values.none'))
-        if (!stock.is_favorite) {
-          return productName
-        }
+        const label = stock.is_favorite ? `★ ${productName}` : productName
 
         return h(
-          'span',
+          'button',
           {
+            type: 'button',
             class:
-              'block w-full rounded-md border border-amber-300 bg-amber-100 px-2 py-1 font-semibold text-amber-900',
-            title: t('inventory.stock_table.values.yes'),
+              'inline-flex w-full cursor-pointer items-center justify-start rounded-sm px-1 py-0.5 text-left text-blue-700 transition hover:text-blue-800 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-300',
+            title: t('inventory.stock_table.columns.product_name'),
+            onClick: () => onSelectStock(stock),
           },
-          `★ ${productName}`,
+          label,
         )
       },
     },
