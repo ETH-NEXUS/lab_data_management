@@ -102,12 +102,18 @@ const {
             {{ t('inventory.page.section_labels.quick_actions') }}
           </p>
           <div class="flex items-center gap-2">
-            <UButton color="primary" size="xs" label="Adjust stock" :disabled="isEditingStock" @click="openEditMode" />
+            <UButton
+              color="primary"
+              size="xs"
+              :label="t('inventory.stock_drawer.actions.adjust_stock')"
+              :disabled="isEditingStock"
+              @click="openEditMode"
+            />
             <UButton
               color="neutral"
               variant="soft"
               size="xs"
-              label="Move item"
+              :label="t('inventory.stock_drawer.actions.move_item')"
               :disabled="isMovingStock"
               @click="openMoveMode"
             />
@@ -174,20 +180,30 @@ const {
         <div v-if="isMovingStock" class="space-y-3 rounded-lg border border-slate-200 bg-slate-50 p-3">
           <div class="grid gap-3 sm:grid-cols-2">
             <div class="space-y-1">
-              <label class="block text-sm font-medium text-slate-700">Room</label>
+              <label class="block text-sm font-medium text-slate-700">{{
+                t('inventory.stock_drawer.fields.room')
+              }}</label>
               <select
                 v-model="selectedRoomId"
                 class="w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 outline-none focus:border-blue-300 focus:ring-2 focus:ring-blue-300/50"
                 :disabled="isSavingMove || isLookupsLoading"
               >
-                <option value="">{{ isLookupsLoading ? 'Loading rooms...' : 'Select room' }}</option>
+                <option value="">
+                  {{
+                    isLookupsLoading
+                      ? t('inventory.stock_drawer.move.loading_rooms')
+                      : t('inventory.stock_drawer.move.select_room')
+                  }}
+                </option>
                 <option v-for="room in rooms" :key="room.id" :value="String(room.id)">
                   {{ room.label || room.name }}
                 </option>
               </select>
             </div>
             <div class="space-y-1">
-              <label class="block text-sm font-medium text-slate-700">Sector</label>
+              <label class="block text-sm font-medium text-slate-700">{{
+                t('inventory.stock_drawer.fields.sector')
+              }}</label>
               <select
                 v-model="selectedSectorId"
                 class="w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 outline-none focus:border-blue-300 focus:ring-2 focus:ring-blue-300/50"
@@ -196,10 +212,10 @@ const {
                 <option value="">
                   {{
                     selectedRoomId === ''
-                      ? 'Select room first'
+                      ? t('inventory.stock_drawer.move.select_room_first')
                       : filteredSectors.length > 0
-                        ? 'Select sector'
-                        : 'No sectors available'
+                        ? t('inventory.stock_drawer.move.select_sector')
+                        : t('inventory.stock_drawer.move.no_sectors_available')
                   }}
                 </option>
                 <option v-for="sector in filteredSectors" :key="sector.id" :value="String(sector.id)">

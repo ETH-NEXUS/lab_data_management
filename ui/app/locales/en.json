@@ -515,6 +515,8 @@
         "quantity": "Quantity",
         "minimum_quantity": "Minimum quantity",
         "location": "Location",
+        "room": "Room",
+        "sector": "Sector",
         "lot_number": "Lot number",
         "expiry_date": "Expiry date",
         "notes": "Notes",
@@ -557,7 +559,16 @@
         "hide": "Hide metadata"
       },
       "actions": {
-        "close": "Close details"
+        "close": "Close details",
+        "adjust_stock": "Adjust stock",
+        "move_item": "Move item"
+      },
+      "move": {
+        "loading_rooms": "Loading rooms...",
+        "select_room": "Select room",
+        "select_room_first": "Select room first",
+        "select_sector": "Select sector",
+        "no_sectors_available": "No sectors available"
       }
     },
     "orders": {
