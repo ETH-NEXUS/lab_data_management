@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import type { InventoryStockDetailsPanelProps } from '~/components/inventory/stock-details/useInventoryStockDetailsPanel'
 import { useInventoryStockDetailsPanel } from '~/components/inventory/stock-details/useInventoryStockDetailsPanel'
+import { useInventoryStockQuickAdjust } from '~/components/inventory/stock-details/useInventoryStockQuickAdjust'
 import { formatDateTime } from '~/utils/dateTime'
 
 type Props = InventoryStockDetailsPanelProps & {
@@ -36,6 +37,18 @@ const {
   metadataFields,
   toggleMetadata,
 } = useInventoryStockDetailsPanel(props)
+
+const {
+  isEditingStock,
+  isSavingStockAdjustment,
+  editQuantity,
+  editMinimumQuantity,
+  editNotes,
+  stockUnitLabel,
+  openEditMode,
+  cancelEditMode,
+  saveStockAdjustment,
+} = useInventoryStockQuickAdjust(props)
 </script>
 
 <template>
@@ -67,6 +80,72 @@ const {
     </header>
 
     <div class="space-y-5 overflow-y-auto px-5 py-4">
+      <section class="space-y-3 rounded-xl border border-slate-200 bg-white p-4">
+        <div class="flex items-center justify-between gap-3">
+          <p class="text-xs font-semibold tracking-[0.12em] text-slate-500 uppercase">
+            {{ t('inventory.page.section_labels.quick_actions') }}
+          </p>
+          <UButton color="primary" size="xs" label="Adjust stock" :disabled="isEditingStock" @click="openEditMode" />
+        </div>
+
+        <div v-if="isEditingStock" class="space-y-3 rounded-lg border border-slate-200 bg-slate-50 p-3">
+          <div class="grid gap-3 sm:grid-cols-2">
+            <div class="space-y-1">
+              <label class="block text-sm font-medium text-slate-700">{{
+                t('inventory.stock_drawer.fields.quantity')
+              }}</label>
+              <input
+                v-model="editQuantity"
+                type="text"
+                class="w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 outline-none focus:border-blue-300 focus:ring-2 focus:ring-blue-300/50"
+                :disabled="isSavingStockAdjustment"
+              />
+            </div>
+            <div class="space-y-1">
+              <label class="block text-sm font-medium text-slate-700">{{
+                t('inventory.stock_drawer.fields.minimum_quantity')
+              }}</label>
+              <input
+                v-model="editMinimumQuantity"
+                type="text"
+                class="w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 outline-none focus:border-blue-300 focus:ring-2 focus:ring-blue-300/50"
+                :disabled="isSavingStockAdjustment"
+              />
+            </div>
+            <p class="text-xs text-slate-600 sm:col-span-2">
+              {{ t('inventory.stock_drawer.fields.stock_unit') }}: {{ stockUnitLabel }}
+            </p>
+            <div class="space-y-1 sm:col-span-2">
+              <label class="block text-sm font-medium text-slate-700">{{
+                t('inventory.stock_drawer.fields.notes')
+              }}</label>
+              <textarea
+                v-model="editNotes"
+                rows="3"
+                class="w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 outline-none focus:border-blue-300 focus:ring-2 focus:ring-blue-300/50"
+                :disabled="isSavingStockAdjustment"
+              />
+            </div>
+          </div>
+          <div class="flex justify-end gap-2">
+            <UButton
+              variant="ghost"
+              color="neutral"
+              :label="t('common.actions.cancel')"
+              :disabled="isSavingStockAdjustment"
+              @click="cancelEditMode"
+            />
+            <UButton
+              color="primary"
+              :label="t('common.actions.save')"
+              :loading="isSavingStockAdjustment"
+              :disabled="isSavingStockAdjustment"
+              @click="saveStockAdjustment"
+            />
+          </div>
+        </div>
+      </section>
+
       <section class="space-y-3 rounded-xl border border-slate-200 bg-white p-4">
         <div class="flex flex-wrap items-center gap-2">
           <p class="text-xs font-semibold tracking-[0.12em] text-slate-500 uppercase">
