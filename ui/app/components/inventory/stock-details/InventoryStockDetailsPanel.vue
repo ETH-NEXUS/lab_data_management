@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { InventoryStockDetailsPanelProps } from '~/components/inventory/stock-details/useInventoryStockDetailsPanel'
+import InventoryStockDetailsHeader from '~/components/inventory/stock-details/InventoryStockDetailsHeader.vue'
 import InventoryStockMaterialIdentitySection from '~/components/inventory/stock-details/InventoryStockMaterialIdentitySection.vue'
 import InventoryStockMovePanel from '~/components/inventory/stock-details/InventoryStockMovePanel.vue'
 import InventoryStockMetadataSection from '~/components/inventory/stock-details/InventoryStockMetadataSection.vue'
@@ -98,28 +99,11 @@ const {
     v-if="props.open && props.stock"
     class="flex h-full min-h-[36rem] w-full flex-col overflow-hidden rounded-xl border border-[var(--app-border)] bg-[var(--app-surface)] shadow-[0_16px_44px_rgba(15,23,42,0.12)]"
   >
-    <header class="flex items-start justify-between gap-4 border-b border-[var(--app-border)] px-5 py-4">
-      <div class="min-w-0 space-y-1">
-        <p class="text-xs font-semibold tracking-[0.12em] text-slate-500 uppercase">
-          {{ t('inventory.stock_drawer.title') }}
-        </p>
-        <h2 class="truncate text-lg font-semibold text-slate-900">
-          {{ props.stock.material.product_name }}
-        </h2>
-        <p class="text-xs text-slate-600">
-          {{ t('inventory.stock_drawer.subtitle', { id: props.stock.id }) }}
-        </p>
-      </div>
-
-      <UButton
-        size="xs"
-        variant="ghost"
-        color="neutral"
-        icon="i-heroicons-x-mark"
-        :label="t('inventory.stock_drawer.actions.close')"
-        @click="emit('close')"
-      />
-    </header>
+    <InventoryStockDetailsHeader
+      :stock-id="props.stock.id"
+      :product-name="props.stock.material.product_name"
+      @close="emit('close')"
+    />
 
     <div class="space-y-5 overflow-y-auto px-5 py-4">
       <section class="space-y-3 rounded-xl border border-slate-200 bg-white p-4">
