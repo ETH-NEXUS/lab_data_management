@@ -1,5 +1,6 @@
 export const INVENTORY_STOCKS_ENDPOINT = 'inventory/stocks/'
 export const INVENTORY_MATERIALS_ENDPOINT = 'inventory/materials/'
+export const INVENTORY_MATERIAL_UNITS_ENDPOINT = 'inventory/material-units/'
 export const INVENTORY_ORDERS_ENDPOINT = 'inventory/orders/'
 export const INVENTORY_USAGES_ENDPOINT = 'inventory/material-usages/'
 
@@ -15,6 +16,7 @@ export const INVENTORY_UNITS_ENDPOINT = 'inventory/units-of-measure/'
 
 export const INVENTORY_STOCKS_QUERY_KEY = ['inventory-stocks']
 export const INVENTORY_MATERIALS_QUERY_KEY = ['inventory-materials']
+export const INVENTORY_MATERIAL_UNITS_QUERY_KEY = ['inventory-material-units']
 export const INVENTORY_ORDERS_QUERY_KEY = ['inventory-orders']
 export const INVENTORY_USAGES_QUERY_KEY = ['inventory-usages']
 export const INVENTORY_LOOKUPS_QUERY_KEY = ['inventory-lookups']
@@ -23,6 +25,7 @@ export const INVENTORY_STOCKS_ERROR_MESSAGE = 'Failed to load inventory stock it
 export const INVENTORY_STOCK_ERROR_MESSAGE = 'Failed to load inventory stock item.'
 export const INVENTORY_MATERIALS_ERROR_MESSAGE = 'Failed to load inventory materials.'
 export const INVENTORY_MATERIAL_ERROR_MESSAGE = 'Failed to load inventory material.'
+export const INVENTORY_MATERIAL_UNITS_ERROR_MESSAGE = 'Failed to load inventory material units.'
 export const INVENTORY_ORDERS_ERROR_MESSAGE = 'Failed to load inventory orders.'
 export const INVENTORY_ORDER_ERROR_MESSAGE = 'Failed to load inventory order.'
 export const INVENTORY_USAGES_ERROR_MESSAGE = 'Failed to load material usages.'
