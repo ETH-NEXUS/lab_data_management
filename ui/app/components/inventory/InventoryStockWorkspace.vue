@@ -162,8 +162,6 @@ watch(
         </p>
         <InventoryStockTable v-else :stocks="stocks" @select-stock="openStockDetails" />
       </UCard>
-      {{selectedStock}}
-
 
       <InventoryStockDetailsPanel
         v-if="hasSelectedStock"

@@ -12,6 +12,7 @@ const props = defineProps<Props>()
 const emit = defineEmits<{
   (e: 'select-order', orderId: number): void
 }>()
+const { t } = useI18n()
 
 /**
  * Sorts orders by order date descending for newest-first scanning.
@@ -60,14 +61,30 @@ const statusBadgeClass = (status: string): string => {
     <table class="min-w-full text-sm">
       <thead class="border-b border-[var(--app-border)] bg-slate-50">
         <tr>
-          <th class="px-3 py-2 text-left font-semibold text-slate-800">Product</th>
-          <th class="px-3 py-2 text-left font-semibold text-slate-800">Date</th>
-          <th class="px-3 py-2 text-left font-semibold text-slate-800">Amount</th>
-          <th class="px-3 py-2 text-left font-semibold text-slate-800">Unit</th>
-          <th class="px-3 py-2 text-left font-semibold text-slate-800">Status</th>
-          <th class="px-3 py-2 text-left font-semibold text-slate-800">Ordered by</th>
-          <th class="px-3 py-2 text-left font-semibold text-slate-800">Project</th>
-          <th class="px-3 py-2 text-left font-semibold text-slate-800">Notes</th>
+          <th class="px-3 py-2 text-left font-semibold text-slate-800">
+            {{ t('inventory.orders.table.columns.product') }}
+          </th>
+          <th class="px-3 py-2 text-left font-semibold text-slate-800">
+            {{ t('inventory.orders.table.columns.date') }}
+          </th>
+          <th class="px-3 py-2 text-left font-semibold text-slate-800">
+            {{ t('inventory.orders.table.columns.amount') }}
+          </th>
+          <th class="px-3 py-2 text-left font-semibold text-slate-800">
+            {{ t('inventory.orders.table.columns.unit') }}
+          </th>
+          <th class="px-3 py-2 text-left font-semibold text-slate-800">
+            {{ t('inventory.orders.table.columns.status') }}
+          </th>
+          <th class="px-3 py-2 text-left font-semibold text-slate-800">
+            {{ t('inventory.orders.table.columns.ordered_by') }}
+          </th>
+          <th class="px-3 py-2 text-left font-semibold text-slate-800">
+            {{ t('inventory.orders.table.columns.project') }}
+          </th>
+          <th class="px-3 py-2 text-left font-semibold text-slate-800">
+            {{ t('inventory.orders.table.columns.notes') }}
+          </th>
         </tr>
       </thead>
 
@@ -123,7 +140,9 @@ const statusBadgeClass = (status: string): string => {
         </tr>
 
         <tr v-if="sortedOrders.length === 0">
-          <td colspan="8" class="px-3 py-10 text-center text-sm text-slate-500">No orders found.</td>
+          <td colspan="8" class="px-3 py-10 text-center text-sm text-slate-500">
+            {{ t('inventory.orders.table.empty') }}
+          </td>
         </tr>
       </tbody>
     </table>

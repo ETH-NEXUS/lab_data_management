@@ -559,6 +559,21 @@
       "actions": {
         "close": "Close details"
       }
+    },
+    "orders": {
+      "table": {
+        "columns": {
+          "product": "Product",
+          "date": "Date",
+          "amount": "Amount",
+          "unit": "Unit",
+          "status": "Status",
+          "ordered_by": "Ordered by",
+          "project": "Project",
+          "notes": "Notes"
+        },
+        "empty": "No orders found."
+      }
     }
   },
   "table": {
