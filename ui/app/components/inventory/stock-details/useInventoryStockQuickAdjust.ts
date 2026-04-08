@@ -20,6 +20,25 @@ export const useInventoryStockQuickAdjust = (props: Readonly<QuickAdjustProps>) 
   const editMinimumQuantity = ref('')
   const editNotes = ref('')
 
+  const formatDecimalForInput = (value: string | null | undefined): string => {
+    const rawValue = value?.trim() || ''
+    if (rawValue === '') {
+      return ''
+    }
+
+    // Keep non-decimal input unchanged; only normalize canonical decimal strings.
+    if (!/^-?\d+(\.\d+)?$/.test(rawValue)) {
+      return rawValue
+    }
+
+    if (!rawValue.includes('.')) {
+      return rawValue
+    }
+
+    const normalizedValue = rawValue.replace(/\.?0+$/, '')
+    return normalizedValue === '-0' ? '0' : normalizedValue
+  }
+
   const stockUnitLabel = computed<string>(() => {
     const stock = props.stock
     if (!stock) return '—'
@@ -28,8 +47,8 @@ export const useInventoryStockQuickAdjust = (props: Readonly<QuickAdjustProps>) 
 
   const resetDraft = (): void => {
     const stock = props.stock
-    editQuantity.value = stock?.quantity ?? ''
-    editMinimumQuantity.value = stock?.minimum_quantity ?? ''
+    editQuantity.value = formatDecimalForInput(stock?.quantity)
+    editMinimumQuantity.value = formatDecimalForInput(stock?.minimum_quantity)
     editNotes.value = stock?.notes ?? ''
   }
 
