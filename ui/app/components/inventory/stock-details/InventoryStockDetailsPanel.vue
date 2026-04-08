@@ -1,8 +1,11 @@
 <script setup lang="ts">
 import type { InventoryStockDetailsPanelProps } from '~/components/inventory/stock-details/useInventoryStockDetailsPanel'
+import InventoryStockMovePanel from '~/components/inventory/stock-details/InventoryStockMovePanel.vue'
+import InventoryStockRecordUsagePanel from '~/components/inventory/stock-details/InventoryStockRecordUsagePanel.vue'
 import { useInventoryStockDetailsPanel } from '~/components/inventory/stock-details/useInventoryStockDetailsPanel'
 import { useInventoryStockQuickAdjust } from '~/components/inventory/stock-details/useInventoryStockQuickAdjust'
 import { useInventoryStockMoveItem } from '~/components/inventory/stock-details/useInventoryStockMoveItem'
+import { useInventoryStockRecordUsage } from '~/components/inventory/stock-details/useInventoryStockRecordUsage'
 import { formatDateTime } from '~/utils/dateTime'
 
 type Props = InventoryStockDetailsPanelProps & {
@@ -65,6 +68,23 @@ const {
   cancelMoveMode,
   saveMove,
 } = useInventoryStockMoveItem(props)
+
+const {
+  isRecordingUsage,
+  isSavingUsage,
+  selectedProjectId,
+  selectedExperimentId,
+  quantityUsed,
+  selectedUsageUnitId,
+  usageNotes,
+  projects,
+  filteredExperiments,
+  usageUnitOptions,
+  stockItemLabel,
+  openUsageMode,
+  cancelUsageMode,
+  saveUsage,
+} = useInventoryStockRecordUsage(props)
 </script>
 
 <template>
@@ -116,6 +136,14 @@ const {
               :label="t('inventory.stock_drawer.actions.move_item')"
               :disabled="isMovingStock"
               @click="openMoveMode"
+            />
+            <UButton
+              color="neutral"
+              variant="soft"
+              size="xs"
+              label="Record usage"
+              :disabled="isRecordingUsage"
+              @click="openUsageMode"
             />
           </div>
         </div>
@@ -177,71 +205,42 @@ const {
           </div>
         </div>
 
-        <div v-if="isMovingStock" class="space-y-3 rounded-lg border border-slate-200 bg-slate-50 p-3">
-          <div class="grid gap-3 sm:grid-cols-2">
-            <div class="space-y-1">
-              <label class="block text-sm font-medium text-slate-700">{{
-                t('inventory.stock_drawer.fields.room')
-              }}</label>
-              <select
-                v-model="selectedRoomId"
-                class="w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 outline-none focus:border-blue-300 focus:ring-2 focus:ring-blue-300/50"
-                :disabled="isSavingMove || isLookupsLoading"
-              >
-                <option value="">
-                  {{
-                    isLookupsLoading
-                      ? t('inventory.stock_drawer.move.loading_rooms')
-                      : t('inventory.stock_drawer.move.select_room')
-                  }}
-                </option>
-                <option v-for="room in rooms" :key="room.id" :value="String(room.id)">
-                  {{ room.label || room.name }}
-                </option>
-              </select>
-            </div>
-            <div class="space-y-1">
-              <label class="block text-sm font-medium text-slate-700">{{
-                t('inventory.stock_drawer.fields.sector')
-              }}</label>
-              <select
-                v-model="selectedSectorId"
-                class="w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 outline-none focus:border-blue-300 focus:ring-2 focus:ring-blue-300/50"
-                :disabled="isSavingMove || isLookupsLoading || selectedRoomId === ''"
-              >
-                <option value="">
-                  {{
-                    selectedRoomId === ''
-                      ? t('inventory.stock_drawer.move.select_room_first')
-                      : filteredSectors.length > 0
-                        ? t('inventory.stock_drawer.move.select_sector')
-                        : t('inventory.stock_drawer.move.no_sectors_available')
-                  }}
-                </option>
-                <option v-for="sector in filteredSectors" :key="sector.id" :value="String(sector.id)">
-                  {{ sector.label || sector.name }}
-                </option>
-              </select>
-            </div>
-          </div>
-          <p v-if="lookupsErrorMessage" class="text-xs text-red-600">{{ lookupsErrorMessage }}</p>
-          <div class="flex justify-end gap-2">
-            <UButton
-              variant="ghost"
-              color="neutral"
-              :label="t('common.actions.cancel')"
-              :disabled="isSavingMove"
-              @click="cancelMoveMode"
-            />
-            <UButton
-              color="primary"
-              :label="t('common.actions.save')"
-              :loading="isSavingMove"
-              :disabled="isMoveSaveDisabled"
-              @click="saveMove"
-            />
-          </div>
-        </div>
+        <InventoryStockMovePanel
+          :open="isMovingStock"
+          :is-saving-move="isSavingMove"
+          :selected-room-id="selectedRoomId"
+          :selected-sector-id="selectedSectorId"
+          :rooms="rooms"
+          :filtered-sectors="filteredSectors"
+          :is-lookups-loading="isLookupsLoading"
+          :lookups-error-message="lookupsErrorMessage"
+          :is-move-save-disabled="isMoveSaveDisabled"
+          @update:selected-room-id="selectedRoomId = $event"
+          @update:selected-sector-id="selectedSectorId = $event"
+          @cancel="cancelMoveMode"
+          @save="saveMove"
+        />
+
+        <InventoryStockRecordUsagePanel
+          :open="isRecordingUsage"
+          :is-saving-usage="isSavingUsage"
+          :stock-item-label="stockItemLabel"
+          :selected-project-id="selectedProjectId"
+          :selected-experiment-id="selectedExperimentId"
+          :quantity-used="quantityUsed"
+          :selected-usage-unit-id="selectedUsageUnitId"
+          :usage-notes="usageNotes"
+          :projects="projects"
+          :filtered-experiments="filteredExperiments"
+          :usage-unit-options="usageUnitOptions"
+          @update:selected-project-id="selectedProjectId = $event"
+          @update:selected-experiment-id="selectedExperimentId = $event"
+          @update:quantity-used="quantityUsed = $event"
+          @update:selected-usage-unit-id="selectedUsageUnitId = $event"
+          @update:usage-notes="usageNotes = $event"
+          @cancel="cancelUsageMode"
+          @save="saveUsage"
+        />
       </section>
 
       <section class="space-y-3 rounded-xl border border-slate-200 bg-white p-4">
