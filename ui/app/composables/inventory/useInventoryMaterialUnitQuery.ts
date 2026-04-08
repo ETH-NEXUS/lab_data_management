@@ -2,15 +2,17 @@ import { computed, type ComputedRef } from 'vue'
 import { useQuery } from '@tanstack/vue-query'
 import { useAPI } from '~/composables/useAPI'
 import { parseListPage, type ListResponse } from '~/composables/inventory/listResponse'
-import type { InventoryMaterialUnitSummary } from '~/types/inventory'
-
-const INVENTORY_MATERIAL_UNITS_ERROR_MESSAGE = 'Failed to load inventory material units.'
-const INVENTORY_MATERIAL_UNITS_QUERY_KEY = ['inventory-material-units']
+import {
+  INVENTORY_MATERIAL_UNITS_ENDPOINT,
+  INVENTORY_MATERIAL_UNITS_ERROR_MESSAGE,
+  INVENTORY_MATERIAL_UNITS_QUERY_KEY,
+  type InventoryMaterialUnitSummary,
+} from '~/types/inventory'
 
 const fetchInventoryMaterialOrderUnits = async (materialId: number): Promise<InventoryMaterialUnitSummary[]> => {
   const allItems: InventoryMaterialUnitSummary[] = []
   const visitedEndpoints = new Set<string>()
-  let nextEndpoint: string | null = `inventory/material-units/?material=${materialId}&is_order_unit=true`
+  let nextEndpoint: string | null = `${INVENTORY_MATERIAL_UNITS_ENDPOINT}?material=${materialId}&is_order_unit=true`
 
   while (nextEndpoint) {
     if (visitedEndpoints.has(nextEndpoint)) break
