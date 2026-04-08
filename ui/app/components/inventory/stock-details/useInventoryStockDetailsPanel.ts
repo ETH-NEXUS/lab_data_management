@@ -68,6 +68,37 @@ export const useInventoryStockDetailsPanel = (props: Readonly<InventoryStockDeta
   }
 
   /**
+   * Normalizes decimal strings for compact UI display.
+   *
+   * Input examples:
+   * - `'10.000000'`
+   * - `'3.250000'`
+   * - `'5'`
+   *
+   * Returned examples:
+   * - `'10'`
+   * - `'3.25'`
+   * - `'5'`
+   */
+  const formatDecimalForDisplay = (value: string | null | undefined): string => {
+    const rawValue = value?.trim() || ''
+    if (rawValue === '') {
+      return ''
+    }
+
+    if (!/^-?\d+(\.\d+)?$/.test(rawValue)) {
+      return rawValue
+    }
+
+    if (!rawValue.includes('.')) {
+      return rawValue
+    }
+
+    const normalizedValue = rawValue.replace(/\.?0+$/, '')
+    return normalizedValue === '-0' ? '0' : normalizedValue
+  }
+
+  /**
    * Resolves one room/sector location label from stock values.
    *
    * Accepted stock example:
@@ -131,7 +162,7 @@ export const useInventoryStockDetailsPanel = (props: Readonly<InventoryStockDeta
       return t('inventory.stock_drawer.values.none')
     }
 
-    return `${toDisplayValue(props.stock.quantity)} ${stockUnitLabel.value}`.trim()
+    return `${toDisplayValue(formatDecimalForDisplay(props.stock.quantity))} ${stockUnitLabel.value}`.trim()
   })
 
   const minimumQuantityLabel = computed<string>(() => {
@@ -139,7 +170,7 @@ export const useInventoryStockDetailsPanel = (props: Readonly<InventoryStockDeta
       return t('inventory.stock_drawer.values.none')
     }
 
-    return `${toDisplayValue(props.stock.minimum_quantity)} ${stockUnitLabel.value}`.trim()
+    return `${toDisplayValue(formatDecimalForDisplay(props.stock.minimum_quantity))} ${stockUnitLabel.value}`.trim()
   })
 
   const baseUnitLabel = computed<string>(() => {
