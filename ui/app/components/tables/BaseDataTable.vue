@@ -28,7 +28,6 @@ type BaseDataTableProps = {
   columns: ColumnDef<TableRow, unknown>[]
   globalFilterPlaceholder?: string
   frozenColumnCount?: number
-  dense?: boolean
   rowClickable?: boolean
   hideToolbar?: boolean
   enablePagination?: boolean
@@ -38,7 +37,6 @@ type BaseDataTableProps = {
 const props = withDefaults(defineProps<BaseDataTableProps>(), {
   globalFilterPlaceholder: '',
   frozenColumnCount: 0,
-  dense: false,
   rowClickable: false,
   hideToolbar: false,
   enablePagination: false,
@@ -267,7 +265,7 @@ const getSemanticHeaderClass = (column: Column<TableRow, unknown>): string => {
 }
 
 const getCellClass = (column: Column<TableRow, unknown>): string[] => {
-  const classes = ['worksheet-cell', props.dense ? 'px-2 py-1.5 text-xs' : 'px-3 py-2.5 text-sm']
+  const classes = ['worksheet-cell', 'px-3 py-2.5 text-sm']
 
   if (isFrozenColumn(column)) {
     // Frozen columns always use white background for scan stability.
@@ -280,11 +278,7 @@ const getCellClass = (column: Column<TableRow, unknown>): string[] => {
 }
 
 const getHeaderCellClass = (column: Column<TableRow, unknown>): string[] => {
-  const classes = [
-    'worksheet-header-cell',
-    props.dense ? 'px-2 py-1.5 text-xs' : 'px-3 py-2.5 text-sm',
-    'font-semibold text-slate-800',
-  ]
+  const classes = ['worksheet-header-cell', 'px-3 py-2.5 text-sm', 'font-semibold text-slate-800']
 
   if (isFrozenColumn(column)) {
     // Frozen columns always use white background for scan stability.
@@ -335,7 +329,7 @@ const totalRowsCount = computed<number>(() => {
 </script>
 
 <template>
-  <div :class="['space-y-4', props.dense ? 'worksheet-table' : '']">
+  <div class="space-y-4">
     <div v-if="!props.hideToolbar" class="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
       <UInput
         v-model="globalFilter"
@@ -348,6 +342,27 @@ const totalRowsCount = computed<number>(() => {
         <UBadge color="neutral" variant="soft" class="font-medium">
           {{ t('table.general.rows', { count: totalRowsCount }) }}
         </UBadge>
+        <div v-if="props.enablePagination && totalRowsCount > 0" class="flex items-center gap-1">
+          <span class="text-xs text-slate-600">
+            {{ table.getState().pagination.pageIndex + 1 }} / {{ table.getPageCount() }}
+          </span>
+          <UButton
+            size="xs"
+            color="neutral"
+            variant="ghost"
+            icon="i-heroicons-chevron-left"
+            :disabled="!table.getCanPreviousPage()"
+            @click="table.previousPage()"
+          />
+          <UButton
+            size="xs"
+            color="neutral"
+            variant="ghost"
+            icon="i-heroicons-chevron-right"
+            :disabled="!table.getCanNextPage()"
+            @click="table.nextPage()"
+          />
+        </div>
         <UButton
           variant="ghost"
           color="neutral"
@@ -358,13 +373,8 @@ const totalRowsCount = computed<number>(() => {
       </div>
     </div>
 
-    <div
-      :class="[
-        'worksheet-table-scroll overflow-x-auto rounded-lg border border-[var(--app-border)] bg-white shadow-sm',
-        props.dense ? 'max-h-[70vh]' : '',
-      ]"
-    >
-      <table :class="['worksheet-table-grid min-w-full', props.dense ? 'text-xs' : 'text-sm']">
+    <div class="worksheet-table-scroll overflow-x-auto rounded-lg border border-[var(--app-border)] bg-white shadow-sm">
+      <table class="worksheet-table-grid min-w-full text-sm">
         <thead class="border-b border-[var(--app-border)]">
           <tr v-for="headerGroup in table.getHeaderGroups()" :key="headerGroup.id">
             <th
@@ -379,11 +389,7 @@ const totalRowsCount = computed<number>(() => {
                   <button
                     v-if="header.column.getCanSort()"
                     type="button"
-                    :class="[
-                      'inline-flex items-center gap-1 rounded-md px-1 py-0.5 text-left text-slate-800',
-                      props.dense ? 'leading-tight' : '',
-                      'hover:bg-slate-100',
-                    ]"
+                    class="inline-flex items-center gap-1 rounded-md px-1 py-0.5 text-left text-slate-800 hover:bg-slate-100"
                     @click="header.column.toggleSorting(header.column.getIsSorted() === 'asc')"
                   >
                     <FlexRender :render="header.column.columnDef.header" :props="header.getContext()" />
@@ -510,7 +516,6 @@ const totalRowsCount = computed<number>(() => {
             :class="[
               'worksheet-row border-b border-slate-100 transition-colors hover:bg-slate-50',
               props.rowClickable ? 'cursor-pointer' : '',
-              props.dense ? 'odd:bg-white even:bg-slate-50/35' : '',
             ]"
             @click="props.rowClickable ? emitRowClick(row.original) : undefined"
           >
@@ -536,28 +541,6 @@ const totalRowsCount = computed<number>(() => {
           </tr>
         </tbody>
       </table>
-    </div>
-
-    <div v-if="props.enablePagination && totalRowsCount > 0" class="flex items-center justify-end gap-2">
-      <span class="text-xs text-slate-600">
-        {{ table.getState().pagination.pageIndex + 1 }} / {{ table.getPageCount() }}
-      </span>
-      <UButton
-        size="xs"
-        color="neutral"
-        variant="ghost"
-        icon="i-heroicons-chevron-left"
-        :disabled="!table.getCanPreviousPage()"
-        @click="table.previousPage()"
-      />
-      <UButton
-        size="xs"
-        color="neutral"
-        variant="ghost"
-        icon="i-heroicons-chevron-right"
-        :disabled="!table.getCanNextPage()"
-        @click="table.nextPage()"
-      />
     </div>
   </div>
 </template>
