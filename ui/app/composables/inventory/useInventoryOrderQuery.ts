@@ -1,8 +1,7 @@
 import { computed, type ComputedRef } from 'vue'
 import { useQuery } from '@tanstack/vue-query'
 import { useAPI } from '~/composables/useAPI'
-import type { PaginatedResponse } from '~/types/api'
-import { toRelativeApiEndpoint } from '~/utils/apiEndpoint'
+import { parseListPage, type ListResponse } from '~/composables/inventory/listResponse'
 import {
   INVENTORY_ORDERS_ENDPOINT,
   INVENTORY_ORDERS_ERROR_MESSAGE,
@@ -22,7 +21,7 @@ const fetchInventoryOrders = async (): Promise<InventoryOrderListItem[]> => {
     if (visitedEndpoints.has(nextEndpoint)) break
     visitedEndpoints.add(nextEndpoint)
 
-    const { data, error } = await useAPI<PaginatedResponse<InventoryOrderListItem>>(nextEndpoint, {
+    const { data, error } = await useAPI<ListResponse<InventoryOrderListItem>>(nextEndpoint, {
       method: 'GET',
     })
 
@@ -30,8 +29,9 @@ const fetchInventoryOrders = async (): Promise<InventoryOrderListItem[]> => {
       throw (error.value ?? new Error(INVENTORY_ORDERS_ERROR_MESSAGE)) as Error
     }
 
-    allItems.push(...(data.value.results ?? []))
-    nextEndpoint = toRelativeApiEndpoint(data.value.next)
+    const parsedPage = parseListPage(data.value)
+    allItems.push(...parsedPage.items)
+    nextEndpoint = parsedPage.nextEndpoint
   }
 
   return allItems

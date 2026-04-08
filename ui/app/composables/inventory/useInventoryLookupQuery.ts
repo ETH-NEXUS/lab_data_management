@@ -1,7 +1,6 @@
 import { useQuery } from '@tanstack/vue-query'
 import { useAPI } from '~/composables/useAPI'
-import type { PaginatedResponse } from '~/types/api'
-import { toRelativeApiEndpoint } from '~/utils/apiEndpoint'
+import { parseListPage, type ListResponse } from '~/composables/inventory/listResponse'
 import {
   INVENTORY_ATTRIBUTES_ENDPOINT,
   INVENTORY_BRANDS_ENDPOINT,
@@ -27,14 +26,15 @@ const fetchAllPages = async <T>(endpoint: string): Promise<T[]> => {
     if (visitedEndpoints.has(nextEndpoint)) break
     visitedEndpoints.add(nextEndpoint)
 
-    const { data, error } = await useAPI<PaginatedResponse<T>>(nextEndpoint, { method: 'GET' })
+    const { data, error } = await useAPI<ListResponse<T>>(nextEndpoint, { method: 'GET' })
 
     if (error.value || !data.value) {
       throw (error.value ?? new Error(`Failed to load ${endpoint}`)) as Error
     }
 
-    allItems.push(...(data.value.results ?? []))
-    nextEndpoint = toRelativeApiEndpoint(data.value.next)
+    const parsedPage = parseListPage(data.value)
+    allItems.push(...parsedPage.items)
+    nextEndpoint = parsedPage.nextEndpoint
   }
 
   return allItems
