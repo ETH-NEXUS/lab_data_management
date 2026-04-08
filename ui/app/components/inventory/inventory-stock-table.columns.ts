@@ -10,6 +10,23 @@ const toLabel = (value: string | null | undefined, fallback: string): string => 
   return value?.trim() || fallback
 }
 
+const formatNumericString = (value: string | null | undefined): string => {
+  const rawValue = value?.trim() || ''
+  if (rawValue === '') {
+    return ''
+  }
+
+  if (!/^-?\d+(\.\d+)?$/.test(rawValue)) {
+    return rawValue
+  }
+
+  if (!rawValue.includes('.')) {
+    return rawValue
+  }
+
+  return rawValue.replace(/\.?0+$/, '')
+}
+
 const getStock = (row: TableRow): InventoryStockListItem => {
   return row as InventoryStockListItem
 }
@@ -27,6 +44,24 @@ const getAttributes = (stock: InventoryStockListItem, t: TranslateFn): string[] 
     .filter((label) => label !== '')
 
   return labels.length > 0 ? labels : [t('inventory.stock_drawer.values.no_attributes')]
+}
+
+const getStockUnitLabel = (stock: InventoryStockListItem): string => {
+  return stock.stock_unit.unit?.label || stock.stock_unit.unit?.name || ''
+}
+
+const getFormattedQuantityWithUnit = (stock: InventoryStockListItem, fallback: string): string => {
+  const quantityValue = formatNumericString(stock.quantity)
+  if (quantityValue === '') {
+    return fallback
+  }
+
+  const unitLabel = getStockUnitLabel(stock)
+  if (unitLabel === '') {
+    return quantityValue
+  }
+
+  return `${quantityValue} ${unitLabel}`.trim()
 }
 
 /**
@@ -51,7 +86,7 @@ export const createInventoryStockTableColumns = (t: TranslateFn): ColumnDef<Tabl
       header: t('inventory.stock_table.columns.product_name'),
       enableSorting: true,
       enableColumnFilter: true,
-      size: 260,
+      size: 220,
       cell: ({ row }) => {
         const stock = getStock(row.original)
         const productName = toLabel(stock.material.product_name, t('inventory.stock_table.values.none'))
@@ -76,7 +111,7 @@ export const createInventoryStockTableColumns = (t: TranslateFn): ColumnDef<Tabl
       header: t('inventory.stock_table.columns.inventory_status'),
       enableSorting: true,
       enableColumnFilter: true,
-      size: 132,
+      size: 122,
       cell: ({ row }) => {
         const stock = getStock(row.original)
         const isLowStock = stock.inventory_status === 'low'
@@ -91,19 +126,20 @@ export const createInventoryStockTableColumns = (t: TranslateFn): ColumnDef<Tabl
     },
     {
       id: 'quantityWithStockUnit',
-      accessorFn: (row) => toLabel(getStock(row).stock_label, t('inventory.stock_table.values.none')),
+      accessorFn: (row) => getFormattedQuantityWithUnit(getStock(row), t('inventory.stock_table.values.none')),
       header: t('inventory.stock_table.columns.quantity_with_stock_unit'),
       enableSorting: true,
       enableColumnFilter: true,
-      size: 190,
+      size: 150,
     },
     {
       id: 'minimumQuantity',
-      accessorFn: (row) => toLabel(getStock(row).minimum_quantity, t('inventory.stock_table.values.none')),
+      accessorFn: (row) =>
+        toLabel(formatNumericString(getStock(row).minimum_quantity), t('inventory.stock_table.values.none')),
       header: t('inventory.stock_table.columns.minimum_quantity'),
       enableSorting: true,
       enableColumnFilter: true,
-      size: 170,
+      size: 130,
     },
     {
       id: 'location',
@@ -111,7 +147,7 @@ export const createInventoryStockTableColumns = (t: TranslateFn): ColumnDef<Tabl
       header: t('inventory.stock_table.columns.location'),
       enableSorting: true,
       enableColumnFilter: true,
-      size: 220,
+      size: 150,
     },
     {
       id: 'deviceType',
@@ -125,7 +161,7 @@ export const createInventoryStockTableColumns = (t: TranslateFn): ColumnDef<Tabl
       header: t('inventory.stock_table.columns.device_type'),
       enableSorting: true,
       enableColumnFilter: true,
-      size: 180,
+      size: 150,
       meta: identityMeta,
     },
     {
@@ -140,7 +176,7 @@ export const createInventoryStockTableColumns = (t: TranslateFn): ColumnDef<Tabl
       header: t('inventory.stock_table.columns.item_type'),
       enableSorting: true,
       enableColumnFilter: true,
-      size: 180,
+      size: 150,
       meta: identityMeta,
     },
     {
@@ -149,7 +185,7 @@ export const createInventoryStockTableColumns = (t: TranslateFn): ColumnDef<Tabl
       header: t('inventory.stock_table.columns.attributes'),
       enableSorting: true,
       enableColumnFilter: true,
-      size: 220,
+      size: 180,
       meta: identityMeta,
     },
     {
@@ -158,7 +194,7 @@ export const createInventoryStockTableColumns = (t: TranslateFn): ColumnDef<Tabl
       header: t('inventory.stock_table.columns.lot_number'),
       enableSorting: true,
       enableColumnFilter: true,
-      size: 170,
+      size: 130,
       meta: lifecycleMeta,
     },
     {
@@ -173,7 +209,7 @@ export const createInventoryStockTableColumns = (t: TranslateFn): ColumnDef<Tabl
       header: t('inventory.stock_table.columns.expiry_date'),
       enableSorting: true,
       enableColumnFilter: true,
-      size: 170,
+      size: 130,
       meta: lifecycleMeta,
     },
     {
@@ -182,7 +218,7 @@ export const createInventoryStockTableColumns = (t: TranslateFn): ColumnDef<Tabl
       header: t('inventory.stock_table.columns.notes'),
       enableSorting: true,
       enableColumnFilter: true,
-      size: 260,
+      size: 210,
       meta: lifecycleMeta,
     },
   ]
