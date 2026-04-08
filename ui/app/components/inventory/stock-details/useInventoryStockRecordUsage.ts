@@ -1,7 +1,15 @@
 import { computed, ref, watch } from 'vue'
+import { useQueryClient } from '@tanstack/vue-query'
 import { useExperimentsQuery } from '~/composables/useExperimentQuery'
 import { useProjectsQuery } from '~/composables/useProjectsQuery'
-import type { InventoryMaterialDetail, InventoryStockListItem } from '~/types/inventory'
+import { useInventoryUsageStore } from '~/stores/inventory/InventoryUsageStore'
+import {
+  INVENTORY_STOCKS_QUERY_KEY,
+  INVENTORY_USAGES_QUERY_KEY,
+  type InventoryMaterialDetail,
+  type InventoryStockListItem,
+} from '~/types/inventory'
+import { getErrorMessage } from '~/utils/errors'
 
 type RecordUsageProps = {
   open: boolean
@@ -15,6 +23,10 @@ type UsageUnitOption = {
 }
 
 export const useInventoryStockRecordUsage = (props: Readonly<RecordUsageProps>) => {
+  const toast = useToast()
+  const queryClient = useQueryClient()
+  const inventoryUsageStore = useInventoryUsageStore()
+
   const projectsQuery = useProjectsQuery()
   const experimentsQuery = useExperimentsQuery()
 
@@ -89,7 +101,87 @@ export const useInventoryStockRecordUsage = (props: Readonly<RecordUsageProps>) 
     resetDraft()
   }
 
-  const saveUsage = async (): Promise<void> => {}
+  const saveUsage = async (): Promise<void> => {
+    const stock = props.stock
+    if (!stock || isSavingUsage.value) {
+      return
+    }
+
+    const projectId = Number.parseInt(selectedProjectId.value.trim(), 10)
+    if (!Number.isInteger(projectId) || projectId <= 0) {
+      toast.add({
+        title: 'Project is required',
+        color: 'warning',
+        duration: 2500,
+      })
+      return
+    }
+
+    const usageUnitId = Number.parseInt(selectedUsageUnitId.value.trim(), 10)
+    if (!Number.isInteger(usageUnitId) || usageUnitId <= 0) {
+      toast.add({
+        title: 'Usage unit is required',
+        color: 'warning',
+        duration: 2500,
+      })
+      return
+    }
+
+    const quantityText = quantityUsed.value.trim()
+    const quantityValue = Number.parseFloat(quantityText)
+    if (quantityText === '' || !Number.isFinite(quantityValue) || quantityValue <= 0) {
+      toast.add({
+        title: 'Enter a valid quantity',
+        color: 'warning',
+        duration: 2500,
+      })
+      return
+    }
+
+    const experimentText = selectedExperimentId.value.trim()
+    const experimentId = experimentText === '' ? null : Number.parseInt(experimentText, 10)
+    if (experimentId !== null && (!Number.isInteger(experimentId) || experimentId <= 0)) {
+      toast.add({
+        title: 'Experiment must be valid',
+        color: 'warning',
+        duration: 2500,
+      })
+      return
+    }
+
+    isSavingUsage.value = true
+    try {
+      await inventoryUsageStore.createUsage({
+        project_id: projectId,
+        experiment_id: experimentId,
+        inventory_stock_id: stock.id,
+        usage_unit_id: usageUnitId,
+        quantity_used: quantityText,
+        notes: usageNotes.value.trim() === '' ? null : usageNotes.value.trim(),
+      })
+
+      await queryClient.invalidateQueries({ queryKey: INVENTORY_USAGES_QUERY_KEY })
+      await queryClient.invalidateQueries({ queryKey: INVENTORY_STOCKS_QUERY_KEY })
+
+      isRecordingUsage.value = false
+      resetDraft()
+
+      toast.add({
+        title: 'Usage recorded',
+        color: 'success',
+        duration: 2500,
+      })
+    } catch (err: unknown) {
+      toast.add({
+        title: 'Failed to record usage',
+        description: getErrorMessage(err),
+        color: 'error',
+        duration: 4000,
+      })
+    } finally {
+      isSavingUsage.value = false
+    }
+  }
 
   watch(selectedProjectId, () => {
     const selectedExperiment = Number.parseInt(selectedExperimentId.value, 10)
