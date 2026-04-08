@@ -13,6 +13,7 @@ type Props = {
   orderUnitOptions: OrderUnitOption[]
   isMaterialsLoading?: boolean
   isOrderUnitsLoading?: boolean
+  orderUnitsErrorMessage?: string | null
   isSubmitting?: boolean
 }
 
@@ -28,6 +29,7 @@ type OrderFormState = {
 const props = withDefaults(defineProps<Props>(), {
   isMaterialsLoading: false,
   isOrderUnitsLoading: false,
+  orderUnitsErrorMessage: null,
   isSubmitting: false,
 })
 
@@ -224,15 +226,20 @@ const submitForm = (): void => {
                 {{
                   props.isOrderUnitsLoading
                     ? 'Loading units...'
-                    : props.orderUnitOptions.length > 0
-                      ? 'Select order unit'
-                      : 'No order units available'
+                    : props.orderUnitsErrorMessage
+                      ? 'Failed to load units'
+                      : props.orderUnitOptions.length > 0
+                        ? 'Select order unit'
+                        : 'No order units available'
                 }}
               </option>
               <option v-for="unitOption in props.orderUnitOptions" :key="unitOption.id" :value="String(unitOption.id)">
                 {{ unitOption.label }}
               </option>
             </select>
+            <p v-if="props.orderUnitsErrorMessage" class="text-xs text-red-600">
+              {{ props.orderUnitsErrorMessage }}
+            </p>
           </div>
 
           <div class="space-y-1">

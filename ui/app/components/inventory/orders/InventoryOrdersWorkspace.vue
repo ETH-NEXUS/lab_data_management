@@ -46,6 +46,15 @@ const orderUnitOptions = computed<OrderUnitOption[]>(() => {
   }))
 })
 
+const orderUnitsErrorMessage = computed<string | null>(() => {
+  const err = selectedMaterialOrderUnitsQuery.error.value
+  if (!err) {
+    return null
+  }
+
+  return getErrorMessage(err)
+})
+
 const ordersErrorMessage = computed<string | null>(() => {
   const err = ordersQuery.error.value
   if (!err) {
@@ -137,6 +146,7 @@ const registerOrder = async (payload: CreateInventoryOrderPayload): Promise<void
       :order-unit-options="orderUnitOptions"
       :is-materials-loading="materialsQuery.isPending.value"
       :is-order-units-loading="selectedMaterialId > 0 && selectedMaterialOrderUnitsQuery.isPending.value"
+      :order-units-error-message="orderUnitsErrorMessage"
       :is-submitting="inventoryOrderStore.isCreatingOrder"
       @update:open="isCreateOrderModalOpen = $event"
       @select-material="onSelectMaterial"
