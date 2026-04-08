@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import BaseDataTable from '~/components/tables/BaseDataTable.vue'
-import type { TableRow } from '~/components/tables/base-data-table.utils'
 import { createInventoryStockTableColumns } from '~/components/inventory/inventory-stock-table.columns'
 import type { InventoryStockListItem } from '~/types/inventory'
 
@@ -17,28 +16,26 @@ const emit = defineEmits<{
 
 const { t } = useI18n()
 
-const tableColumns = computed(() => createInventoryStockTableColumns(t))
+const onSelectStock = (stock: InventoryStockListItem): void => {
+  emit('select-stock', stock)
+}
 
 /**
- * Forwards one selected table row as its original stock payload.
+ * Builds columns with a product-name click action that opens stock details.
  *
- * Input example:
- * - `row = { id: 14, material: { product_name: 'PBS Buffer' }, ... }`
+ * Input callback example:
+ * - `(stock) => emit('select-stock', stock)`
  */
-const onRowClick = (row: TableRow): void => {
-  emit('select-stock', row as InventoryStockListItem)
-}
+const tableColumns = computed(() => createInventoryStockTableColumns(t, onSelectStock))
 </script>
 
 <template>
   <BaseDataTable
-    :data="props.stocks as unknown as TableRow[]"
+    :data="props.stocks as unknown as Record<string, unknown>[]"
     :columns="tableColumns"
     :frozen-column-count="5"
     enable-pagination
     :page-size="50"
-    row-clickable
     :global-filter-placeholder="t('table.general.search_placeholder')"
-    @row-click="onRowClick"
   />
 </template>
