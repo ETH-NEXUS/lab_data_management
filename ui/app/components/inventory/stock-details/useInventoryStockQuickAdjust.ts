@@ -10,6 +10,7 @@ type QuickAdjustProps = {
 }
 
 export const useInventoryStockQuickAdjust = (props: Readonly<QuickAdjustProps>) => {
+  const { t } = useI18n()
   const toast = useToast()
   const queryClient = useQueryClient()
   const inventoryStockStore = useInventoryStockStore()
@@ -71,7 +72,11 @@ export const useInventoryStockQuickAdjust = (props: Readonly<QuickAdjustProps>) 
     const quantity = editQuantity.value.trim()
     const minimumQuantity = editMinimumQuantity.value.trim()
     if (quantity === '' || minimumQuantity === '') {
-      toast.add({ title: 'Quantity and minimum quantity are required', color: 'warning', duration: 2500 })
+      toast.add({
+        title: t('inventory.stock_drawer.quick_adjust.toasts.quantity_required'),
+        color: 'warning',
+        duration: 2500,
+      })
       return
     }
 
@@ -84,10 +89,10 @@ export const useInventoryStockQuickAdjust = (props: Readonly<QuickAdjustProps>) 
       })
       await queryClient.invalidateQueries({ queryKey: INVENTORY_STOCKS_QUERY_KEY })
       isEditingStock.value = false
-      toast.add({ title: 'Stock adjusted', color: 'success', duration: 2500 })
+      toast.add({ title: t('inventory.stock_drawer.quick_adjust.toasts.adjusted'), color: 'success', duration: 2500 })
     } catch (err: unknown) {
       toast.add({
-        title: 'Failed to adjust stock',
+        title: t('inventory.stock_drawer.quick_adjust.toasts.adjust_failed'),
         description: getErrorMessage(err),
         color: 'error',
         duration: 4000,
