@@ -569,6 +569,13 @@
         "select_room_first": "Select room first",
         "select_sector": "Select sector",
         "no_sectors_available": "No sectors available"
+      },
+      "quick_adjust": {
+        "toasts": {
+          "quantity_required": "Quantity and minimum quantity are required",
+          "adjusted": "Stock adjusted",
+          "adjust_failed": "Failed to adjust stock"
+        }
       }
     },
     "orders": {
