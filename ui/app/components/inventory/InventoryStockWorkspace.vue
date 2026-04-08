@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
-import InventoryStockDetailDrawer from '~/components/inventory/InventoryStockDetailDrawer.vue'
+import InventoryStockDetailsPanel from '~/components/inventory/stock-details/InventoryStockDetailsPanel.vue'
 import InventoryStockTable from '~/components/inventory/InventoryStockTable.vue'
 import { useInventoryMaterialQuery } from '~/composables/inventory/useInventoryMaterialQuery'
 import { useInventoryOrdersQuery } from '~/composables/inventory/useInventoryOrderQuery'
@@ -85,6 +85,10 @@ const stocksErrorMessage = computed<string | null>(() => {
   return err instanceof Error ? err.message : t('inventory.stock_workspace.error')
 })
 
+const hasSelectedStock = computed<boolean>(() => {
+  return selectedStock.value !== null
+})
+
 /**
  * Opens the stock detail drawer for one selected row.
  *
@@ -128,40 +132,52 @@ watch(
   <section class="space-y-3">
     <p class="inventory-section-title">{{ t('inventory.stock_workspace.title') }}</p>
 
-    <UCard
-      :ui="{
-        root: 'core-card divide-y divide-slate-200/70',
-      }"
+    <div
+      :class="[
+        'grid items-start gap-4',
+        hasSelectedStock ? 'xl:grid-cols-[minmax(0,1.45fr)_minmax(0,1fr)]' : 'grid-cols-1',
+      ]"
     >
-      <template #header>
-        <div class="space-y-1">
-          <p class="text-sm font-semibold text-slate-800">{{ t('inventory.stock_workspace.title') }}</p>
-          <p class="text-sm text-slate-600">{{ t('inventory.stock_workspace.description') }}</p>
-        </div>
-      </template>
+      <UCard
+        class="min-w-0"
+        :ui="{
+          root: 'core-card divide-y divide-slate-200/70',
+        }"
+      >
+        <template #header>
+          <div class="space-y-1">
+            <p class="text-sm font-semibold text-slate-800">{{ t('inventory.stock_workspace.title') }}</p>
+            <p class="text-sm text-slate-600">{{ t('inventory.stock_workspace.description') }}</p>
+          </div>
+        </template>
 
-      <p v-if="stocksQuery.isPending.value" class="text-sm text-slate-600">
-        {{ t('inventory.stock_workspace.loading') }}
-      </p>
-      <p v-else-if="stocksErrorMessage" class="text-sm text-red-600">
-        {{ stocksErrorMessage }}
-      </p>
-      <p v-else-if="stocks.length === 0" class="text-sm text-slate-600">
-        {{ t('inventory.stock_workspace.empty') }}
-      </p>
-      <InventoryStockTable v-else :stocks="stocks" @select-stock="openStockDetails" />
-    </UCard>
+        <p v-if="stocksQuery.isPending.value" class="text-sm text-slate-600">
+          {{ t('inventory.stock_workspace.loading') }}
+        </p>
+        <p v-else-if="stocksErrorMessage" class="text-sm text-red-600">
+          {{ stocksErrorMessage }}
+        </p>
+        <p v-else-if="stocks.length === 0" class="text-sm text-slate-600">
+          {{ t('inventory.stock_workspace.empty') }}
+        </p>
+        <InventoryStockTable v-else :stocks="stocks" @select-stock="openStockDetails" />
+      </UCard>
+      {{selectedStock}}
 
-    <InventoryStockDetailDrawer
-      :open="selectedStock !== null"
-      :stock="selectedStock"
-      :material-detail="selectedMaterialQuery.data.value ?? null"
-      :usage-entries="selectedStockUsageEntries"
-      :order-entries="selectedStockOrderEntries"
-      :is-material-loading="selectedMaterialQuery.isPending.value"
-      :is-usages-loading="usagesQuery.isPending.value"
-      :is-orders-loading="ordersQuery.isPending.value"
-      @close="closeStockDetails"
-    />
+
+      <InventoryStockDetailsPanel
+        v-if="hasSelectedStock"
+        class="min-w-0"
+        :open="hasSelectedStock"
+        :stock="selectedStock"
+        :material-detail="selectedMaterialQuery.data.value ?? null"
+        :usage-entries="selectedStockUsageEntries"
+        :order-entries="selectedStockOrderEntries"
+        :is-material-loading="selectedMaterialQuery.isPending.value"
+        :is-usages-loading="usagesQuery.isPending.value"
+        :is-orders-loading="ordersQuery.isPending.value"
+        @close="closeStockDetails"
+      />
+    </div>
   </section>
 </template>

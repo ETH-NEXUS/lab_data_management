@@ -25,27 +25,15 @@ const allItemsAction = computed<InventoryActionItem>(() => ({
 }))
 
 /**
- * Top-row operational actions (compact card style).
+ * Secondary primary action rendered as direct link button.
  *
  * Returned data example:
- * - `[{ id: 'search', title: 'Search', icon: 'i-heroicons-magnifying-glass' }]`
+ * - `{ id: 'order', title: 'Order' }`
  */
-const topRowActions = computed<InventoryActionItem[]>(() => [
-  {
-    id: 'search',
-    title: t('inventory.page.actions.search.title'),
-    icon: 'i-heroicons-magnifying-glass',
-  },
-  {
-    id: 'advanced_search',
-    title: t('inventory.page.actions.advanced_search.title'),
-    icon: 'i-heroicons-magnifying-glass',
-  },
-  {
-    id: 'order',
-    title: t('inventory.page.actions.order.title'),
-  },
-])
+const ordersAction = computed<InventoryActionItem>(() => ({
+  id: 'order',
+  title: t('inventory.page.actions.order.title'),
+}))
 
 /**
  * Secondary icon actions shown separately to the right.
@@ -87,16 +75,9 @@ const onSelectAction = (actionId: string): void => {
           <span class="truncate">{{ allItemsAction.title }}</span>
         </NuxtLink>
 
-        <button
-          v-for="action in topRowActions"
-          :key="action.id"
-          type="button"
-          class="inventory-toolbar-card"
-          @click="onSelectAction(action.id)"
-        >
-          <span class="truncate">{{ action.title }}</span>
-          <UIcon v-if="action.icon" :name="action.icon" class="size-5 shrink-0 text-slate-600" />
-        </button>
+        <NuxtLink to="/inventory/orders" class="inventory-toolbar-card inventory-toolbar-card--primary">
+          <span class="truncate">{{ ordersAction.title }}</span>
+        </NuxtLink>
       </div>
 
       <div class="flex gap-3 lg:flex-col">
