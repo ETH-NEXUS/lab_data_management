@@ -1,9 +1,11 @@
 <script setup lang="ts">
-import type { InventoryMaterialDetail, InventoryStockListItem } from '~/types/inventory'
+import { computed } from 'vue'
+import type { InventoryStockListItem } from '~/types/inventory'
 import InventoryStockMovePanel from '~/components/inventory/stock-details/InventoryStockMovePanel.vue'
 import InventoryStockQuickAdjustPanel from '~/components/inventory/stock-details/InventoryStockQuickAdjustPanel.vue'
 import InventoryStockQuickActionsBar from '~/components/inventory/stock-details/InventoryStockQuickActionsBar.vue'
 import InventoryStockRecordUsagePanel from '~/components/inventory/stock-details/InventoryStockRecordUsagePanel.vue'
+import { useInventoryMaterialQuery } from '~/composables/inventory/useInventoryMaterialQuery'
 import { useInventoryStockMoveItem } from '~/components/inventory/stock-details/useInventoryStockMoveItem'
 import { useInventoryStockQuickAdjust } from '~/components/inventory/stock-details/useInventoryStockQuickAdjust'
 import { useInventoryStockRecordUsage } from '~/components/inventory/stock-details/useInventoryStockRecordUsage'
@@ -11,10 +13,15 @@ import { useInventoryStockRecordUsage } from '~/components/inventory/stock-detai
 type Props = {
   open: boolean
   stock: InventoryStockListItem | null
-  materialDetail: InventoryMaterialDetail | null
 }
 
 const props = defineProps<Props>()
+
+const selectedMaterialId = computed<number>(() => {
+  return props.stock?.material?.id ?? 0
+})
+
+const selectedMaterialQuery = useInventoryMaterialQuery(selectedMaterialId)
 
 const {
   isEditingStock,
@@ -43,6 +50,18 @@ const {
   saveMove,
 } = useInventoryStockMoveItem(props)
 
+const recordUsageProps = {
+  get open() {
+    return props.open
+  },
+  get stock() {
+    return props.stock
+  },
+  get materialDetail() {
+    return selectedMaterialQuery.data.value ?? null
+  },
+}
+
 const {
   isRecordingUsage,
   isSavingUsage,
@@ -58,7 +77,7 @@ const {
   openUsageMode,
   cancelUsageMode,
   saveUsage,
-} = useInventoryStockRecordUsage(props)
+} = useInventoryStockRecordUsage(recordUsageProps)
 </script>
 
 <template>
