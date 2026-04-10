@@ -1,49 +1,20 @@
 <script setup lang="ts">
-import type { Experiment } from '~/types/experiments'
-import type { Project } from '~/types/projects'
-import type { InventoryStockListItem } from '~/types/inventory'
+import type { InventoryMaterialDetail, InventoryStockListItem } from '~/types/inventory'
 import InventoryStockMovePanel from '~/components/inventory/stock-details/InventoryStockMovePanel.vue'
 import InventoryStockQuickAdjustPanel from '~/components/inventory/stock-details/InventoryStockQuickAdjustPanel.vue'
 import InventoryStockQuickActionsBar from '~/components/inventory/stock-details/InventoryStockQuickActionsBar.vue'
 import InventoryStockRecordUsagePanel from '~/components/inventory/stock-details/InventoryStockRecordUsagePanel.vue'
 import { useInventoryStockMoveItem } from '~/components/inventory/stock-details/useInventoryStockMoveItem'
 import { useInventoryStockQuickAdjust } from '~/components/inventory/stock-details/useInventoryStockQuickAdjust'
-
-type UsageUnitOption = {
-  id: number
-  label: string
-}
+import { useInventoryStockRecordUsage } from '~/components/inventory/stock-details/useInventoryStockRecordUsage'
 
 type Props = {
   open: boolean
   stock: InventoryStockListItem | null
-  isRecordingUsage: boolean
-  isSavingUsage: boolean
-  selectedProjectId: string
-  selectedExperimentId: string
-  quantityUsed: string
-  selectedUsageUnitId: string
-  usageNotes: string
-  projects: Project[]
-  filteredExperiments: Experiment[]
-  usageUnitOptions: UsageUnitOption[]
-  stockItemLabel: string
+  materialDetail: InventoryMaterialDetail | null
 }
 
 const props = defineProps<Props>()
-
-const emit = defineEmits<{
-  (e: 'open-usage-mode' | 'cancel-usage-mode' | 'save-usage'): void
-  (
-    e:
-      | 'update:selected-project-id'
-      | 'update:selected-experiment-id'
-      | 'update:quantity-used'
-      | 'update:selected-usage-unit-id'
-      | 'update:usage-notes',
-    value: string,
-  ): void
-}>()
 
 const {
   isEditingStock,
@@ -71,6 +42,23 @@ const {
   cancelMoveMode,
   saveMove,
 } = useInventoryStockMoveItem(props)
+
+const {
+  isRecordingUsage,
+  isSavingUsage,
+  selectedProjectId,
+  selectedExperimentId,
+  quantityUsed,
+  selectedUsageUnitId,
+  usageNotes,
+  projects,
+  filteredExperiments,
+  usageUnitOptions,
+  stockItemLabel,
+  openUsageMode,
+  cancelUsageMode,
+  saveUsage,
+} = useInventoryStockRecordUsage(props)
 </script>
 
 <template>
@@ -78,10 +66,10 @@ const {
     <InventoryStockQuickActionsBar
       :is-editing-stock="isEditingStock"
       :is-moving-stock="isMovingStock"
-      :is-recording-usage="props.isRecordingUsage"
+      :is-recording-usage="isRecordingUsage"
       @adjust-stock="openEditMode"
       @move-item="openMoveMode"
-      @record-usage="emit('open-usage-mode')"
+      @record-usage="openUsageMode"
     />
 
     <InventoryStockQuickAdjustPanel
@@ -115,24 +103,24 @@ const {
     />
 
     <InventoryStockRecordUsagePanel
-      :open="props.isRecordingUsage"
-      :is-saving-usage="props.isSavingUsage"
-      :stock-item-label="props.stockItemLabel"
-      :selected-project-id="props.selectedProjectId"
-      :selected-experiment-id="props.selectedExperimentId"
-      :quantity-used="props.quantityUsed"
-      :selected-usage-unit-id="props.selectedUsageUnitId"
-      :usage-notes="props.usageNotes"
-      :projects="props.projects"
-      :filtered-experiments="props.filteredExperiments"
-      :usage-unit-options="props.usageUnitOptions"
-      @update:selected-project-id="emit('update:selected-project-id', $event)"
-      @update:selected-experiment-id="emit('update:selected-experiment-id', $event)"
-      @update:quantity-used="emit('update:quantity-used', $event)"
-      @update:selected-usage-unit-id="emit('update:selected-usage-unit-id', $event)"
-      @update:usage-notes="emit('update:usage-notes', $event)"
-      @cancel="emit('cancel-usage-mode')"
-      @save="emit('save-usage')"
+      :open="isRecordingUsage"
+      :is-saving-usage="isSavingUsage"
+      :stock-item-label="stockItemLabel"
+      :selected-project-id="selectedProjectId"
+      :selected-experiment-id="selectedExperimentId"
+      :quantity-used="quantityUsed"
+      :selected-usage-unit-id="selectedUsageUnitId"
+      :usage-notes="usageNotes"
+      :projects="projects"
+      :filtered-experiments="filteredExperiments"
+      :usage-unit-options="usageUnitOptions"
+      @update:selected-project-id="selectedProjectId = $event"
+      @update:selected-experiment-id="selectedExperimentId = $event"
+      @update:quantity-used="quantityUsed = $event"
+      @update:selected-usage-unit-id="selectedUsageUnitId = $event"
+      @update:usage-notes="usageNotes = $event"
+      @cancel="cancelUsageMode"
+      @save="saveUsage"
     />
   </section>
 </template>

@@ -10,7 +10,6 @@ import InventoryStockSupplierSection from '~/components/inventory/stock-details/
 import InventoryStockUnitConversionSection from '~/components/inventory/stock-details/InventoryStockUnitConversionSection.vue'
 import InventoryStockUsageSection from '~/components/inventory/stock-details/InventoryStockUsageSection.vue'
 import { useInventoryStockDetailsPanel } from '~/components/inventory/stock-details/useInventoryStockDetailsPanel'
-import { useInventoryStockRecordUsage } from '~/components/inventory/stock-details/useInventoryStockRecordUsage'
 
 type Props = InventoryStockDetailsPanelProps & {
   isMaterialLoading?: boolean
@@ -43,23 +42,6 @@ const {
   metadataFields,
   toggleMetadata,
 } = useInventoryStockDetailsPanel(props)
-
-const {
-  isRecordingUsage,
-  isSavingUsage,
-  selectedProjectId,
-  selectedExperimentId,
-  quantityUsed,
-  selectedUsageUnitId,
-  usageNotes,
-  projects,
-  filteredExperiments,
-  usageUnitOptions,
-  stockItemLabel,
-  openUsageMode,
-  cancelUsageMode,
-  saveUsage,
-} = useInventoryStockRecordUsage(props)
 </script>
 
 <template>
@@ -77,25 +59,7 @@ const {
       <InventoryStockQuickActionsSection
         :open="props.open"
         :stock="props.stock"
-        :is-recording-usage="isRecordingUsage"
-        :is-saving-usage="isSavingUsage"
-        :selected-project-id="selectedProjectId"
-        :selected-experiment-id="selectedExperimentId"
-        :quantity-used="quantityUsed"
-        :selected-usage-unit-id="selectedUsageUnitId"
-        :usage-notes="usageNotes"
-        :projects="projects"
-        :filtered-experiments="filteredExperiments"
-        :usage-unit-options="usageUnitOptions"
-        :stock-item-label="stockItemLabel"
-        @open-usage-mode="openUsageMode"
-        @update:selected-project-id="selectedProjectId = $event"
-        @update:selected-experiment-id="selectedExperimentId = $event"
-        @update:quantity-used="quantityUsed = $event"
-        @update:selected-usage-unit-id="selectedUsageUnitId = $event"
-        @update:usage-notes="usageNotes = $event"
-        @cancel-usage-mode="cancelUsageMode"
-        @save-usage="saveUsage"
+        :material-detail="props.materialDetail"
       />
 
       <InventoryStockOperationalSection
