@@ -2,12 +2,12 @@
 import { computed, ref, watch } from 'vue'
 import { useInventoryMaterialsQuery } from '~/composables/inventory/useInventoryMaterialQuery'
 import { useInventoryMaterialOrderUnitsQuery } from '~/composables/inventory/useInventoryMaterialUnitQuery'
+import { useInventoryOrderStore } from '~/stores/inventory/InventoryOrderStore'
 import type { CreateInventoryOrderPayload, InventoryMaterialListItem } from '~/types/inventory'
 import { getErrorMessage } from '~/utils/errors'
 
 type Props = {
   open: boolean
-  isSubmitting?: boolean
 }
 
 type OrderFormState = {
@@ -19,7 +19,7 @@ type OrderFormState = {
   notes: string
 }
 
-const props = withDefaults(defineProps<Props>(), { isSubmitting: false })
+const props = defineProps<Props>()
 
 const emit = defineEmits<{
   (e: 'update:open', value: boolean): void
@@ -27,7 +27,9 @@ const emit = defineEmits<{
 }>()
 
 const toast = useToast()
+const inventoryOrderStore = useInventoryOrderStore()
 const materialsQuery = useInventoryMaterialsQuery()
+const isSubmitting = computed<boolean>(() => inventoryOrderStore.isCreatingOrder)
 
 /**
  * Returns current local date as YYYY-MM-DD for `<input type="date">`.
@@ -106,7 +108,7 @@ const sortedMaterials = computed<InventoryMaterialListItem[]>(() => {
  * - status: non-empty
  */
 const canSubmit = computed<boolean>(() => {
-  if (props.isSubmitting || isOrderUnitsLoading.value) {
+  if (isSubmitting.value || isOrderUnitsLoading.value) {
     return false
   }
 
@@ -244,7 +246,7 @@ const submitForm = (): void => {
             <select
               v-model="formState.materialId"
               class="w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 outline-none focus:border-blue-300 focus:ring-2 focus:ring-blue-300/50"
-              :disabled="materialsQuery.isPending.value || props.isSubmitting"
+              :disabled="materialsQuery.isPending.value || isSubmitting"
             >
               <option value="">
                 {{ materialsQuery.isPending.value ? 'Loading materials...' : 'Select material' }}
@@ -260,7 +262,7 @@ const submitForm = (): void => {
             <select
               v-model="formState.orderUnitId"
               class="w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 outline-none focus:border-blue-300 focus:ring-2 focus:ring-blue-300/50 disabled:cursor-not-allowed disabled:opacity-70"
-              :disabled="isOrderUnitsLoading || formState.materialId === '' || props.isSubmitting"
+              :disabled="isOrderUnitsLoading || formState.materialId === '' || isSubmitting"
             >
               <option value="">
                 {{
@@ -290,7 +292,7 @@ const submitForm = (): void => {
               min="0.000001"
               step="0.000001"
               class="w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 outline-none focus:border-blue-300 focus:ring-2 focus:ring-blue-300/50"
-              :disabled="props.isSubmitting"
+              :disabled="isSubmitting"
             />
           </div>
 
@@ -300,7 +302,7 @@ const submitForm = (): void => {
               v-model="formState.orderDate"
               type="date"
               class="w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 outline-none focus:border-blue-300 focus:ring-2 focus:ring-blue-300/50"
-              :disabled="props.isSubmitting"
+              :disabled="isSubmitting"
             />
           </div>
 
@@ -309,7 +311,7 @@ const submitForm = (): void => {
             <select
               v-model="formState.status"
               class="w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 outline-none focus:border-blue-300 focus:ring-2 focus:ring-blue-300/50"
-              :disabled="props.isSubmitting"
+              :disabled="isSubmitting"
             >
               <option v-for="statusOption in statusOptions" :key="statusOption.value" :value="statusOption.value">
                 {{ statusOption.label }}
@@ -323,7 +325,7 @@ const submitForm = (): void => {
               v-model="formState.notes"
               rows="3"
               class="w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 outline-none focus:border-blue-300 focus:ring-2 focus:ring-blue-300/50"
-              :disabled="props.isSubmitting"
+              :disabled="isSubmitting"
             />
           </div>
         </div>
@@ -332,11 +334,11 @@ const submitForm = (): void => {
 
     <template #footer>
       <div class="flex w-full justify-end gap-2 px-6 pb-6">
-        <UButton variant="ghost" color="neutral" label="Cancel" :disabled="props.isSubmitting" @click="closeModal" />
+        <UButton variant="ghost" color="neutral" label="Cancel" :disabled="isSubmitting" @click="closeModal" />
         <UButton
           color="primary"
           label="Register order"
-          :loading="props.isSubmitting"
+          :loading="isSubmitting"
           :disabled="!canSubmit"
           @click="submitForm"
         />

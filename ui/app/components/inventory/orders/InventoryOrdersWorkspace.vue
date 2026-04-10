@@ -373,7 +373,6 @@ watch(
 
     <InventoryOrderCreateModal
       :open="isCreateOrderModalOpen"
-      :is-submitting="inventoryOrderStore.isCreatingOrder"
       @update:open="isCreateOrderModalOpen = $event"
       @submit="registerOrder"
     />
