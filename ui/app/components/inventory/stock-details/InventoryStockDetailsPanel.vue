@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { InventoryStockDetailsPanelProps } from '~/components/inventory/stock-details/useInventoryStockDetailsPanel'
+import { computed } from 'vue'
 import InventoryStockDetailsHeader from '~/components/inventory/stock-details/InventoryStockDetailsHeader.vue'
 import InventoryStockMaterialIdentitySection from '~/components/inventory/stock-details/InventoryStockMaterialIdentitySection.vue'
 import InventoryStockMetadataSection from '~/components/inventory/stock-details/InventoryStockMetadataSection.vue'
@@ -9,23 +9,53 @@ import InventoryStockQuickActionsSection from '~/components/inventory/stock-deta
 import InventoryStockSupplierSection from '~/components/inventory/stock-details/InventoryStockSupplierSection.vue'
 import InventoryStockUnitConversionSection from '~/components/inventory/stock-details/InventoryStockUnitConversionSection.vue'
 import InventoryStockUsageSection from '~/components/inventory/stock-details/InventoryStockUsageSection.vue'
+import { useInventoryOrdersQuery } from '~/composables/inventory/useInventoryOrderQuery'
+import { useInventoryUsagesQuery } from '~/composables/inventory/useInventoryUsageQuery'
 import { useInventoryStockDetailsPanel } from '~/components/inventory/stock-details/useInventoryStockDetailsPanel'
+import type {
+  InventoryMaterialDetail,
+  InventoryOrderListItem,
+  InventoryStockListItem,
+  InventoryUsageListItem,
+} from '~/types/inventory'
 
-type Props = InventoryStockDetailsPanelProps & {
+type Props = {
+  open: boolean
+  stock: InventoryStockListItem | null
+  materialDetail: InventoryMaterialDetail | null
   isMaterialLoading?: boolean
-  isUsagesLoading?: boolean
-  isOrdersLoading?: boolean
 }
 
 const props = withDefaults(defineProps<Props>(), {
   isMaterialLoading: false,
-  isUsagesLoading: false,
-  isOrdersLoading: false,
 })
 
 const emit = defineEmits<{
   (e: 'close'): void
 }>()
+
+const usagesQuery = useInventoryUsagesQuery()
+const ordersQuery = useInventoryOrdersQuery()
+
+const selectedStockUsageEntries = computed<InventoryUsageListItem[]>(() => {
+  const stock = props.stock
+  if (!stock) {
+    return []
+  }
+
+  const usages = usagesQuery.data.value ?? []
+  return usages.filter((usage) => usage.inventory_stock.id === stock.id)
+})
+
+const selectedStockOrderEntries = computed<InventoryOrderListItem[]>(() => {
+  const stock = props.stock
+  if (!stock) {
+    return []
+  }
+
+  const orders = ordersQuery.data.value ?? []
+  return orders.filter((order) => order.material.id === stock.material.id)
+})
 
 const {
   inventoryStatusLabel,
@@ -41,7 +71,23 @@ const {
   isMetadataExpanded,
   metadataFields,
   toggleMetadata,
-} = useInventoryStockDetailsPanel(props)
+} = useInventoryStockDetailsPanel({
+  get open() {
+    return props.open
+  },
+  get stock() {
+    return props.stock
+  },
+  get materialDetail() {
+    return props.materialDetail
+  },
+  get usageEntries() {
+    return selectedStockUsageEntries.value
+  },
+  get orderEntries() {
+    return selectedStockOrderEntries.value
+  },
+})
 </script>
 
 <template>
@@ -76,13 +122,13 @@ const {
       <InventoryStockUsageSection
         :usage-entries="sortedUsageEntries"
         :linked-experiment-project-labels="linkedExperimentProjectLabels"
-        :is-usages-loading="props.isUsagesLoading"
+        :is-usages-loading="usagesQuery.isPending.value"
       />
 
       <InventoryStockOrderSection
         :order-entries="sortedOrderEntries"
         :responsible-users="responsibleUsers"
-        :is-orders-loading="props.isOrdersLoading"
+        :is-orders-loading="ordersQuery.isPending.value"
       />
 
       <InventoryStockMetadataSection

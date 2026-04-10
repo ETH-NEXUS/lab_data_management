@@ -3,16 +3,12 @@ import { computed, ref, watch } from 'vue'
 import InventoryStockDetailsPanel from '~/components/inventory/stock-details/InventoryStockDetailsPanel.vue'
 import InventoryStockTable from '~/components/inventory/InventoryStockTable.vue'
 import { useInventoryMaterialQuery } from '~/composables/inventory/useInventoryMaterialQuery'
-import { useInventoryOrdersQuery } from '~/composables/inventory/useInventoryOrderQuery'
 import { useInventoryStocksQuery } from '~/composables/inventory/useInventoryStockQuery'
-import { useInventoryUsagesQuery } from '~/composables/inventory/useInventoryUsageQuery'
-import type { InventoryOrderListItem, InventoryStockListItem, InventoryUsageListItem } from '~/types/inventory'
+import type { InventoryStockListItem } from '~/types/inventory'
 
 const { t } = useI18n()
 
 const stocksQuery = useInventoryStocksQuery()
-const usagesQuery = useInventoryUsagesQuery()
-const ordersQuery = useInventoryOrdersQuery()
 
 const selectedStockId = ref<number | null>(null)
 
@@ -40,42 +36,6 @@ const selectedMaterialId = computed<number>(() => {
 })
 
 const selectedMaterialQuery = useInventoryMaterialQuery(selectedMaterialId)
-
-const selectedStockUsageEntries = computed<InventoryUsageListItem[]>(() => {
-  const stock = selectedStock.value
-  if (!stock) {
-    return []
-  }
-
-  const usages = usagesQuery.data.value ?? []
-  const matches: InventoryUsageListItem[] = []
-
-  for (const usage of usages) {
-    if (usage.inventory_stock.id === stock.id) {
-      matches.push(usage)
-    }
-  }
-
-  return matches
-})
-
-const selectedStockOrderEntries = computed<InventoryOrderListItem[]>(() => {
-  const stock = selectedStock.value
-  if (!stock) {
-    return []
-  }
-
-  const orders = ordersQuery.data.value ?? []
-  const matches: InventoryOrderListItem[] = []
-
-  for (const order of orders) {
-    if (order.material.id === stock.material.id) {
-      matches.push(order)
-    }
-  }
-
-  return matches
-})
 
 const stocksErrorMessage = computed<string | null>(() => {
   const err = stocksQuery.error.value
@@ -169,11 +129,7 @@ watch(
         :open="hasSelectedStock"
         :stock="selectedStock"
         :material-detail="selectedMaterialQuery.data.value ?? null"
-        :usage-entries="selectedStockUsageEntries"
-        :order-entries="selectedStockOrderEntries"
         :is-material-loading="selectedMaterialQuery.isPending.value"
-        :is-usages-loading="usagesQuery.isPending.value"
-        :is-orders-loading="ordersQuery.isPending.value"
         @close="closeStockDetails"
       />
     </div>
