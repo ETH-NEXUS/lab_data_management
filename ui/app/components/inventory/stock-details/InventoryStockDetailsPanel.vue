@@ -2,18 +2,14 @@
 import type { InventoryStockDetailsPanelProps } from '~/components/inventory/stock-details/useInventoryStockDetailsPanel'
 import InventoryStockDetailsHeader from '~/components/inventory/stock-details/InventoryStockDetailsHeader.vue'
 import InventoryStockMaterialIdentitySection from '~/components/inventory/stock-details/InventoryStockMaterialIdentitySection.vue'
-import InventoryStockMovePanel from '~/components/inventory/stock-details/InventoryStockMovePanel.vue'
 import InventoryStockMetadataSection from '~/components/inventory/stock-details/InventoryStockMetadataSection.vue'
 import InventoryStockOperationalSection from '~/components/inventory/stock-details/InventoryStockOperationalSection.vue'
 import InventoryStockOrderSection from '~/components/inventory/stock-details/InventoryStockOrderSection.vue'
-import InventoryStockQuickAdjustPanel from '~/components/inventory/stock-details/InventoryStockQuickAdjustPanel.vue'
-import InventoryStockQuickActionsBar from '~/components/inventory/stock-details/InventoryStockQuickActionsBar.vue'
-import InventoryStockRecordUsagePanel from '~/components/inventory/stock-details/InventoryStockRecordUsagePanel.vue'
+import InventoryStockQuickActionsSection from '~/components/inventory/stock-details/InventoryStockQuickActionsSection.vue'
 import InventoryStockSupplierSection from '~/components/inventory/stock-details/InventoryStockSupplierSection.vue'
 import InventoryStockUnitConversionSection from '~/components/inventory/stock-details/InventoryStockUnitConversionSection.vue'
 import InventoryStockUsageSection from '~/components/inventory/stock-details/InventoryStockUsageSection.vue'
 import { useInventoryStockDetailsPanel } from '~/components/inventory/stock-details/useInventoryStockDetailsPanel'
-import { useInventoryStockQuickAdjust } from '~/components/inventory/stock-details/useInventoryStockQuickAdjust'
 import { useInventoryStockMoveItem } from '~/components/inventory/stock-details/useInventoryStockMoveItem'
 import { useInventoryStockRecordUsage } from '~/components/inventory/stock-details/useInventoryStockRecordUsage'
 
@@ -48,18 +44,6 @@ const {
   metadataFields,
   toggleMetadata,
 } = useInventoryStockDetailsPanel(props)
-
-const {
-  isEditingStock,
-  isSavingStockAdjustment,
-  editQuantity,
-  editMinimumQuantity,
-  editNotes,
-  stockUnitLabel,
-  openEditMode,
-  cancelEditMode,
-  saveStockAdjustment,
-} = useInventoryStockQuickAdjust(props)
 
 const {
   isMovingStock,
@@ -106,67 +90,43 @@ const {
     />
 
     <div class="space-y-5 overflow-y-auto px-5 py-4">
-      <section class="space-y-3 rounded-xl border border-slate-200 bg-white p-4">
-        <InventoryStockQuickActionsBar
-          :is-editing-stock="isEditingStock"
-          :is-moving-stock="isMovingStock"
-          :is-recording-usage="isRecordingUsage"
-          @adjust-stock="openEditMode"
-          @move-item="openMoveMode"
-          @record-usage="openUsageMode"
-        />
-
-        <InventoryStockQuickAdjustPanel
-          :open="isEditingStock"
-          :is-saving-stock-adjustment="isSavingStockAdjustment"
-          :edit-quantity="editQuantity"
-          :edit-minimum-quantity="editMinimumQuantity"
-          :edit-notes="editNotes"
-          :stock-unit-label="stockUnitLabel"
-          @update:edit-quantity="editQuantity = $event"
-          @update:edit-minimum-quantity="editMinimumQuantity = $event"
-          @update:edit-notes="editNotes = $event"
-          @cancel="cancelEditMode"
-          @save="saveStockAdjustment"
-        />
-
-        <InventoryStockMovePanel
-          :open="isMovingStock"
-          :is-saving-move="isSavingMove"
-          :selected-room-id="selectedRoomId"
-          :selected-sector-id="selectedSectorId"
-          :rooms="rooms"
-          :filtered-sectors="filteredSectors"
-          :is-lookups-loading="isLookupsLoading"
-          :lookups-error-message="lookupsErrorMessage"
-          :is-move-save-disabled="isMoveSaveDisabled"
-          @update:selected-room-id="selectedRoomId = $event"
-          @update:selected-sector-id="selectedSectorId = $event"
-          @cancel="cancelMoveMode"
-          @save="saveMove"
-        />
-
-        <InventoryStockRecordUsagePanel
-          :open="isRecordingUsage"
-          :is-saving-usage="isSavingUsage"
-          :stock-item-label="stockItemLabel"
-          :selected-project-id="selectedProjectId"
-          :selected-experiment-id="selectedExperimentId"
-          :quantity-used="quantityUsed"
-          :selected-usage-unit-id="selectedUsageUnitId"
-          :usage-notes="usageNotes"
-          :projects="projects"
-          :filtered-experiments="filteredExperiments"
-          :usage-unit-options="usageUnitOptions"
-          @update:selected-project-id="selectedProjectId = $event"
-          @update:selected-experiment-id="selectedExperimentId = $event"
-          @update:quantity-used="quantityUsed = $event"
-          @update:selected-usage-unit-id="selectedUsageUnitId = $event"
-          @update:usage-notes="usageNotes = $event"
-          @cancel="cancelUsageMode"
-          @save="saveUsage"
-        />
-      </section>
+      <InventoryStockQuickActionsSection
+        :open="props.open"
+        :stock="props.stock"
+        :is-moving-stock="isMovingStock"
+        :is-saving-move="isSavingMove"
+        :selected-room-id="selectedRoomId"
+        :selected-sector-id="selectedSectorId"
+        :rooms="rooms"
+        :filtered-sectors="filteredSectors"
+        :is-lookups-loading="isLookupsLoading"
+        :lookups-error-message="lookupsErrorMessage"
+        :is-move-save-disabled="isMoveSaveDisabled"
+        :is-recording-usage="isRecordingUsage"
+        :is-saving-usage="isSavingUsage"
+        :selected-project-id="selectedProjectId"
+        :selected-experiment-id="selectedExperimentId"
+        :quantity-used="quantityUsed"
+        :selected-usage-unit-id="selectedUsageUnitId"
+        :usage-notes="usageNotes"
+        :projects="projects"
+        :filtered-experiments="filteredExperiments"
+        :usage-unit-options="usageUnitOptions"
+        :stock-item-label="stockItemLabel"
+        @open-move-mode="openMoveMode"
+        @open-usage-mode="openUsageMode"
+        @update:selected-room-id="selectedRoomId = $event"
+        @update:selected-sector-id="selectedSectorId = $event"
+        @cancel-move-mode="cancelMoveMode"
+        @save-move="saveMove"
+        @update:selected-project-id="selectedProjectId = $event"
+        @update:selected-experiment-id="selectedExperimentId = $event"
+        @update:quantity-used="quantityUsed = $event"
+        @update:selected-usage-unit-id="selectedUsageUnitId = $event"
+        @update:usage-notes="usageNotes = $event"
+        @cancel-usage-mode="cancelUsageMode"
+        @save-usage="saveUsage"
+      />
 
       <InventoryStockOperationalSection
         :inventory-status-label="inventoryStatusLabel"
