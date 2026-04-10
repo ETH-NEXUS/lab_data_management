@@ -6,6 +6,7 @@ import InventoryStockMovePanel from '~/components/inventory/stock-details/Invent
 import InventoryStockMetadataSection from '~/components/inventory/stock-details/InventoryStockMetadataSection.vue'
 import InventoryStockOperationalSection from '~/components/inventory/stock-details/InventoryStockOperationalSection.vue'
 import InventoryStockOrderSection from '~/components/inventory/stock-details/InventoryStockOrderSection.vue'
+import InventoryStockQuickAdjustPanel from '~/components/inventory/stock-details/InventoryStockQuickAdjustPanel.vue'
 import InventoryStockQuickActionsBar from '~/components/inventory/stock-details/InventoryStockQuickActionsBar.vue'
 import InventoryStockRecordUsagePanel from '~/components/inventory/stock-details/InventoryStockRecordUsagePanel.vue'
 import InventoryStockSupplierSection from '~/components/inventory/stock-details/InventoryStockSupplierSection.vue'
@@ -31,8 +32,6 @@ const props = withDefaults(defineProps<Props>(), {
 const emit = defineEmits<{
   (e: 'close'): void
 }>()
-
-const { t } = useI18n()
 
 const {
   inventoryStatusLabel,
@@ -117,62 +116,19 @@ const {
           @record-usage="openUsageMode"
         />
 
-        <div v-if="isEditingStock" class="space-y-3 rounded-lg border border-slate-200 bg-slate-50 p-3">
-          <div class="grid gap-3 sm:grid-cols-2">
-            <div class="space-y-1">
-              <label class="block text-sm font-medium text-slate-700">{{
-                t('inventory.stock_drawer.fields.quantity')
-              }}</label>
-              <input
-                v-model="editQuantity"
-                type="text"
-                class="w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 outline-none focus:border-blue-300 focus:ring-2 focus:ring-blue-300/50"
-                :disabled="isSavingStockAdjustment"
-              />
-            </div>
-            <div class="space-y-1">
-              <label class="block text-sm font-medium text-slate-700">{{
-                t('inventory.stock_drawer.fields.minimum_quantity')
-              }}</label>
-              <input
-                v-model="editMinimumQuantity"
-                type="text"
-                class="w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 outline-none focus:border-blue-300 focus:ring-2 focus:ring-blue-300/50"
-                :disabled="isSavingStockAdjustment"
-              />
-            </div>
-            <p class="text-xs text-slate-600 sm:col-span-2">
-              {{ t('inventory.stock_drawer.fields.stock_unit') }}: {{ stockUnitLabel }}
-            </p>
-            <div class="space-y-1 sm:col-span-2">
-              <label class="block text-sm font-medium text-slate-700">{{
-                t('inventory.stock_drawer.fields.notes')
-              }}</label>
-              <textarea
-                v-model="editNotes"
-                rows="3"
-                class="w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 outline-none focus:border-blue-300 focus:ring-2 focus:ring-blue-300/50"
-                :disabled="isSavingStockAdjustment"
-              />
-            </div>
-          </div>
-          <div class="flex justify-end gap-2">
-            <UButton
-              variant="ghost"
-              color="neutral"
-              :label="t('common.actions.cancel')"
-              :disabled="isSavingStockAdjustment"
-              @click="cancelEditMode"
-            />
-            <UButton
-              color="primary"
-              :label="t('common.actions.save')"
-              :loading="isSavingStockAdjustment"
-              :disabled="isSavingStockAdjustment"
-              @click="saveStockAdjustment"
-            />
-          </div>
-        </div>
+        <InventoryStockQuickAdjustPanel
+          :open="isEditingStock"
+          :is-saving-stock-adjustment="isSavingStockAdjustment"
+          :edit-quantity="editQuantity"
+          :edit-minimum-quantity="editMinimumQuantity"
+          :edit-notes="editNotes"
+          :stock-unit-label="stockUnitLabel"
+          @update:edit-quantity="editQuantity = $event"
+          @update:edit-minimum-quantity="editMinimumQuantity = $event"
+          @update:edit-notes="editNotes = $event"
+          @cancel="cancelEditMode"
+          @save="saveStockAdjustment"
+        />
 
         <InventoryStockMovePanel
           :open="isMovingStock"
