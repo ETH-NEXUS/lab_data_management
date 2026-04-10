@@ -3,7 +3,6 @@ import { computed, ref, watch } from 'vue'
 import { useQueryClient } from '@tanstack/vue-query'
 import InventoryOrderCreateModal from '~/components/inventory/orders/InventoryOrderCreateModal.vue'
 import InventoryOrdersTable from '~/components/inventory/orders/InventoryOrdersTable.vue'
-import { useInventoryMaterialsQuery } from '~/composables/inventory/useInventoryMaterialQuery'
 import { useInventoryOrdersQuery } from '~/composables/inventory/useInventoryOrderQuery'
 import { useProjectsQuery } from '~/composables/useProjectsQuery'
 import { useInventoryOrderStore } from '~/stores/inventory/InventoryOrderStore'
@@ -21,7 +20,6 @@ const queryClient = useQueryClient()
 const inventoryOrderStore = useInventoryOrderStore()
 
 const ordersQuery = useInventoryOrdersQuery()
-const materialsQuery = useInventoryMaterialsQuery()
 const projectsQuery = useProjectsQuery()
 
 const isCreateOrderModalOpen = ref(false)
@@ -225,13 +223,7 @@ watch(
         <p class="text-sm text-slate-600">Create new orders and review existing entries.</p>
       </div>
 
-      <UButton
-        color="primary"
-        icon="i-heroicons-plus"
-        label="Register order"
-        :disabled="materialsQuery.isPending.value"
-        @click="openCreateOrderModal"
-      />
+      <UButton color="primary" icon="i-heroicons-plus" label="Register order" @click="openCreateOrderModal" />
     </div>
 
     <div
@@ -381,8 +373,6 @@ watch(
 
     <InventoryOrderCreateModal
       :open="isCreateOrderModalOpen"
-      :materials="materialsQuery.data.value ?? []"
-      :is-materials-loading="materialsQuery.isPending.value"
       :is-submitting="inventoryOrderStore.isCreatingOrder"
       @update:open="isCreateOrderModalOpen = $event"
       @submit="registerOrder"

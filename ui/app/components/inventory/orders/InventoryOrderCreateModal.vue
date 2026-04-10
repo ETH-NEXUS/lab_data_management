@@ -1,13 +1,12 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
+import { useInventoryMaterialsQuery } from '~/composables/inventory/useInventoryMaterialQuery'
 import { useInventoryMaterialOrderUnitsQuery } from '~/composables/inventory/useInventoryMaterialUnitQuery'
 import type { CreateInventoryOrderPayload, InventoryMaterialListItem } from '~/types/inventory'
 import { getErrorMessage } from '~/utils/errors'
 
 type Props = {
   open: boolean
-  materials: InventoryMaterialListItem[]
-  isMaterialsLoading?: boolean
   isSubmitting?: boolean
 }
 
@@ -20,10 +19,7 @@ type OrderFormState = {
   notes: string
 }
 
-const props = withDefaults(defineProps<Props>(), {
-  isMaterialsLoading: false,
-  isSubmitting: false,
-})
+const props = withDefaults(defineProps<Props>(), { isSubmitting: false })
 
 const emit = defineEmits<{
   (e: 'update:open', value: boolean): void
@@ -31,6 +27,7 @@ const emit = defineEmits<{
 }>()
 
 const toast = useToast()
+const materialsQuery = useInventoryMaterialsQuery()
 
 /**
  * Returns current local date as YYYY-MM-DD for `<input type="date">`.
@@ -89,7 +86,7 @@ const orderUnitsErrorMessage = computed<string | null>(() => {
 })
 
 const sortedMaterials = computed<InventoryMaterialListItem[]>(() => {
-  const materials = [...props.materials]
+  const materials = [...(materialsQuery.data.value ?? [])]
   materials.sort((leftMaterial, rightMaterial) => {
     const leftLabel = (leftMaterial.label || leftMaterial.product_name || '').toLowerCase()
     const rightLabel = (rightMaterial.label || rightMaterial.product_name || '').toLowerCase()
@@ -247,10 +244,10 @@ const submitForm = (): void => {
             <select
               v-model="formState.materialId"
               class="w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 outline-none focus:border-blue-300 focus:ring-2 focus:ring-blue-300/50"
-              :disabled="props.isMaterialsLoading || props.isSubmitting"
+              :disabled="materialsQuery.isPending.value || props.isSubmitting"
             >
               <option value="">
-                {{ props.isMaterialsLoading ? 'Loading materials...' : 'Select material' }}
+                {{ materialsQuery.isPending.value ? 'Loading materials...' : 'Select material' }}
               </option>
               <option v-for="material in sortedMaterials" :key="material.id" :value="String(material.id)">
                 {{ material.label || material.product_name || `Material #${material.id}` }}
