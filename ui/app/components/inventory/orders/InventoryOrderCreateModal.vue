@@ -1,19 +1,13 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
+import { useInventoryMaterialOrderUnitsQuery } from '~/composables/inventory/useInventoryMaterialUnitQuery'
 import type { CreateInventoryOrderPayload, InventoryMaterialListItem } from '~/types/inventory'
-
-type OrderUnitOption = {
-  id: number
-  label: string
-}
+import { getErrorMessage } from '~/utils/errors'
 
 type Props = {
   open: boolean
   materials: InventoryMaterialListItem[]
-  orderUnitOptions: OrderUnitOption[]
   isMaterialsLoading?: boolean
-  isOrderUnitsLoading?: boolean
-  orderUnitsErrorMessage?: string | null
   isSubmitting?: boolean
 }
 
@@ -28,14 +22,11 @@ type OrderFormState = {
 
 const props = withDefaults(defineProps<Props>(), {
   isMaterialsLoading: false,
-  isOrderUnitsLoading: false,
-  orderUnitsErrorMessage: null,
   isSubmitting: false,
 })
 
 const emit = defineEmits<{
   (e: 'update:open', value: boolean): void
-  (e: 'select-material', materialId: number | null): void
   (e: 'submit', payload: CreateInventoryOrderPayload): void
 }>()
 
@@ -65,12 +56,37 @@ const buildInitialFormState = (): OrderFormState => ({
 })
 
 const formState = ref<OrderFormState>(buildInitialFormState())
+const selectedMaterialIdRef = computed<number>(() => {
+  const parsedId = Number.parseInt(formState.value.materialId, 10)
+  return Number.isInteger(parsedId) && parsedId > 0 ? parsedId : 0
+})
+const materialOrderUnitsQuery = useInventoryMaterialOrderUnitsQuery(selectedMaterialIdRef)
 
 const statusOptions = [
   { value: 'ordered', label: 'Ordered' },
   { value: 'tentative', label: 'Tentative' },
   { value: 'product_arrived', label: 'Product arrived' },
 ]
+
+const orderUnitOptions = computed(() => {
+  const materialUnits = materialOrderUnitsQuery.data.value ?? []
+  return materialUnits.map((unit) => ({
+    id: unit.id,
+    label: unit.display_name || unit.unit?.label || unit.unit?.name || `Unit #${unit.id}`,
+  }))
+})
+
+const isOrderUnitsLoading = computed<boolean>(() => {
+  return selectedMaterialIdRef.value > 0 && materialOrderUnitsQuery.isPending.value
+})
+
+const orderUnitsErrorMessage = computed<string | null>(() => {
+  const err = materialOrderUnitsQuery.error.value
+  if (!err) {
+    return null
+  }
+  return getErrorMessage(err)
+})
 
 const sortedMaterials = computed<InventoryMaterialListItem[]>(() => {
   const materials = [...props.materials]
@@ -93,7 +109,7 @@ const sortedMaterials = computed<InventoryMaterialListItem[]>(() => {
  * - status: non-empty
  */
 const canSubmit = computed<boolean>(() => {
-  if (props.isSubmitting || props.isOrderUnitsLoading) {
+  if (props.isSubmitting || isOrderUnitsLoading.value) {
     return false
   }
 
@@ -123,7 +139,6 @@ watch(
     }
 
     formState.value = buildInitialFormState()
-    emit('select-material', null)
   },
 )
 
@@ -131,14 +146,9 @@ watch(
   () => formState.value.materialId,
   (materialIdText) => {
     formState.value.orderUnitId = ''
-
-    const parsedId = Number.parseInt(materialIdText, 10)
-    if (!Number.isInteger(parsedId) || parsedId <= 0) {
-      emit('select-material', null)
+    if (materialIdText.trim() === '') {
       return
     }
-
-    emit('select-material', parsedId)
   },
 )
 
@@ -253,25 +263,25 @@ const submitForm = (): void => {
             <select
               v-model="formState.orderUnitId"
               class="w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 outline-none focus:border-blue-300 focus:ring-2 focus:ring-blue-300/50 disabled:cursor-not-allowed disabled:opacity-70"
-              :disabled="props.isOrderUnitsLoading || formState.materialId === '' || props.isSubmitting"
+              :disabled="isOrderUnitsLoading || formState.materialId === '' || props.isSubmitting"
             >
               <option value="">
                 {{
-                  props.isOrderUnitsLoading
+                  isOrderUnitsLoading
                     ? 'Loading units...'
-                    : props.orderUnitsErrorMessage
+                    : orderUnitsErrorMessage
                       ? 'Failed to load units'
-                      : props.orderUnitOptions.length > 0
+                      : orderUnitOptions.length > 0
                         ? 'Select order unit'
                         : 'No order units available'
                 }}
               </option>
-              <option v-for="unitOption in props.orderUnitOptions" :key="unitOption.id" :value="String(unitOption.id)">
+              <option v-for="unitOption in orderUnitOptions" :key="unitOption.id" :value="String(unitOption.id)">
                 {{ unitOption.label }}
               </option>
             </select>
-            <p v-if="props.orderUnitsErrorMessage" class="text-xs text-red-600">
-              {{ props.orderUnitsErrorMessage }}
+            <p v-if="orderUnitsErrorMessage" class="text-xs text-red-600">
+              {{ orderUnitsErrorMessage }}
             </p>
           </div>
 

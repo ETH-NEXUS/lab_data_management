@@ -4,7 +4,6 @@ import { useQueryClient } from '@tanstack/vue-query'
 import InventoryOrderCreateModal from '~/components/inventory/orders/InventoryOrderCreateModal.vue'
 import InventoryOrdersTable from '~/components/inventory/orders/InventoryOrdersTable.vue'
 import { useInventoryMaterialsQuery } from '~/composables/inventory/useInventoryMaterialQuery'
-import { useInventoryMaterialOrderUnitsQuery } from '~/composables/inventory/useInventoryMaterialUnitQuery'
 import { useInventoryOrdersQuery } from '~/composables/inventory/useInventoryOrderQuery'
 import { useProjectsQuery } from '~/composables/useProjectsQuery'
 import { useInventoryOrderStore } from '~/stores/inventory/InventoryOrderStore'
@@ -16,11 +15,6 @@ import {
 import { formatDateTime } from '~/utils/dateTime'
 import { getErrorMessage } from '~/utils/errors'
 
-type OrderUnitOption = {
-  id: number
-  label: string
-}
-
 const { t } = useI18n()
 const toast = useToast()
 const queryClient = useQueryClient()
@@ -31,7 +25,6 @@ const materialsQuery = useInventoryMaterialsQuery()
 const projectsQuery = useProjectsQuery()
 
 const isCreateOrderModalOpen = ref(false)
-const selectedMaterialId = ref<number>(0)
 const selectedOrderId = ref<number | null>(null)
 const selectedOrderStatus = ref('')
 const selectedProjectId = ref('')
@@ -42,8 +35,6 @@ const orderStatusOptions = [
   { value: 'product_arrived', label: 'Product arrived' },
 ]
 
-const selectedMaterialIdRef = computed<number>(() => selectedMaterialId.value)
-const selectedMaterialOrderUnitsQuery = useInventoryMaterialOrderUnitsQuery(selectedMaterialIdRef)
 const orders = computed<InventoryOrderListItem[]>(() => ordersQuery.data.value ?? [])
 
 const selectedOrder = computed<InventoryOrderListItem | null>(() => {
@@ -52,32 +43,6 @@ const selectedOrder = computed<InventoryOrderListItem | null>(() => {
 })
 
 const hasSelectedOrder = computed<boolean>(() => selectedOrder.value !== null)
-
-/**
- * Builds select options for order units from the dedicated material-units endpoint.
- *
- * Accepted data example:
- * - `[{ id: 8, display_name: 'Box', unit: { label: 'Box' } }]`
- *
- * Returned data example:
- * - `[{ id: 8, label: 'Box' }]`
- */
-const orderUnitOptions = computed<OrderUnitOption[]>(() => {
-  const materialUnits = selectedMaterialOrderUnitsQuery.data.value ?? []
-  return materialUnits.map((unit) => ({
-    id: unit.id,
-    label: unit.display_name || unit.unit?.label || unit.unit?.name || `Unit #${unit.id}`,
-  }))
-})
-
-const orderUnitsErrorMessage = computed<string | null>(() => {
-  const err = selectedMaterialOrderUnitsQuery.error.value
-  if (!err) {
-    return null
-  }
-
-  return getErrorMessage(err)
-})
 
 const projectOptions = computed(() => {
   const projects = [...(projectsQuery.data.value ?? [])]
@@ -102,7 +67,6 @@ const ordersErrorMessage = computed<string | null>(() => {
 })
 
 const openCreateOrderModal = (): void => {
-  selectedMaterialId.value = 0
   isCreateOrderModalOpen.value = true
 }
 
@@ -117,17 +81,6 @@ const toDisplayValue = (value: unknown): string => {
 
   const text = String(value).trim()
   return text === '' ? '—' : text
-}
-
-/**
- * Updates currently selected material id for dependent order-unit lookup.
- *
- * Accepted data examples:
- * - `12`
- * - `null`
- */
-const onSelectMaterial = (materialId: number | null): void => {
-  selectedMaterialId.value = materialId ?? 0
 }
 
 const openOrderDetails = (orderId: number): void => {
@@ -429,13 +382,9 @@ watch(
     <InventoryOrderCreateModal
       :open="isCreateOrderModalOpen"
       :materials="materialsQuery.data.value ?? []"
-      :order-unit-options="orderUnitOptions"
       :is-materials-loading="materialsQuery.isPending.value"
-      :is-order-units-loading="selectedMaterialId > 0 && selectedMaterialOrderUnitsQuery.isPending.value"
-      :order-units-error-message="orderUnitsErrorMessage"
       :is-submitting="inventoryOrderStore.isCreatingOrder"
       @update:open="isCreateOrderModalOpen = $event"
-      @select-material="onSelectMaterial"
       @submit="registerOrder"
     />
   </section>
