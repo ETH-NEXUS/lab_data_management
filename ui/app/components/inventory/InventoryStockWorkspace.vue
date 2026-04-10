@@ -2,7 +2,6 @@
 import { computed, ref, watch } from 'vue'
 import InventoryStockDetailsPanel from '~/components/inventory/stock-details/InventoryStockDetailsPanel.vue'
 import InventoryStockTable from '~/components/inventory/InventoryStockTable.vue'
-import { useInventoryMaterialQuery } from '~/composables/inventory/useInventoryMaterialQuery'
 import { useInventoryStocksQuery } from '~/composables/inventory/useInventoryStockQuery'
 import type { InventoryStockListItem } from '~/types/inventory'
 
@@ -27,15 +26,6 @@ const selectedStock = computed<InventoryStockListItem | null>(() => {
 
   return null
 })
-
-const selectedMaterialId = computed<number>(() => {
-  if (!selectedStock.value) {
-    return 0
-  }
-  return selectedStock.value.material.id
-})
-
-const selectedMaterialQuery = useInventoryMaterialQuery(selectedMaterialId)
 
 const stocksErrorMessage = computed<string | null>(() => {
   const err = stocksQuery.error.value
@@ -128,8 +118,6 @@ watch(
         class="min-w-0"
         :open="hasSelectedStock"
         :stock="selectedStock"
-        :material-detail="selectedMaterialQuery.data.value ?? null"
-        :is-material-loading="selectedMaterialQuery.isPending.value"
         @close="closeStockDetails"
       />
     </div>

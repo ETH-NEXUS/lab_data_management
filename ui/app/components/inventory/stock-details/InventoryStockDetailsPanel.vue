@@ -9,31 +9,28 @@ import InventoryStockQuickActionsSection from '~/components/inventory/stock-deta
 import InventoryStockSupplierSection from '~/components/inventory/stock-details/InventoryStockSupplierSection.vue'
 import InventoryStockUnitConversionSection from '~/components/inventory/stock-details/InventoryStockUnitConversionSection.vue'
 import InventoryStockUsageSection from '~/components/inventory/stock-details/InventoryStockUsageSection.vue'
+import { useInventoryMaterialQuery } from '~/composables/inventory/useInventoryMaterialQuery'
 import { useInventoryOrdersQuery } from '~/composables/inventory/useInventoryOrderQuery'
 import { useInventoryUsagesQuery } from '~/composables/inventory/useInventoryUsageQuery'
 import { useInventoryStockDetailsPanel } from '~/components/inventory/stock-details/useInventoryStockDetailsPanel'
-import type {
-  InventoryMaterialDetail,
-  InventoryOrderListItem,
-  InventoryStockListItem,
-  InventoryUsageListItem,
-} from '~/types/inventory'
+import type { InventoryOrderListItem, InventoryStockListItem, InventoryUsageListItem } from '~/types/inventory'
 
 type Props = {
   open: boolean
   stock: InventoryStockListItem | null
-  materialDetail: InventoryMaterialDetail | null
-  isMaterialLoading?: boolean
 }
 
-const props = withDefaults(defineProps<Props>(), {
-  isMaterialLoading: false,
+const props = defineProps<Props>()
+
+const selectedMaterialId = computed<number>(() => {
+  return props.stock?.material?.id ?? 0
 })
 
 const emit = defineEmits<{
   (e: 'close'): void
 }>()
 
+const selectedMaterialQuery = useInventoryMaterialQuery(selectedMaterialId)
 const usagesQuery = useInventoryUsagesQuery()
 const ordersQuery = useInventoryOrdersQuery()
 
@@ -79,7 +76,7 @@ const {
     return props.stock
   },
   get materialDetail() {
-    return props.materialDetail
+    return selectedMaterialQuery.data.value ?? null
   },
   get usageEntries() {
     return selectedStockUsageEntries.value
@@ -113,7 +110,7 @@ const {
       <InventoryStockUnitConversionSection :fields="unitConversionFields" />
 
       <InventoryStockMaterialIdentitySection
-        :is-material-loading="props.isMaterialLoading"
+        :is-material-loading="selectedMaterialQuery.isPending.value"
         :fields="materialIdentityFields"
       />
 
