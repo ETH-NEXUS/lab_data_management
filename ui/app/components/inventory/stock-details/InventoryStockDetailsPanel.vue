@@ -10,7 +10,6 @@ import InventoryStockSupplierSection from '~/components/inventory/stock-details/
 import InventoryStockUnitConversionSection from '~/components/inventory/stock-details/InventoryStockUnitConversionSection.vue'
 import InventoryStockUsageSection from '~/components/inventory/stock-details/InventoryStockUsageSection.vue'
 import { useInventoryStockDetailsPanel } from '~/components/inventory/stock-details/useInventoryStockDetailsPanel'
-import { useInventoryStockMoveItem } from '~/components/inventory/stock-details/useInventoryStockMoveItem'
 import { useInventoryStockRecordUsage } from '~/components/inventory/stock-details/useInventoryStockRecordUsage'
 
 type Props = InventoryStockDetailsPanelProps & {
@@ -46,21 +45,6 @@ const {
 } = useInventoryStockDetailsPanel(props)
 
 const {
-  isMovingStock,
-  isSavingMove,
-  selectedRoomId,
-  selectedSectorId,
-  rooms,
-  filteredSectors,
-  isLookupsLoading,
-  lookupsErrorMessage,
-  isMoveSaveDisabled,
-  openMoveMode,
-  cancelMoveMode,
-  saveMove,
-} = useInventoryStockMoveItem(props)
-
-const {
   isRecordingUsage,
   isSavingUsage,
   selectedProjectId,
@@ -93,15 +77,6 @@ const {
       <InventoryStockQuickActionsSection
         :open="props.open"
         :stock="props.stock"
-        :is-moving-stock="isMovingStock"
-        :is-saving-move="isSavingMove"
-        :selected-room-id="selectedRoomId"
-        :selected-sector-id="selectedSectorId"
-        :rooms="rooms"
-        :filtered-sectors="filteredSectors"
-        :is-lookups-loading="isLookupsLoading"
-        :lookups-error-message="lookupsErrorMessage"
-        :is-move-save-disabled="isMoveSaveDisabled"
         :is-recording-usage="isRecordingUsage"
         :is-saving-usage="isSavingUsage"
         :selected-project-id="selectedProjectId"
@@ -113,12 +88,7 @@ const {
         :filtered-experiments="filteredExperiments"
         :usage-unit-options="usageUnitOptions"
         :stock-item-label="stockItemLabel"
-        @open-move-mode="openMoveMode"
         @open-usage-mode="openUsageMode"
-        @update:selected-room-id="selectedRoomId = $event"
-        @update:selected-sector-id="selectedSectorId = $event"
-        @cancel-move-mode="cancelMoveMode"
-        @save-move="saveMove"
         @update:selected-project-id="selectedProjectId = $event"
         @update:selected-experiment-id="selectedExperimentId = $event"
         @update:quantity-used="quantityUsed = $event"

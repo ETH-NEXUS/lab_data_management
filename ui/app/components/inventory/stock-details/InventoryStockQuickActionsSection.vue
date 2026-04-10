@@ -1,11 +1,12 @@
 <script setup lang="ts">
 import type { Experiment } from '~/types/experiments'
 import type { Project } from '~/types/projects'
-import type { InventoryRoom, InventorySector, InventoryStockListItem } from '~/types/inventory'
+import type { InventoryStockListItem } from '~/types/inventory'
 import InventoryStockMovePanel from '~/components/inventory/stock-details/InventoryStockMovePanel.vue'
 import InventoryStockQuickAdjustPanel from '~/components/inventory/stock-details/InventoryStockQuickAdjustPanel.vue'
 import InventoryStockQuickActionsBar from '~/components/inventory/stock-details/InventoryStockQuickActionsBar.vue'
 import InventoryStockRecordUsagePanel from '~/components/inventory/stock-details/InventoryStockRecordUsagePanel.vue'
+import { useInventoryStockMoveItem } from '~/components/inventory/stock-details/useInventoryStockMoveItem'
 import { useInventoryStockQuickAdjust } from '~/components/inventory/stock-details/useInventoryStockQuickAdjust'
 
 type UsageUnitOption = {
@@ -16,15 +17,6 @@ type UsageUnitOption = {
 type Props = {
   open: boolean
   stock: InventoryStockListItem | null
-  isMovingStock: boolean
-  isSavingMove: boolean
-  selectedRoomId: string
-  selectedSectorId: string
-  rooms: InventoryRoom[]
-  filteredSectors: InventorySector[]
-  isLookupsLoading: boolean
-  lookupsErrorMessage?: string | null
-  isMoveSaveDisabled: boolean
   isRecordingUsage: boolean
   isSavingUsage: boolean
   selectedProjectId: string
@@ -38,18 +30,12 @@ type Props = {
   stockItemLabel: string
 }
 
-const props = withDefaults(defineProps<Props>(), {
-  lookupsErrorMessage: null,
-})
+const props = defineProps<Props>()
 
 const emit = defineEmits<{
-  (
-    e: 'open-move-mode' | 'open-usage-mode' | 'cancel-move-mode' | 'save-move' | 'cancel-usage-mode' | 'save-usage',
-  ): void
+  (e: 'open-usage-mode' | 'cancel-usage-mode' | 'save-usage'): void
   (
     e:
-      | 'update:selected-room-id'
-      | 'update:selected-sector-id'
       | 'update:selected-project-id'
       | 'update:selected-experiment-id'
       | 'update:quantity-used'
@@ -70,16 +56,31 @@ const {
   cancelEditMode,
   saveStockAdjustment,
 } = useInventoryStockQuickAdjust(props)
+
+const {
+  isMovingStock,
+  isSavingMove,
+  selectedRoomId,
+  selectedSectorId,
+  rooms,
+  filteredSectors,
+  isLookupsLoading,
+  lookupsErrorMessage,
+  isMoveSaveDisabled,
+  openMoveMode,
+  cancelMoveMode,
+  saveMove,
+} = useInventoryStockMoveItem(props)
 </script>
 
 <template>
   <section class="space-y-3 rounded-xl border border-slate-200 bg-white p-4">
     <InventoryStockQuickActionsBar
       :is-editing-stock="isEditingStock"
-      :is-moving-stock="props.isMovingStock"
+      :is-moving-stock="isMovingStock"
       :is-recording-usage="props.isRecordingUsage"
       @adjust-stock="openEditMode"
-      @move-item="emit('open-move-mode')"
+      @move-item="openMoveMode"
       @record-usage="emit('open-usage-mode')"
     />
 
@@ -98,19 +99,19 @@ const {
     />
 
     <InventoryStockMovePanel
-      :open="props.isMovingStock"
-      :is-saving-move="props.isSavingMove"
-      :selected-room-id="props.selectedRoomId"
-      :selected-sector-id="props.selectedSectorId"
-      :rooms="props.rooms"
-      :filtered-sectors="props.filteredSectors"
-      :is-lookups-loading="props.isLookupsLoading"
-      :lookups-error-message="props.lookupsErrorMessage"
-      :is-move-save-disabled="props.isMoveSaveDisabled"
-      @update:selected-room-id="emit('update:selected-room-id', $event)"
-      @update:selected-sector-id="emit('update:selected-sector-id', $event)"
-      @cancel="emit('cancel-move-mode')"
-      @save="emit('save-move')"
+      :open="isMovingStock"
+      :is-saving-move="isSavingMove"
+      :selected-room-id="selectedRoomId"
+      :selected-sector-id="selectedSectorId"
+      :rooms="rooms"
+      :filtered-sectors="filteredSectors"
+      :is-lookups-loading="isLookupsLoading"
+      :lookups-error-message="lookupsErrorMessage"
+      :is-move-save-disabled="isMoveSaveDisabled"
+      @update:selected-room-id="selectedRoomId = $event"
+      @update:selected-sector-id="selectedSectorId = $event"
+      @cancel="cancelMoveMode"
+      @save="saveMove"
     />
 
     <InventoryStockRecordUsagePanel
