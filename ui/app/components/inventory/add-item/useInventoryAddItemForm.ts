@@ -5,11 +5,13 @@ import {
   useInventoryMaterialQuery,
   useInventoryMaterialsQuery,
 } from '~/composables/inventory/useInventoryMaterialQuery'
+import { useInventoryOrdersQuery } from '~/composables/inventory/useInventoryOrderQuery'
 import { useInventoryStockStore } from '~/stores/inventory/InventoryStock'
 import {
   INVENTORY_STOCKS_QUERY_KEY,
   type CreateInventoryStockPayload,
   type InventoryMaterialListItem,
+  type InventoryOrderListItem,
 } from '~/types/inventory'
 import { getErrorMessage } from '~/utils/errors'
 
@@ -57,9 +59,11 @@ export const useInventoryAddItemForm = ({ open, onSaved }: UseInventoryAddItemFo
   const inventoryStockStore = useInventoryStockStore()
   const materialsQuery = useInventoryMaterialsQuery()
   const lookupsQuery = useInventoryLookupsQuery()
+  const ordersQuery = useInventoryOrdersQuery()
   const isSubmitting = computed<boolean>(() => inventoryStockStore.isCreatingStock)
 
   const formState = ref<AddItemFormState>(buildInitialFormState())
+  const selectedOrderId = ref('')
 
   const selectedMaterialId = computed<number>(() => {
     const parsedId = Number.parseInt(formState.value.materialId, 10)
@@ -76,6 +80,29 @@ export const useInventoryAddItemForm = ({ open, onSaved }: UseInventoryAddItemFo
       return leftLabel.localeCompare(rightLabel)
     })
     return materials
+  })
+
+  const sortedOrders = computed<InventoryOrderListItem[]>(() => {
+    const orders = [...(ordersQuery.data.value ?? [])]
+    orders.sort((leftOrder, rightOrder) => {
+      const leftDate = new Date(leftOrder.order_date).getTime()
+      const rightDate = new Date(rightOrder.order_date).getTime()
+      return rightDate - leftDate
+    })
+    return orders
+  })
+
+  const orderPrefillOptions = computed<Array<{ id: number; label: string }>>(() => {
+    return sortedOrders.value.map((order) => {
+      const materialLabel = order.material.label || order.material.product_name || `Material #${order.material.id}`
+      const unitLabel =
+        order.order_unit.display_name || order.order_unit.unit?.label || order.order_unit.unit?.name || ''
+      const statusLabel = order.status_label || order.status
+      return {
+        id: order.id,
+        label: `#${order.id} · ${materialLabel} · ${order.amount} ${unitLabel}`.trim() + ` · ${statusLabel}`,
+      }
+    })
   })
 
   const sectorOptions = computed<Array<{ id: number; label: string }>>(() => {
@@ -142,6 +169,14 @@ export const useInventoryAddItemForm = ({ open, onSaved }: UseInventoryAddItemFo
     return getErrorMessage(err)
   })
 
+  const ordersErrorMessage = computed<string | null>(() => {
+    const err = ordersQuery.error.value
+    if (!err) {
+      return null
+    }
+    return getErrorMessage(err)
+  })
+
   const validationMessages = computed<string[]>(() => {
     const messages: string[] = []
     const materialId = Number.parseInt(formState.value.materialId, 10)
@@ -170,6 +205,16 @@ export const useInventoryAddItemForm = ({ open, onSaved }: UseInventoryAddItemFo
   })
 
   const isFormValid = computed<boolean>(() => validationMessages.value.length === 0)
+
+  const isOrderPrefillDisabled = computed<boolean>(() => {
+    if (isSubmitting.value) {
+      return true
+    }
+
+    const orderId = Number.parseInt(selectedOrderId.value, 10)
+    return !Number.isInteger(orderId) || orderId <= 0
+  })
+
   const isSaveDisabled = computed<boolean>(() => {
     if (isSubmitting.value) {
       return true
@@ -183,6 +228,7 @@ export const useInventoryAddItemForm = ({ open, onSaved }: UseInventoryAddItemFo
     }
 
     formState.value = buildInitialFormState()
+    selectedOrderId.value = ''
   })
 
   watch(
@@ -263,22 +309,41 @@ export const useInventoryAddItemForm = ({ open, onSaved }: UseInventoryAddItemFo
     }
   }
 
+  const requestOrderPrefill = (): void => {
+    if (isOrderPrefillDisabled.value) {
+      return
+    }
+
+    toast.add({
+      title: 'Order prefill will be connected in the next step',
+      color: 'primary',
+      duration: 2500,
+    })
+  }
+
   return {
     formState,
+    selectedOrderId,
     selectedMaterialId,
     sortedMaterials,
+    sortedOrders,
+    orderPrefillOptions,
     sectorOptions,
     stockUnitOptions,
     isStockUnitsLoading,
     materialsQuery,
     lookupsQuery,
+    ordersQuery,
     materialsErrorMessage,
     sectorsErrorMessage,
     stockUnitsErrorMessage,
+    ordersErrorMessage,
     validationMessages,
     isFormValid,
+    isOrderPrefillDisabled,
     isSaveDisabled,
     isSubmitting,
+    requestOrderPrefill,
     submitForm,
   }
 }

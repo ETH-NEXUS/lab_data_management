@@ -21,20 +21,26 @@ const openRef = computed<boolean>(() => props.open)
 
 const {
   formState,
+  selectedOrderId,
   selectedMaterialId,
   sortedMaterials,
+  orderPrefillOptions,
   sectorOptions,
   stockUnitOptions,
   isStockUnitsLoading,
   materialsQuery,
   lookupsQuery,
+  ordersQuery,
   materialsErrorMessage,
   sectorsErrorMessage,
   stockUnitsErrorMessage,
+  ordersErrorMessage,
   validationMessages,
   isFormValid,
+  isOrderPrefillDisabled,
   isSaveDisabled,
   isSubmitting,
+  requestOrderPrefill,
   submitForm,
 } = useInventoryAddItemForm({
   open: openRef,
@@ -53,6 +59,53 @@ const {
   >
     <template #body>
       <div class="space-y-5 p-6">
+        <section class="space-y-3">
+          <p class="text-sm font-semibold text-slate-800">Prefill from order</p>
+          <div class="rounded-lg border border-slate-200 bg-slate-50 p-3">
+            <div class="grid gap-3 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-end">
+              <div class="space-y-1">
+                <label class="block text-sm font-medium text-slate-700">Order</label>
+                <select
+                  v-model="selectedOrderId"
+                  class="w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700"
+                  :disabled="ordersQuery.isPending.value || isSubmitting"
+                >
+                  <option value="">
+                    {{
+                      ordersQuery.isPending.value
+                        ? 'Loading orders...'
+                        : ordersErrorMessage
+                          ? 'Failed to load orders'
+                          : orderPrefillOptions.length > 0
+                            ? 'Select order'
+                            : 'No orders available'
+                    }}
+                  </option>
+                  <option
+                    v-for="orderOption in orderPrefillOptions"
+                    :key="orderOption.id"
+                    :value="String(orderOption.id)"
+                  >
+                    {{ orderOption.label }}
+                  </option>
+                </select>
+                <p v-if="ordersErrorMessage" class="text-xs text-red-600">
+                  {{ ordersErrorMessage }}
+                </p>
+              </div>
+
+              <UButton
+                color="neutral"
+                variant="soft"
+                icon="i-heroicons-arrow-down-tray"
+                label="Prefill from order"
+                :disabled="isOrderPrefillDisabled"
+                @click="requestOrderPrefill"
+              />
+            </div>
+          </div>
+        </section>
+
         <section class="space-y-3">
           <p class="text-sm font-semibold text-slate-800">Stock fields</p>
 
