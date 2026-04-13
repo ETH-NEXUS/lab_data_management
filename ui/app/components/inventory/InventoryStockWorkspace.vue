@@ -71,6 +71,38 @@ const stocksErrorMessage = computed<string | null>(() => {
   return err instanceof Error ? err.message : t('inventory.stock_workspace.error')
 })
 
+const workspaceTitle = computed<string>(() => {
+  if (props.preset === 'favorite') {
+    return t('inventory.page.actions.favorite_items.title')
+  }
+
+  if (props.preset === 'low_stock') {
+    return t('inventory.page.actions.low_stock_items.title')
+  }
+
+  if (props.preset === 'expired') {
+    return t('inventory.page.actions.expired_items.title')
+  }
+
+  return t('inventory.stock_workspace.title')
+})
+
+const workspaceDescription = computed<string>(() => {
+  if (props.preset === 'favorite') {
+    return t('inventory.page.actions.favorite_items.description')
+  }
+
+  if (props.preset === 'low_stock') {
+    return t('inventory.page.actions.low_stock_items.description')
+  }
+
+  if (props.preset === 'expired') {
+    return t('inventory.page.actions.expired_items.description')
+  }
+
+  return t('inventory.stock_workspace.description')
+})
+
 const hasSelectedStock = computed<boolean>(() => {
   return selectedStock.value !== null
 })
@@ -116,7 +148,7 @@ watch(
 
 <template>
   <section class="space-y-3">
-    <p class="inventory-section-title">{{ t('inventory.stock_workspace.title') }}</p>
+    <p class="inventory-section-title">{{ workspaceTitle }}</p>
 
     <div
       :class="[
@@ -132,8 +164,8 @@ watch(
       >
         <template #header>
           <div class="space-y-1">
-            <p class="text-sm font-semibold text-slate-800">{{ t('inventory.stock_workspace.title') }}</p>
-            <p class="text-sm text-slate-600">{{ t('inventory.stock_workspace.description') }}</p>
+            <p class="text-sm font-semibold text-slate-800">{{ workspaceTitle }}</p>
+            <p class="text-sm text-slate-600">{{ workspaceDescription }}</p>
           </div>
         </template>
 
