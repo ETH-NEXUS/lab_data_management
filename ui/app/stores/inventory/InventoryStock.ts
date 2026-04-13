@@ -1,6 +1,7 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
 import {
+  INVENTORY_ARCHIVE_STOCK_ERROR_MESSAGE,
   INVENTORY_CREATE_STOCK_ERROR_MESSAGE,
   INVENTORY_MARK_FAVORITE_ERROR_MESSAGE,
   INVENTORY_UNMARK_FAVORITE_ERROR_MESSAGE,
@@ -16,6 +17,7 @@ export const useInventoryStockStore = defineStore('inventoryStockStore', () => {
   const isUpdatingStock = ref(false)
   const isMarkingFavorite = ref(false)
   const isUnmarkingFavorite = ref(false)
+  const isArchivingStock = ref(false)
 
   const createStock = async (payload: CreateInventoryStockPayload): Promise<InventoryStockDetail> => {
     isCreatingStock.value = true
@@ -79,14 +81,31 @@ export const useInventoryStockStore = defineStore('inventoryStockStore', () => {
     }
   }
 
+  const archiveStock = async (stockId: number): Promise<InventoryStockDetail> => {
+    isArchivingStock.value = true
+    try {
+      return await requestApiData<InventoryStockDetail>(
+        `inventory/stocks/${stockId}/archive/`,
+        {
+          method: 'POST',
+        },
+        INVENTORY_ARCHIVE_STOCK_ERROR_MESSAGE,
+      )
+    } finally {
+      isArchivingStock.value = false
+    }
+  }
+
   return {
     isCreatingStock,
     isUpdatingStock,
     isMarkingFavorite,
     isUnmarkingFavorite,
+    isArchivingStock,
     createStock,
     updateStock,
     markFavorite,
     unmarkFavorite,
+    archiveStock,
   }
 })

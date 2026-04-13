@@ -40,6 +40,7 @@ export const INVENTORY_CREATE_USAGE_ERROR_MESSAGE = 'Failed to create material u
 export const INVENTORY_UPDATE_USAGE_ERROR_MESSAGE = 'Failed to update material usage.'
 export const INVENTORY_MARK_FAVORITE_ERROR_MESSAGE = 'Failed to mark stock item as favorite.'
 export const INVENTORY_UNMARK_FAVORITE_ERROR_MESSAGE = 'Failed to unmark stock item as favorite.'
+export const INVENTORY_ARCHIVE_STOCK_ERROR_MESSAGE = 'Failed to archive stock item.'
 
 export const getInventoryStockQueryKey = (stockId: number) => [...INVENTORY_STOCKS_QUERY_KEY, stockId]
 export const getInventoryMaterialQueryKey = (materialId: number) => [...INVENTORY_MATERIALS_QUERY_KEY, materialId]
