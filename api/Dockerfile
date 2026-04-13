@@ -108,11 +108,11 @@ RUN if [ "${ENABLE_R}" = "True" ]; then \
 #     fi
 
 
-COPY ./pyproject.toml /pyproject.toml
+COPY ./pyproject.toml ./uv.lock /
 ARG DEPENDENCIES=prod
 RUN --mount=type=cache,target=/root/.cache/uv \
     /bin/sh -eux -c '\
-      UV_ARGS="--no-install-project --no-default-groups"; \
+      UV_ARGS="--frozen --no-install-project --no-default-groups"; \
       if [ "$DEPENDENCIES" = "dev" ]; then \
         UV_ARGS="$UV_ARGS --group dev"; \
       fi; \
