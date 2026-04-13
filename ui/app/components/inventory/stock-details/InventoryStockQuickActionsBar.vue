@@ -1,14 +1,17 @@
 <script setup lang="ts">
 type Props = {
+  isFavorite: boolean
   isEditingStock: boolean
   isMovingStock: boolean
   isRecordingUsage: boolean
+  isTogglingFavorite: boolean
+  isArchivingStock: boolean
 }
 
 const props = defineProps<Props>()
 
 const emit = defineEmits<{
-  (e: 'adjust-stock' | 'move-item' | 'record-usage'): void
+  (e: 'adjust-stock' | 'move-item' | 'record-usage' | 'toggle-favorite' | 'archive-item'): void
 }>()
 
 const { t } = useI18n()
@@ -42,6 +45,22 @@ const { t } = useI18n()
         label="Record usage"
         :disabled="props.isRecordingUsage"
         @click="emit('record-usage')"
+      />
+      <UButton
+        color="warning"
+        variant="soft"
+        size="xs"
+        :label="props.isFavorite ? 'Unfavorite item' : 'Favorite item'"
+        :disabled="props.isTogglingFavorite"
+        @click="emit('toggle-favorite')"
+      />
+      <UButton
+        color="neutral"
+        variant="soft"
+        size="xs"
+        label="Archive item"
+        :disabled="props.isArchivingStock"
+        @click="emit('archive-item')"
       />
     </div>
   </div>

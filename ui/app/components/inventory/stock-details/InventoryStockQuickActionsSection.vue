@@ -1,14 +1,18 @@
 <script setup lang="ts">
 import { computed } from 'vue'
+import { useQueryClient } from '@tanstack/vue-query'
 import type { InventoryStockListItem } from '~/types/inventory'
 import InventoryStockMovePanel from '~/components/inventory/stock-details/InventoryStockMovePanel.vue'
 import InventoryStockQuickAdjustPanel from '~/components/inventory/stock-details/InventoryStockQuickAdjustPanel.vue'
 import InventoryStockQuickActionsBar from '~/components/inventory/stock-details/InventoryStockQuickActionsBar.vue'
 import InventoryStockRecordUsagePanel from '~/components/inventory/stock-details/InventoryStockRecordUsagePanel.vue'
+import { useInventoryStockStore } from '~/stores/inventory/InventoryStock'
 import { useInventoryMaterialQuery } from '~/composables/inventory/useInventoryMaterialQuery'
 import { useInventoryStockMoveItem } from '~/components/inventory/stock-details/useInventoryStockMoveItem'
 import { useInventoryStockQuickAdjust } from '~/components/inventory/stock-details/useInventoryStockQuickAdjust'
 import { useInventoryStockRecordUsage } from '~/components/inventory/stock-details/useInventoryStockRecordUsage'
+import { INVENTORY_STOCKS_QUERY_KEY } from '~/types/inventory'
+import { getErrorMessage } from '~/utils/errors'
 
 type Props = {
   open: boolean
@@ -16,12 +20,19 @@ type Props = {
 }
 
 const props = defineProps<Props>()
+const toast = useToast()
+const queryClient = useQueryClient()
+const inventoryStockStore = useInventoryStockStore()
 
 const selectedMaterialId = computed<number>(() => {
   return props.stock?.material?.id ?? 0
 })
 
 const selectedMaterialQuery = useInventoryMaterialQuery(selectedMaterialId)
+
+const isTogglingFavorite = computed<boolean>(() => {
+  return inventoryStockStore.isMarkingFavorite || inventoryStockStore.isUnmarkingFavorite
+})
 
 const {
   isEditingStock,
@@ -78,17 +89,76 @@ const {
   cancelUsageMode,
   saveUsage,
 } = useInventoryStockRecordUsage(recordUsageProps)
+
+const toggleFavorite = async (): Promise<void> => {
+  const stock = props.stock
+  if (!stock || isTogglingFavorite.value) return
+
+  try {
+    if (stock.is_favorite) {
+      await inventoryStockStore.unmarkFavorite(stock.id)
+      toast.add({
+        title: 'Removed from favorites',
+        color: 'success',
+        duration: 2500,
+      })
+    } else {
+      await inventoryStockStore.markFavorite(stock.id)
+      toast.add({
+        title: 'Marked as favorite',
+        color: 'success',
+        duration: 2500,
+      })
+    }
+
+    await queryClient.invalidateQueries({ queryKey: INVENTORY_STOCKS_QUERY_KEY })
+  } catch (err: unknown) {
+    toast.add({
+      title: 'Failed to update favorite state',
+      description: getErrorMessage(err),
+      color: 'error',
+      duration: 4000,
+    })
+  }
+}
+
+const archiveItem = async (): Promise<void> => {
+  const stock = props.stock
+  if (!stock || inventoryStockStore.isArchivingStock) return
+
+  try {
+    await inventoryStockStore.archiveStock(stock.id)
+    await queryClient.invalidateQueries({ queryKey: INVENTORY_STOCKS_QUERY_KEY })
+    toast.add({
+      title: 'Stock item archived',
+      color: 'success',
+      duration: 2500,
+    })
+  } catch (err: unknown) {
+    toast.add({
+      title: 'Failed to archive stock item',
+      description: getErrorMessage(err),
+      color: 'error',
+      duration: 4000,
+    })
+  }
+}
 </script>
 
 <template>
   <section class="space-y-3 rounded-xl border border-slate-200 bg-white p-4">
     <InventoryStockQuickActionsBar
+      :is-favorite="Boolean(props.stock?.is_favorite)"
       :is-editing-stock="isEditingStock"
       :is-moving-stock="isMovingStock"
       :is-recording-usage="isRecordingUsage"
+      :is-toggling-favorite="isTogglingFavorite"
+      :is-archiving-stock="inventoryStockStore.isArchivingStock"
       @adjust-stock="openEditMode"
       @move-item="openMoveMode"
       @record-usage="openUsageMode"
+      @toggle-favorite="toggleFavorite"
+      @archive-item="archiveItem"
     />
 
     <InventoryStockQuickAdjustPanel
