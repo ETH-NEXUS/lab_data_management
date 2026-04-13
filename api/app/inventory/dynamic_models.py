@@ -161,6 +161,10 @@ class InventoryStock(models.Model):
         default=False,
         help_text="Optional flag if we want to mark favorite / pinned stock items.",
     )
+    is_archived = models.BooleanField(
+        default=False,
+        help_text="Optional flag if we want to hide archived stock items.",
+    )
 
     notes = models.TextField(
         null=True,
