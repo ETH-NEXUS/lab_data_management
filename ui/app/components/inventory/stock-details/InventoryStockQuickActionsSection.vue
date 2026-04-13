@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, ref } from 'vue'
 import { useQueryClient } from '@tanstack/vue-query'
 import { storeToRefs } from 'pinia'
 import type { InventoryStockListItem } from '~/types/inventory'
@@ -25,6 +25,7 @@ const toast = useToast()
 const queryClient = useQueryClient()
 const inventoryStockStore = useInventoryStockStore()
 const { isMarkingFavorite, isUnmarkingFavorite, isArchivingStock } = storeToRefs(inventoryStockStore)
+const isArchiveConfirmOpen = ref(false)
 
 const selectedMaterialId = computed<number>(() => {
   return props.stock?.material?.id ?? 0
@@ -124,13 +125,30 @@ const toggleFavorite = async (): Promise<void> => {
   }
 }
 
-const archiveItem = async (): Promise<void> => {
+const openArchiveConfirmation = (): void => {
+  if (!props.stock || isArchivingStock.value) {
+    return
+  }
+
+  isArchiveConfirmOpen.value = true
+}
+
+const cancelArchiveConfirmation = (): void => {
+  if (isArchivingStock.value) {
+    return
+  }
+
+  isArchiveConfirmOpen.value = false
+}
+
+const confirmArchiveItem = async (): Promise<void> => {
   const stock = props.stock
   if (!stock || isArchivingStock.value) return
 
   try {
     await inventoryStockStore.archiveStock(stock.id)
     await queryClient.invalidateQueries({ queryKey: INVENTORY_STOCKS_QUERY_KEY })
+    isArchiveConfirmOpen.value = false
     toast.add({
       title: 'Stock item archived',
       color: 'success',
@@ -160,8 +178,36 @@ const archiveItem = async (): Promise<void> => {
       @move-item="openMoveMode"
       @record-usage="openUsageMode"
       @toggle-favorite="toggleFavorite"
-      @archive-item="archiveItem"
+      @archive-item="openArchiveConfirmation"
     />
+
+    <UModal
+      :open="isArchiveConfirmOpen"
+      title="Archive stock item?"
+      description="This will hide the item from active inventory views."
+      class="w-full sm:max-w-lg"
+      :ui="{ content: 'rounded-2xl bg-white shadow-md' }"
+      @update:open="(isOpen) => (isArchiveConfirmOpen = isOpen)"
+    >
+      <template #footer>
+        <div class="flex w-full justify-end gap-2 px-6 pb-6">
+          <UButton
+            variant="ghost"
+            color="neutral"
+            label="Cancel"
+            :disabled="isArchivingStock"
+            @click="cancelArchiveConfirmation"
+          />
+          <UButton
+            color="warning"
+            label="Archive item"
+            :loading="isArchivingStock"
+            :disabled="isArchivingStock"
+            @click="confirmArchiveItem"
+          />
+        </div>
+      </template>
+    </UModal>
 
     <InventoryStockQuickAdjustPanel
       :open="isEditingStock"
