@@ -47,16 +47,16 @@ const inventoryViews = computed<InventoryActionItem[]>(() => [
     icon: 'i-heroicons-link',
   },
   {
-    id: 'reserved_items',
-    title: t('inventory.page.actions.reserved_items.title'),
-    description: t('inventory.page.actions.reserved_items.description'),
-    icon: 'i-heroicons-bookmark',
+    id: 'favorite_items',
+    title: t('inventory.page.actions.favorite_items.title'),
+    description: t('inventory.page.actions.favorite_items.description'),
+    icon: 'i-heroicons-star',
   },
   {
-    id: 'archived_items',
-    title: t('inventory.page.actions.archived_items.title'),
-    description: t('inventory.page.actions.archived_items.description'),
-    icon: 'i-heroicons-archive-box',
+    id: 'low_stock_items',
+    title: t('inventory.page.actions.low_stock_items.title'),
+    description: t('inventory.page.actions.low_stock_items.description'),
+    icon: 'i-heroicons-exclamation-triangle',
   },
 ])
 

@@ -5,6 +5,16 @@ import InventoryStockTable from '~/components/inventory/InventoryStockTable.vue'
 import { useInventoryStocksQuery } from '~/composables/inventory/useInventoryStockQuery'
 import type { InventoryStockListItem } from '~/types/inventory'
 
+type StockPreset = 'all' | 'favorite' | 'low_stock' | 'expired'
+
+type Props = {
+  preset?: StockPreset
+}
+
+const props = withDefaults(defineProps<Props>(), {
+  preset: 'all',
+})
+
 const { t } = useI18n()
 
 const stocksQuery = useInventoryStocksQuery()
@@ -13,12 +23,38 @@ const selectedStockId = ref<number | null>(null)
 
 const stocks = computed<InventoryStockListItem[]>(() => stocksQuery.data.value ?? [])
 
+/**
+ * Applies one preset filter on top of the already-loaded full stocks list.
+ *
+ * Input examples:
+ * - `preset = 'favorite'`
+ * - `preset = 'low_stock'`
+ *
+ * Returned data example:
+ * - `[{ id: 4, is_favorite: true, ... }, { id: 12, is_favorite: true, ... }]`
+ */
+const filteredStocks = computed<InventoryStockListItem[]>(() => {
+  if (props.preset === 'favorite') {
+    return stocks.value.filter((stock) => stock.is_favorite)
+  }
+
+  if (props.preset === 'low_stock') {
+    return stocks.value.filter((stock) => stock.is_low_stock || stock.inventory_status === 'low')
+  }
+
+  if (props.preset === 'expired') {
+    return stocks.value.filter((stock) => stock.is_expired)
+  }
+
+  return stocks.value
+})
+
 const selectedStock = computed<InventoryStockListItem | null>(() => {
   if (!selectedStockId.value) {
     return null
   }
 
-  for (const stock of stocks.value) {
+  for (const stock of filteredStocks.value) {
     if (stock.id === selectedStockId.value) {
       return stock
     }
@@ -61,7 +97,7 @@ watch(
       return
     }
 
-    const hasMatch = stocks.value.some((stock) => stock.id === stockId)
+    const hasMatch = filteredStocks.value.some((stock) => stock.id === stockId)
     if (!hasMatch) {
       selectedStockId.value = null
     }
@@ -107,10 +143,10 @@ watch(
         <p v-else-if="stocksErrorMessage" class="text-sm text-red-600">
           {{ stocksErrorMessage }}
         </p>
-        <p v-else-if="stocks.length === 0" class="text-sm text-slate-600">
+        <p v-else-if="filteredStocks.length === 0" class="text-sm text-slate-600">
           {{ t('inventory.stock_workspace.empty') }}
         </p>
-        <InventoryStockTable v-else :stocks="stocks" @select-stock="openStockDetails" />
+        <InventoryStockTable v-else :stocks="filteredStocks" @select-stock="openStockDetails" />
       </UCard>
 
       <InventoryStockDetailsPanel

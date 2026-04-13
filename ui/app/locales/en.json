@@ -455,6 +455,10 @@
           "title": "Reserved items",
           "description": "Track currently reserved stock."
         },
+        "low_stock_items": {
+          "title": "Low stock items",
+          "description": "Review items that are below minimum quantity."
+        },
         "archived_items": {
           "title": "Archived items",
           "description": "Access archived inventory records."

@@ -30,6 +30,11 @@ const onSelectAction = (actionId: string): void => {
     return
   }
 
+  if (actionId === 'recently_linked_items') {
+    navigateTo('/inventory/usages')
+    return
+  }
+
   const titleKey = `inventory.page.actions.${actionId}.title`
   const actionTitle = t(titleKey)
   const placeholderSuffix = t('inventory.page.placeholder_suffix')

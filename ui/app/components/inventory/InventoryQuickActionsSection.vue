@@ -36,17 +36,6 @@ const ordersAction = computed<InventoryActionItem>(() => ({
 }))
 
 /**
- * Tertiary primary action rendered as direct link button.
- *
- * Returned data example:
- * - `{ id: 'usages', title: 'Usages' }`
- */
-const usagesAction = computed<InventoryActionItem>(() => ({
-  id: 'usages',
-  title: t('inventory.page.actions.usages.title'),
-}))
-
-/**
  * Secondary icon actions shown separately to the right.
  *
  * Returned data example:
@@ -57,11 +46,6 @@ const sideActions = computed<InventoryActionItem[]>(() => [
     id: 'add_new_item',
     title: t('inventory.page.actions.add_new_item.title'),
     icon: 'i-heroicons-plus',
-  },
-  {
-    id: 'favorite_items',
-    title: t('inventory.page.actions.favorite_items.title'),
-    icon: 'i-heroicons-star',
   },
 ])
 
@@ -88,10 +72,6 @@ const onSelectAction = (actionId: string): void => {
 
         <NuxtLink to="/inventory/orders" class="inventory-toolbar-card inventory-toolbar-card--primary">
           <span class="truncate">{{ ordersAction.title }}</span>
-        </NuxtLink>
-
-        <NuxtLink to="/inventory/usages" class="inventory-toolbar-card inventory-toolbar-card--primary">
-          <span class="truncate">{{ usagesAction.title }}</span>
         </NuxtLink>
       </div>
 
