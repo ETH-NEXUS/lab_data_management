@@ -478,4 +478,4 @@ class MaterialUnit(models.Model):
         verbose_name_plural = "Material units"
 
     def __str__(self):
-        return f"{self.material.product_name} [{self.unit.name}]"
+        return f"[{self.unit.name}]" # return f"{self.material.product_name} [{self.unit.name}]"
