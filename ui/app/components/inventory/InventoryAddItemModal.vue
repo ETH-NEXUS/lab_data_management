@@ -12,6 +12,7 @@ const props = defineProps<Props>()
 const emit = defineEmits<{
   (e: 'update:open', value: boolean): void
 }>()
+const { t } = useI18n()
 
 const closeModal = (): void => {
   emit('update:open', false)
@@ -60,11 +61,13 @@ const {
     <template #body>
       <div class="space-y-5 p-6">
         <section class="space-y-3">
-          <p class="text-sm font-semibold text-slate-800">Prefill from order</p>
+          <p class="text-sm font-semibold text-slate-800">{{ t('inventory.add_item.prefill.title') }}</p>
           <div class="rounded-lg border border-slate-200 bg-slate-50 p-3">
             <div class="grid gap-3 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-end">
               <div class="space-y-1">
-                <label class="block text-sm font-medium text-slate-700">Order</label>
+                <label class="block text-sm font-medium text-slate-700">
+                  {{ t('inventory.add_item.prefill.order_label') }}
+                </label>
                 <select
                   v-model="selectedOrderId"
                   class="w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700"
@@ -73,12 +76,12 @@ const {
                   <option value="">
                     {{
                       ordersQuery.isPending.value
-                        ? 'Loading orders...'
+                        ? t('inventory.add_item.prefill.select_options.loading_orders')
                         : ordersErrorMessage
-                          ? 'Failed to load orders'
+                          ? t('inventory.add_item.prefill.select_options.failed_orders')
                           : orderPrefillOptions.length > 0
-                            ? 'Select order'
-                            : 'No orders available'
+                            ? t('inventory.add_item.prefill.select_options.select_order')
+                            : t('inventory.add_item.prefill.select_options.no_orders')
                     }}
                   </option>
                   <option
@@ -98,7 +101,7 @@ const {
                 color="neutral"
                 variant="soft"
                 icon="i-heroicons-arrow-down-tray"
-                label="Prefill from order"
+                :label="t('inventory.add_item.prefill.prefill_button')"
                 :disabled="isOrderPrefillDisabled"
                 @click="requestOrderPrefill"
               />

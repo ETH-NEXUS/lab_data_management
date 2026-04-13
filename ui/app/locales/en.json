@@ -625,6 +625,19 @@
         },
         "empty": "No usages found."
       }
+    },
+    "add_item": {
+      "prefill": {
+        "title": "Prefill from order",
+        "order_label": "Order",
+        "prefill_button": "Prefill from order",
+        "select_options": {
+          "loading_orders": "Loading orders...",
+          "failed_orders": "Failed to load orders",
+          "select_order": "Select order",
+          "no_orders": "No orders available"
+        }
+      }
     }
   },
   "table": {
