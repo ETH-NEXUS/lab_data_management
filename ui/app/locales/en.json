@@ -606,6 +606,20 @@
         },
         "empty": "No orders found."
       }
+    },
+    "usages": {
+      "table": {
+        "columns": {
+          "product": "Product",
+          "used_at": "Used at",
+          "quantity": "Quantity",
+          "unit": "Unit",
+          "project": "Project",
+          "experiment": "Experiment",
+          "notes": "Notes"
+        },
+        "empty": "No usages found."
+      }
     }
   },
   "table": {
