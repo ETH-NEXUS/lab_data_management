@@ -290,7 +290,7 @@ class InventoryStockViewSet(viewsets.ModelViewSet):
         return InventoryStockDetailSerializer
 
     def get_queryset(self):
-        queryset = super().get_queryset()
+        queryset = super().get_queryset().filter(is_archived=False)
 
         search = self.request.query_params.get("search")
         room_id = self.request.query_params.get("room")
@@ -395,6 +395,14 @@ class InventoryStockViewSet(viewsets.ModelViewSet):
         stock = self.get_object()
         stock.is_favorite = False
         stock.save(update_fields=["is_favorite"])
+        serializer = InventoryStockDetailSerializer(stock, context={"request": request})
+        return Response(serializer.data)
+
+    @action(detail=True, methods=["post"])
+    def archive(self, request, pk=None):
+        stock = self.get_object()
+        stock.is_archived = True
+        stock.save(update_fields=["is_archived"])
         serializer = InventoryStockDetailSerializer(stock, context={"request": request})
         return Response(serializer.data)
 
