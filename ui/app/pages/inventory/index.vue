@@ -21,7 +21,7 @@ const onUpdateAddItemModalOpen = (isOpen: boolean): void => {
  */
 const onSelectAction = (actionId: string): void => {
   if (actionId === 'all_items') {
-    navigateTo('/inventory/all')
+    navigateTo('/inventory/all?preset=all')
     return
   }
 
@@ -32,6 +32,21 @@ const onSelectAction = (actionId: string): void => {
 
   if (actionId === 'recently_linked_items') {
     navigateTo('/inventory/usages')
+    return
+  }
+
+  if (actionId === 'favorite_items') {
+    navigateTo('/inventory/all?preset=favorite')
+    return
+  }
+
+  if (actionId === 'expired_items') {
+    navigateTo('/inventory/all?preset=expired')
+    return
+  }
+
+  if (actionId === 'low_stock_items') {
+    navigateTo('/inventory/all?preset=low_stock')
     return
   }
 
