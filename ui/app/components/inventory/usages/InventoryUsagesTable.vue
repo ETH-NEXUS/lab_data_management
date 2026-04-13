@@ -38,6 +38,7 @@ const usageItemLabel = (usage: InventoryUsageListItem): string => {
           <th class="px-3 py-2 text-left font-semibold text-slate-800">Unit</th>
           <th class="px-3 py-2 text-left font-semibold text-slate-800">Project</th>
           <th class="px-3 py-2 text-left font-semibold text-slate-800">Experiment</th>
+          <th class="px-3 py-2 text-left font-semibold text-slate-800">Notes</th>
         </tr>
       </thead>
 
@@ -61,10 +62,13 @@ const usageItemLabel = (usage: InventoryUsageListItem): string => {
           <td class="px-3 py-2 text-slate-700">
             {{ toDisplayValue(usage.experiment?.label || usage.experiment?.name) }}
           </td>
+          <td class="px-3 py-2 text-slate-700">
+            {{ toDisplayValue(usage.notes) }}
+          </td>
         </tr>
 
         <tr v-if="props.usages.length === 0">
-          <td colspan="6" class="px-3 py-10 text-center text-sm text-slate-500">No usages found.</td>
+          <td colspan="7" class="px-3 py-10 text-center text-sm text-slate-500">No usages found.</td>
         </tr>
       </tbody>
     </table>
