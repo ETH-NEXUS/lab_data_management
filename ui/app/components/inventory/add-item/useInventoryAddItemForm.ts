@@ -1,4 +1,4 @@
-import { computed, ref, watch, type ComputedRef } from 'vue'
+import { computed, nextTick, ref, watch, type ComputedRef } from 'vue'
 import { useQueryClient } from '@tanstack/vue-query'
 import { useInventoryLookupsQuery } from '~/composables/inventory/useInventoryLookupQuery'
 import {
@@ -51,6 +51,49 @@ const buildInitialFormState = (): AddItemFormState => ({
 })
 
 /**
+ * Parses decimal-like text into a finite number.
+ *
+ * Input examples:
+ * - `'2.5'`
+ * - `'96'`
+ * - `null`
+ *
+ * Returned examples:
+ * - `2.5`
+ * - `96`
+ * - `null`
+ */
+const parseDecimal = (value: string | null | undefined): number | null => {
+  if (value == null) {
+    return null
+  }
+
+  const parsedValue = Number.parseFloat(value.trim())
+  if (!Number.isFinite(parsedValue)) {
+    return null
+  }
+
+  return parsedValue
+}
+
+/**
+ * Formats decimal values for API-compatible string fields.
+ *
+ * Input examples:
+ * - `2`
+ * - `2.041666666`
+ *
+ * Returned examples:
+ * - `'2'`
+ * - `'2.041667'`
+ */
+const formatDecimal = (value: number): string => {
+  const fixedValue = value.toFixed(6)
+  const normalizedValue = fixedValue.replace(/\.?0+$/, '')
+  return normalizedValue === '' ? '0' : normalizedValue
+}
+
+/**
  * Manages add-item modal form state, dependent lookup data, validation, and stock creation submit.
  */
 export const useInventoryAddItemForm = ({ open, onSaved }: UseInventoryAddItemFormParams) => {
@@ -90,6 +133,15 @@ export const useInventoryAddItemForm = ({ open, onSaved }: UseInventoryAddItemFo
       return rightDate - leftDate
     })
     return orders
+  })
+
+  const selectedOrder = computed<InventoryOrderListItem | null>(() => {
+    const orderId = Number.parseInt(selectedOrderId.value, 10)
+    if (!Number.isInteger(orderId) || orderId <= 0) {
+      return null
+    }
+
+    return sortedOrders.value.find((order) => order.id === orderId) ?? null
   })
 
   const orderPrefillOptions = computed<Array<{ id: number; label: string }>>(() => {
@@ -310,15 +362,86 @@ export const useInventoryAddItemForm = ({ open, onSaved }: UseInventoryAddItemFo
   }
 
   const requestOrderPrefill = (): void => {
-    if (isOrderPrefillDisabled.value) {
+    if (isOrderPrefillDisabled.value || isSubmitting.value) {
       return
     }
 
-    toast.add({
-      title: 'Order prefill will be connected in the next step',
-      color: 'primary',
-      duration: 2500,
-    })
+    void (async (): Promise<void> => {
+      const order = selectedOrder.value
+      if (!order) {
+        toast.add({
+          title: 'Select a valid order first',
+          color: 'warning',
+          duration: 2500,
+        })
+        return
+      }
+
+      formState.value.materialId = String(order.material.id)
+      formState.value.stockUnitId = ''
+
+      await nextTick()
+
+      const materialRefetch = await selectedMaterialQuery.refetch()
+      const materialDetail = materialRefetch.data ?? selectedMaterialQuery.data.value
+
+      if (!materialDetail || materialDetail.id !== order.material.id) {
+        toast.add({
+          title: 'Failed to load material units for selected order',
+          color: 'error',
+          duration: 3500,
+        })
+        return
+      }
+
+      const stockUnits = (materialDetail.units ?? []).filter((unit) => unit.is_stock_unit)
+      if (stockUnits.length === 0) {
+        toast.add({
+          title: 'Selected material has no stock unit',
+          color: 'warning',
+          duration: 3500,
+        })
+        return
+      }
+
+      const stockUnit = stockUnits[0]
+      formState.value.stockUnitId = String(stockUnit.id)
+
+      const orderAmount = parseDecimal(order.amount)
+      const orderBaseUnitsPerUnit = parseDecimal(order.order_unit.base_units_per_unit)
+      const stockBaseUnitsPerUnit = parseDecimal(stockUnit.base_units_per_unit)
+
+      const canConvertQuantity =
+        orderAmount !== null &&
+        orderBaseUnitsPerUnit !== null &&
+        stockBaseUnitsPerUnit !== null &&
+        orderBaseUnitsPerUnit > 0 &&
+        stockBaseUnitsPerUnit > 0
+
+      if (!canConvertQuantity) {
+        formState.value.quantity = ''
+        toast.add({
+          title: 'Could not convert order amount to stock unit',
+          color: 'warning',
+          duration: 3500,
+        })
+      } else {
+        const quantityInBaseUnits = orderAmount * orderBaseUnitsPerUnit
+        const quantityInStockUnits = quantityInBaseUnits / stockBaseUnitsPerUnit
+        formState.value.quantity = formatDecimal(quantityInStockUnits)
+      }
+
+      if (formState.value.notes.trim() === '') {
+        const orderNotes = order.notes?.trim() || ''
+        formState.value.notes = orderNotes === '' ? `Order #${order.id}` : `Order #${order.id}: ${orderNotes}`
+      }
+
+      toast.add({
+        title: 'Form prefilled from order',
+        color: 'success',
+        duration: 2500,
+      })
+    })()
   }
 
   return {
