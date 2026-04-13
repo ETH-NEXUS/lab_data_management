@@ -608,6 +608,11 @@
       }
     },
     "usages": {
+      "workspace": {
+        "title": "Usages",
+        "description": "Review recorded material usages in a dedicated table workspace.",
+        "loading": "Loading recorded usages..."
+      },
       "table": {
         "columns": {
           "product": "Product",

@@ -26,8 +26,10 @@ const usagesErrorMessage = computed<string | null>(() => {
 <template>
   <section class="space-y-3">
     <div class="space-y-1">
-      <p class="inventory-section-title">{{ t('inventory.stock_drawer.sections.usage') }}</p>
-      <p class="text-sm text-slate-600">Review recorded material usages in a dedicated table workspace.</p>
+      <p class="inventory-section-title">{{ t('inventory.usages.workspace.title') }}</p>
+      <p class="text-sm text-slate-600">
+        {{ t('inventory.usages.workspace.description') }}
+      </p>
     </div>
 
     <UCard
@@ -36,7 +38,7 @@ const usagesErrorMessage = computed<string | null>(() => {
       }"
     >
       <p v-if="usagesQuery.isPending.value" class="text-sm text-slate-600">
-        {{ t('inventory.stock_workspace.loading') }}
+        {{ t('inventory.usages.workspace.loading') }}
       </p>
       <p v-else-if="usagesErrorMessage" class="text-sm text-red-600">
         {{ usagesErrorMessage }}

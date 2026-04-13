@@ -1,7 +1,14 @@
 <script setup lang="ts">
+import { ref } from 'vue'
+import InventoryAddItemModal from '~/components/inventory/InventoryAddItemModal.vue'
 import InventoryLandingContent from '~/components/inventory/InventoryLandingContent.vue'
 
 const { t } = useI18n()
+const isAddItemModalOpen = ref(false)
+
+const onUpdateAddItemModalOpen = (isOpen: boolean): void => {
+  isAddItemModalOpen.value = isOpen
+}
 
 /**
  * Shows a temporary placeholder alert for selected inventory actions.
@@ -18,6 +25,11 @@ const onSelectAction = (actionId: string): void => {
     return
   }
 
+  if (actionId === 'add_new_item') {
+    isAddItemModalOpen.value = true
+    return
+  }
+
   const titleKey = `inventory.page.actions.${actionId}.title`
   const actionTitle = t(titleKey)
   const placeholderSuffix = t('inventory.page.placeholder_suffix')
@@ -27,5 +39,8 @@ const onSelectAction = (actionId: string): void => {
 </script>
 
 <template>
-  <InventoryLandingContent @select-action="onSelectAction" />
+  <div>
+    <InventoryLandingContent @select-action="onSelectAction" />
+    <InventoryAddItemModal :open="isAddItemModalOpen" @update:open="onUpdateAddItemModalOpen" />
+  </div>
 </template>
