@@ -28,6 +28,7 @@ type BaseDataTableProps = {
   columns: ColumnDef<TableRow, unknown>[]
   globalFilterPlaceholder?: string
   frozenColumnCount?: number
+  rowCellClassName?: (row: TableRow) => string | string[]
   rowClickable?: boolean
   hideToolbar?: boolean
   enablePagination?: boolean
@@ -37,6 +38,7 @@ type BaseDataTableProps = {
 const props = withDefaults(defineProps<BaseDataTableProps>(), {
   globalFilterPlaceholder: '',
   frozenColumnCount: 0,
+  rowCellClassName: () => '',
   rowClickable: false,
   hideToolbar: false,
   enablePagination: false,
@@ -323,6 +325,20 @@ const hasCustomCellRenderer = (column: Column<TableRow, unknown>): boolean => {
   return typeof column.columnDef.cell !== 'undefined'
 }
 
+const getRowCellClass = (row: TableRow): string[] => {
+  const customClass = props.rowCellClassName?.(row)
+
+  if (!customClass) {
+    return []
+  }
+
+  if (Array.isArray(customClass)) {
+    return customClass.filter((value) => value.trim() !== '')
+  }
+
+  return customClass.trim() === '' ? [] : [customClass]
+}
+
 const totalRowsCount = computed<number>(() => {
   return props.enablePagination ? table.getFilteredRowModel().rows.length : table.getRowModel().rows.length
 })
@@ -522,7 +538,7 @@ const totalRowsCount = computed<number>(() => {
             <td
               v-for="cell in row.getAllCells()"
               :key="cell.id"
-              :class="[...getCellClass(cell.column), 'text-slate-700']"
+              :class="[...getCellClass(cell.column), 'text-slate-700', ...getRowCellClass(row.original)]"
               :style="getStickyStyle(cell.column)"
             >
               <template v-if="hasCustomCellRenderer(cell.column)">

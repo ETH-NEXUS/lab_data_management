@@ -21,6 +21,25 @@ const onSelectStock = (stock: InventoryStockListItem): void => {
 }
 
 /**
+ * Returns custom table cell class for one row.
+ *
+ * Input example:
+ * - `{ id: 14, is_favorite: true, ... }`
+ *
+ * Returned example:
+ * - `'!bg-amber-100'`
+ */
+const getStockRowCellClass = (row: Record<string, unknown>): string => {
+  const stock = row as InventoryStockListItem
+
+  if (stock.is_favorite) {
+    return '!bg-amber-100'
+  }
+
+  return ''
+}
+
+/**
  * Builds columns with a product-name click action that opens stock details.
  *
  * Input callback example:
@@ -34,6 +53,7 @@ const tableColumns = computed(() => createInventoryStockTableColumns(t, onSelect
     :data="props.stocks as unknown as Record<string, unknown>[]"
     :columns="tableColumns"
     :frozen-column-count="5"
+    :row-cell-class-name="getStockRowCellClass"
     enable-pagination
     :page-size="50"
     :global-filter-placeholder="t('table.general.search_placeholder')"
