@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { useQueryClient } from '@tanstack/vue-query'
+import { storeToRefs } from 'pinia'
 import type { InventoryStockListItem } from '~/types/inventory'
 import InventoryStockMovePanel from '~/components/inventory/stock-details/InventoryStockMovePanel.vue'
 import InventoryStockQuickAdjustPanel from '~/components/inventory/stock-details/InventoryStockQuickAdjustPanel.vue'
@@ -23,6 +24,7 @@ const props = defineProps<Props>()
 const toast = useToast()
 const queryClient = useQueryClient()
 const inventoryStockStore = useInventoryStockStore()
+const { isMarkingFavorite, isUnmarkingFavorite, isArchivingStock } = storeToRefs(inventoryStockStore)
 
 const selectedMaterialId = computed<number>(() => {
   return props.stock?.material?.id ?? 0
@@ -31,7 +33,7 @@ const selectedMaterialId = computed<number>(() => {
 const selectedMaterialQuery = useInventoryMaterialQuery(selectedMaterialId)
 
 const isTogglingFavorite = computed<boolean>(() => {
-  return inventoryStockStore.isMarkingFavorite || inventoryStockStore.isUnmarkingFavorite
+  return isMarkingFavorite.value || isUnmarkingFavorite.value
 })
 
 const {
@@ -124,7 +126,7 @@ const toggleFavorite = async (): Promise<void> => {
 
 const archiveItem = async (): Promise<void> => {
   const stock = props.stock
-  if (!stock || inventoryStockStore.isArchivingStock) return
+  if (!stock || isArchivingStock.value) return
 
   try {
     await inventoryStockStore.archiveStock(stock.id)
@@ -153,7 +155,7 @@ const archiveItem = async (): Promise<void> => {
       :is-moving-stock="isMovingStock"
       :is-recording-usage="isRecordingUsage"
       :is-toggling-favorite="isTogglingFavorite"
-      :is-archiving-stock="inventoryStockStore.isArchivingStock"
+      :is-archiving-stock="isArchivingStock"
       @adjust-stock="openEditMode"
       @move-item="openMoveMode"
       @record-usage="openUsageMode"

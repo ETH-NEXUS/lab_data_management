@@ -52,6 +52,7 @@ const { t } = useI18n()
         size="xs"
         :label="props.isFavorite ? 'Unfavorite item' : 'Favorite item'"
         :disabled="props.isTogglingFavorite"
+        :loading="props.isTogglingFavorite"
         @click="emit('toggle-favorite')"
       />
       <UButton
@@ -60,6 +61,7 @@ const { t } = useI18n()
         size="xs"
         label="Archive item"
         :disabled="props.isArchivingStock"
+        :loading="props.isArchivingStock"
         @click="emit('archive-item')"
       />
     </div>
