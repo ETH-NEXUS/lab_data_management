@@ -1,16 +1,29 @@
 <script setup lang="ts">
+import { computed } from 'vue'
 import type { InventoryOrderListItem } from '~/types/inventory'
 import { formatDateTime } from '~/utils/dateTime'
 
 type Props = {
   orderEntries: InventoryOrderListItem[]
-  responsibleUsers: string[]
   isOrdersLoading: boolean
 }
 
 const props = defineProps<Props>()
 
 const { t } = useI18n()
+
+const responsibleUsers = computed<string[]>(() => {
+  const labels = new Set<string>()
+
+  for (const order of props.orderEntries) {
+    const userLabel = order.who_ordered?.label || order.who_ordered?.full_name || order.who_ordered?.username || ''
+    if (userLabel !== '') {
+      labels.add(userLabel)
+    }
+  }
+
+  return Array.from(labels)
+})
 </script>
 
 <template>
@@ -45,11 +58,11 @@ const { t } = useI18n()
       <p class="text-[11px] font-semibold tracking-[0.06em] text-slate-500 uppercase">
         {{ t('inventory.stock_drawer.fields.responsible_user') }}
       </p>
-      <p v-if="props.responsibleUsers.length === 0" class="text-sm text-slate-600">
+      <p v-if="responsibleUsers.length === 0" class="text-sm text-slate-600">
         {{ t('inventory.stock_drawer.values.no_responsible_user') }}
       </p>
       <ul v-else class="list-disc space-y-1 pl-5 text-sm text-slate-700">
-        <li v-for="userLabel in props.responsibleUsers" :key="userLabel">
+        <li v-for="userLabel in responsibleUsers" :key="userLabel">
           {{ userLabel }}
         </li>
       </ul>

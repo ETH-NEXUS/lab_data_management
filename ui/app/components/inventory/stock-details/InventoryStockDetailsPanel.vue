@@ -64,7 +64,6 @@ const {
   sortedUsageEntries,
   linkedExperimentProjectLabels,
   sortedOrderEntries,
-  responsibleUsers,
   isMetadataExpanded,
   metadataFields,
   toggleMetadata,
@@ -124,7 +123,6 @@ const {
 
       <InventoryStockOrderSection
         :order-entries="sortedOrderEntries"
-        :responsible-users="responsibleUsers"
         :is-orders-loading="ordersQuery.isPending.value"
       />
 
