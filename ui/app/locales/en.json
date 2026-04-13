@@ -396,6 +396,269 @@
       "in_progress_description": "Recalculating library plate status. This can take some time."
     }
   },
+  "inventory": {
+    "page": {
+      "eyebrow": "Laboratory workspace",
+      "title": "Inventory",
+      "description": "Manage stock, devices, reserved materials, and activity from one place.",
+      "helper": "This landing page is a visual shell. Actions are placeholders and will be connected to real inventory modules next.",
+      "section_labels": {
+        "quick_actions": "Quick actions",
+        "inventory_views": "Inventory views"
+      },
+      "actions": {
+        "all_items": {
+          "title": "All items",
+          "description": "Browse all inventory entries."
+        },
+        "search": {
+          "title": "Search",
+          "description": "Find items by name, barcode, or tag."
+        },
+        "advanced_search": {
+          "title": "Advanced search",
+          "description": "Filter by status, dates, and metadata."
+        },
+        "order": {
+          "title": "Orders",
+          "description": "Open ordering and replenishment workflows."
+        },
+        "usages": {
+          "title": "Usages",
+          "description": "Review recorded material usage entries."
+        },
+        "add_new_item": {
+          "title": "Add new item",
+          "description": "Create a new inventory entry."
+        },
+        "favorite_items": {
+          "title": "Favorite items",
+          "description": "Open frequently used entries."
+        },
+        "expired_items": {
+          "title": "Expired items",
+          "description": "Review items past expiration date."
+        },
+        "devices": {
+          "title": "Devices",
+          "description": "Manage registered devices and equipment."
+        },
+        "recent_activities": {
+          "title": "Recent activities",
+          "description": "Inspect latest inventory changes."
+        },
+        "recently_linked_items": {
+          "title": "Recently linked items",
+          "description": "See recently connected records."
+        },
+        "reserved_items": {
+          "title": "Reserved items",
+          "description": "Track currently reserved stock."
+        },
+        "low_stock_items": {
+          "title": "Low stock items",
+          "description": "Review items that are below minimum quantity."
+        },
+        "archived_items": {
+          "title": "Archived items",
+          "description": "Access archived inventory records."
+        }
+      },
+      "placeholder_suffix": "to be implemented"
+    },
+    "stock_workspace": {
+      "title": "Inventory stock",
+      "description": "Operational overview optimized for quick scanning, low-stock checks, and physical lookup.",
+      "loading": "Loading inventory stock items...",
+      "empty": "No inventory stock items found.",
+      "error": "Failed to load inventory stock items."
+    },
+    "stock_table": {
+      "groups": {
+        "operational": "Operational",
+        "identity": "Identity",
+        "lifecycle": "Lifecycle"
+      },
+      "columns": {
+        "favorite": "Favorite",
+        "inventory_status": "Status",
+        "product_name": "Product name",
+        "quantity_with_stock_unit": "Quantity",
+        "minimum_quantity": "Minimum quantity",
+        "location": "Location",
+        "device_type": "Device type",
+        "item_type": "Item type",
+        "attributes": "Attributes",
+        "lot_number": "Lot number",
+        "expiry_date": "Expiry date",
+        "notes": "Notes"
+      },
+      "status_labels": {
+        "in_stock": "In stock",
+        "low": "Low stock"
+      },
+      "values": {
+        "yes": "Yes",
+        "no": "No",
+        "none": "—",
+        "no_notes": "No notes",
+        "unknown_location": "Unknown location"
+      }
+    },
+    "stock_drawer": {
+      "title": "Stock item details",
+      "subtitle": "Stock item #{id}",
+      "sections": {
+        "operational": "Operational overview",
+        "unit_conversion": "Unit conversion",
+        "material_identity": "Material identity",
+        "supplier": "Supplier and catalog",
+        "usage": "Usage",
+        "order": "Order information",
+        "metadata": "Metadata"
+      },
+      "fields": {
+        "product_name": "Product name",
+        "inventory_status": "Inventory status",
+        "quantity": "Quantity",
+        "minimum_quantity": "Minimum quantity",
+        "location": "Location",
+        "room": "Room",
+        "sector": "Sector",
+        "lot_number": "Lot number",
+        "expiry_date": "Expiry date",
+        "notes": "Notes",
+        "stock_unit": "Stock unit",
+        "base_unit": "Base unit",
+        "base_units_per_unit": "Base units per stock unit",
+        "device_type": "Device type",
+        "item_type": "Item type",
+        "attributes": "Attributes",
+        "capacity_value": "Capacity value",
+        "capacity_unit": "Capacity unit",
+        "description": "Description",
+        "manufacturer": "Manufacturer",
+        "vendor": "Vendor",
+        "manufacturer_catalog_number": "Manufacturer catalog number",
+        "vendor_catalog_number": "Vendor catalog number",
+        "brand": "Brand",
+        "default_cost": "Default cost",
+        "recent_usages": "Recent usages",
+        "linked_experiments_projects": "Linked experiments/projects",
+        "order_history": "Order history",
+        "responsible_user": "Responsible user",
+        "created_at": "Created at",
+        "updated_at": "Updated at",
+        "serial_number": "Serial number",
+        "order_number": "Order number",
+        "lifetime_days": "Lifetime (days)"
+      },
+      "values": {
+        "none": "—",
+        "no_notes": "No notes",
+        "no_attributes": "No attributes",
+        "no_usage": "No usage entries found.",
+        "no_linked_items": "No linked experiments or projects.",
+        "no_order_history": "No order history entries found.",
+        "no_responsible_user": "No responsible user available."
+      },
+      "metadata_toggle": {
+        "show": "Show metadata",
+        "hide": "Hide metadata"
+      },
+      "actions": {
+        "close": "Close details",
+        "adjust_stock": "Adjust stock",
+        "move_item": "Move item"
+      },
+      "move": {
+        "loading_rooms": "Loading rooms...",
+        "select_room": "Select room",
+        "select_room_first": "Select room first",
+        "select_sector": "Select sector",
+        "no_sectors_available": "No sectors available"
+      },
+      "record_usage": {
+        "stock_item": "Stock item: {label}",
+        "project": "Project",
+        "experiment_optional": "Experiment (optional)",
+        "quantity_used": "Quantity used",
+        "usage_unit": "Usage unit",
+        "select_project": "Select project",
+        "no_experiment": "No experiment",
+        "select_usage_unit": "Select usage unit"
+      },
+      "quick_adjust": {
+        "toasts": {
+          "quantity_required": "Quantity and minimum quantity are required",
+          "adjusted": "Stock adjusted",
+          "adjust_failed": "Failed to adjust stock"
+        }
+      }
+    },
+    "orders": {
+      "table": {
+        "columns": {
+          "product": "Product",
+          "date": "Date",
+          "amount": "Amount",
+          "unit": "Unit",
+          "status": "Status",
+          "ordered_by": "Ordered by",
+          "project": "Project",
+          "notes": "Notes"
+        },
+        "empty": "No orders found."
+      }
+    },
+    "usages": {
+      "workspace": {
+        "title": "Usages",
+        "description": "Review recorded material usages in a dedicated table workspace.",
+        "loading": "Loading recorded usages..."
+      },
+      "table": {
+        "columns": {
+          "product": "Product",
+          "used_at": "Used at",
+          "quantity": "Quantity",
+          "unit": "Unit",
+          "project": "Project",
+          "experiment": "Experiment",
+          "notes": "Notes"
+        },
+        "empty": "No usages found."
+      }
+    },
+    "add_item": {
+      "prefill": {
+        "title": "Prefill from order",
+        "order_label": "Order",
+        "prefill_button": "Prefill from order",
+        "select_options": {
+          "loading_orders": "Loading orders...",
+          "failed_orders": "Failed to load orders",
+          "select_order": "Select order",
+          "no_orders": "No orders available"
+        }
+      }
+    }
+  },
+  "table": {
+    "general": {
+      "search_placeholder": "Search table",
+      "rows": "{count} rows",
+      "clear_all": "Clear all",
+      "sort_asc": "Sort ascending",
+      "sort_desc": "Sort descending",
+      "clear_sort": "Clear sort",
+      "filter_options_placeholder": "Filter options",
+      "no_filter_options": "No matching options",
+      "apply_filter": "Apply filter",
+      "clear_filter": "Clear filter",
+      "no_rows": "No rows found."
+    }
+  },
   "title": {
     "status": "Status",
     "amount_dmso": "Amount / DMSO",

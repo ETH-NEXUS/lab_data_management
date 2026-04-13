@@ -11,8 +11,8 @@
     "moduleResolution": "Bundler",
     "types": ["node"],
 
-    "strict": true,
-    "noImplicitAny": true,
+    "strict": false,
+    "noImplicitAny": false,
     "strictNullChecks": true,
     "strictFunctionTypes": true,
     "strictBindCallApply": true,

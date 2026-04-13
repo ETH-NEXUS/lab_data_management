@@ -1,0 +1,91 @@
+{
+  "manufacturers": [
+    "Tecan",
+    "Integra",
+    "Eppendorf",
+    "Corning",
+    "Greiner bio-one",
+    "Beckman Coulter",
+    "HighRes Biosolutions"
+  ],
+  "brands": [
+    "Costar",
+    "Cellstar",
+    "Twin.tec",
+    "Sempercare",
+    "fisherbrand",
+    "oxo"
+  ],
+  "vendors": [
+    "Tecan",
+    "Witec",
+    "D-BIOL shop",
+    "Huberlab",
+    "Brack",
+    "Galaxus"
+  ],
+  "device_types": [
+    "Hand pipette",
+    "LiHa",
+    "MCA96",
+    "MCA384"
+  ],
+  "item_types": [
+    "tip box",
+    "tube",
+    "plate",
+    "reservoir",
+    "lid",
+    "seal",
+    "bottle",
+    "reagent",
+    "other",
+    "cap",
+    "syringe",
+    "labels",
+    "serological pipette",
+    "cell culture consumable",
+    "spare part",
+    "accessory"
+  ],
+  "material_attributes": [
+    "sterile",
+    "filtered",
+    "pure",
+    "conductive",
+    "wide bore",
+    "low retention",
+    "PCR clean",
+    "refill",
+    "single wrapped",
+    "individually wrapped",
+    "barcoded",
+    "culture treated",
+    "non-treated",
+    "graduated",
+    "non-filtered",
+    "non-sterile",
+    "RNase/DNase/protease/pyrogen free"
+  ],
+  "units_of_measure": [
+    "piece",
+    "box",
+    "bag",
+    "rack",
+    "blister",
+    "bottle",
+    "tip",
+    "tube",
+    "plate",
+    "lid",
+    "seal",
+    "roll",
+    "cassette",
+    "pack",
+    "glove",
+    "reservoir",
+    "cap",
+    "label",
+    "syringe"
+  ]
+}

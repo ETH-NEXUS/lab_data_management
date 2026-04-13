@@ -66,6 +66,7 @@ INSTALLED_APPS = [
     "harvest",
     "dbbackup",
     "problems",
+    "inventory"
 ]
 
 

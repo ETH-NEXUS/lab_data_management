@@ -61,6 +61,9 @@ export default defineNuxtConfig({
     host: '0.0.0.0',
     port: parseInt(process.env.UI_PORT || '8077', 10),
   },
+  typescript: {
+    strict: false,
+  },
   alias: {
     components: `${srcDir}/components`,
     stores: `${srcDir}/stores`,

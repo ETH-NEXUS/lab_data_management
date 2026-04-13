@@ -1,5 +1,5 @@
-@import "tailwindcss";
-@import "@nuxt/ui";
+@import 'tailwindcss';
+@import '@nuxt/ui';
 
 /*
   Global color tokens for the new neutral layout style.
@@ -37,11 +37,13 @@ body {
     border: 1px solid #dbe4ff;
     background: #ffffff;
     box-shadow: 0 20px 48px rgb(30 64 175 / 12%);
-    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    transition:
+      transform 0.2s ease,
+      box-shadow 0.2s ease;
   }
 
   .core-card::before {
-    content: "";
+    content: '';
     position: absolute;
     top: 0;
     left: 50%;
@@ -89,7 +91,9 @@ body {
     letter-spacing: 0.14em;
     text-transform: uppercase;
     color: #64748b;
-    transition: color 0.2s ease, border-color 0.2s ease;
+    transition:
+      color 0.2s ease,
+      border-color 0.2s ease;
   }
 
   .core-card:hover .core-card-tag {
@@ -133,6 +137,273 @@ body {
   }
 
   /*
+    Inventory page utility classes.
+
+    Accepted structure example:
+    {
+      shellClass: 'inventory-shell',
+      introClass: 'inventory-intro-card',
+      actionClass: 'inventory-action-card'
+    }
+
+    Returned visual behavior example:
+    - `inventory-shell`: airy page spacing with neutral background sections
+    - `inventory-intro-card`: top descriptive card aligned with core-card surfaces
+    - `inventory-action-card`: clickable action card with hover lift and accent bar
+  */
+  .inventory-shell {
+    position: relative;
+    padding-top: 3.5rem;
+    padding-bottom: 4rem;
+  }
+
+  .inventory-shell::before {
+    content: '';
+    position: absolute;
+    inset: 2rem 0 2rem 0;
+    z-index: -1;
+    background:
+      radial-gradient(circle at top left, rgb(147 197 253 / 25%) 0%, transparent 55%),
+      radial-gradient(circle at bottom right, rgb(191 219 254 / 22%) 0%, transparent 58%);
+    pointer-events: none;
+  }
+
+  .inventory-intro-card {
+    border-radius: 1.5rem;
+    border: 1px solid rgb(219 228 255);
+    background: linear-gradient(180deg, rgb(255 255 255) 0%, rgb(248 250 255) 100%);
+    box-shadow: 0 18px 44px rgb(15 23 42 / 7%);
+  }
+
+  .inventory-section-title {
+    font-size: 0.75rem;
+    font-weight: 700;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: #64748b;
+  }
+
+  .inventory-action-card {
+    position: relative;
+    width: 100%;
+    border-radius: 1.25rem;
+    border: 1px solid rgb(219 228 255);
+    background: #ffffff;
+    padding: 1rem 1rem 1.1rem;
+    text-align: left;
+    box-shadow: 0 14px 30px rgb(15 23 42 / 7%);
+    transition:
+      transform 0.18s ease,
+      box-shadow 0.18s ease,
+      border-color 0.18s ease;
+  }
+
+  .inventory-action-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 1rem;
+    right: 1rem;
+    height: 2px;
+    border-radius: 9999px;
+    background: #93c5fd;
+    transition: background-color 0.18s ease;
+  }
+
+  .inventory-action-card:hover {
+    transform: translateY(-2px);
+    border-color: rgb(186 230 253);
+    box-shadow: 0 18px 34px rgb(30 64 175 / 14%);
+  }
+
+  .inventory-action-card:hover::before {
+    background: #60a5fa;
+  }
+
+  .inventory-action-card-title {
+    font-size: 1rem;
+    line-height: 1.4;
+    font-weight: 700;
+    color: #0f172a;
+  }
+
+  .inventory-action-card-description {
+    margin-top: 0.38rem;
+    font-size: 0.82rem;
+    line-height: 1.45;
+    color: #64748b;
+  }
+
+  .inventory-quick-action-card {
+    min-height: 8.75rem;
+  }
+
+  .inventory-view-action-card {
+    min-height: 10.5rem;
+  }
+
+  .inventory-icon-chip {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    height: 2.75rem;
+    width: 2.75rem;
+    border-radius: 9999px;
+    border: 1px solid rgb(191 219 254);
+    background: linear-gradient(180deg, #eff6ff 0%, #dbeafe 100%);
+    color: #1d4ed8;
+    box-shadow: inset 0 0 0 1px rgb(255 255 255 / 62%);
+  }
+
+  .inventory-compact-title {
+    font-size: 1.65rem;
+    font-weight: 600;
+    line-height: 1.2;
+    color: #0f172a;
+    letter-spacing: -0.01em;
+  }
+
+  .inventory-toolbar-card {
+    display: inline-flex;
+    width: 100%;
+    min-height: 3.5rem;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
+    border-radius: 0.95rem;
+    border: 1px solid rgb(219 228 255);
+    background: #ffffff;
+    padding: 0.8rem 0.95rem;
+    font-size: 1rem;
+    font-weight: 600;
+    color: #0f172a;
+    box-shadow: 0 12px 24px rgb(15 23 42 / 8%);
+    transition:
+      transform 0.18s ease,
+      box-shadow 0.18s ease,
+      border-color 0.18s ease;
+  }
+
+  .inventory-toolbar-card:hover {
+    transform: translateY(-1px);
+    border-color: rgb(186 230 253);
+    box-shadow: 0 16px 30px rgb(30 64 175 / 12%);
+  }
+
+  .inventory-toolbar-card--primary {
+    border-color: var(--app-accent);
+    background: var(--app-accent);
+    color: #ffffff;
+  }
+
+  .inventory-toolbar-card--primary:hover {
+    border-color: var(--app-accent-hover);
+    background: var(--app-accent-hover);
+  }
+
+  .inventory-side-card {
+    display: inline-flex;
+    width: 100%;
+    min-width: 11rem;
+    align-items: center;
+    gap: 0.55rem;
+    border-radius: 0.95rem;
+    border: 1px solid rgb(219 228 255);
+    background: #ffffff;
+    padding: 0.55rem 0.7rem;
+    box-shadow: 0 12px 24px rgb(15 23 42 / 8%);
+    transition:
+      transform 0.18s ease,
+      box-shadow 0.18s ease,
+      border-color 0.18s ease;
+  }
+
+  .inventory-side-card:hover {
+    transform: translateY(-1px);
+    border-color: rgb(186 230 253);
+    box-shadow: 0 16px 30px rgb(30 64 175 / 12%);
+  }
+
+  .inventory-side-card-icon {
+    display: inline-flex;
+    height: 2.1rem;
+    width: 2.1rem;
+    align-items: center;
+    justify-content: center;
+    border-radius: 9999px;
+    border: 1px solid rgb(191 219 254);
+    background: linear-gradient(180deg, #eff6ff 0%, #dbeafe 100%);
+  }
+
+  /*
+    Worksheet table primitives used by modular data-table components.
+
+    Accepted shape example:
+    {
+      frozenColumns: ['favorite', 'inventory_status', 'product_name'],
+      semanticGroups: { identity: ['device_type'], lifecycle: ['expiry_date'] }
+    }
+
+    Returned visual behavior example:
+    - frozen columns stay white and sticky on horizontal scroll
+    - identity group uses very light blue tint
+    - lifecycle group uses very light amber tint
+  */
+  .worksheet-table-scroll {
+    position: relative;
+    scrollbar-color: #94a3b8 #e2e8f0;
+  }
+
+  .worksheet-table-grid {
+    border-collapse: separate;
+    border-spacing: 0;
+  }
+
+  .worksheet-header-cell,
+  .worksheet-cell {
+    position: relative;
+    vertical-align: top;
+    border-right: 1px solid rgb(226 232 240);
+  }
+
+  .worksheet-header-cell:last-child,
+  .worksheet-cell:last-child {
+    border-right: 0;
+  }
+
+  .worksheet-sticky-header,
+  .worksheet-sticky-cell {
+    background-clip: padding-box;
+  }
+
+  .worksheet-sticky-header::after,
+  .worksheet-sticky-cell::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    right: -1px;
+    width: 1px;
+    height: 100%;
+    background: rgb(203 213 225 / 80%);
+  }
+
+  .worksheet-header-group-identity {
+    background: rgb(238 248 255);
+  }
+
+  .worksheet-cell-group-identity {
+    background: rgb(247 251 255);
+  }
+
+  .worksheet-header-group-lifecycle {
+    background: rgb(255 246 232);
+  }
+
+  .worksheet-cell-group-lifecycle {
+    background: rgb(255 251 242);
+  }
+
+  /*
     The nav pattern uses a thematic medical/lab SVG tile.
     Layer order example:
     - `layer[0] = svg pattern`
@@ -142,9 +413,13 @@ body {
     background-image:
       url('../cta-lines2.svg'),
       linear-gradient(to right, rgb(37 99 235 / 97%), rgb(59 130 246 / 97%), rgb(96 165 250 / 97%));
-    background-position: left top, center;
+    background-position:
+      left top,
+      center;
     background-repeat: repeat-x, no-repeat;
-    background-size: 280px 96px, 100% 100%;
+    background-size:
+      280px 96px,
+      100% 100%;
   }
 
   @media (min-width: 1024px) {

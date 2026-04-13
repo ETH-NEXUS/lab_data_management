@@ -52,6 +52,7 @@ urlpatterns = [
     path("api/auth/login/", LoginView.as_view(), name="login"),
     path("api/auth/logout/", LogoutView.as_view(), name="logout"),
     path("api/", include(router.urls)),
+    path("api/", include("inventory.urls")),
     path("api/", include(user_router.urls)),
     path("api/mapping_preview/", MappingPreviewView.as_view()),
     path("api/version/", VersionView.as_view()),
