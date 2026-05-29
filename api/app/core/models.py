@@ -119,7 +119,7 @@ class PlateDimension(models.Model):
 class Plate(TimeTrackedModel):
     related_name = "plates"
     barcode = models.CharField(
-        max_length=50,
+        max_length=300,
         unique=True,
         db_index=True,
         validators=[
