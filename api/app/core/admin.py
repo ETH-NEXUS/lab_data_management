@@ -1,4 +1,4 @@
-from django.contrib import admin
+from django.contrib import admin, messages
 from django.utils.html import mark_safe
 
 from .models import (
@@ -18,6 +18,22 @@ from .models import (
     Threshold,
     PlateInfo,
 )
+from .utils import copy_library_plates
+
+
+@admin.action(description="Copy selected plates")
+def copy_selected_plates(modeladmin, request, queryset):
+    try:
+        copied_plates = copy_library_plates(queryset)
+    except ValueError as error:
+        modeladmin.message_user(request, str(error), level=messages.ERROR)
+        return
+
+    modeladmin.message_user(
+        request,
+        f"Copied {len(copied_plates)} plate(s).",
+        level=messages.SUCCESS,
+    )
 
 
 @admin.register(Plate)
@@ -41,6 +57,7 @@ class PlateAdmin(admin.ModelAdmin):
         "template",
         "use_as_template_to_select",
     )
+    actions = (copy_selected_plates,)
 
     def get_wells(self, plate: Plate):
         out = "<table><tr>"
