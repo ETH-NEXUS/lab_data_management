@@ -180,7 +180,7 @@ const dropdownItems = computed(() => [
     <div class="border-b border-blue-400/70 bg-blue-600">
       <div class="mx-auto flex h-8 w-full items-center justify-center px-3">
         <UIcon name="i-heroicons-sparkles" class="mr-2 h-3.5 w-3.5 text-blue-50" />
-        <p class="text-[11px] font-semibold tracking-[0.12em] text-blue-50 uppercase">Refresh to sync latest data.</p>
+        <p class="text-[11px] font-semibold tracking-[0.12em] text-blue-50 uppercase">LDM</p>
       </div>
     </div>
 
