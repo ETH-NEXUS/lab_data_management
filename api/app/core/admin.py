@@ -1,4 +1,7 @@
+from django import forms
 from django.contrib import admin, messages
+from django.contrib.admin import helpers
+from django.template.response import TemplateResponse
 from django.utils.html import mark_safe
 
 from .models import (
@@ -21,19 +24,46 @@ from .models import (
 from .utils import copy_library_plates
 
 
+class CopySelectedPlatesForm(forms.Form):
+    target_volume = forms.FloatField(label="Target volume (nL)")
+
+    def clean_target_volume(self):
+        target_volume = self.cleaned_data["target_volume"]
+        if target_volume <= 0:
+            raise forms.ValidationError("Target volume must be greater than 0.")
+        return target_volume
+
+
 @admin.action(description="Copy selected plates")
 def copy_selected_plates(modeladmin, request, queryset):
-    try:
-        copied_plates = copy_library_plates(queryset)
-    except ValueError as error:
-        modeladmin.message_user(request, str(error), level=messages.ERROR)
-        return
+    if "apply" in request.POST:
+        form = CopySelectedPlatesForm(request.POST)
+        if form.is_valid():
+            target_volume = form.cleaned_data["target_volume"]
+            try:
+                copied_plates = copy_library_plates(queryset, target_volume)
+            except ValueError as error:
+                form.add_error(None, str(error))
+            else:
+                modeladmin.message_user(
+                    request,
+                    f"Copied {len(copied_plates)} plate(s) with {target_volume} nL per well.",
+                    level=messages.SUCCESS,
+                )
+                return None
+    else:
+        form = CopySelectedPlatesForm()
 
-    modeladmin.message_user(
-        request,
-        f"Copied {len(copied_plates)} plate(s).",
-        level=messages.SUCCESS,
-    )
+    context = {
+        **modeladmin.admin_site.each_context(request),
+        "action_checkbox_name": helpers.ACTION_CHECKBOX_NAME,
+        "form": form,
+        "opts": modeladmin.model._meta,
+        "plates": queryset,
+        "select_across": request.POST.get("select_across", "0"),
+        "title": "Copy selected plates",
+    }
+    return TemplateResponse(request, "admin/core/copy_selected_plates.html", context)
 
 
 @admin.register(Plate)
