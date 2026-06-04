@@ -1,0 +1,31 @@
+{% extends "admin/base_site.html" %}
+
+{% block content %}
+  <h1>{{ title }}</h1>
+
+  <p>Please enter the volume that should be copied into each new library well.</p>
+
+  <form method="post">
+    {% csrf_token %}
+    {{ form.as_p }}
+
+    {% for plate in plates %}
+      <input type="hidden" name="{{ action_checkbox_name }}" value="{{ plate.pk }}">
+    {% endfor %}
+
+    <input type="hidden" name="action" value="copy_selected_plates">
+    <input type="hidden" name="apply" value="1">
+    <input type="hidden" name="select_across" value="{{ select_across }}">
+
+    <h2>Selected plates</h2>
+    <ul>
+      {% for plate in plates %}
+        <li>{{ plate.barcode }}</li>
+      {% endfor %}
+    </ul>
+
+    <div class="submit-row">
+      <input type="submit" value="Copy plates">
+    </div>
+  </form>
+{% endblock %}
