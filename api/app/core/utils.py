@@ -1,7 +1,7 @@
 from collections.abc import Iterable
+from django.conf import settings
 from django.db import transaction
-from django.utils import timezone
-from .models import Plate, PlateDetail, Well, WellCompound, WellDetail
+from .models import Plate, PlateDetail, Well, WellCompound, WellDetail, WellWithdrawal
 
 
 def build_copied_plate_barcode(source_barcode: str) -> str:
@@ -26,9 +26,37 @@ def build_copied_plate_barcode(source_barcode: str) -> str:
         barcode = f"{barcode}{copy_suffix}"
 
 
-def copy_library_plates(source_plates: Iterable[Plate]) -> list[Plate]:
+def build_copy_withdrawal_metadata(source_well: Well, target_volume: float) -> dict:
     """
-    Copy library plates without measurements or transfer history.
+    Build withdrawal metadata for library plate copies.
+    Example input:
+    {"source_amount": 100, "target_volume": 20}
+    Example output:
+    {"current_amount": 80, "current_dmso": 100}
+    """
+    source_current_info = source_well.current_info
+    remaining_amount = round(
+        source_well.amount - target_volume,
+        settings.FLOAT_PRECISION,
+    )
+
+    if source_current_info and source_current_info["current_dmso"] is not None:
+        current_dmso = source_current_info["current_dmso"]
+    else:
+        current_dmso = 100
+
+    return {
+        "current_amount": max(remaining_amount, 0),
+        "current_dmso": current_dmso,
+    }
+
+
+def copy_library_plates(
+    source_plates: Iterable[Plate],
+    target_volume: float,
+) -> list[Plate]:
+    """
+    Copy library plates and create donor links back to the source wells.
     Copied data example:
     {
         "plate": {"barcode": "LIB_001", "library_id": 7},
@@ -38,6 +66,9 @@ def copy_library_plates(source_plates: Iterable[Plate]) -> list[Plate]:
     Returned data example:
     [{"barcode": "LIB_001_COPY_29.05.26", "library_id": 7}]
     """
+    if target_volume <= 0:
+        raise ValueError("Target volume must be greater than 0.")
+
     plates = list(source_plates)
     for source_plate in plates:
         if source_plate.library_id is None or source_plate.is_control_plate:
@@ -55,9 +86,12 @@ def copy_library_plates(source_plates: Iterable[Plate]) -> list[Plate]:
                 use_as_template_to_select=source_plate.use_as_template_to_select,
             )
 
-            for source_well in source_plate.wells.select_related(
-                "sample", "type"
-            ).prefetch_related("well_compounds__compound").order_by("position"):
+            source_wells = (
+                source_plate.wells.select_related("sample", "type")
+                .prefetch_related("well_compounds__compound")
+                .order_by("position")
+            )
+            for source_well in source_wells:
                 copied_well = Well.objects.create(
                     plate=copied_plate,
                     position=source_well.position,
@@ -66,12 +100,46 @@ def copy_library_plates(source_plates: Iterable[Plate]) -> list[Plate]:
                     status=source_well.status,
                     is_invalid=source_well.is_invalid,
                 )
-                for source_well_compound in source_well.well_compounds.all():
+
+                source_well_compounds = list(source_well.well_compounds.all())
+                if not source_well_compounds:
+                    continue
+
+                if source_well.amount < target_volume:
+                    raise ValueError(
+                        f"Well {source_well.hr_position} on plate {source_plate.barcode} "
+                        f"does not have enough volume for {target_volume} nL."
+                    )
+
+                source_total_amount = source_well.initial_amount
+                for source_well_compound in source_well_compounds:
+                    if source_total_amount > 0:
+                        copied_amount = round(
+                            target_volume
+                            * source_well_compound.amount
+                            / source_total_amount,
+                            settings.FLOAT_PRECISION,
+                        )
+                    else:
+                        copied_amount = 0
+
                     WellCompound.objects.create(
                         well=copied_well,
                         compound=source_well_compound.compound,
-                        amount=source_well_compound.amount,
+                        amount=copied_amount,
                     )
+
+                withdrawal_metadata = build_copy_withdrawal_metadata(
+                    source_well,
+                    target_volume,
+                )
+                WellWithdrawal.objects.create(
+                    well=source_well,
+                    target_well=copied_well,
+                    amount=target_volume,
+                    current_amount=withdrawal_metadata["current_amount"],
+                    current_dmso=withdrawal_metadata["current_dmso"],
+                )
 
             copied_plates.append(copied_plate)
 
