@@ -26,17 +26,17 @@ def build_copied_plate_barcode(source_barcode: str) -> str:
         barcode = f"{barcode}{copy_suffix}"
 
 
-def build_copy_withdrawal_metadata(source_well: Well, target_volume: float) -> dict:
+def build_copy_withdrawal_metadata(source_well: Well, withdrawal_volume: float) -> dict:
     """
     Build withdrawal metadata for library plate copies.
     Example input:
-    {"source_amount": 100, "target_volume": 20}
+    {"source_amount": 100, "withdrawal_volume": 20}
     Example output:
     {"current_amount": 80, "current_dmso": 100}
     """
     source_current_info = source_well.current_info
     remaining_amount = round(
-        source_well.amount - target_volume,
+        source_well.amount - withdrawal_volume,
         settings.FLOAT_PRECISION,
     )
 
@@ -49,6 +49,45 @@ def build_copy_withdrawal_metadata(source_well: Well, target_volume: float) -> d
         "current_amount": max(remaining_amount, 0),
         "current_dmso": current_dmso,
     }
+
+
+def get_copied_compound_amounts(
+    source_well_compounds: list[WellCompound],
+    source_total_amount: float,
+    target_volume: float,
+) -> list[tuple[WellCompound, float]]:
+    """
+    Calculate copied compound amounts for a library plate copy.
+    Example input:
+    {"source_total_amount": 0, "target_volume": 20, "compound_count": 1}
+    Example output:
+    [{"compound": "source compound", "amount": 20}]
+    """
+    if source_total_amount > 0:
+        copied_amounts = []
+        for source_well_compound in source_well_compounds:
+            source_amount = source_well_compound.amount or 0
+            copied_amount = round(
+                target_volume * source_amount / source_total_amount,
+                settings.FLOAT_PRECISION,
+            )
+            copied_amounts.append((source_well_compound, copied_amount))
+        return copied_amounts
+
+    copied_amounts = []
+    remaining_volume = target_volume
+    compound_count = len(source_well_compounds)
+    for index, source_well_compound in enumerate(source_well_compounds):
+        if index == compound_count - 1:
+            copied_amount = round(remaining_volume, settings.FLOAT_PRECISION)
+        else:
+            copied_amount = round(
+                target_volume / compound_count,
+                settings.FLOAT_PRECISION,
+            )
+            remaining_volume -= copied_amount
+        copied_amounts.append((source_well_compound, copied_amount))
+    return copied_amounts
 
 
 def copy_library_plates(
@@ -105,38 +144,36 @@ def copy_library_plates(
                 if not source_well_compounds:
                     continue
 
-                if source_well.amount < target_volume:
+                source_total_amount = source_well.initial_amount
+                has_source_volume = source_total_amount > 0
+
+                if has_source_volume and source_well.amount < target_volume:
                     raise ValueError(
                         f"Well {source_well.hr_position} on plate {source_plate.barcode} "
                         f"does not have enough volume for {target_volume} nL."
                     )
 
-                source_total_amount = source_well.initial_amount
-                for source_well_compound in source_well_compounds:
-                    if source_total_amount > 0:
-                        copied_amount = round(
-                            target_volume
-                            * source_well_compound.amount
-                            / source_total_amount,
-                            settings.FLOAT_PRECISION,
-                        )
-                    else:
-                        copied_amount = 0
-
+                copied_amounts = get_copied_compound_amounts(
+                    source_well_compounds,
+                    source_total_amount,
+                    target_volume,
+                )
+                for source_well_compound, copied_amount in copied_amounts:
                     WellCompound.objects.create(
                         well=copied_well,
                         compound=source_well_compound.compound,
                         amount=copied_amount,
                     )
 
+                withdrawal_volume = target_volume if has_source_volume else 0
                 withdrawal_metadata = build_copy_withdrawal_metadata(
                     source_well,
-                    target_volume,
+                    withdrawal_volume,
                 )
                 WellWithdrawal.objects.create(
                     well=source_well,
                     target_well=copied_well,
-                    amount=target_volume,
+                    amount=withdrawal_volume,
                     current_amount=withdrawal_metadata["current_amount"],
                     current_dmso=withdrawal_metadata["current_dmso"],
                 )
