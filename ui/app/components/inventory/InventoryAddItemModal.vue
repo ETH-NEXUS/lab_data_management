@@ -25,6 +25,8 @@ const {
   selectedOrderId,
   selectedItemTypeId,
   selectedMaterialId,
+  selectedRoomId,
+  roomOptions,
   supplierDetails,
   filteredMaterials,
   orderPrefillOptions,
@@ -73,6 +75,7 @@ const itemTypeOptions = computed<Array<{ id: number; label: string }>>(() => {
 
 const hasSelectedItemType = computed<boolean>(() => selectedItemTypeId.value > 0)
 const hasSelectedMaterial = computed<boolean>(() => selectedMaterialId.value > 0)
+const hasSelectedRoom = computed<boolean>(() => selectedRoomId.value > 0)
 </script>
 
 <template>
@@ -201,15 +204,39 @@ const hasSelectedMaterial = computed<boolean>(() => selectedMaterialId.value > 0
             </div>
 
             <div class="space-y-1">
-              <label class="block text-sm font-medium text-slate-700">Sector *</label>
+              <label class="block text-sm font-medium text-slate-700">Room *</label>
               <select
-                v-model="formState.sectorId"
+                v-model="formState.roomId"
                 class="w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700"
                 :disabled="lookupsQuery.isPending.value"
               >
                 <option value="">
                   {{
                     lookupsQuery.isPending.value
+                      ? 'Loading rooms...'
+                      : roomOptions.length > 0
+                        ? 'Select room'
+                        : 'No rooms available'
+                  }}
+                </option>
+                <option v-for="roomOption in roomOptions" :key="roomOption.id" :value="String(roomOption.id)">
+                  {{ roomOption.label }}
+                </option>
+              </select>
+            </div>
+
+            <div class="space-y-1">
+              <label class="block text-sm font-medium text-slate-700">Sector *</label>
+              <select
+                v-model="formState.sectorId"
+                class="w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700"
+                :disabled="lookupsQuery.isPending.value || !hasSelectedRoom"
+              >
+                <option value="">
+                  {{
+                    !hasSelectedRoom
+                      ? 'Select room first'
+                      : lookupsQuery.isPending.value
                       ? 'Loading sectors...'
                       : sectorsErrorMessage
                         ? 'Failed to load sectors'
