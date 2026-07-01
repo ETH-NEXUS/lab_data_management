@@ -11,6 +11,7 @@ from inventory.dynamic_models import (
     Room,
     Sector,
     InventoryStock,
+    InventoryStockTablePreference,
     Order,
     MaterialUsage,
 )
@@ -344,6 +345,31 @@ class OrderDetailSerializer(serializers.ModelSerializer):
 
     def get_status_label(self, obj):
         return obj.get_status_display()
+
+
+class InventoryStockTablePreferenceSerializer(serializers.ModelSerializer):
+    """
+    Stores one authenticated user's saved stock table state.
+    """
+
+    class Meta:
+        model = InventoryStockTablePreference
+        fields = (
+            "id",
+            "table_key",
+            "preset",
+            "sorting",
+            "column_filters",
+            "column_order",
+            "column_visibility",
+            "created_at",
+            "updated_at",
+        )
+        read_only_fields = (
+            "id",
+            "created_at",
+            "updated_at",
+        )
 
 
 class MaterialUsageListSerializer(serializers.ModelSerializer):
