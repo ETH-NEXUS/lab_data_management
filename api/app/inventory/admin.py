@@ -18,6 +18,7 @@ from .static_models import (
 )
 from .dynamic_models import (
     InventoryStock,
+    InventoryStockTablePreference,
     MaterialUsage,
     Order,
     Room,
@@ -751,3 +752,34 @@ class MaterialUsageAdmin(admin.ModelAdmin):
     @admin.display(description="Qty in base units")
     def quantity_used_in_base_units_display(self, obj):
         return obj.quantity_used_in_base_units
+
+
+# =========================================================
+# Table preference admin
+# =========================================================
+
+@admin.register(InventoryStockTablePreference)
+class InventoryStockTablePreferenceAdmin(admin.ModelAdmin):
+    list_display = (
+        "user",
+        "table_key",
+        "preset",
+        "updated_at",
+    )
+    list_filter = (
+        "table_key",
+        "preset",
+        "updated_at",
+    )
+    search_fields = (
+        "user__username",
+        "user__first_name",
+        "user__last_name",
+        "user__email",
+    )
+    autocomplete_fields = ("user",)
+    readonly_fields = (
+        "created_at",
+        "updated_at",
+    )
+    list_per_page = 100
