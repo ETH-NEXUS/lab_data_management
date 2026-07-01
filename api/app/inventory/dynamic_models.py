@@ -389,3 +389,91 @@ class MaterialUsage(models.Model):
         - 2 boxes * 96 tips per box = 192 tips
         """
         return self.quantity_used * self.usage_unit.base_units_per_unit
+
+
+class InventoryStockTablePreference(models.Model):
+    """
+    Stores one user's saved inventory stock table state.
+
+    This supports shared-computer workflows where browser-local storage
+    is not sufficient because multiple users log in on the same machine.
+
+    The JSON fields intentionally store UI state as-is so the frontend can
+    restore the table without lossy transformations.
+
+    Example stored state:
+    - preset = "favorite"
+    - sorting = [{"id": "inventoryStatus", "desc": false}]
+    - column_filters = [{"id": "itemType", "value": ["tip box"]}]
+    - column_order = ["productName", "inventoryStatus", "location"]
+    - column_visibility = {"notes": false, "expiryDate": true}
+    """
+
+    TABLE_KEY_INVENTORY_STOCK = "inventory_stock"
+
+    TABLE_KEY_CHOICES = [
+        (TABLE_KEY_INVENTORY_STOCK, "Inventory stock"),
+    ]
+
+    user = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name="inventory_stock_table_preferences",
+        help_text="Authenticated user who owns this saved table state.",
+    )
+
+    table_key = models.CharField(
+        max_length=100,
+        choices=TABLE_KEY_CHOICES,
+        default=TABLE_KEY_INVENTORY_STOCK,
+        help_text="Identifies which table this preference record belongs to.",
+    )
+
+    preset = models.CharField(
+        max_length=50,
+        default="all",
+        help_text="Saved stock preset, e.g. all, favorite, low_stock, or expired.",
+    )
+
+    sorting = models.JSONField(
+        default=list,
+        blank=True,
+        help_text="Saved TanStack sorting state for the stock table.",
+    )
+
+    column_filters = models.JSONField(
+        default=list,
+        blank=True,
+        help_text="Saved TanStack column filter state for the stock table.",
+    )
+
+    column_order = models.JSONField(
+        default=list,
+        blank=True,
+        help_text="Saved visible column order for the stock table.",
+    )
+
+    column_visibility = models.JSONField(
+        default=dict,
+        blank=True,
+        help_text="Saved visible/hidden column state keyed by column id.",
+    )
+
+    created_at = models.DateTimeField(
+        auto_now_add=True,
+        help_text="When this preference record was created.",
+    )
+
+    updated_at = models.DateTimeField(
+        auto_now=True,
+        help_text="When this preference record was last updated.",
+    )
+
+    class Meta:
+        ordering = ["user_id", "table_key"]
+        unique_together = ("user", "table_key")
+        verbose_name = "Inventory stock table preference"
+        verbose_name_plural = "Inventory stock table preferences"
+
+    def __str__(self):
+        return f"{self.user} / {self.table_key}"
