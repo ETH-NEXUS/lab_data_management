@@ -25,6 +25,7 @@ const {
   selectedOrderId,
   selectedItemTypeId,
   selectedMaterialId,
+  supplierDetails,
   filteredMaterials,
   orderPrefillOptions,
   sectorOptions,
@@ -71,6 +72,7 @@ const itemTypeOptions = computed<Array<{ id: number; label: string }>>(() => {
 })
 
 const hasSelectedItemType = computed<boolean>(() => selectedItemTypeId.value > 0)
+const hasSelectedMaterial = computed<boolean>(() => selectedMaterialId.value > 0)
 </script>
 
 <template>
@@ -223,6 +225,39 @@ const hasSelectedItemType = computed<boolean>(() => selectedItemTypeId.value > 0
               <p v-if="sectorsErrorMessage" class="text-xs text-red-600">
                 {{ sectorsErrorMessage }}
               </p>
+            </div>
+
+            <div class="space-y-2 sm:col-span-2">
+              <p class="text-sm font-medium text-slate-700">Supplier and catalog</p>
+              <div class="grid gap-3 rounded-lg border border-slate-200 bg-slate-50 p-3 sm:grid-cols-2">
+                <div class="space-y-1">
+                  <p class="text-xs font-medium uppercase tracking-wide text-slate-500">Manufacturer</p>
+                  <p class="text-sm text-slate-700">
+                    {{ hasSelectedMaterial ? (supplierDetails.manufacturer || '—') : 'Select material first' }}
+                  </p>
+                </div>
+
+                <div class="space-y-1">
+                  <p class="text-xs font-medium uppercase tracking-wide text-slate-500">Supplier</p>
+                  <p class="text-sm text-slate-700">
+                    {{ hasSelectedMaterial ? (supplierDetails.vendor || '—') : 'Select material first' }}
+                  </p>
+                </div>
+
+                <div class="space-y-1">
+                  <p class="text-xs font-medium uppercase tracking-wide text-slate-500">Manufacturer catalog number</p>
+                  <p class="text-sm text-slate-700">
+                    {{ hasSelectedMaterial ? (supplierDetails.manufacturerCatalogNumber || '—') : 'Select material first' }}
+                  </p>
+                </div>
+
+                <div class="space-y-1">
+                  <p class="text-xs font-medium uppercase tracking-wide text-slate-500">Supplier catalog number</p>
+                  <p class="text-sm text-slate-700">
+                    {{ hasSelectedMaterial ? (supplierDetails.vendorCatalogNumber || '—') : 'Select material first' }}
+                  </p>
+                </div>
+              </div>
             </div>
 
             <div class="space-y-1">
