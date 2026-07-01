@@ -6,6 +6,7 @@ import { requestApiData } from '~/utils/apiRequests'
 import {
   INVENTORY_STOCK_TABLE_PREFERENCES_ENDPOINT,
   INVENTORY_UPDATE_STOCK_TABLE_PREFERENCE_ERROR_MESSAGE,
+  type InventoryStockPreset,
   type InventoryStockTablePreference,
 } from '~/types/inventory'
 
@@ -19,6 +20,7 @@ export const useInventoryStockTablePreferenceStore = defineStore('inventoryStock
   const preferenceQuery = useInventoryStockTablePreferenceQuery()
   const isSavingPreference = ref(false)
 
+  const presetState = ref<InventoryStockPreset>('all')
   const sortingState = ref<SortingState>([])
   const globalFilterState = ref('')
   const columnFiltersState = ref<ColumnFiltersState>([])
@@ -32,6 +34,7 @@ export const useInventoryStockTablePreferenceStore = defineStore('inventoryStock
   watch(
     () => preference.value,
     (nextPreference) => {
+      presetState.value = nextPreference?.preset ?? 'all'
       sortingState.value = nextPreference?.sorting ?? []
       globalFilterState.value = ''
       columnFiltersState.value = nextPreference?.column_filters ?? []
@@ -62,6 +65,11 @@ export const useInventoryStockTablePreferenceStore = defineStore('inventoryStock
     await savePreference({ sorting: nextSortingState })
   }
 
+  const updatePresetState = async (nextPresetState: InventoryStockPreset): Promise<void> => {
+    presetState.value = nextPresetState
+    await savePreference({ preset: nextPresetState })
+  }
+
   const updateGlobalFilterState = async (nextGlobalFilterState: string): Promise<void> => {
     globalFilterState.value = nextGlobalFilterState
   }
@@ -85,11 +93,13 @@ export const useInventoryStockTablePreferenceStore = defineStore('inventoryStock
     preferenceQuery,
     preference,
     isSavingPreference,
+    presetState,
     sortingState,
     globalFilterState,
     columnFiltersState,
     columnOrderState,
     columnVisibilityState,
+    updatePresetState,
     updateSortingState,
     updateGlobalFilterState,
     updateColumnFiltersState,

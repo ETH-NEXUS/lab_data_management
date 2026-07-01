@@ -4,17 +4,13 @@ import InventoryStockDetailsPanel from '~/components/inventory/stock-details/Inv
 import InventoryStockTable from '~/components/inventory/InventoryStockTable.vue'
 import { useInventoryStocksQuery } from '~/composables/inventory/useInventoryStockQuery'
 import { useInventoryStockTablePreferenceStore } from '~/stores/inventory/InventoryStockTablePreferenceStore'
-import type { InventoryStockListItem } from '~/types/inventory'
-
-type StockPreset = 'all' | 'favorite' | 'low_stock' | 'expired'
+import type { InventoryStockListItem, InventoryStockPreset } from '~/types/inventory'
 
 type Props = {
-  preset?: StockPreset
+  preset?: InventoryStockPreset
 }
 
-const props = withDefaults(defineProps<Props>(), {
-  preset: 'all',
-})
+const props = defineProps<Props>()
 
 const { t } = useI18n()
 
@@ -24,6 +20,9 @@ const stockTablePreferenceStore = useInventoryStockTablePreferenceStore()
 const selectedStockId = ref<number | null>(null)
 
 const stocks = computed<InventoryStockListItem[]>(() => stocksQuery.data.value ?? [])
+const effectivePreset = computed<InventoryStockPreset>(() => {
+  return props.preset ?? stockTablePreferenceStore.presetState
+})
 
 /**
  * Applies one preset filter on top of the already-loaded full stocks list.
@@ -36,15 +35,15 @@ const stocks = computed<InventoryStockListItem[]>(() => stocksQuery.data.value ?
  * - `[{ id: 4, is_favorite: true, ... }, { id: 12, is_favorite: true, ... }]`
  */
 const filteredStocks = computed<InventoryStockListItem[]>(() => {
-  if (props.preset === 'favorite') {
+  if (effectivePreset.value === 'favorite') {
     return stocks.value.filter((stock) => stock.is_favorite)
   }
 
-  if (props.preset === 'low_stock') {
+  if (effectivePreset.value === 'low_stock') {
     return stocks.value.filter((stock) => stock.is_low_stock || stock.inventory_status === 'low')
   }
 
-  if (props.preset === 'expired') {
+  if (effectivePreset.value === 'expired') {
     return stocks.value.filter((stock) => stock.is_expired)
   }
 
@@ -74,15 +73,15 @@ const stocksErrorMessage = computed<string | null>(() => {
 })
 
 const workspaceTitle = computed<string>(() => {
-  if (props.preset === 'favorite') {
+  if (effectivePreset.value === 'favorite') {
     return t('inventory.page.actions.favorite_items.title')
   }
 
-  if (props.preset === 'low_stock') {
+  if (effectivePreset.value === 'low_stock') {
     return t('inventory.page.actions.low_stock_items.title')
   }
 
-  if (props.preset === 'expired') {
+  if (effectivePreset.value === 'expired') {
     return t('inventory.page.actions.expired_items.title')
   }
 
@@ -90,15 +89,15 @@ const workspaceTitle = computed<string>(() => {
 })
 
 const workspaceDescription = computed<string>(() => {
-  if (props.preset === 'favorite') {
+  if (effectivePreset.value === 'favorite') {
     return t('inventory.page.actions.favorite_items.description')
   }
 
-  if (props.preset === 'low_stock') {
+  if (effectivePreset.value === 'low_stock') {
     return t('inventory.page.actions.low_stock_items.description')
   }
 
-  if (props.preset === 'expired') {
+  if (effectivePreset.value === 'expired') {
     return t('inventory.page.actions.expired_items.description')
   }
 
@@ -145,6 +144,20 @@ watch(
       selectedStockId.value = null
     }
   },
+)
+
+watch(
+  () => props.preset,
+  (nextPreset) => {
+    if (!nextPreset) {
+      return
+    }
+
+    if (nextPreset !== stockTablePreferenceStore.presetState) {
+      void stockTablePreferenceStore.updatePresetState(nextPreset)
+    }
+  },
+  { immediate: true },
 )
 </script>
 

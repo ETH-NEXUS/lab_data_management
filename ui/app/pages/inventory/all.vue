@@ -1,8 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import InventoryStockWorkspace from '~/components/inventory/InventoryStockWorkspace.vue'
-
-type StockPreset = 'all' | 'favorite' | 'low_stock' | 'expired'
+import type { InventoryStockPreset } from '~/types/inventory'
 
 const { t } = useI18n()
 const route = useRoute()
@@ -23,14 +22,15 @@ const goBackToInventory = (): void => {
  * - `'favorite'`
  * - fallback `'all'` for unknown/missing values
  */
-const selectedPreset = computed<StockPreset>(() => {
+const selectedPreset = computed<InventoryStockPreset | undefined>(() => {
   const presetValue = route.query.preset
   const normalizedPreset = Array.isArray(presetValue) ? presetValue[0] : presetValue
 
   if (normalizedPreset === 'favorite') return 'favorite'
   if (normalizedPreset === 'low_stock') return 'low_stock'
   if (normalizedPreset === 'expired') return 'expired'
-  return 'all'
+  if (normalizedPreset === 'all') return 'all'
+  return undefined
 })
 </script>
 
