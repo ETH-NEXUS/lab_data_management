@@ -18,6 +18,11 @@ const props = defineProps<Props>()
 
 const emit = defineEmits<{
   (e: 'select-stock', stock: InventoryStockListItem): void
+  (e: 'sorting-change', sorting: SortingState): void
+  (e: 'global-filter-change', value: string): void
+  (e: 'column-filters-change', filters: ColumnFiltersState): void
+  (e: 'column-order-change', columnOrder: ColumnOrderState): void
+  (e: 'column-visibility-change', columnVisibility: VisibilityState): void
 }>()
 
 const { t } = useI18n()
@@ -68,5 +73,10 @@ const tableColumns = computed(() => createInventoryStockTableColumns(t, onSelect
     :column-order-state="props.columnOrderState"
     :column-visibility-state="props.columnVisibilityState"
     :global-filter-placeholder="t('table.general.search_placeholder')"
+    @sorting-change="(sorting) => emit('sorting-change', sorting)"
+    @global-filter-change="(value) => emit('global-filter-change', value)"
+    @column-filters-change="(filters) => emit('column-filters-change', filters)"
+    @column-order-change="(columnOrder) => emit('column-order-change', columnOrder)"
+    @column-visibility-change="(columnVisibility) => emit('column-visibility-change', columnVisibility)"
   />
 </template>

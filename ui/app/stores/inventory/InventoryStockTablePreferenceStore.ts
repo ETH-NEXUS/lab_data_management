@@ -1,8 +1,13 @@
 import { defineStore } from 'pinia'
-import { computed } from 'vue'
+import { computed, ref, watch } from 'vue'
 import type { ColumnFiltersState, ColumnOrderState, SortingState, VisibilityState } from '@tanstack/vue-table'
 import { useInventoryStockTablePreferenceQuery } from '~/composables/inventory/useInventoryStockTablePreferenceQuery'
-import type { InventoryStockTablePreference } from '~/types/inventory'
+import { requestApiData } from '~/utils/apiRequests'
+import {
+  INVENTORY_STOCK_TABLE_PREFERENCES_ENDPOINT,
+  INVENTORY_UPDATE_STOCK_TABLE_PREFERENCE_ERROR_MESSAGE,
+  type InventoryStockTablePreference,
+} from '~/types/inventory'
 
 /**
  * Provides normalized inventory stock table preference state from the backend.
@@ -12,38 +17,83 @@ import type { InventoryStockTablePreference } from '~/types/inventory'
  */
 export const useInventoryStockTablePreferenceStore = defineStore('inventoryStockTablePreferenceStore', () => {
   const preferenceQuery = useInventoryStockTablePreferenceQuery()
+  const isSavingPreference = ref(false)
+
+  const sortingState = ref<SortingState>([])
+  const globalFilterState = ref('')
+  const columnFiltersState = ref<ColumnFiltersState>([])
+  const columnOrderState = ref<ColumnOrderState>([])
+  const columnVisibilityState = ref<VisibilityState>({})
 
   const preference = computed<InventoryStockTablePreference | null>(() => {
     return preferenceQuery.data.value ?? null
   })
 
-  const sortingState = computed<SortingState>(() => {
-    return preference.value?.sorting ?? []
-  })
+  watch(
+    () => preference.value,
+    (nextPreference) => {
+      sortingState.value = nextPreference?.sorting ?? []
+      globalFilterState.value = ''
+      columnFiltersState.value = nextPreference?.column_filters ?? []
+      columnOrderState.value = nextPreference?.column_order ?? []
+      columnVisibilityState.value = nextPreference?.column_visibility ?? {}
+    },
+    { immediate: true },
+  )
 
-  const globalFilterState = computed<string>(() => {
-    return ''
-  })
+  const savePreference = async (payload: Partial<InventoryStockTablePreference>): Promise<void> => {
+    isSavingPreference.value = true
+    try {
+      await requestApiData<InventoryStockTablePreference>(
+        `${INVENTORY_STOCK_TABLE_PREFERENCES_ENDPOINT}current/`,
+        {
+          method: 'PATCH',
+          body: payload,
+        },
+        INVENTORY_UPDATE_STOCK_TABLE_PREFERENCE_ERROR_MESSAGE,
+      )
+    } finally {
+      isSavingPreference.value = false
+    }
+  }
 
-  const columnFiltersState = computed<ColumnFiltersState>(() => {
-    return preference.value?.column_filters ?? []
-  })
+  const updateSortingState = async (nextSortingState: SortingState): Promise<void> => {
+    sortingState.value = nextSortingState
+    await savePreference({ sorting: nextSortingState })
+  }
 
-  const columnOrderState = computed<ColumnOrderState>(() => {
-    return preference.value?.column_order ?? []
-  })
+  const updateGlobalFilterState = async (nextGlobalFilterState: string): Promise<void> => {
+    globalFilterState.value = nextGlobalFilterState
+  }
 
-  const columnVisibilityState = computed<VisibilityState>(() => {
-    return preference.value?.column_visibility ?? {}
-  })
+  const updateColumnFiltersState = async (nextColumnFiltersState: ColumnFiltersState): Promise<void> => {
+    columnFiltersState.value = nextColumnFiltersState
+    await savePreference({ column_filters: nextColumnFiltersState })
+  }
+
+  const updateColumnOrderState = async (nextColumnOrderState: ColumnOrderState): Promise<void> => {
+    columnOrderState.value = nextColumnOrderState
+    await savePreference({ column_order: nextColumnOrderState })
+  }
+
+  const updateColumnVisibilityState = async (nextColumnVisibilityState: VisibilityState): Promise<void> => {
+    columnVisibilityState.value = nextColumnVisibilityState
+    await savePreference({ column_visibility: nextColumnVisibilityState })
+  }
 
   return {
     preferenceQuery,
     preference,
+    isSavingPreference,
     sortingState,
     globalFilterState,
     columnFiltersState,
     columnOrderState,
     columnVisibilityState,
+    updateSortingState,
+    updateGlobalFilterState,
+    updateColumnFiltersState,
+    updateColumnOrderState,
+    updateColumnVisibilityState,
   }
 })

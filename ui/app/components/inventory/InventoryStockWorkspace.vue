@@ -188,6 +188,11 @@ watch(
           :column-filters-state="stockTablePreferenceStore.columnFiltersState"
           :column-order-state="stockTablePreferenceStore.columnOrderState"
           :column-visibility-state="stockTablePreferenceStore.columnVisibilityState"
+          @sorting-change="stockTablePreferenceStore.updateSortingState"
+          @global-filter-change="stockTablePreferenceStore.updateGlobalFilterState"
+          @column-filters-change="stockTablePreferenceStore.updateColumnFiltersState"
+          @column-order-change="stockTablePreferenceStore.updateColumnOrderState"
+          @column-visibility-change="stockTablePreferenceStore.updateColumnVisibilityState"
           @select-stock="openStockDetails"
         />
       </UCard>
