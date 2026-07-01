@@ -4,6 +4,7 @@ from .views import (
     BrandViewSet,
     DeviceTypeViewSet,
     InventoryStockViewSet,
+    InventoryStockTablePreferenceViewSet,
     ItemTypeViewSet,
     ManufacturerViewSet,
     MaterialAttributeViewSet,
@@ -32,6 +33,7 @@ router.register(r"inventory/material-units", MaterialUnitViewSet, basename="inve
 router.register(r"inventory/rooms", RoomViewSet, basename="inventory-room")
 router.register(r"inventory/sectors", SectorViewSet, basename="inventory-sector")
 router.register(r"inventory/stocks", InventoryStockViewSet, basename="inventory-stock")
+router.register(r"inventory/stock-table-preferences", InventoryStockTablePreferenceViewSet, basename="inventory-stock-table-preference")
 router.register(r"inventory/orders", OrderViewSet, basename="inventory-order")
 router.register(r"inventory/material-usages", MaterialUsageViewSet, basename="inventory-material-usage")
 

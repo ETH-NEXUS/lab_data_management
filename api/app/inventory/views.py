@@ -4,12 +4,14 @@ from django.db.models import Prefetch, Q
 from django.utils import timezone
 from rest_framework import viewsets
 from rest_framework.decorators import action
+from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
-from .dynamic_models import InventoryStock, MaterialUsage, Order, Room, Sector
+from .dynamic_models import InventoryStock, InventoryStockTablePreference, MaterialUsage, Order, Room, Sector
 from .serializers.dynamic_models_serializers import (
     InventoryStockDetailSerializer,
     InventoryStockListSerializer,
+    InventoryStockTablePreferenceSerializer,
     MaterialUsageDetailSerializer,
     MaterialUsageListSerializer,
     OrderDetailSerializer,
@@ -404,6 +406,41 @@ class InventoryStockViewSet(viewsets.ModelViewSet):
         stock.is_archived = True
         stock.save(update_fields=["is_archived"])
         serializer = InventoryStockDetailSerializer(stock, context={"request": request})
+        return Response(serializer.data)
+
+
+class InventoryStockTablePreferenceViewSet(viewsets.GenericViewSet):
+    """
+    Reads and updates the authenticated user's saved inventory stock table state.
+    """
+
+    serializer_class = InventoryStockTablePreferenceSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        return InventoryStockTablePreference.objects.filter(user=self.request.user)
+
+    def _get_current_preference(self):
+        preference, _created = InventoryStockTablePreference.objects.get_or_create(
+            user=self.request.user,
+            table_key=InventoryStockTablePreference.TABLE_KEY_INVENTORY_STOCK,
+        )
+        return preference
+
+    @action(detail=False, methods=["get", "put", "patch"])
+    def current(self, request):
+        preference = self._get_current_preference()
+
+        if request.method == "GET":
+            serializer = self.get_serializer(preference)
+            return Response(serializer.data)
+
+        serializer = self.get_serializer(preference, data=request.data, partial=request.method == "PATCH")
+        serializer.is_valid(raise_exception=True)
+        serializer.save(
+            user=request.user,
+            table_key=InventoryStockTablePreference.TABLE_KEY_INVENTORY_STOCK,
+        )
         return Response(serializer.data)
 
 
