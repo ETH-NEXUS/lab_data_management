@@ -1,10 +1,9 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
-import type { ColumnFiltersState, ColumnOrderState, SortingState, VisibilityState } from '@tanstack/vue-table'
 import InventoryStockDetailsPanel from '~/components/inventory/stock-details/InventoryStockDetailsPanel.vue'
 import InventoryStockTable from '~/components/inventory/InventoryStockTable.vue'
 import { useInventoryStocksQuery } from '~/composables/inventory/useInventoryStockQuery'
-import { useInventoryStockTablePreferenceQuery } from '~/composables/inventory/useInventoryStockTablePreferenceQuery'
+import { useInventoryStockTablePreferenceStore } from '~/stores/inventory/InventoryStockTablePreferenceStore'
 import type { InventoryStockListItem } from '~/types/inventory'
 
 type StockPreset = 'all' | 'favorite' | 'low_stock' | 'expired'
@@ -20,7 +19,7 @@ const props = withDefaults(defineProps<Props>(), {
 const { t } = useI18n()
 
 const stocksQuery = useInventoryStocksQuery()
-const stockTablePreferenceQuery = useInventoryStockTablePreferenceQuery()
+const stockTablePreferenceStore = useInventoryStockTablePreferenceStore()
 
 const selectedStockId = ref<number | null>(null)
 
@@ -72,26 +71,6 @@ const stocksErrorMessage = computed<string | null>(() => {
     return null
   }
   return err instanceof Error ? err.message : t('inventory.stock_workspace.error')
-})
-
-const savedSortingState = computed<SortingState>(() => {
-  return stockTablePreferenceQuery.data.value?.sorting ?? []
-})
-
-const savedGlobalFilterState = computed<string>(() => {
-  return ''
-})
-
-const savedColumnFiltersState = computed<ColumnFiltersState>(() => {
-  return stockTablePreferenceQuery.data.value?.column_filters ?? []
-})
-
-const savedColumnOrderState = computed<ColumnOrderState>(() => {
-  return stockTablePreferenceQuery.data.value?.column_order ?? []
-})
-
-const savedColumnVisibilityState = computed<VisibilityState>(() => {
-  return stockTablePreferenceQuery.data.value?.column_visibility ?? {}
 })
 
 const workspaceTitle = computed<string>(() => {
@@ -204,11 +183,11 @@ watch(
         <InventoryStockTable
           v-else
           :stocks="filteredStocks"
-          :sorting-state="savedSortingState"
-          :global-filter-state="savedGlobalFilterState"
-          :column-filters-state="savedColumnFiltersState"
-          :column-order-state="savedColumnOrderState"
-          :column-visibility-state="savedColumnVisibilityState"
+          :sorting-state="stockTablePreferenceStore.sortingState"
+          :global-filter-state="stockTablePreferenceStore.globalFilterState"
+          :column-filters-state="stockTablePreferenceStore.columnFiltersState"
+          :column-order-state="stockTablePreferenceStore.columnOrderState"
+          :column-visibility-state="stockTablePreferenceStore.columnVisibilityState"
           @select-stock="openStockDetails"
         />
       </UCard>
