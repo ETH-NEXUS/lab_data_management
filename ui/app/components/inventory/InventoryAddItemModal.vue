@@ -77,7 +77,7 @@ const hasSelectedItemType = computed<boolean>(() => selectedItemTypeId.value > 0
   <UModal
     :open="props.open"
     title="Add new item"
-    description="Create one new inventory stock row using model-aligned fields."
+    description="Choose an item type first, optionally prefill from an order, then complete the stock fields."
     class="w-full sm:max-w-2xl"
     :ui="{ content: 'rounded-2xl bg-white shadow-md' }"
     @update:open="(isOpen) => emit('update:open', isOpen)"
@@ -107,6 +107,7 @@ const hasSelectedItemType = computed<boolean>(() => selectedItemTypeId.value > 0
                   {{ itemTypeOption.label }}
                 </option>
               </select>
+              <p class="text-xs text-slate-500">Step 1. Choose the item category to narrow materials and matching orders.</p>
             </div>
           </div>
         </section>
@@ -148,6 +149,7 @@ const hasSelectedItemType = computed<boolean>(() => selectedItemTypeId.value > 0
                 <p v-if="ordersErrorMessage" class="text-xs text-red-600">
                   {{ ordersErrorMessage }}
                 </p>
+                <p v-else class="text-xs text-slate-500">Step 2. Optionally select an order from the chosen item type to populate fields.</p>
               </div>
 
               <UButton
@@ -164,6 +166,7 @@ const hasSelectedItemType = computed<boolean>(() => selectedItemTypeId.value > 0
 
         <section class="space-y-3">
           <p class="text-sm font-semibold text-slate-800">Stock fields</p>
+          <p class="text-xs text-slate-500">Step 3. Complete the remaining stock details for the selected material.</p>
 
           <div class="grid gap-4 sm:grid-cols-2">
             <div class="space-y-1">
