@@ -13,86 +13,17 @@ import {
   type InventoryMaterialListItem,
   type InventoryOrderListItem,
 } from '~/types/inventory'
+import {
+  buildInitialFormState,
+  formatDecimal,
+  parseDecimal,
+  type AddItemFormState,
+} from '~/components/inventory/add-item/inventoryAddItemForm.utils'
 import { getErrorMessage } from '~/utils/errors'
-
-export type AddItemFormState = {
-  itemTypeId: string
-  materialId: string
-  sectorId: string
-  stockUnitId: string
-  quantity: string
-  minimumQuantity: string
-  lotNumber: string
-  expiryDate: string
-  notes: string
-  isFavorite: boolean
-}
 
 type UseInventoryAddItemFormParams = {
   open: ComputedRef<boolean>
   onSaved: () => void
-}
-
-/**
- * Builds empty draft values for the add-item stock form.
- *
- * Returned data example:
- * - `{ itemTypeId: '', materialId: '', sectorId: '', stockUnitId: '', quantity: '', minimumQuantity: '', lotNumber: '', expiryDate: '', notes: '', isFavorite: false }`
- */
-const buildInitialFormState = (): AddItemFormState => ({
-  itemTypeId: '',
-  materialId: '',
-  sectorId: '',
-  stockUnitId: '',
-  quantity: '',
-  minimumQuantity: '',
-  lotNumber: '',
-  expiryDate: '',
-  notes: '',
-  isFavorite: false,
-})
-
-/**
- * Parses decimal-like text into a finite number.
- *
- * Input examples:
- * - `'2.5'`
- * - `'96'`
- * - `null`
- *
- * Returned examples:
- * - `2.5`
- * - `96`
- * - `null`
- */
-const parseDecimal = (value: string | null | undefined): number | null => {
-  if (value == null) {
-    return null
-  }
-
-  const parsedValue = Number.parseFloat(value.trim())
-  if (!Number.isFinite(parsedValue)) {
-    return null
-  }
-
-  return parsedValue
-}
-
-/**
- * Formats decimal values for API-compatible string fields.
- *
- * Input examples:
- * - `2`
- * - `2.041666666`
- *
- * Returned examples:
- * - `'2'`
- * - `'2.041667'`
- */
-const formatDecimal = (value: number): string => {
-  const fixedValue = value.toFixed(6)
-  const normalizedValue = fixedValue.replace(/\.?0+$/, '')
-  return normalizedValue === '' ? '0' : normalizedValue
 }
 
 /**
@@ -143,6 +74,27 @@ export const useInventoryAddItemForm = ({ open, onSaved }: UseInventoryAddItemFo
     return materials
   })
 
+  /**
+   * Narrows materials to the selected item type for the first step of the flow.
+   *
+   * Input examples:
+   * - `selectedItemTypeId = 0`
+   * - `selectedItemTypeId = 5`
+   *
+   * Returned examples:
+   * - `[]`
+   * - `[{ id: 12, item_type: { id: 5, label: 'plate' } }]`
+   */
+  const filteredMaterials = computed<InventoryMaterialListItem[]>(() => {
+    if (selectedItemTypeId.value <= 0) {
+      return []
+    }
+
+    return sortedMaterials.value.filter((material) => {
+      return material.item_type?.id === selectedItemTypeId.value
+    })
+  })
+
   const sortedOrders = computed<InventoryOrderListItem[]>(() => {
     const orders = [...(ordersQuery.data.value ?? [])]
     orders.sort((leftOrder, rightOrder) => {
@@ -153,17 +105,38 @@ export const useInventoryAddItemForm = ({ open, onSaved }: UseInventoryAddItemFo
     return orders
   })
 
+  /**
+   * Narrows order-prefill candidates to orders whose material belongs to the selected item type.
+   *
+   * Input examples:
+   * - `selectedItemTypeId = 0`
+   * - `selectedItemTypeId = 9`
+   *
+   * Returned examples:
+   * - `[]`
+   * - `[{ id: 41, material: { item_type: { id: 9, label: 'bottle' } } }]`
+   */
+  const filteredOrders = computed<InventoryOrderListItem[]>(() => {
+    if (selectedItemTypeId.value <= 0) {
+      return []
+    }
+
+    return sortedOrders.value.filter((order) => {
+      return order.material.item_type?.id === selectedItemTypeId.value
+    })
+  })
+
   const selectedOrder = computed<InventoryOrderListItem | null>(() => {
     const orderId = Number.parseInt(selectedOrderId.value, 10)
     if (!Number.isInteger(orderId) || orderId <= 0) {
       return null
     }
 
-    return sortedOrders.value.find((order) => order.id === orderId) ?? null
+    return filteredOrders.value.find((order) => order.id === orderId) ?? null
   })
 
   const orderPrefillOptions = computed<Array<{ id: number; label: string }>>(() => {
-    return sortedOrders.value.map((order) => {
+    return filteredOrders.value.map((order) => {
       const materialLabel = order.material.label || order.material.product_name || `Material #${order.material.id}`
       const unitLabel =
         order.order_unit.display_name || order.order_unit.unit?.label || order.order_unit.unit?.name || ''
@@ -476,6 +449,8 @@ export const useInventoryAddItemForm = ({ open, onSaved }: UseInventoryAddItemFo
     selectedOrderId,
     selectedItemTypeId,
     selectedMaterialId,
+    filteredMaterials,
+    filteredOrders,
     sortedMaterials,
     sortedOrders,
     orderPrefillOptions,
