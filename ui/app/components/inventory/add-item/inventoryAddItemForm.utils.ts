@@ -1,6 +1,7 @@
 export type AddItemFormState = {
   itemTypeId: string
   materialId: string
+  roomId: string
   sectorId: string
   stockUnitId: string
   quantity: string
@@ -15,11 +16,12 @@ export type AddItemFormState = {
  * Builds empty draft values for the add-item stock form.
  *
  * Returned data example:
- * - `{ itemTypeId: '', materialId: '', sectorId: '', stockUnitId: '', quantity: '', minimumQuantity: '', lotNumber: '', expiryDate: '', notes: '', isFavorite: false }`
+ * - `{ itemTypeId: '', materialId: '', roomId: '', sectorId: '', stockUnitId: '', quantity: '', minimumQuantity: '', lotNumber: '', expiryDate: '', notes: '', isFavorite: false }`
  */
 export const buildInitialFormState = (): AddItemFormState => ({
   itemTypeId: '',
   materialId: '',
+  roomId: '',
   sectorId: '',
   stockUnitId: '',
   quantity: '',
