@@ -18,6 +18,8 @@ type UseInventoryAddItemFormStateResult = {
   selectedOrderId: Ref<string>
   selectedItemTypeId: ComputedRef<number>
   selectedMaterialId: ComputedRef<number>
+  selectedRoomId: ComputedRef<number>
+  roomOptions: ComputedRef<Array<{ id: number; label: string }>>
   selectedMaterialQuery: ReturnType<typeof useInventoryMaterialQuery>
   sortedMaterials: ComputedRef<InventoryMaterialListItem[]>
   filteredMaterials: ComputedRef<InventoryMaterialListItem[]>
@@ -68,6 +70,22 @@ export const useInventoryAddItemFormState = ({
 
   const selectedMaterialId = computed<number>(() => {
     const parsedId = Number.parseInt(formState.value.materialId, 10)
+    return Number.isInteger(parsedId) && parsedId > 0 ? parsedId : 0
+  })
+
+  /**
+   * Resolves the selected room identifier from the location step.
+   *
+   * Input examples:
+   * - `{ roomId: '3' }`
+   * - `{ roomId: '' }`
+   *
+   * Returned examples:
+   * - `3`
+   * - `0`
+   */
+  const selectedRoomId = computed<number>(() => {
+    const parsedId = Number.parseInt(formState.value.roomId, 10)
     return Number.isInteger(parsedId) && parsedId > 0 ? parsedId : 0
   })
 
@@ -157,6 +175,21 @@ export const useInventoryAddItemFormState = ({
     })
   })
 
+  const roomOptions = computed<Array<{ id: number; label: string }>>(() => {
+    const rooms = [...(lookupsQuery.data.value?.rooms ?? [])]
+
+    rooms.sort((leftRoom, rightRoom) => {
+      const leftLabel = (leftRoom.label || leftRoom.name || '').toLowerCase()
+      const rightLabel = (rightRoom.label || rightRoom.name || '').toLowerCase()
+      return leftLabel.localeCompare(rightLabel)
+    })
+
+    return rooms.map((room) => ({
+      id: room.id,
+      label: room.label || room.name || `Room #${room.id}`,
+    }))
+  })
+
   const sectorOptions = computed<Array<{ id: number; label: string }>>(() => {
     const sectors = [...(lookupsQuery.data.value?.sectors ?? [])]
     sectors.sort((leftSector, rightSector) => {
@@ -171,14 +204,22 @@ export const useInventoryAddItemFormState = ({
       return leftSectorLabel.localeCompare(rightSectorLabel)
     })
 
-    return sectors.map((sector) => {
+    return sectors
+      .filter((sector) => {
+        if (selectedRoomId.value <= 0) {
+          return false
+        }
+
+        return sector.room?.id === selectedRoomId.value
+      })
+      .map((sector) => {
       const roomLabel = sector.room?.label || sector.room?.name || 'Unknown room'
       const sectorLabel = sector.name || `Sector #${sector.id}`
       return {
         id: sector.id,
         label: sector.label || `${roomLabel} / ${sectorLabel}`,
       }
-    })
+      })
   })
 
   const stockUnitOptions = computed<Array<{ id: number; label: string }>>(() => {
@@ -254,11 +295,20 @@ export const useInventoryAddItemFormState = ({
     },
   )
 
+  watch(
+    () => formState.value.roomId,
+    () => {
+      formState.value.sectorId = ''
+    },
+  )
+
   return {
     formState,
     selectedOrderId,
     selectedItemTypeId,
     selectedMaterialId,
+    selectedRoomId,
+    roomOptions,
     selectedMaterialQuery,
     sortedMaterials,
     filteredMaterials,
