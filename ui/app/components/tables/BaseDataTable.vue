@@ -9,8 +9,10 @@ import {
   type Column,
   type ColumnDef,
   type ColumnFiltersState,
+  type ColumnOrderState,
   type PaginationState,
   type SortingState,
+  type VisibilityState,
 } from '@tanstack/vue-table'
 import {
   applyUpdater,
@@ -33,6 +35,11 @@ type BaseDataTableProps = {
   hideToolbar?: boolean
   enablePagination?: boolean
   pageSize?: number
+  sortingState?: SortingState
+  globalFilterState?: string
+  columnFiltersState?: ColumnFiltersState
+  columnOrderState?: ColumnOrderState
+  columnVisibilityState?: VisibilityState
 }
 
 const props = withDefaults(defineProps<BaseDataTableProps>(), {
@@ -43,17 +50,29 @@ const props = withDefaults(defineProps<BaseDataTableProps>(), {
   hideToolbar: false,
   enablePagination: false,
   pageSize: 50,
+  sortingState: () => [],
+  globalFilterState: '',
+  columnFiltersState: () => [],
+  columnOrderState: () => [],
+  columnVisibilityState: () => ({}),
 })
 
 const emit = defineEmits<{
   rowClick: [row: TableRow]
+  sortingChange: [sorting: SortingState]
+  globalFilterChange: [value: string]
+  columnFiltersChange: [filters: ColumnFiltersState]
+  columnOrderChange: [columnOrder: ColumnOrderState]
+  columnVisibilityChange: [columnVisibility: VisibilityState]
 }>()
 
 const { t } = useI18n()
 
-const sorting = ref<SortingState>([])
-const globalFilter = ref('')
-const columnFilters = ref<ColumnFiltersState>([])
+const sorting = ref<SortingState>(props.sortingState)
+const globalFilter = ref(props.globalFilterState)
+const columnFilters = ref<ColumnFiltersState>(props.columnFiltersState)
+const columnOrder = ref<ColumnOrderState>(props.columnOrderState)
+const columnVisibility = ref<VisibilityState>(props.columnVisibilityState)
 const pagination = ref<PaginationState>({
   pageIndex: 0,
   pageSize: props.pageSize,
@@ -82,6 +101,12 @@ const table = useVueTable({
     get columnFilters() {
       return columnFilters.value
     },
+    get columnOrder() {
+      return columnOrder.value
+    },
+    get columnVisibility() {
+      return columnVisibility.value
+    },
     get pagination() {
       return pagination.value
     },
@@ -91,12 +116,23 @@ const table = useVueTable({
   },
   onSortingChange: (updater) => {
     sorting.value = applyUpdater(updater, sorting.value)
+    emit('sortingChange', sorting.value)
   },
   onGlobalFilterChange: (updater) => {
     globalFilter.value = applyUpdater(updater, globalFilter.value)
+    emit('globalFilterChange', globalFilter.value)
   },
   onColumnFiltersChange: (updater) => {
     columnFilters.value = applyUpdater(updater, columnFilters.value)
+    emit('columnFiltersChange', columnFilters.value)
+  },
+  onColumnOrderChange: (updater) => {
+    columnOrder.value = applyUpdater(updater, columnOrder.value)
+    emit('columnOrderChange', columnOrder.value)
+  },
+  onColumnVisibilityChange: (updater) => {
+    columnVisibility.value = applyUpdater(updater, columnVisibility.value)
+    emit('columnVisibilityChange', columnVisibility.value)
   },
   onPaginationChange: (updater) => {
     pagination.value = applyUpdater(updater, pagination.value)
@@ -195,6 +231,41 @@ watch(
       pageIndex: 0,
       pageSize,
     }
+  },
+)
+
+watch(
+  () => props.sortingState,
+  (nextSortingState) => {
+    sorting.value = nextSortingState
+  },
+)
+
+watch(
+  () => props.globalFilterState,
+  (nextGlobalFilterState) => {
+    globalFilter.value = nextGlobalFilterState
+  },
+)
+
+watch(
+  () => props.columnFiltersState,
+  (nextColumnFiltersState) => {
+    columnFilters.value = nextColumnFiltersState
+  },
+)
+
+watch(
+  () => props.columnOrderState,
+  (nextColumnOrderState) => {
+    columnOrder.value = nextColumnOrderState
+  },
+)
+
+watch(
+  () => props.columnVisibilityState,
+  (nextColumnVisibilityState) => {
+    columnVisibility.value = nextColumnVisibilityState
   },
 )
 

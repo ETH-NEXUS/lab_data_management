@@ -3,6 +3,7 @@ export const INVENTORY_MATERIALS_ENDPOINT = 'inventory/materials/'
 export const INVENTORY_MATERIAL_UNITS_ENDPOINT = 'inventory/material-units/'
 export const INVENTORY_ORDERS_ENDPOINT = 'inventory/orders/'
 export const INVENTORY_USAGES_ENDPOINT = 'inventory/material-usages/'
+export const INVENTORY_STOCK_TABLE_PREFERENCES_ENDPOINT = 'inventory/stock-table-preferences/'
 
 export const INVENTORY_ROOMS_ENDPOINT = 'inventory/rooms/'
 export const INVENTORY_SECTORS_ENDPOINT = 'inventory/sectors/'
@@ -20,6 +21,7 @@ export const INVENTORY_MATERIAL_UNITS_QUERY_KEY = ['inventory-material-units']
 export const INVENTORY_ORDERS_QUERY_KEY = ['inventory-orders']
 export const INVENTORY_USAGES_QUERY_KEY = ['inventory-usages']
 export const INVENTORY_LOOKUPS_QUERY_KEY = ['inventory-lookups']
+export const INVENTORY_STOCK_TABLE_PREFERENCES_QUERY_KEY = ['inventory-stock-table-preferences']
 
 export const INVENTORY_STOCKS_ERROR_MESSAGE = 'Failed to load inventory stock items.'
 export const INVENTORY_STOCK_ERROR_MESSAGE = 'Failed to load inventory stock item.'
@@ -41,11 +43,16 @@ export const INVENTORY_UPDATE_USAGE_ERROR_MESSAGE = 'Failed to update material u
 export const INVENTORY_MARK_FAVORITE_ERROR_MESSAGE = 'Failed to mark stock item as favorite.'
 export const INVENTORY_UNMARK_FAVORITE_ERROR_MESSAGE = 'Failed to unmark stock item as favorite.'
 export const INVENTORY_ARCHIVE_STOCK_ERROR_MESSAGE = 'Failed to archive stock item.'
+export const INVENTORY_STOCK_TABLE_PREFERENCE_ERROR_MESSAGE = 'Failed to load inventory stock table preference.'
 
 export const getInventoryStockQueryKey = (stockId: number) => [...INVENTORY_STOCKS_QUERY_KEY, stockId]
 export const getInventoryMaterialQueryKey = (materialId: number) => [...INVENTORY_MATERIALS_QUERY_KEY, materialId]
 export const getInventoryOrderQueryKey = (orderId: number) => [...INVENTORY_ORDERS_QUERY_KEY, orderId]
 export const getInventoryUsageQueryKey = (usageId: number) => [...INVENTORY_USAGES_QUERY_KEY, usageId]
+export const getInventoryStockTablePreferenceQueryKey = (tableKey: string) => [
+  ...INVENTORY_STOCK_TABLE_PREFERENCES_QUERY_KEY,
+  tableKey,
+]
 
 export type InventoryLookupItem = {
   id: number
@@ -204,6 +211,30 @@ export type InventoryUsageDetail = InventoryUsageListItem & {
   experiment_id?: number | null
   inventory_stock_id?: number
   usage_unit_id?: number
+}
+
+export type InventoryStockPreset = 'all' | 'favorite' | 'low_stock' | 'expired'
+
+export type InventoryStockTableSorting = {
+  id: string
+  desc: boolean
+}
+
+export type InventoryStockTableColumnFilter = {
+  id: string
+  value: string[]
+}
+
+export type InventoryStockTablePreference = {
+  id: number
+  table_key: string
+  preset: InventoryStockPreset
+  sorting: InventoryStockTableSorting[]
+  column_filters: InventoryStockTableColumnFilter[]
+  column_order: string[]
+  column_visibility: Record<string, boolean>
+  created_at: string
+  updated_at: string
 }
 
 export type CreateInventoryMaterialPayload = {
