@@ -334,8 +334,10 @@ const hasSelectedRoom = computed<boolean>(() => selectedRoomId.value > 0)
               <label class="block text-sm font-medium text-slate-700">Minimum quantity *</label>
               <input
                 v-model="formState.minimumQuantity"
-                type="text"
-                inputmode="decimal"
+                type="number"
+                min="0"
+                step="1"
+                inputmode="numeric"
                 class="w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700"
               />
             </div>
