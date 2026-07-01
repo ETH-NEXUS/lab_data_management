@@ -50,14 +50,41 @@ export const useInventoryAddItemForm = ({ open, onSaved }: UseInventoryAddItemFo
     ordersErrorMessage,
   } = useInventoryAddItemFormState({ open })
 
+  /**
+   * Builds read-only supplier and catalog display values from the selected material.
+   *
+   * Returned data example:
+   * - `{ manufacturer: 'Corning', vendor: 'Huberlab', manufacturerCatalogNumber: '3005', vendorCatalogNumber: 'H-42' }`
+   * - `{ manufacturer: null, vendor: null, manufacturerCatalogNumber: null, vendorCatalogNumber: null }`
+   */
+  const supplierDetails = computed<{
+    manufacturer: string | null
+    vendor: string | null
+    manufacturerCatalogNumber: string | null
+    vendorCatalogNumber: string | null
+  }>(() => {
+    const material = selectedMaterialQuery.data.value
+
+    return {
+      manufacturer: material?.manufacturer?.label || material?.manufacturer?.name || null,
+      vendor: material?.vendor?.label || material?.vendor?.name || null,
+      manufacturerCatalogNumber: material?.manufacturer_catalog_number || null,
+      vendorCatalogNumber: material?.vendor_catalog_number || null,
+    }
+  })
+
   const validationMessages = computed<string[]>(() => {
     const messages: string[] = []
+    const itemTypeId = Number.parseInt(formState.value.itemTypeId, 10)
     const materialId = Number.parseInt(formState.value.materialId, 10)
     const sectorId = Number.parseInt(formState.value.sectorId, 10)
     const stockUnitId = Number.parseInt(formState.value.stockUnitId, 10)
     const quantityValue = Number.parseFloat(formState.value.quantity.trim())
     const minimumQuantityValue = Number.parseFloat(formState.value.minimumQuantity.trim())
 
+    if (!Number.isInteger(itemTypeId) || itemTypeId <= 0) {
+      messages.push('Item type is required before selecting a material or order.')
+    }
     if (!Number.isInteger(materialId) || materialId <= 0) {
       messages.push('Material is required.')
     }
@@ -254,6 +281,7 @@ export const useInventoryAddItemForm = ({ open, onSaved }: UseInventoryAddItemFo
     selectedOrderId,
     selectedItemTypeId,
     selectedMaterialId,
+    supplierDetails,
     filteredMaterials,
     filteredOrders,
     sortedMaterials,
