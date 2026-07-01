@@ -16,6 +16,7 @@ import {
 import { getErrorMessage } from '~/utils/errors'
 
 export type AddItemFormState = {
+  itemTypeId: string
   materialId: string
   sectorId: string
   stockUnitId: string
@@ -36,9 +37,10 @@ type UseInventoryAddItemFormParams = {
  * Builds empty draft values for the add-item stock form.
  *
  * Returned data example:
- * - `{ materialId: '', sectorId: '', stockUnitId: '', quantity: '', minimumQuantity: '', lotNumber: '', expiryDate: '', notes: '', isFavorite: false }`
+ * - `{ itemTypeId: '', materialId: '', sectorId: '', stockUnitId: '', quantity: '', minimumQuantity: '', lotNumber: '', expiryDate: '', notes: '', isFavorite: false }`
  */
 const buildInitialFormState = (): AddItemFormState => ({
+  itemTypeId: '',
   materialId: '',
   sectorId: '',
   stockUnitId: '',
@@ -107,6 +109,22 @@ export const useInventoryAddItemForm = ({ open, onSaved }: UseInventoryAddItemFo
 
   const formState = ref<AddItemFormState>(buildInitialFormState())
   const selectedOrderId = ref('')
+
+  /**
+   * Resolves the currently selected item type identifier from the draft form.
+   *
+   * Input examples:
+   * - `{ itemTypeId: '4' }`
+   * - `{ itemTypeId: '' }`
+   *
+   * Returned examples:
+   * - `4`
+   * - `0`
+   */
+  const selectedItemTypeId = computed<number>(() => {
+    const parsedId = Number.parseInt(formState.value.itemTypeId, 10)
+    return Number.isInteger(parsedId) && parsedId > 0 ? parsedId : 0
+  })
 
   const selectedMaterialId = computed<number>(() => {
     const parsedId = Number.parseInt(formState.value.materialId, 10)
@@ -284,6 +302,15 @@ export const useInventoryAddItemForm = ({ open, onSaved }: UseInventoryAddItemFo
   })
 
   watch(
+    () => formState.value.itemTypeId,
+    () => {
+      formState.value.materialId = ''
+      formState.value.stockUnitId = ''
+      selectedOrderId.value = ''
+    },
+  )
+
+  watch(
     () => formState.value.materialId,
     () => {
       formState.value.stockUnitId = ''
@@ -447,6 +474,7 @@ export const useInventoryAddItemForm = ({ open, onSaved }: UseInventoryAddItemFo
   return {
     formState,
     selectedOrderId,
+    selectedItemTypeId,
     selectedMaterialId,
     sortedMaterials,
     sortedOrders,
