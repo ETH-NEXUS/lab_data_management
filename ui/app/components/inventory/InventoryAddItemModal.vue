@@ -23,8 +23,9 @@ const openRef = computed<boolean>(() => props.open)
 const {
   formState,
   selectedOrderId,
+  selectedItemTypeId,
   selectedMaterialId,
-  sortedMaterials,
+  filteredMaterials,
   orderPrefillOptions,
   sectorOptions,
   stockUnitOptions,
@@ -47,6 +48,29 @@ const {
   open: openRef,
   onSaved: closeModal,
 })
+
+/**
+ * Builds sorted item-type select options from lookup data.
+ *
+ * Returned data example:
+ * - `[{ id: 4, label: 'tube' }, { id: 5, label: 'plate' }]`
+ */
+const itemTypeOptions = computed<Array<{ id: number; label: string }>>(() => {
+  const itemTypes = [...(lookupsQuery.data.value?.itemTypes ?? [])]
+
+  itemTypes.sort((leftItemType, rightItemType) => {
+    const leftLabel = (leftItemType.label || leftItemType.name || '').toLowerCase()
+    const rightLabel = (rightItemType.label || rightItemType.name || '').toLowerCase()
+    return leftLabel.localeCompare(rightLabel)
+  })
+
+  return itemTypes.map((itemType) => ({
+    id: itemType.id,
+    label: itemType.label || itemType.name || `Item type #${itemType.id}`,
+  }))
+})
+
+const hasSelectedItemType = computed<boolean>(() => selectedItemTypeId.value > 0)
 </script>
 
 <template>
@@ -61,6 +85,33 @@ const {
     <template #body>
       <div class="space-y-5 p-6">
         <section class="space-y-3">
+          <p class="text-sm font-semibold text-slate-800">Item type</p>
+          <div class="rounded-lg border border-slate-200 bg-slate-50 p-3">
+            <div class="space-y-1">
+              <label class="block text-sm font-medium text-slate-700">Item Type *</label>
+              <select
+                v-model="formState.itemTypeId"
+                class="w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700"
+                :disabled="lookupsQuery.isPending.value"
+              >
+                <option value="">
+                  {{
+                    lookupsQuery.isPending.value
+                      ? 'Loading item types...'
+                      : itemTypeOptions.length > 0
+                        ? 'Select item type'
+                        : 'No item types available'
+                  }}
+                </option>
+                <option v-for="itemTypeOption in itemTypeOptions" :key="itemTypeOption.id" :value="String(itemTypeOption.id)">
+                  {{ itemTypeOption.label }}
+                </option>
+              </select>
+            </div>
+          </div>
+        </section>
+
+        <section class="space-y-3">
           <p class="text-sm font-semibold text-slate-800">{{ t('inventory.add_item.prefill.title') }}</p>
           <div class="rounded-lg border border-slate-200 bg-slate-50 p-3">
             <div class="grid gap-3 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-end">
@@ -71,11 +122,13 @@ const {
                 <select
                   v-model="selectedOrderId"
                   class="w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700"
-                  :disabled="ordersQuery.isPending.value || isSubmitting"
+                  :disabled="ordersQuery.isPending.value || isSubmitting || !hasSelectedItemType"
                 >
                   <option value="">
                     {{
-                      ordersQuery.isPending.value
+                      !hasSelectedItemType
+                        ? 'Select item type first'
+                        : ordersQuery.isPending.value
                         ? t('inventory.add_item.prefill.select_options.loading_orders')
                         : ordersErrorMessage
                           ? t('inventory.add_item.prefill.select_options.failed_orders')
@@ -102,7 +155,7 @@ const {
                 variant="soft"
                 icon="i-heroicons-arrow-down-tray"
                 :label="t('inventory.add_item.prefill.prefill_button')"
-                :disabled="isOrderPrefillDisabled"
+                :disabled="isOrderPrefillDisabled || !hasSelectedItemType"
                 @click="requestOrderPrefill"
               />
             </div>
@@ -118,20 +171,22 @@ const {
               <select
                 v-model="formState.materialId"
                 class="w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700"
-                :disabled="materialsQuery.isPending.value"
+                :disabled="materialsQuery.isPending.value || !hasSelectedItemType"
               >
                 <option value="">
                   {{
-                    materialsQuery.isPending.value
+                    !hasSelectedItemType
+                      ? 'Select item type first'
+                      : materialsQuery.isPending.value
                       ? 'Loading materials...'
                       : materialsErrorMessage
                         ? 'Failed to load materials'
-                        : sortedMaterials.length > 0
+                        : filteredMaterials.length > 0
                           ? 'Select material'
                           : 'No materials available'
                   }}
                 </option>
-                <option v-for="material in sortedMaterials" :key="material.id" :value="String(material.id)">
+                <option v-for="material in filteredMaterials" :key="material.id" :value="String(material.id)">
                   {{ material.label || material.product_name || `Material #${material.id}` }}
                 </option>
               </select>
