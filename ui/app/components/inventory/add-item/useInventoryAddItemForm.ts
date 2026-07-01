@@ -8,6 +8,7 @@ import {
 import {
   formatDecimal,
   parseDecimal,
+  parseInteger,
 } from '~/components/inventory/add-item/inventoryAddItemForm.utils'
 import { useInventoryAddItemFormState } from '~/components/inventory/add-item/useInventoryAddItemFormState'
 import { getErrorMessage } from '~/utils/errors'
@@ -81,8 +82,8 @@ export const useInventoryAddItemForm = ({ open, onSaved }: UseInventoryAddItemFo
     const materialId = Number.parseInt(formState.value.materialId, 10)
     const sectorId = Number.parseInt(formState.value.sectorId, 10)
     const stockUnitId = Number.parseInt(formState.value.stockUnitId, 10)
-    const quantityValue = Number.parseFloat(formState.value.quantity.trim())
-    const minimumQuantityValue = Number.parseFloat(formState.value.minimumQuantity.trim())
+    const quantityValue = parseDecimal(formState.value.quantity)
+    const minimumQuantityValue = parseInteger(formState.value.minimumQuantity)
 
     if (!Number.isInteger(itemTypeId) || itemTypeId <= 0) {
       messages.push('Item type is required before selecting a material or order.')
@@ -96,11 +97,11 @@ export const useInventoryAddItemForm = ({ open, onSaved }: UseInventoryAddItemFo
     if (!Number.isInteger(stockUnitId) || stockUnitId <= 0) {
       messages.push('Stock unit is required.')
     }
-    if (!Number.isFinite(quantityValue) || quantityValue <= 0) {
+    if (quantityValue === null || quantityValue <= 0) {
       messages.push('Quantity must be greater than zero.')
     }
-    if (!Number.isFinite(minimumQuantityValue) || minimumQuantityValue < 0) {
-      messages.push('Minimum quantity must be zero or greater.')
+    if (minimumQuantityValue === null || minimumQuantityValue < 0) {
+      messages.push('Minimum quantity must be a whole number that is zero or greater.')
     }
 
     return messages
@@ -137,14 +138,14 @@ export const useInventoryAddItemForm = ({ open, onSaved }: UseInventoryAddItemFo
     const materialId = Number.parseInt(formState.value.materialId, 10)
     const sectorId = Number.parseInt(formState.value.sectorId, 10)
     const stockUnitId = Number.parseInt(formState.value.stockUnitId, 10)
-    const quantityValue = Number.parseFloat(formState.value.quantity.trim())
-    const minimumQuantityValue = Number.parseFloat(formState.value.minimumQuantity.trim())
+    const quantityValue = parseDecimal(formState.value.quantity)
+    const minimumQuantityValue = parseInteger(formState.value.minimumQuantity)
 
     if (!Number.isInteger(materialId) || materialId <= 0) return null
     if (!Number.isInteger(sectorId) || sectorId <= 0) return null
     if (!Number.isInteger(stockUnitId) || stockUnitId <= 0) return null
-    if (!Number.isFinite(quantityValue) || quantityValue <= 0) return null
-    if (!Number.isFinite(minimumQuantityValue) || minimumQuantityValue < 0) return null
+    if (quantityValue === null || quantityValue <= 0) return null
+    if (minimumQuantityValue === null || minimumQuantityValue < 0) return null
 
     return {
       material_id: materialId,
