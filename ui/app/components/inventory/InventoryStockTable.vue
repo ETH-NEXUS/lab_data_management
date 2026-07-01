@@ -1,11 +1,17 @@
 <script setup lang="ts">
 import { computed } from 'vue'
+import type { ColumnFiltersState, ColumnOrderState, SortingState, VisibilityState } from '@tanstack/vue-table'
 import BaseDataTable from '~/components/tables/BaseDataTable.vue'
 import { createInventoryStockTableColumns } from '~/components/inventory/inventory-stock-table.columns'
 import type { InventoryStockListItem } from '~/types/inventory'
 
 type Props = {
   stocks: InventoryStockListItem[]
+  sortingState?: SortingState
+  globalFilterState?: string
+  columnFiltersState?: ColumnFiltersState
+  columnOrderState?: ColumnOrderState
+  columnVisibilityState?: VisibilityState
 }
 
 const props = defineProps<Props>()
@@ -56,6 +62,11 @@ const tableColumns = computed(() => createInventoryStockTableColumns(t, onSelect
     :row-cell-class-name="getStockRowCellClass"
     enable-pagination
     :page-size="50"
+    :sorting-state="props.sortingState"
+    :global-filter-state="props.globalFilterState"
+    :column-filters-state="props.columnFiltersState"
+    :column-order-state="props.columnOrderState"
+    :column-visibility-state="props.columnVisibilityState"
     :global-filter-placeholder="t('table.general.search_placeholder')"
   />
 </template>
