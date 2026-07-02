@@ -13,7 +13,6 @@ import {
 } from '~/components/tables/base-data-table.utils'
 import {
   getCellClass as getPresentationCellClass,
-  getColumnVisibilityLabel as getPresentationColumnVisibilityLabel,
   getHeaderCellClass as getPresentationHeaderCellClass,
   getRowCellClass as getPresentationRowCellClass,
   getSortIcon as getPresentationSortIcon,
@@ -91,7 +90,6 @@ const emitRowClick = (row: TableRow): void => {
   emit('rowClick', row)
 }
 
-const getColumnVisibilityLabel = getPresentationColumnVisibilityLabel
 const getSortIcon = getPresentationSortIcon
 const getCellClass = getPresentationCellClass
 const getHeaderCellClass = getPresentationHeaderCellClass
@@ -104,78 +102,16 @@ const getRowCellClass = (row: TableRow): string[] => {
 
 <template>
   <div class="space-y-4">
-    <div v-if="!props.hideToolbar" class="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-      <UInput
-        v-model="globalFilter"
-        :placeholder="props.globalFilterPlaceholder || t('table.general.search_placeholder')"
-        icon="i-heroicons-magnifying-glass"
-        class="w-full sm:max-w-sm"
-      />
-
-      <div class="flex items-center gap-2">
-        <UBadge color="neutral" variant="soft" class="font-medium">
-          {{ t('table.general.rows', { count: totalRowsCount }) }}
-        </UBadge>
-        <UPopover :content="{ side: 'bottom', align: 'end' }">
-          <UButton
-            variant="ghost"
-            color="neutral"
-            icon="i-heroicons-view-columns"
-            :label="t('table.general.columns')"
-          />
-
-          <template #content>
-            <div class="w-64 space-y-3 p-3">
-              <p class="text-xs font-semibold tracking-[0.06em] text-slate-600 uppercase">
-                {{ t('table.general.columns') }}
-              </p>
-
-              <div class="max-h-56 space-y-1 overflow-y-auto pr-1">
-                <label
-                  v-for="column in table.getAllLeafColumns()"
-                  :key="`visibility-${column.id}`"
-                  class="flex cursor-pointer items-center gap-2 rounded px-1 py-1 hover:bg-slate-50"
-                >
-                  <UCheckbox
-                    :model-value="column.getIsVisible()"
-                    @update:model-value="(checked) => column.toggleVisibility(Boolean(checked))"
-                  />
-                  <span class="truncate text-xs text-slate-700">{{ getColumnVisibilityLabel(column) }}</span>
-                </label>
-              </div>
-            </div>
-          </template>
-        </UPopover>
-        <div v-if="props.enablePagination && totalRowsCount > 0" class="flex items-center gap-1">
-          <span class="text-xs text-slate-600">
-            {{ table.getState().pagination.pageIndex + 1 }} / {{ table.getPageCount() }}
-          </span>
-          <UButton
-            size="xs"
-            color="neutral"
-            variant="ghost"
-            icon="i-heroicons-chevron-left"
-            :disabled="!table.getCanPreviousPage()"
-            @click="table.previousPage()"
-          />
-          <UButton
-            size="xs"
-            color="neutral"
-            variant="ghost"
-            icon="i-heroicons-chevron-right"
-            :disabled="!table.getCanNextPage()"
-            @click="table.nextPage()"
-          />
-        </div>
-        <UButton
-          variant="ghost"
-          color="neutral"
-          icon="i-heroicons-x-mark"
-          :label="t('table.general.clear_all')"
-          @click="clearAllFilters"
-        />
-      </div>
-    </div>
+    <BaseDataTableToolbar
+      v-if="!props.hideToolbar"
+      :table="table"
+      :global-filter="globalFilter"
+      :global-filter-placeholder="props.globalFilterPlaceholder || t('table.general.search_placeholder')"
+      :enable-pagination="props.enablePagination"
+      :total-rows-count="totalRowsCount"
+      @update:global-filter="(value) => (globalFilter = value)"
+      @clear-all="clearAllFilters"
+    />
 
     <div class="worksheet-table-scroll overflow-x-auto rounded-lg border border-[var(--app-border)] bg-white shadow-sm">
       <table class="worksheet-table-grid min-w-full text-sm">
