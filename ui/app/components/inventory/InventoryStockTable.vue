@@ -63,7 +63,6 @@ const tableColumns = computed(() => createInventoryStockTableColumns(t, onSelect
   <BaseDataTable
     :data="props.stocks as unknown as Record<string, unknown>[]"
     :columns="tableColumns"
-    :frozen-column-count="5"
     :row-cell-class-name="getStockRowCellClass"
     enable-pagination
     :page-size="50"
