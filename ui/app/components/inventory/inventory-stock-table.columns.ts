@@ -2,66 +2,14 @@ import { h } from 'vue'
 import type { ColumnDef } from '@tanstack/vue-table'
 import type { TableRow } from '~/components/tables/base-data-table.utils'
 import type { InventoryStockListItem } from '~/types/inventory'
-import { formatDateTime } from '~/utils/dateTime'
-
-type TranslateFn = (key: string, named?: Record<string, unknown>) => string
-
-const toLabel = (value: string | null | undefined, fallback: string): string => {
-  return value?.trim() || fallback
-}
-
-const formatNumericString = (value: string | null | undefined): string => {
-  const rawValue = value?.trim() || ''
-  if (rawValue === '') {
-    return ''
-  }
-
-  if (!/^-?\d+(\.\d+)?$/.test(rawValue)) {
-    return rawValue
-  }
-
-  if (!rawValue.includes('.')) {
-    return rawValue
-  }
-
-  return rawValue.replace(/\.?0+$/, '')
-}
+import {
+  getInventoryStockTableSortValue,
+  getStatusLabel,
+  type TranslateFn,
+} from '~/components/inventory/inventory-stock-table.values'
 
 const getStock = (row: TableRow): InventoryStockListItem => {
   return row as InventoryStockListItem
-}
-
-const getStatusLabel = (t: TranslateFn, status: InventoryStockListItem['inventory_status']): string => {
-  return status === 'low'
-    ? t('inventory.stock_table.status_labels.low')
-    : t('inventory.stock_table.status_labels.in_stock')
-}
-
-const getAttributes = (stock: InventoryStockListItem, t: TranslateFn): string[] => {
-  const labels = (stock.material.attributes ?? [])
-    .map((attribute) => attribute.label || attribute.name || '')
-    .map((label) => label.trim())
-    .filter((label) => label !== '')
-
-  return labels.length > 0 ? labels : [t('inventory.stock_drawer.values.no_attributes')]
-}
-
-const getStockUnitLabel = (stock: InventoryStockListItem): string => {
-  return stock.stock_unit.unit?.label || stock.stock_unit.unit?.name || ''
-}
-
-const getFormattedQuantityWithUnit = (stock: InventoryStockListItem, fallback: string): string => {
-  const quantityValue = formatNumericString(stock.quantity)
-  if (quantityValue === '') {
-    return fallback
-  }
-
-  const unitLabel = getStockUnitLabel(stock)
-  if (unitLabel === '') {
-    return quantityValue
-  }
-
-  return `${quantityValue} ${unitLabel}`.trim()
 }
 
 /**
@@ -85,14 +33,14 @@ export const createInventoryStockTableColumns = (
   const columns: ColumnDef<TableRow, unknown>[] = [
     {
       id: 'productName',
-      accessorFn: (row) => toLabel(getStock(row).material.product_name, t('inventory.stock_table.values.none')),
+      accessorFn: (row) => getInventoryStockTableSortValue(getStock(row), 'productName', t),
       header: t('inventory.stock_table.columns.product_name'),
       enableSorting: true,
       enableColumnFilter: true,
       size: 220,
       cell: ({ row }) => {
         const stock = getStock(row.original)
-        const productName = toLabel(stock.material.product_name, t('inventory.stock_table.values.none'))
+        const productName = stock.material.product_name?.trim() || t('inventory.stock_table.values.none')
         const label = stock.is_favorite ? `★ ${productName}` : productName
 
         return h(
@@ -110,7 +58,7 @@ export const createInventoryStockTableColumns = (
     },
     {
       id: 'inventoryStatus',
-      accessorFn: (row) => getStatusLabel(t, getStock(row).inventory_status),
+      accessorFn: (row) => getInventoryStockTableSortValue(getStock(row), 'inventoryStatus', t),
       header: t('inventory.stock_table.columns.inventory_status'),
       enableSorting: true,
       enableColumnFilter: true,
@@ -129,7 +77,7 @@ export const createInventoryStockTableColumns = (
     },
     {
       id: 'quantityWithStockUnit',
-      accessorFn: (row) => getFormattedQuantityWithUnit(getStock(row), t('inventory.stock_table.values.none')),
+      accessorFn: (row) => getInventoryStockTableSortValue(getStock(row), 'quantityWithStockUnit', t),
       header: t('inventory.stock_table.columns.quantity_with_stock_unit'),
       enableSorting: true,
       enableColumnFilter: true,
@@ -137,8 +85,7 @@ export const createInventoryStockTableColumns = (
     },
     {
       id: 'minimumQuantity',
-      accessorFn: (row) =>
-        toLabel(formatNumericString(getStock(row).minimum_quantity), t('inventory.stock_table.values.none')),
+      accessorFn: (row) => getInventoryStockTableSortValue(getStock(row), 'minimumQuantity', t),
       header: t('inventory.stock_table.columns.minimum_quantity'),
       enableSorting: true,
       enableColumnFilter: true,
@@ -146,7 +93,7 @@ export const createInventoryStockTableColumns = (
     },
     {
       id: 'location',
-      accessorFn: (row) => toLabel(getStock(row).location_label, t('inventory.stock_table.values.unknown_location')),
+      accessorFn: (row) => getInventoryStockTableSortValue(getStock(row), 'location', t),
       header: t('inventory.stock_table.columns.location'),
       enableSorting: true,
       enableColumnFilter: true,
@@ -154,13 +101,7 @@ export const createInventoryStockTableColumns = (
     },
     {
       id: 'deviceType',
-      accessorFn: (row) => {
-        const stock = getStock(row)
-        return toLabel(
-          stock.material.device_type?.label || stock.material.device_type?.name,
-          t('inventory.stock_table.values.none'),
-        )
-      },
+      accessorFn: (row) => getInventoryStockTableSortValue(getStock(row), 'deviceType', t),
       header: t('inventory.stock_table.columns.device_type'),
       enableSorting: true,
       enableColumnFilter: true,
@@ -169,13 +110,7 @@ export const createInventoryStockTableColumns = (
     },
     {
       id: 'itemType',
-      accessorFn: (row) => {
-        const stock = getStock(row)
-        return toLabel(
-          stock.material.item_type?.label || stock.material.item_type?.name,
-          t('inventory.stock_table.values.none'),
-        )
-      },
+      accessorFn: (row) => getInventoryStockTableSortValue(getStock(row), 'itemType', t),
       header: t('inventory.stock_table.columns.item_type'),
       enableSorting: true,
       enableColumnFilter: true,
@@ -184,7 +119,7 @@ export const createInventoryStockTableColumns = (
     },
     {
       id: 'attributes',
-      accessorFn: (row) => getAttributes(getStock(row), t),
+      accessorFn: (row) => getInventoryStockTableSortValue(getStock(row), 'attributes', t),
       header: t('inventory.stock_table.columns.attributes'),
       enableSorting: true,
       enableColumnFilter: true,
@@ -193,7 +128,7 @@ export const createInventoryStockTableColumns = (
     },
     {
       id: 'lotNumber',
-      accessorFn: (row) => toLabel(getStock(row).lot_number, t('inventory.stock_table.values.none')),
+      accessorFn: (row) => getInventoryStockTableSortValue(getStock(row), 'lotNumber', t),
       header: t('inventory.stock_table.columns.lot_number'),
       enableSorting: true,
       enableColumnFilter: true,
@@ -202,13 +137,7 @@ export const createInventoryStockTableColumns = (
     },
     {
       id: 'expiryDate',
-      accessorFn: (row) => {
-        const expiryDate = getStock(row).expiry_date
-        if (!expiryDate) {
-          return t('inventory.stock_table.values.none')
-        }
-        return formatDateTime(expiryDate, { dateStyle: 'medium' }, t('inventory.stock_table.values.none'))
-      },
+      accessorFn: (row) => getInventoryStockTableSortValue(getStock(row), 'expiryDate', t),
       header: t('inventory.stock_table.columns.expiry_date'),
       enableSorting: true,
       enableColumnFilter: true,
@@ -217,7 +146,7 @@ export const createInventoryStockTableColumns = (
     },
     {
       id: 'notes',
-      accessorFn: (row) => toLabel(getStock(row).notes, t('inventory.stock_table.values.no_notes')),
+      accessorFn: (row) => getInventoryStockTableSortValue(getStock(row), 'notes', t),
       header: t('inventory.stock_table.columns.notes'),
       enableSorting: true,
       enableColumnFilter: true,

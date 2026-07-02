@@ -1,7 +1,12 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import InventoryActionCard from '~/components/inventory/InventoryActionCard.vue'
+import {
+  getStocksForPreset,
+  sortStocksLikeInventoryTable,
+} from '~/components/inventory/inventory-stock-table.values'
 import { useInventoryStocksQuery } from '~/composables/inventory/useInventoryStockQuery'
+import { useInventoryStockTablePreferenceStore } from '~/stores/inventory/InventoryStockTablePreferenceStore'
 import type { InventoryStockListItem, InventoryStockPreset } from '~/types/inventory'
 
 type InventoryActionItem = {
@@ -26,6 +31,7 @@ const emit = defineEmits<{
 
 const { t } = useI18n()
 const stocksQuery = useInventoryStocksQuery()
+const stockTablePreferenceStore = useInventoryStockTablePreferenceStore()
 const stocks = computed<InventoryStockListItem[]>(() => stocksQuery.data.value ?? [])
 
 /**
@@ -60,19 +66,8 @@ const onSelectAction = (actionId: string): void => {
 }
 
 const getPreviewItems = (preset: InventoryStockPreset): InventoryStockListItem[] => {
-  if (preset === 'favorite') {
-    return stocks.value.filter((stock) => stock.is_favorite).slice(0, 5)
-  }
-
-  if (preset === 'low_stock') {
-    return stocks.value.filter((stock) => stock.is_low_stock || stock.inventory_status === 'low').slice(0, 5)
-  }
-
-  if (preset === 'expired') {
-    return stocks.value.filter((stock) => stock.is_expired).slice(0, 5)
-  }
-
-  return []
+  const presetStocks = getStocksForPreset(stocks.value, preset)
+  return sortStocksLikeInventoryTable(presetStocks, stockTablePreferenceStore.sortingState, t).slice(0, 5)
 }
 
 const previewCards = computed<InventoryPreviewCard[]>(() => [

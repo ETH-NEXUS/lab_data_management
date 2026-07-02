@@ -2,6 +2,7 @@
 import { computed, ref, watch } from 'vue'
 import InventoryStockDetailsPanel from '~/components/inventory/stock-details/InventoryStockDetailsPanel.vue'
 import InventoryStockTable from '~/components/inventory/InventoryStockTable.vue'
+import { getStocksForPreset } from '~/components/inventory/inventory-stock-table.values'
 import { useInventoryStocksQuery } from '~/composables/inventory/useInventoryStockQuery'
 import { useInventoryStockTablePreferenceStore } from '~/stores/inventory/InventoryStockTablePreferenceStore'
 import type { InventoryStockListItem, InventoryStockPreset } from '~/types/inventory'
@@ -36,19 +37,7 @@ const effectivePreset = computed<InventoryStockPreset>(() => {
  * - `[{ id: 4, is_favorite: true, ... }, { id: 12, is_favorite: true, ... }]`
  */
 const filteredStocks = computed<InventoryStockListItem[]>(() => {
-  if (effectivePreset.value === 'favorite') {
-    return stocks.value.filter((stock) => stock.is_favorite)
-  }
-
-  if (effectivePreset.value === 'low_stock') {
-    return stocks.value.filter((stock) => stock.is_low_stock || stock.inventory_status === 'low')
-  }
-
-  if (effectivePreset.value === 'expired') {
-    return stocks.value.filter((stock) => stock.is_expired)
-  }
-
-  return stocks.value
+  return getStocksForPreset(stocks.value, effectivePreset.value)
 })
 
 const selectedStock = computed<InventoryStockListItem | null>(() => {
