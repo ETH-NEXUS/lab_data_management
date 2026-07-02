@@ -16,7 +16,6 @@ import {
 } from '@tanstack/vue-table'
 import {
   applyUpdater,
-  buildFrozenLeftByColumnId,
   filterVisibleOptions,
   formatCellValue,
   getColumnSemanticGroup,
@@ -29,7 +28,6 @@ type BaseDataTableProps = {
   data: TableRow[]
   columns: ColumnDef<TableRow, unknown>[]
   globalFilterPlaceholder?: string
-  frozenColumnCount?: number
   rowCellClassName?: (row: TableRow) => string | string[]
   rowClickable?: boolean
   hideToolbar?: boolean
@@ -44,7 +42,6 @@ type BaseDataTableProps = {
 
 const props = withDefaults(defineProps<BaseDataTableProps>(), {
   globalFilterPlaceholder: '',
-  frozenColumnCount: 0,
   rowCellClassName: () => '',
   rowClickable: false,
   hideToolbar: false,
@@ -293,18 +290,6 @@ const getSortIcon = (state: false | 'asc' | 'desc'): string => {
   return 'i-heroicons-arrows-up-down'
 }
 
-const frozenLeafColumns = computed(() => {
-  return table.getAllLeafColumns().slice(0, props.frozenColumnCount)
-})
-
-const frozenLeftByColumnId = computed<Record<string, number>>(() => {
-  return buildFrozenLeftByColumnId(frozenLeafColumns.value)
-})
-
-const isFrozenColumn = (column: Column<TableRow, unknown>): boolean => {
-  return props.frozenColumnCount > 0 && frozenLeftByColumnId.value[column.id] != null
-}
-
 /**
  * Maps semantic group metadata to cell background helper classes.
  *
@@ -349,47 +334,16 @@ const getSemanticHeaderClass = (column: Column<TableRow, unknown>): string => {
 
 const getCellClass = (column: Column<TableRow, unknown>): string[] => {
   const classes = ['worksheet-cell', 'px-3 py-2.5 text-sm']
-
-  if (isFrozenColumn(column)) {
-    // Frozen columns always use white background for scan stability.
-    classes.push('sticky z-20 bg-white worksheet-sticky-cell')
-  } else {
-    classes.push(getSemanticCellClass(column))
-  }
+  classes.push(getSemanticCellClass(column))
 
   return classes
 }
 
 const getHeaderCellClass = (column: Column<TableRow, unknown>): string[] => {
   const classes = ['worksheet-header-cell', 'px-3 py-2.5 text-sm', 'font-semibold text-slate-800']
-
-  if (isFrozenColumn(column)) {
-    // Frozen columns always use white background for scan stability.
-    classes.push('sticky z-30 bg-white worksheet-sticky-header')
-  } else {
-    classes.push(getSemanticHeaderClass(column))
-  }
+  classes.push(getSemanticHeaderClass(column))
 
   return classes
-}
-
-/**
- * Returns sticky position styles for frozen columns.
- *
- * Returned style example:
- * - `{ left: '184px', minWidth: '220px', width: '220px' }`
- */
-const getStickyStyle = (column: Column<TableRow, unknown>): Record<string, string> => {
-  if (!isFrozenColumn(column)) {
-    return {}
-  }
-
-  return {
-    left: `${frozenLeftByColumnId.value[column.id]}px`,
-    minWidth: `${column.getSize()}px`,
-    width: `${column.getSize()}px`,
-    boxShadow: '1px 0 0 rgba(148, 163, 184, 0.35)',
-  }
 }
 
 /**
@@ -509,7 +463,6 @@ const totalRowsCount = computed<number>(() => {
               :key="header.id"
               scope="col"
               :class="getHeaderCellClass(header.column)"
-              :style="getStickyStyle(header.column)"
             >
               <template v-if="!header.isPlaceholder">
                 <div class="flex items-center justify-between gap-2">
@@ -650,7 +603,6 @@ const totalRowsCount = computed<number>(() => {
               v-for="cell in row.getAllCells()"
               :key="cell.id"
               :class="[...getCellClass(cell.column), 'text-slate-700', ...getRowCellClass(row.original)]"
-              :style="getStickyStyle(cell.column)"
             >
               <template v-if="hasCustomCellRenderer(cell.column)">
                 <FlexRender :render="cell.column.columnDef.cell" :props="cell.getContext()" />

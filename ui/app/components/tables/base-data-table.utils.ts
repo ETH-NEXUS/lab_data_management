@@ -102,27 +102,6 @@ export const filterVisibleOptions = (options: string[], query: string): string[]
 }
 
 /**
- * Calculates sticky-left offsets for frozen columns.
- *
- * Input example:
- * - first three columns with widths `[64, 120, 240]`
- *
- * Returned data example:
- * - `{ favorite: 0, status: 64, product_name: 184 }`
- */
-export const buildFrozenLeftByColumnId = (columns: Column<TableRow, unknown>[]): Record<string, number> => {
-  const offsets: Record<string, number> = {}
-  let leftOffset = 0
-
-  for (const column of columns) {
-    offsets[column.id] = leftOffset
-    leftOffset += column.getSize()
-  }
-
-  return offsets
-}
-
-/**
  * Converts a raw cell value to user-facing string for default cell rendering.
  *
  * Input examples:

@@ -371,22 +371,6 @@ body {
     border-right: 0;
   }
 
-  .worksheet-sticky-header,
-  .worksheet-sticky-cell {
-    background-clip: padding-box;
-  }
-
-  .worksheet-sticky-header::after,
-  .worksheet-sticky-cell::after {
-    content: '';
-    position: absolute;
-    top: 0;
-    right: -1px;
-    width: 1px;
-    height: 100%;
-    background: rgb(203 213 225 / 80%);
-  }
-
   .worksheet-header-group-identity {
     background: rgb(238 248 255);
   }
