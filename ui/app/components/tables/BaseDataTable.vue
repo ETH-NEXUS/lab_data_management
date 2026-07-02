@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import {
   FlexRender,
-  type Column,
   type ColumnDef,
   type ColumnFiltersState,
   type ColumnOrderState,
@@ -10,9 +9,15 @@ import {
 } from '@tanstack/vue-table'
 import {
   formatCellValue,
-  getColumnSemanticGroup,
   type TableRow,
 } from '~/components/tables/base-data-table.utils'
+import {
+  getCellClass as getPresentationCellClass,
+  getColumnVisibilityLabel as getPresentationColumnVisibilityLabel,
+  getHeaderCellClass as getPresentationHeaderCellClass,
+  getSortIcon as getPresentationSortIcon,
+  hasCustomCellRenderer as hasPresentationCustomCellRenderer,
+} from '~/components/tables/base-data-table.presentation'
 import { useBaseDataTableState } from '~/components/tables/useBaseDataTableState'
 
 type BaseDataTableProps = {
@@ -75,86 +80,6 @@ const {
   onColumnVisibilityChange: (columnVisibility) => emit('columnVisibilityChange', columnVisibility),
 })
 
-const getColumnVisibilityLabel = (column: Column<TableRow, unknown>): string => {
-  const headerValue = column.columnDef.header
-
-  if (typeof headerValue === 'string') {
-    return headerValue
-  }
-
-  return column.id
-}
-
-/**
- * Returns the matching sort icon name for a given sorting state.
- *
- * Input examples:
- * - `false`
- * - `'asc'`
- * - `'desc'`
- */
-const getSortIcon = (state: false | 'asc' | 'desc'): string => {
-  if (state === 'asc') return 'i-heroicons-bars-arrow-up'
-  if (state === 'desc') return 'i-heroicons-bars-arrow-down'
-  return 'i-heroicons-arrows-up-down'
-}
-
-/**
- * Maps semantic group metadata to cell background helper classes.
- *
- * Returned value examples:
- * - `'worksheet-cell-group-identity'`
- * - `'worksheet-cell-group-lifecycle'`
- */
-const getSemanticCellClass = (column: Column<TableRow, unknown>): string => {
-  const semanticGroup = getColumnSemanticGroup(column)
-
-  if (semanticGroup === 'identity') {
-    return 'worksheet-cell-group-identity'
-  }
-
-  if (semanticGroup === 'lifecycle') {
-    return 'worksheet-cell-group-lifecycle'
-  }
-
-  return 'bg-white'
-}
-
-/**
- * Maps semantic group metadata to header background helper classes.
- *
- * Returned value examples:
- * - `'worksheet-header-group-identity'`
- * - `'worksheet-header-group-lifecycle'`
- */
-const getSemanticHeaderClass = (column: Column<TableRow, unknown>): string => {
-  const semanticGroup = getColumnSemanticGroup(column)
-
-  if (semanticGroup === 'identity') {
-    return 'worksheet-header-group-identity'
-  }
-
-  if (semanticGroup === 'lifecycle') {
-    return 'worksheet-header-group-lifecycle'
-  }
-
-  return 'bg-slate-50'
-}
-
-const getCellClass = (column: Column<TableRow, unknown>): string[] => {
-  const classes = ['worksheet-cell', 'px-3 py-2.5 text-sm']
-  classes.push(getSemanticCellClass(column))
-
-  return classes
-}
-
-const getHeaderCellClass = (column: Column<TableRow, unknown>): string[] => {
-  const classes = ['worksheet-header-cell', 'px-3 py-2.5 text-sm', 'font-semibold text-slate-800']
-  classes.push(getSemanticHeaderClass(column))
-
-  return classes
-}
-
 /**
  * Emits one clicked row to parent components.
  *
@@ -165,9 +90,11 @@ const emitRowClick = (row: TableRow): void => {
   emit('rowClick', row)
 }
 
-const hasCustomCellRenderer = (column: Column<TableRow, unknown>): boolean => {
-  return typeof column.columnDef.cell !== 'undefined'
-}
+const getColumnVisibilityLabel = getPresentationColumnVisibilityLabel
+const getSortIcon = getPresentationSortIcon
+const getCellClass = getPresentationCellClass
+const getHeaderCellClass = getPresentationHeaderCellClass
+const hasCustomCellRenderer = hasPresentationCustomCellRenderer
 
 const getRowCellClass = (row: TableRow): string[] => {
   const customClass = props.rowCellClassName?.(row)
