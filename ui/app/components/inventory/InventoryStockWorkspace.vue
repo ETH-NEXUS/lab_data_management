@@ -8,6 +8,7 @@ import type { InventoryStockListItem, InventoryStockPreset } from '~/types/inven
 
 type Props = {
   preset?: InventoryStockPreset
+  initialStockId?: number | null
 }
 
 const props = defineProps<Props>()
@@ -17,7 +18,7 @@ const { t } = useI18n()
 const stocksQuery = useInventoryStocksQuery()
 const stockTablePreferenceStore = useInventoryStockTablePreferenceStore()
 
-const selectedStockId = ref<number | null>(null)
+const selectedStockId = ref<number | null>(props.initialStockId ?? null)
 
 const stocks = computed<InventoryStockListItem[]>(() => stocksQuery.data.value ?? [])
 const effectivePreset = computed<InventoryStockPreset>(() => {
@@ -156,6 +157,14 @@ watch(
     if (nextPreset !== stockTablePreferenceStore.presetState) {
       void stockTablePreferenceStore.updatePresetState(nextPreset)
     }
+  },
+  { immediate: true },
+)
+
+watch(
+  () => props.initialStockId,
+  (nextStockId) => {
+    selectedStockId.value = nextStockId ?? null
   },
   { immediate: true },
 )

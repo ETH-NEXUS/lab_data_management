@@ -32,6 +32,19 @@ const selectedPreset = computed<InventoryStockPreset | undefined>(() => {
   if (normalizedPreset === 'all') return 'all'
   return undefined
 })
+
+const selectedStockId = computed<number | null>(() => {
+  const stockValue = route.query.stock
+  const normalizedStockValue = Array.isArray(stockValue) ? stockValue[0] : stockValue
+
+  if (!normalizedStockValue) {
+    return null
+  }
+
+  const parsedStockId = Number.parseInt(normalizedStockValue, 10)
+
+  return Number.isNaN(parsedStockId) ? null : parsedStockId
+})
 </script>
 
 <template>
@@ -45,7 +58,7 @@ const selectedPreset = computed<InventoryStockPreset | undefined>(() => {
         @click="goBackToInventory"
       />
 
-      <InventoryStockWorkspace :preset="selectedPreset" />
+      <InventoryStockWorkspace :preset="selectedPreset" :initial-stock-id="selectedStockId" />
     </div>
   </section>
 </template>
