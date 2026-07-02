@@ -138,110 +138,16 @@ const getRowCellClass = (row: TableRow): string[] => {
                     <FlexRender :render="header.column.columnDef.header" :props="header.getContext()" />
                   </div>
 
-                  <UPopover v-if="header.column.getCanFilter()" :content="{ side: 'bottom', align: 'end' }">
-                    <UButton
-                      variant="ghost"
-                      color="neutral"
-                      size="xs"
-                      icon="i-heroicons-funnel"
-                      :class="header.column.getFilterValue() ? 'text-blue-700' : 'text-slate-500'"
-                      @click="initializeColumnFilterDraft(header.column)"
-                    />
-
-                    <template #content="{ close }">
-                      <div class="w-64 space-y-3 p-3">
-                        <div class="flex flex-col gap-1">
-                          <UButton
-                            variant="ghost"
-                            color="neutral"
-                            icon="i-heroicons-bars-arrow-up"
-                            :label="t('table.general.sort_asc')"
-                            block
-                            @click="
-                              () => {
-                                header.column.toggleSorting(false)
-                                close()
-                              }
-                            "
-                          />
-                          <UButton
-                            variant="ghost"
-                            color="neutral"
-                            icon="i-heroicons-bars-arrow-down"
-                            :label="t('table.general.sort_desc')"
-                            block
-                            @click="
-                              () => {
-                                header.column.toggleSorting(true)
-                                close()
-                              }
-                            "
-                          />
-                          <UButton
-                            variant="ghost"
-                            color="neutral"
-                            icon="i-heroicons-arrows-up-down"
-                            :label="t('table.general.clear_sort')"
-                            block
-                            @click="
-                              () => {
-                                header.column.clearSorting()
-                                close()
-                              }
-                            "
-                          />
-                        </div>
-
-                        <UDivider />
-
-                        <UInput
-                          v-model="filterSearch[header.column.id]"
-                          :placeholder="t('table.general.filter_options_placeholder')"
-                          icon="i-heroicons-magnifying-glass"
-                          size="sm"
-                        />
-
-                        <div class="max-h-44 space-y-1 overflow-y-auto pr-1">
-                          <label
-                            v-for="option in getVisibleFilterOptions(header.column)"
-                            :key="`${header.column.id}-${option}`"
-                            class="flex cursor-pointer items-center gap-2 rounded px-1 py-1 hover:bg-slate-50"
-                          >
-                            <UCheckbox
-                              :model-value="isDraftValueSelected(header.column.id, option)"
-                              @update:model-value="
-                                (checked) => setDraftValueSelection(header.column.id, option, Boolean(checked))
-                              "
-                            />
-                            <span class="truncate text-xs text-slate-700">{{ option }}</span>
-                          </label>
-
-                          <p
-                            v-if="getVisibleFilterOptions(header.column).length === 0"
-                            class="px-1 py-1 text-xs text-slate-500"
-                          >
-                            {{ t('table.general.no_filter_options') }}
-                          </p>
-                        </div>
-
-                        <div class="flex items-center gap-2">
-                          <UButton
-                            color="primary"
-                            size="sm"
-                            :label="t('table.general.apply_filter')"
-                            @click="applyColumnFilter(header.column, close)"
-                          />
-                          <UButton
-                            variant="ghost"
-                            color="neutral"
-                            size="sm"
-                            :label="t('table.general.clear_filter')"
-                            @click="clearColumnFilter(header.column, close)"
-                          />
-                        </div>
-                      </div>
-                    </template>
-                  </UPopover>
+                  <BaseDataTableHeaderFilter
+                    :column="header.column"
+                    :filter-search="filterSearch"
+                    :get-visible-filter-options="getVisibleFilterOptions"
+                    :initialize-column-filter-draft="initializeColumnFilterDraft"
+                    :is-draft-value-selected="isDraftValueSelected"
+                    :set-draft-value-selection="setDraftValueSelection"
+                    :apply-column-filter="applyColumnFilter"
+                    :clear-column-filter="clearColumnFilter"
+                  />
                 </div>
               </template>
             </th>

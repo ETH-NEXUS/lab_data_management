@@ -46,7 +46,6 @@ const getStockRowCellClass = (row: Record<string, unknown>): string => {
   if (stock.is_favorite) {
     return '!bg-amber-100'
   }
-
   return ''
 }
 
