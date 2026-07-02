@@ -1,28 +1,19 @@
 <script setup lang="ts">
 import {
   FlexRender,
-  getCoreRowModel,
-  getFilteredRowModel,
-  getPaginationRowModel,
-  getSortedRowModel,
-  useVueTable,
   type Column,
   type ColumnDef,
   type ColumnFiltersState,
   type ColumnOrderState,
-  type PaginationState,
   type SortingState,
   type VisibilityState,
 } from '@tanstack/vue-table'
 import {
-  applyUpdater,
-  filterVisibleOptions,
   formatCellValue,
   getColumnSemanticGroup,
-  getUniqueColumnValues,
-  multiValueFilter,
   type TableRow,
 } from '~/components/tables/base-data-table.utils'
+import { useBaseDataTableState } from '~/components/tables/useBaseDataTableState'
 
 type BaseDataTableProps = {
   data: TableRow[]
@@ -64,162 +55,25 @@ const emit = defineEmits<{
 }>()
 
 const { t } = useI18n()
-
-const sorting = ref<SortingState>(props.sortingState)
-const globalFilter = ref(props.globalFilterState)
-const columnFilters = ref<ColumnFiltersState>(props.columnFiltersState)
-const columnOrder = ref<ColumnOrderState>(props.columnOrderState)
-const columnVisibility = ref<VisibilityState>(props.columnVisibilityState)
-const pagination = ref<PaginationState>({
-  pageIndex: 0,
-  pageSize: props.pageSize,
+const {
+  globalFilter,
+  filterSearch,
+  table,
+  getVisibleFilterOptions,
+  initializeColumnFilterDraft,
+  isDraftValueSelected,
+  setDraftValueSelection,
+  applyColumnFilter,
+  clearColumnFilter,
+  clearAllFilters,
+  totalRowsCount,
+} = useBaseDataTableState(props, {
+  onSortingChange: (sorting) => emit('sortingChange', sorting),
+  onGlobalFilterChange: (value) => emit('globalFilterChange', value),
+  onColumnFiltersChange: (filters) => emit('columnFiltersChange', filters),
+  onColumnOrderChange: (columnOrder) => emit('columnOrderChange', columnOrder),
+  onColumnVisibilityChange: (columnVisibility) => emit('columnVisibilityChange', columnVisibility),
 })
-
-const filterDraft = ref<Record<string, string[]>>({})
-const filterSearch = ref<Record<string, string>>({})
-
-const table = useVueTable({
-  get data() {
-    return props.data
-  },
-  get columns() {
-    return props.columns
-  },
-  defaultColumn: {
-    filterFn: multiValueFilter,
-  },
-  state: {
-    get sorting() {
-      return sorting.value
-    },
-    get globalFilter() {
-      return globalFilter.value
-    },
-    get columnFilters() {
-      return columnFilters.value
-    },
-    get columnOrder() {
-      return columnOrder.value
-    },
-    get columnVisibility() {
-      return columnVisibility.value
-    },
-    get pagination() {
-      return pagination.value
-    },
-  },
-  filterFns: {
-    multiValue: multiValueFilter,
-  },
-  onSortingChange: (updater) => {
-    sorting.value = applyUpdater(updater, sorting.value)
-    emit('sortingChange', sorting.value)
-  },
-  onGlobalFilterChange: (updater) => {
-    globalFilter.value = applyUpdater(updater, globalFilter.value)
-    emit('globalFilterChange', globalFilter.value)
-  },
-  onColumnFiltersChange: (updater) => {
-    columnFilters.value = applyUpdater(updater, columnFilters.value)
-    emit('columnFiltersChange', columnFilters.value)
-  },
-  onColumnOrderChange: (updater) => {
-    columnOrder.value = applyUpdater(updater, columnOrder.value)
-    emit('columnOrderChange', columnOrder.value)
-  },
-  onColumnVisibilityChange: (updater) => {
-    columnVisibility.value = applyUpdater(updater, columnVisibility.value)
-    emit('columnVisibilityChange', columnVisibility.value)
-  },
-  onPaginationChange: (updater) => {
-    pagination.value = applyUpdater(updater, pagination.value)
-  },
-  getCoreRowModel: getCoreRowModel(),
-  getFilteredRowModel: getFilteredRowModel(),
-  getSortedRowModel: getSortedRowModel(),
-  getPaginationRowModel: props.enablePagination ? getPaginationRowModel() : undefined,
-})
-
-/**
- * Builds unique column values from unfiltered rows to populate filter popovers.
- *
- * Returned structure example:
- * - `{ inventory_status: ['In stock', 'Low stock'], device_type: ['Freezer'] }`
- */
-const uniqueColumnValues = computed<Record<string, string[]>>(() => {
-  const valuesByColumnId: Record<string, string[]> = {}
-  const rows = table.getPreFilteredRowModel().rows
-
-  for (const column of table.getAllLeafColumns()) {
-    valuesByColumnId[column.id] = getUniqueColumnValues(rows, column)
-  }
-
-  return valuesByColumnId
-})
-
-/**
- * Filters the option list shown in one column filter popover.
- *
- * Input example:
- * - `column.id = 'item_type'`
- *
- * Returned example:
- * - `['Consumable', 'Reagent']`
- */
-const getVisibleFilterOptions = (column: Column<TableRow, unknown>): string[] => {
-  return filterVisibleOptions(uniqueColumnValues.value[column.id] ?? [], filterSearch.value[column.id] ?? '')
-}
-
-/**
- * Initializes temporary draft values when one filter popover opens.
- *
- * Input example:
- * - `column.id = 'inventory_status'`
- */
-const initializeColumnFilterDraft = (column: Column<TableRow, unknown>): void => {
-  const filterValue = column.getFilterValue()
-  filterDraft.value[column.id] = Array.isArray(filterValue) ? filterValue.map((value) => String(value)) : []
-  filterSearch.value[column.id] = ''
-}
-
-const isDraftValueSelected = (columnId: string, option: string): boolean => {
-  return (filterDraft.value[columnId] ?? []).includes(option)
-}
-
-const setDraftValueSelection = (columnId: string, option: string, checked: boolean): void => {
-  const current = filterDraft.value[columnId] ?? []
-  const next = checked ? Array.from(new Set([...current, option])) : current.filter((value) => value !== option)
-  filterDraft.value[columnId] = next
-}
-
-/**
- * Applies one column filter using the selected draft values.
- *
- * Input example:
- * - `column.id = 'location'`
- * - `filterDraft['location'] = ['Room A / Shelf 2']`
- */
-const applyColumnFilter = (column: Column<TableRow, unknown>, close?: () => void): void => {
-  const nextFilter = filterDraft.value[column.id] ?? []
-  column.setFilterValue(nextFilter.length > 0 ? nextFilter : undefined)
-  close?.()
-}
-
-const clearColumnFilter = (column: Column<TableRow, unknown>, close?: () => void): void => {
-  filterDraft.value[column.id] = []
-  filterSearch.value[column.id] = ''
-  column.setFilterValue(undefined)
-  close?.()
-}
-
-const clearAllFilters = (): void => {
-  sorting.value = []
-  globalFilter.value = ''
-  columnFilters.value = []
-  filterDraft.value = {}
-  filterSearch.value = {}
-  pagination.value.pageIndex = 0
-}
 
 const getColumnVisibilityLabel = (column: Column<TableRow, unknown>): string => {
   const headerValue = column.columnDef.header
@@ -230,51 +84,6 @@ const getColumnVisibilityLabel = (column: Column<TableRow, unknown>): string => 
 
   return column.id
 }
-
-watch(
-  () => props.pageSize,
-  (pageSize) => {
-    pagination.value = {
-      pageIndex: 0,
-      pageSize,
-    }
-  },
-)
-
-watch(
-  () => props.sortingState,
-  (nextSortingState) => {
-    sorting.value = nextSortingState
-  },
-)
-
-watch(
-  () => props.globalFilterState,
-  (nextGlobalFilterState) => {
-    globalFilter.value = nextGlobalFilterState
-  },
-)
-
-watch(
-  () => props.columnFiltersState,
-  (nextColumnFiltersState) => {
-    columnFilters.value = nextColumnFiltersState
-  },
-)
-
-watch(
-  () => props.columnOrderState,
-  (nextColumnOrderState) => {
-    columnOrder.value = nextColumnOrderState
-  },
-)
-
-watch(
-  () => props.columnVisibilityState,
-  (nextColumnVisibilityState) => {
-    columnVisibility.value = nextColumnVisibilityState
-  },
-)
 
 /**
  * Returns the matching sort icon name for a given sorting state.
@@ -373,10 +182,6 @@ const getRowCellClass = (row: TableRow): string[] => {
 
   return customClass.trim() === '' ? [] : [customClass]
 }
-
-const totalRowsCount = computed<number>(() => {
-  return props.enablePagination ? table.getFilteredRowModel().rows.length : table.getRowModel().rows.length
-})
 </script>
 
 <template>
@@ -600,7 +405,7 @@ const totalRowsCount = computed<number>(() => {
             @click="props.rowClickable ? emitRowClick(row.original) : undefined"
           >
             <td
-              v-for="cell in row.getAllCells()"
+              v-for="cell in row.getVisibleCells()"
               :key="cell.id"
               :class="[...getCellClass(cell.column), 'text-slate-700', ...getRowCellClass(row.original)]"
             >
@@ -614,7 +419,7 @@ const totalRowsCount = computed<number>(() => {
           </tr>
 
           <tr v-if="table.getRowModel().rows.length === 0">
-            <td :colspan="table.getAllLeafColumns().length" class="px-3 py-10 text-center text-sm text-slate-500">
+            <td :colspan="table.getVisibleLeafColumns().length" class="px-3 py-10 text-center text-sm text-slate-500">
               {{ t('table.general.no_rows') }}
             </td>
           </tr>
