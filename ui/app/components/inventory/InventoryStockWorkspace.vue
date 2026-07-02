@@ -101,6 +101,11 @@ const hasSelectedStock = computed<boolean>(() => {
   return selectedStock.value !== null
 })
 
+const setSelectedStockId = (stockId: number | null): void => {
+  selectedStockId.value = stockId
+  emit('update:selected-stock-id', stockId)
+}
+
 /**
  * Opens the stock detail drawer for one selected row.
  *
@@ -108,13 +113,11 @@ const hasSelectedStock = computed<boolean>(() => {
  * - `{ id: 14, material: { id: 3, product_name: 'PBS buffer' }, ... }`
  */
 const openStockDetails = (stock: InventoryStockListItem): void => {
-  selectedStockId.value = stock.id
-  emit('update:selected-stock-id', stock.id)
+  setSelectedStockId(stock.id)
 }
 
 const closeStockDetails = (): void => {
-  selectedStockId.value = null
-  emit('update:selected-stock-id', null)
+  setSelectedStockId(null)
 }
 
 // Close drawer when selected stock no longer exists in refreshed data.
@@ -127,8 +130,7 @@ watch(
 
     const hasMatch = filteredStocks.value.some((stock) => stock.id === stockId)
     if (!hasMatch) {
-      selectedStockId.value = null
-      emit('update:selected-stock-id', null)
+      setSelectedStockId(null)
     }
   },
 )
@@ -137,8 +139,7 @@ watch(
   () => selectedStock.value,
   (stock) => {
     if (!stock && selectedStockId.value !== null) {
-      selectedStockId.value = null
-      emit('update:selected-stock-id', null)
+      setSelectedStockId(null)
     }
   },
 )
