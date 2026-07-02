@@ -15,6 +15,7 @@ import {
   getCellClass as getPresentationCellClass,
   getColumnVisibilityLabel as getPresentationColumnVisibilityLabel,
   getHeaderCellClass as getPresentationHeaderCellClass,
+  getRowCellClass as getPresentationRowCellClass,
   getSortIcon as getPresentationSortIcon,
   hasCustomCellRenderer as hasPresentationCustomCellRenderer,
 } from '~/components/tables/base-data-table.presentation'
@@ -97,17 +98,7 @@ const getHeaderCellClass = getPresentationHeaderCellClass
 const hasCustomCellRenderer = hasPresentationCustomCellRenderer
 
 const getRowCellClass = (row: TableRow): string[] => {
-  const customClass = props.rowCellClassName?.(row)
-
-  if (!customClass) {
-    return []
-  }
-
-  if (Array.isArray(customClass)) {
-    return customClass.filter((value) => value.trim() !== '')
-  }
-
-  return customClass.trim() === '' ? [] : [customClass]
+  return getPresentationRowCellClass(props.rowCellClassName?.(row))
 }
 </script>
 
