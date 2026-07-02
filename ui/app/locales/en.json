@@ -648,6 +648,7 @@
     "general": {
       "search_placeholder": "Search table",
       "rows": "{count} rows",
+      "columns": "Columns",
       "clear_all": "Clear all",
       "sort_asc": "Sort ascending",
       "sort_desc": "Sort descending",

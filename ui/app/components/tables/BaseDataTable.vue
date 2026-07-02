@@ -224,6 +224,16 @@ const clearAllFilters = (): void => {
   pagination.value.pageIndex = 0
 }
 
+const getColumnVisibilityLabel = (column: Column<TableRow, unknown>): string => {
+  const headerValue = column.columnDef.header
+
+  if (typeof headerValue === 'string') {
+    return headerValue
+  }
+
+  return column.id
+}
+
 watch(
   () => props.pageSize,
   (pageSize) => {
@@ -429,6 +439,36 @@ const totalRowsCount = computed<number>(() => {
         <UBadge color="neutral" variant="soft" class="font-medium">
           {{ t('table.general.rows', { count: totalRowsCount }) }}
         </UBadge>
+        <UPopover :content="{ side: 'bottom', align: 'end' }">
+          <UButton
+            variant="ghost"
+            color="neutral"
+            icon="i-heroicons-view-columns"
+            :label="t('table.general.columns')"
+          />
+
+          <template #content>
+            <div class="w-64 space-y-3 p-3">
+              <p class="text-xs font-semibold tracking-[0.06em] text-slate-600 uppercase">
+                {{ t('table.general.columns') }}
+              </p>
+
+              <div class="max-h-56 space-y-1 overflow-y-auto pr-1">
+                <label
+                  v-for="column in table.getAllLeafColumns()"
+                  :key="`visibility-${column.id}`"
+                  class="flex cursor-pointer items-center gap-2 rounded px-1 py-1 hover:bg-slate-50"
+                >
+                  <UCheckbox
+                    :model-value="column.getIsVisible()"
+                    @update:model-value="(checked) => column.toggleVisibility(Boolean(checked))"
+                  />
+                  <span class="truncate text-xs text-slate-700">{{ getColumnVisibilityLabel(column) }}</span>
+                </label>
+              </div>
+            </div>
+          </template>
+        </UPopover>
         <div v-if="props.enablePagination && totalRowsCount > 0" class="flex items-center gap-1">
           <span class="text-xs text-slate-600">
             {{ table.getState().pagination.pageIndex + 1 }} / {{ table.getPageCount() }}
