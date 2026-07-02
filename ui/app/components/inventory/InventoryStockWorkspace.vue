@@ -13,6 +13,9 @@ type Props = {
 }
 
 const props = defineProps<Props>()
+const emit = defineEmits<{
+  (e: 'update:selected-stock-id', stockId: number | null): void
+}>()
 
 const { t } = useI18n()
 
@@ -106,10 +109,12 @@ const hasSelectedStock = computed<boolean>(() => {
  */
 const openStockDetails = (stock: InventoryStockListItem): void => {
   selectedStockId.value = stock.id
+  emit('update:selected-stock-id', stock.id)
 }
 
 const closeStockDetails = (): void => {
   selectedStockId.value = null
+  emit('update:selected-stock-id', null)
 }
 
 // Close drawer when selected stock no longer exists in refreshed data.
@@ -123,6 +128,7 @@ watch(
     const hasMatch = filteredStocks.value.some((stock) => stock.id === stockId)
     if (!hasMatch) {
       selectedStockId.value = null
+      emit('update:selected-stock-id', null)
     }
   },
 )
@@ -132,6 +138,7 @@ watch(
   (stock) => {
     if (!stock && selectedStockId.value !== null) {
       selectedStockId.value = null
+      emit('update:selected-stock-id', null)
     }
   },
 )

@@ -5,6 +5,7 @@ import type { InventoryStockPreset } from '~/types/inventory'
 
 const { t } = useI18n()
 const route = useRoute()
+const router = useRouter()
 
 const goBackToInventory = (): void => {
   navigateTo('/inventory')
@@ -45,6 +46,27 @@ const selectedStockId = computed<number | null>(() => {
 
   return Number.isNaN(parsedStockId) ? null : parsedStockId
 })
+
+/**
+ * Keeps the `stock` query in sync with the selected stock drawer state.
+ *
+ * Input examples:
+ * - `14`
+ * - `null`
+ */
+const updateSelectedStockId = async (stockId: number | null): Promise<void> => {
+  const nextQuery = { ...route.query }
+
+  if (stockId === null) {
+    delete nextQuery.stock
+  } else {
+    nextQuery.stock = String(stockId)
+  }
+
+  await router.replace({
+    query: nextQuery,
+  })
+}
 </script>
 
 <template>
@@ -58,7 +80,11 @@ const selectedStockId = computed<number | null>(() => {
         @click="goBackToInventory"
       />
 
-      <InventoryStockWorkspace :preset="selectedPreset" :initial-stock-id="selectedStockId" />
+      <InventoryStockWorkspace
+        :preset="selectedPreset"
+        :initial-stock-id="selectedStockId"
+        @update:selected-stock-id="updateSelectedStockId"
+      />
     </div>
   </section>
 </template>
