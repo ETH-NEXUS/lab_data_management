@@ -1,7 +1,7 @@
 import { computed, ref, watch } from 'vue'
 import { useQueryClient } from '@tanstack/vue-query'
 import { useInventoryLookupsQuery } from '~/composables/inventory/useInventoryLookupQuery'
-import { parsePositiveIntegerList } from '~/components/inventory/add-item/inventoryAddItemForm.utils'
+import { parsePositiveIntegerList } from '~/components/inventory/inventorySectorSelection.utils'
 import { useInventoryStockStore } from '~/stores/inventory/InventoryStock'
 import { INVENTORY_STOCKS_QUERY_KEY, type InventoryStockListItem } from '~/types/inventory'
 import { getErrorMessage } from '~/utils/errors'
