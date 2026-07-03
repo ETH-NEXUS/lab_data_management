@@ -66,7 +66,7 @@ const onSelectAction = (actionId: string): void => {
 
     <div class="grid gap-4 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-start">
       <div class="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-        <NuxtLink to="/inventory/all" class="inventory-toolbar-card inventory-toolbar-card--primary">
+        <NuxtLink to="/inventory/all?preset=all" class="inventory-toolbar-card inventory-toolbar-card--primary">
           <span class="truncate">{{ allItemsAction.title }}</span>
         </NuxtLink>
 

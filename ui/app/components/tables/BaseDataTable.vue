@@ -18,6 +18,8 @@ import {
   getSortIcon as getPresentationSortIcon,
   hasCustomCellRenderer as hasPresentationCustomCellRenderer,
 } from '~/components/tables/base-data-table.presentation'
+import BaseDataTableHeaderFilter from '~/components/tables/BaseDataTableHeaderFilter.vue'
+import BaseDataTableToolbar from '~/components/tables/BaseDataTableToolbar.vue'
 import { useBaseDataTableState } from '~/components/tables/useBaseDataTableState'
 
 type BaseDataTableProps = {
