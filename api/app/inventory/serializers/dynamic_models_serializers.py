@@ -93,12 +93,72 @@ class SectorSummarySerializer(serializers.ModelSerializer):
         return str(obj)
 
 
+def get_inventory_stock_sectors(obj):
+    """
+    Returns the stock locations as one ordered list without duplicates.
+
+    Returned data examples:
+    - `[Sector(id=3, room='C75', name='3.1')]`
+    - `[Sector(id=3, room='C75', name='3.1'), Sector(id=4, room='C75', name='3.2')]`
+    """
+    sector_map = {}
+
+    if obj.sector_id:
+        sector_map[obj.sector_id] = obj.sector
+
+    for sector in obj.additional_sectors.all():
+        if sector.id == obj.sector_id:
+            continue
+        sector_map[sector.id] = sector
+
+    return sorted(
+        sector_map.values(),
+        key=lambda sector: (
+            sector.room.name.lower(),
+            sector.name.lower(),
+            sector.id,
+        ),
+    )
+
+
+def build_inventory_stock_location_label(obj):
+    """
+    Builds one readable location label for one or more sectors.
+
+    Returned data examples:
+    - `'C75 / 3.1'`
+    - `'C75 / 3.1, 3.2'`
+    - `'C41 / 1.1; C75 / 3.1'`
+    """
+    sectors = get_inventory_stock_sectors(obj)
+
+    if len(sectors) == 0:
+        return None
+
+    grouped_sector_names = {}
+
+    for sector in sectors:
+        room_name = sector.room.name
+        if room_name not in grouped_sector_names:
+            grouped_sector_names[room_name] = []
+        grouped_sector_names[room_name].append(sector.name)
+
+    room_labels = []
+
+    for room_name in sorted(grouped_sector_names.keys(), key=lambda value: value.lower()):
+        sector_names = grouped_sector_names[room_name]
+        room_labels.append(f"{room_name} / {', '.join(sector_names)}")
+
+    return "; ".join(room_labels)
+
+
 class InventoryStockListSerializer(serializers.ModelSerializer):
     """
     Compact serializer for stock list/table/card views.
     """
     material = MaterialMasterListSerializer(read_only=True)
     sector = SectorSummarySerializer(read_only=True)
+    sectors = serializers.SerializerMethodField()
     stock_unit = MaterialUnitSummarySerializer(read_only=True)
 
     room = serializers.SerializerMethodField()
@@ -117,6 +177,7 @@ class InventoryStockListSerializer(serializers.ModelSerializer):
             "id",
             "material",
             "sector",
+            "sectors",
             "room",
             "stock_unit",
             "quantity",
@@ -142,10 +203,11 @@ class InventoryStockListSerializer(serializers.ModelSerializer):
             return None
         return RoomSerializer(obj.sector.room).data
 
+    def get_sectors(self, obj):
+        return SectorSummarySerializer(get_inventory_stock_sectors(obj), many=True).data
+
     def get_location_label(self, obj):
-        if not obj.sector_id:
-            return None
-        return str(obj.sector)
+        return build_inventory_stock_location_label(obj)
 
     def get_stock_label(self, obj):
         unit_name = None
@@ -193,6 +255,13 @@ class InventoryStockDetailSerializer(serializers.ModelSerializer):
         write_only=True,
         required=False,
     )
+    sectors = serializers.SerializerMethodField()
+    sector_ids = serializers.PrimaryKeyRelatedField(
+        many=True,
+        queryset=Sector.objects.select_related("room").all(),
+        write_only=True,
+        required=False,
+    )
 
     stock_unit = MaterialUnitSummarySerializer(read_only=True)
     stock_unit_id = serializers.PrimaryKeyRelatedField(
@@ -216,6 +285,8 @@ class InventoryStockDetailSerializer(serializers.ModelSerializer):
             "material_id",
             "sector",
             "sector_id",
+            "sectors",
+            "sector_ids",
             "stock_unit",
             "stock_unit_id",
             "quantity",
@@ -240,10 +311,68 @@ class InventoryStockDetailSerializer(serializers.ModelSerializer):
             "updated_at",
         )
 
+    def validate(self, attrs):
+        sector_list = attrs.get("sector_ids")
+        primary_sector = attrs.get("sector", getattr(self.instance, "sector", None))
+
+        if sector_list is not None:
+            if len(sector_list) == 0:
+                raise serializers.ValidationError({
+                    "sector_ids": "Select at least one sector.",
+                })
+
+            unique_sector_ids = {sector.id for sector in sector_list}
+            if len(unique_sector_ids) != len(sector_list):
+                raise serializers.ValidationError({
+                    "sector_ids": "Each sector can only be selected once.",
+                })
+
+            room_ids = {sector.room_id for sector in sector_list}
+            if len(room_ids) > 1:
+                raise serializers.ValidationError({
+                    "sector_ids": "All selected sectors must belong to the same room.",
+                })
+
+            attrs["sector"] = sector_list[0]
+            attrs["_validated_sector_list"] = sector_list
+            return attrs
+
+        if primary_sector is None:
+            raise serializers.ValidationError({
+                "sector_id": "Sector is required.",
+            })
+
+        attrs["_validated_sector_list"] = [primary_sector]
+        return attrs
+
+    def create(self, validated_data):
+        sector_list = validated_data.pop("_validated_sector_list", [])
+        validated_data.pop("sector_ids", None)
+        stock = super().create(validated_data)
+        stock.additional_sectors.set([
+            sector for sector in sector_list
+            if sector.id != stock.sector_id
+        ])
+        return stock
+
+    def update(self, instance, validated_data):
+        sector_list = validated_data.pop("_validated_sector_list", None)
+        validated_data.pop("sector_ids", None)
+        stock = super().update(instance, validated_data)
+
+        if sector_list is not None:
+            stock.additional_sectors.set([
+                sector for sector in sector_list
+                if sector.id != stock.sector_id
+            ])
+
+        return stock
+
+    def get_sectors(self, obj):
+        return SectorSummarySerializer(get_inventory_stock_sectors(obj), many=True).data
+
     def get_location_label(self, obj):
-        if not obj.sector_id:
-            return None
-        return str(obj.sector)
+        return build_inventory_stock_location_label(obj)
 
     def get_stock_label(self, obj):
         unit_name = None

@@ -284,6 +284,8 @@ class InventoryStockViewSet(viewsets.ModelViewSet):
         .prefetch_related(
             "material__attributes",
             "material__units__unit",
+            "additional_sectors",
+            "additional_sectors__room",
         )
         .order_by("material__product_name", "sector__room__name", "sector__name")
     )
@@ -324,13 +326,19 @@ class InventoryStockViewSet(viewsets.ModelViewSet):
                 | Q(notes__icontains=search)
                 | Q(sector__name__icontains=search)
                 | Q(sector__room__name__icontains=search)
+                | Q(additional_sectors__name__icontains=search)
+                | Q(additional_sectors__room__name__icontains=search)
             ).distinct()
 
         if room_id:
-            queryset = queryset.filter(sector__room_id=room_id)
+            queryset = queryset.filter(
+                Q(sector__room_id=room_id) | Q(additional_sectors__room_id=room_id)
+            ).distinct()
 
         if sector_id:
-            queryset = queryset.filter(sector_id=sector_id)
+            queryset = queryset.filter(
+                Q(sector_id=sector_id) | Q(additional_sectors__id=sector_id)
+            ).distinct()
 
         if item_type_id:
             queryset = queryset.filter(material__item_type_id=item_type_id)

@@ -104,6 +104,16 @@ class InventoryStock(models.Model):
         help_text="Physical storage location of this stock entry.",
     )
 
+    additional_sectors = models.ManyToManyField(
+        Sector,
+        related_name="secondary_stock_entries",
+        blank=True,
+        help_text=(
+            "Additional physical storage sectors for the same stock item. "
+            "Example: one consumable split across multiple shelves in the same room."
+        ),
+    )
+
     stock_unit = models.ForeignKey(
         MaterialUnit,
         on_delete=models.PROTECT,
