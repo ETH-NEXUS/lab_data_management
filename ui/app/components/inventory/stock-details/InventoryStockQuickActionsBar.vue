@@ -18,11 +18,11 @@ const { t } = useI18n()
 </script>
 
 <template>
-  <div class="flex items-center justify-between gap-3">
+  <div class="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
     <p class="text-xs font-semibold tracking-[0.12em] text-slate-500 uppercase">
       {{ t('inventory.page.section_labels.quick_actions') }}
     </p>
-    <div class="flex items-center gap-2">
+    <div class="flex flex-wrap items-center gap-2">
       <UButton
         color="primary"
         size="xs"

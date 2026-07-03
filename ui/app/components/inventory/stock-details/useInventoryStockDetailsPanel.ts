@@ -238,7 +238,7 @@ export const useInventoryStockDetailsPanel = (props: Readonly<InventoryStockDeta
       return t('inventory.stock_drawer.values.none')
     }
 
-    const capacityValue = toDisplayValue(stock.material.capacity_value)
+    const capacityValue = toDisplayValue(formatDecimalForDisplay(stock.material.capacity_value))
     const capacityUnit = toDisplayValue(stock.material.capacity_unit)
 
     if (
