@@ -313,7 +313,7 @@ class InventoryStockDetailSerializer(serializers.ModelSerializer):
 
     def validate(self, attrs):
         sector_list = attrs.get("sector_ids")
-        primary_sector = attrs.get("sector", getattr(self.instance, "sector", None))
+        primary_sector = attrs.get("sector")
 
         if sector_list is not None:
             if len(sector_list) == 0:
@@ -337,12 +337,18 @@ class InventoryStockDetailSerializer(serializers.ModelSerializer):
             attrs["_validated_sector_list"] = sector_list
             return attrs
 
+        if primary_sector is not None:
+            attrs["_validated_sector_list"] = [primary_sector]
+            return attrs
+
+        if self.instance is not None:
+            return attrs
+
         if primary_sector is None:
             raise serializers.ValidationError({
                 "sector_id": "Sector is required.",
             })
 
-        attrs["_validated_sector_list"] = [primary_sector]
         return attrs
 
     def create(self, validated_data):
