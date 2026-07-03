@@ -1,12 +1,20 @@
 <script setup lang="ts">
 import { computed } from 'vue'
-import type { ColumnFiltersState, ColumnOrderState, SortingState, VisibilityState } from '@tanstack/vue-table'
+import type {
+  ColumnFiltersState,
+  ColumnOrderState,
+  PaginationState,
+  SortingState,
+  VisibilityState,
+} from '@tanstack/vue-table'
 import BaseDataTable from '~/components/tables/BaseDataTable.vue'
 import { createInventoryStockTableColumns } from '~/components/inventory/inventory-stock-table.columns'
 import type { InventoryStockListItem } from '~/types/inventory'
 
 type Props = {
   stocks: InventoryStockListItem[]
+  paginationState?: PaginationState
+  totalRowCount?: number
   sortingState?: SortingState
   globalFilterState?: string
   columnFiltersState?: ColumnFiltersState
@@ -18,6 +26,7 @@ const props = defineProps<Props>()
 
 const emit = defineEmits<{
   (e: 'select-stock', stock: InventoryStockListItem): void
+  (e: 'pagination-change', pagination: PaginationState): void
   (e: 'sorting-change', sorting: SortingState): void
   (e: 'global-filter-change', value: string): void
   (e: 'column-filters-change', filters: ColumnFiltersState): void
@@ -65,12 +74,19 @@ const tableColumns = computed(() => createInventoryStockTableColumns(t, onSelect
     :row-cell-class-name="getStockRowCellClass"
     enable-pagination
     :page-size="50"
+    :pagination-state="props.paginationState"
+    :total-row-count="props.totalRowCount"
+    manual-pagination
+    manual-sorting
+    manual-filtering
+    :enable-column-filters="false"
     :sorting-state="props.sortingState"
     :global-filter-state="props.globalFilterState"
     :column-filters-state="props.columnFiltersState"
     :column-order-state="props.columnOrderState"
     :column-visibility-state="props.columnVisibilityState"
     :global-filter-placeholder="t('table.general.search_placeholder')"
+    @pagination-change="(pagination) => emit('pagination-change', pagination)"
     @sorting-change="(sorting) => emit('sorting-change', sorting)"
     @global-filter-change="(value) => emit('global-filter-change', value)"
     @column-filters-change="(filters) => emit('column-filters-change', filters)"

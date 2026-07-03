@@ -26,6 +26,11 @@ export type BaseDataTableStateProps = {
   columns: ColumnDef<TableRow, unknown>[]
   enablePagination: boolean
   pageSize: number
+  paginationState?: PaginationState
+  totalRowCount?: number
+  manualPagination?: boolean
+  manualSorting?: boolean
+  manualFiltering?: boolean
   sortingState: SortingState
   globalFilterState: string
   columnFiltersState: ColumnFiltersState
@@ -34,6 +39,7 @@ export type BaseDataTableStateProps = {
 }
 
 export type BaseDataTableStateEmitters = {
+  onPaginationChange: (pagination: PaginationState) => void
   onSortingChange: (sorting: SortingState) => void
   onGlobalFilterChange: (value: string) => void
   onColumnFiltersChange: (filters: ColumnFiltersState) => void
@@ -75,10 +81,12 @@ export const useBaseDataTableState = (
   const columnFilters = ref<ColumnFiltersState>(props.columnFiltersState)
   const columnOrder = ref<ColumnOrderState>(props.columnOrderState)
   const columnVisibility = ref<VisibilityState>(props.columnVisibilityState)
-  const pagination = ref<PaginationState>({
-    pageIndex: 0,
-    pageSize: props.pageSize,
-  })
+  const pagination = ref<PaginationState>(
+    props.paginationState ?? {
+      pageIndex: 0,
+      pageSize: props.pageSize,
+    },
+  )
 
   const filterDraft = ref<Record<string, string[]>>({})
   const filterSearch = ref<Record<string, string>>({})
@@ -116,6 +124,10 @@ export const useBaseDataTableState = (
     filterFns: {
       multiValue: multiValueFilter,
     },
+    manualPagination: props.manualPagination ?? false,
+    manualSorting: props.manualSorting ?? false,
+    manualFiltering: props.manualFiltering ?? false,
+    rowCount: props.totalRowCount,
     onSortingChange: (updater) => {
       sorting.value = applyUpdater(updater, sorting.value)
       emitters.onSortingChange(sorting.value)
@@ -138,11 +150,13 @@ export const useBaseDataTableState = (
     },
     onPaginationChange: (updater) => {
       pagination.value = applyUpdater(updater, pagination.value)
+      emitters.onPaginationChange(pagination.value)
     },
     getCoreRowModel: getCoreRowModel(),
-    getFilteredRowModel: getFilteredRowModel(),
-    getSortedRowModel: getSortedRowModel(),
-    getPaginationRowModel: props.enablePagination ? getPaginationRowModel() : undefined,
+    getFilteredRowModel: props.manualFiltering ? undefined : getFilteredRowModel(),
+    getSortedRowModel: props.manualSorting ? undefined : getSortedRowModel(),
+    getPaginationRowModel:
+      props.enablePagination && !(props.manualPagination ?? false) ? getPaginationRowModel() : undefined,
   })
 
   /**
@@ -202,6 +216,10 @@ export const useBaseDataTableState = (
     filterDraft.value = {}
     filterSearch.value = {}
     pagination.value.pageIndex = 0
+    emitters.onSortingChange(sorting.value)
+    emitters.onGlobalFilterChange(globalFilter.value)
+    emitters.onColumnFiltersChange(columnFilters.value)
+    emitters.onPaginationChange(pagination.value)
   }
 
   watch(
@@ -211,6 +229,17 @@ export const useBaseDataTableState = (
         pageIndex: 0,
         pageSize,
       }
+    },
+  )
+
+  watch(
+    () => props.paginationState,
+    (nextPaginationState) => {
+      if (!nextPaginationState) {
+        return
+      }
+
+      pagination.value = nextPaginationState
     },
   )
 
@@ -250,6 +279,10 @@ export const useBaseDataTableState = (
   )
 
   const totalRowsCount = computed<number>(() => {
+    if ((props.manualPagination ?? false) && typeof props.totalRowCount === 'number') {
+      return props.totalRowCount
+    }
+
     return props.enablePagination ? table.getFilteredRowModel().rows.length : table.getRowModel().rows.length
   })
 

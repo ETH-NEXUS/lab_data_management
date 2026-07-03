@@ -1,9 +1,10 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
+import type { PaginationState, SortingState } from '@tanstack/vue-table'
 import InventoryStockDetailsPanel from '~/components/inventory/stock-details/InventoryStockDetailsPanel.vue'
 import InventoryStockTable from '~/components/inventory/InventoryStockTable.vue'
-import { getStocksForPreset } from '~/components/inventory/inventory-stock-table.values'
-import { useInventoryStocksQuery } from '~/composables/inventory/useInventoryStockQuery'
+import { useInventoryStockPageQuery } from '~/composables/inventory/useInventoryStockPageQuery'
+import { useInventoryStockQuery } from '~/composables/inventory/useInventoryStockQuery'
 import { useInventoryStockTablePreferenceStore } from '~/stores/inventory/InventoryStockTablePreferenceStore'
 import type { InventoryStockListItem, InventoryStockPreset } from '~/types/inventory'
 
@@ -19,28 +20,36 @@ const emit = defineEmits<{
 
 const { t } = useI18n()
 
-const stocksQuery = useInventoryStocksQuery()
 const stockTablePreferenceStore = useInventoryStockTablePreferenceStore()
 
 const selectedStockId = ref<number | null>(props.initialStockId ?? null)
+const paginationState = ref<PaginationState>({
+  pageIndex: 0,
+  pageSize: 50,
+})
 
-const stocks = computed<InventoryStockListItem[]>(() => stocksQuery.data.value ?? [])
 const effectivePreset = computed<InventoryStockPreset>(() => {
   return props.preset ?? stockTablePreferenceStore.presetState
 })
+const stockPageQueryParams = computed(() => {
+  return {
+    preset: effectivePreset.value,
+    page: paginationState.value.pageIndex + 1,
+    pageSize: paginationState.value.pageSize,
+    search: stockTablePreferenceStore.globalFilterState,
+    sorting: stockTablePreferenceStore.sortingState,
+  }
+})
+const stocksQuery = useInventoryStockPageQuery(stockPageQueryParams)
+const selectedStockQueryId = computed<number>(() => selectedStockId.value ?? 0)
+const selectedStockQuery = useInventoryStockQuery(selectedStockQueryId)
 
-/**
- * Applies one preset filter on top of the already-loaded full stocks list.
- *
- * Input examples:
- * - `preset = 'favorite'`
- * - `preset = 'low_stock'`
- *
- * Returned data example:
- * - `[{ id: 4, is_favorite: true, ... }, { id: 12, is_favorite: true, ... }]`
- */
-const filteredStocks = computed<InventoryStockListItem[]>(() => {
-  return getStocksForPreset(stocks.value, effectivePreset.value)
+const stocks = computed<InventoryStockListItem[]>(() => {
+  return stocksQuery.data.value?.results ?? []
+})
+
+const totalRowCount = computed<number>(() => {
+  return stocksQuery.data.value?.count ?? 0
 })
 
 const selectedStock = computed<InventoryStockListItem | null>(() => {
@@ -48,13 +57,13 @@ const selectedStock = computed<InventoryStockListItem | null>(() => {
     return null
   }
 
-  for (const stock of filteredStocks.value) {
+  for (const stock of stocks.value) {
     if (stock.id === selectedStockId.value) {
       return stock
     }
   }
 
-  return null
+  return selectedStockQuery.data.value ?? null
 })
 
 const stocksErrorMessage = computed<string | null>(() => {
@@ -120,35 +129,36 @@ const closeStockDetails = (): void => {
   setSelectedStockId(null)
 }
 
-// Close drawer when selected stock no longer exists in refreshed data.
-watch(
-  () => selectedStockId.value,
-  (stockId) => {
-    if (!stockId) {
-      return
-    }
+const updatePaginationState = (nextPaginationState: PaginationState): void => {
+  paginationState.value = nextPaginationState
+}
 
-    const hasMatch = filteredStocks.value.some((stock) => stock.id === stockId)
-    if (!hasMatch) {
-      setSelectedStockId(null)
-    }
-  },
-)
+const updateSortingState = async (nextSortingState: SortingState): Promise<void> => {
+  paginationState.value = {
+    ...paginationState.value,
+    pageIndex: 0,
+  }
+  await stockTablePreferenceStore.updateSortingState(nextSortingState)
+}
 
-watch(
-  () => selectedStock.value,
-  (stock) => {
-    if (!stock && selectedStockId.value !== null) {
-      setSelectedStockId(null)
-    }
-  },
-)
+const updateGlobalFilterState = async (nextGlobalFilterState: string): Promise<void> => {
+  paginationState.value = {
+    ...paginationState.value,
+    pageIndex: 0,
+  }
+  await stockTablePreferenceStore.updateGlobalFilterState(nextGlobalFilterState)
+}
 
 watch(
   () => props.preset,
   (nextPreset) => {
     if (!nextPreset) {
       return
+    }
+
+    paginationState.value = {
+      ...paginationState.value,
+      pageIndex: 0,
     }
 
     if (nextPreset !== stockTablePreferenceStore.presetState) {
@@ -196,20 +206,23 @@ watch(
         <p v-else-if="stocksErrorMessage" class="text-sm text-red-600">
           {{ stocksErrorMessage }}
         </p>
-        <p v-else-if="filteredStocks.length === 0" class="text-sm text-slate-600">
+        <p v-else-if="stocks.length === 0" class="text-sm text-slate-600">
           {{ t('inventory.stock_workspace.empty') }}
         </p>
         <InventoryStockTable
           v-else
-          :stocks="filteredStocks"
+          :stocks="stocks"
+          :pagination-state="paginationState"
+          :total-row-count="totalRowCount"
           :sorting-state="stockTablePreferenceStore.sortingState"
           :global-filter-state="stockTablePreferenceStore.globalFilterState"
-          :column-filters-state="stockTablePreferenceStore.columnFiltersState"
+          :column-filters-state="[]"
           :column-order-state="stockTablePreferenceStore.columnOrderState"
           :column-visibility-state="stockTablePreferenceStore.columnVisibilityState"
-          @sorting-change="stockTablePreferenceStore.updateSortingState"
-          @global-filter-change="stockTablePreferenceStore.updateGlobalFilterState"
-          @column-filters-change="stockTablePreferenceStore.updateColumnFiltersState"
+          @pagination-change="updatePaginationState"
+          @sorting-change="updateSortingState"
+          @global-filter-change="updateGlobalFilterState"
+          @column-filters-change="() => undefined"
           @column-order-change="stockTablePreferenceStore.updateColumnOrderState"
           @column-visibility-change="stockTablePreferenceStore.updateColumnVisibilityState"
           @select-stock="openStockDetails"

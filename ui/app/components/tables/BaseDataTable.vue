@@ -4,6 +4,7 @@ import {
   type ColumnDef,
   type ColumnFiltersState,
   type ColumnOrderState,
+  type PaginationState,
   type SortingState,
   type VisibilityState,
 } from '@tanstack/vue-table'
@@ -31,6 +32,12 @@ type BaseDataTableProps = {
   hideToolbar?: boolean
   enablePagination?: boolean
   pageSize?: number
+  paginationState?: PaginationState
+  totalRowCount?: number
+  manualPagination?: boolean
+  manualSorting?: boolean
+  manualFiltering?: boolean
+  enableColumnFilters?: boolean
   sortingState?: SortingState
   globalFilterState?: string
   columnFiltersState?: ColumnFiltersState
@@ -45,6 +52,12 @@ const props = withDefaults(defineProps<BaseDataTableProps>(), {
   hideToolbar: false,
   enablePagination: false,
   pageSize: 50,
+  paginationState: undefined,
+  totalRowCount: undefined,
+  manualPagination: false,
+  manualSorting: false,
+  manualFiltering: false,
+  enableColumnFilters: true,
   sortingState: () => [],
   globalFilterState: '',
   columnFiltersState: () => [],
@@ -54,6 +67,7 @@ const props = withDefaults(defineProps<BaseDataTableProps>(), {
 
 const emit = defineEmits<{
   rowClick: [row: TableRow]
+  paginationChange: [pagination: PaginationState]
   sortingChange: [sorting: SortingState]
   globalFilterChange: [value: string]
   columnFiltersChange: [filters: ColumnFiltersState]
@@ -75,6 +89,7 @@ const {
   clearAllFilters,
   totalRowsCount,
 } = useBaseDataTableState(props, {
+  onPaginationChange: (pagination) => emit('paginationChange', pagination),
   onSortingChange: (sorting) => emit('sortingChange', sorting),
   onGlobalFilterChange: (value) => emit('globalFilterChange', value),
   onColumnFiltersChange: (filters) => emit('columnFiltersChange', filters),
@@ -141,6 +156,7 @@ const getRowCellClass = (row: TableRow): string[] => {
                   </div>
 
                   <BaseDataTableHeaderFilter
+                    v-if="props.enableColumnFilters"
                     :column="header.column"
                     :filter-search="filterSearch"
                     :get-visible-filter-options="getVisibleFilterOptions"
