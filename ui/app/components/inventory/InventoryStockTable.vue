@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import type {
-  ColumnFiltersState,
   ColumnOrderState,
   PaginationState,
   SortingState,
@@ -17,7 +16,6 @@ type Props = {
   totalRowCount?: number
   sortingState?: SortingState
   globalFilterState?: string
-  columnFiltersState?: ColumnFiltersState
   columnOrderState?: ColumnOrderState
   columnVisibilityState?: VisibilityState
 }
@@ -29,7 +27,6 @@ const emit = defineEmits<{
   (e: 'pagination-change', pagination: PaginationState): void
   (e: 'sorting-change', sorting: SortingState): void
   (e: 'global-filter-change', value: string): void
-  (e: 'column-filters-change', filters: ColumnFiltersState): void
   (e: 'column-order-change', columnOrder: ColumnOrderState): void
   (e: 'column-visibility-change', columnVisibility: VisibilityState): void
 }>()
@@ -82,14 +79,12 @@ const tableColumns = computed(() => createInventoryStockTableColumns(t, onSelect
     :enable-column-filters="false"
     :sorting-state="props.sortingState"
     :global-filter-state="props.globalFilterState"
-    :column-filters-state="props.columnFiltersState"
     :column-order-state="props.columnOrderState"
     :column-visibility-state="props.columnVisibilityState"
     :global-filter-placeholder="t('table.general.search_placeholder')"
     @pagination-change="(pagination) => emit('pagination-change', pagination)"
     @sorting-change="(sorting) => emit('sorting-change', sorting)"
     @global-filter-change="(value) => emit('global-filter-change', value)"
-    @column-filters-change="(filters) => emit('column-filters-change', filters)"
     @column-order-change="(columnOrder) => emit('column-order-change', columnOrder)"
     @column-visibility-change="(columnVisibility) => emit('column-visibility-change', columnVisibility)"
   />
