@@ -53,7 +53,7 @@ const {
   isMovingStock,
   isSavingMove,
   selectedRoomId,
-  selectedSectorId,
+  selectedSectorIds,
   rooms,
   filteredSectors,
   isLookupsLoading,
@@ -227,14 +227,14 @@ const confirmArchiveItem = async (): Promise<void> => {
       :open="isMovingStock"
       :is-saving-move="isSavingMove"
       :selected-room-id="selectedRoomId"
-      :selected-sector-id="selectedSectorId"
+      :selected-sector-ids="selectedSectorIds"
       :rooms="rooms"
       :filtered-sectors="filteredSectors"
       :is-lookups-loading="isLookupsLoading"
       :lookups-error-message="lookupsErrorMessage"
       :is-move-save-disabled="isMoveSaveDisabled"
       @update:selected-room-id="selectedRoomId = $event"
-      @update:selected-sector-id="selectedSectorId = $event"
+      @update:selected-sector-ids="selectedSectorIds = $event"
       @cancel="cancelMoveMode"
       @save="saveMove"
     />

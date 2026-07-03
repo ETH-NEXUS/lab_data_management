@@ -1,6 +1,7 @@
 import { computed, ref, watch } from 'vue'
 import { useQueryClient } from '@tanstack/vue-query'
 import { useInventoryLookupsQuery } from '~/composables/inventory/useInventoryLookupQuery'
+import { parsePositiveIntegerList } from '~/components/inventory/add-item/inventoryAddItemForm.utils'
 import { useInventoryStockStore } from '~/stores/inventory/InventoryStock'
 import { INVENTORY_STOCKS_QUERY_KEY, type InventoryStockListItem } from '~/types/inventory'
 import { getErrorMessage } from '~/utils/errors'
@@ -19,7 +20,7 @@ export const useInventoryStockMoveItem = (props: Readonly<MoveItemProps>) => {
   const isMovingStock = ref(false)
   const isSavingMove = ref(false)
   const selectedRoomId = ref('')
-  const selectedSectorId = ref('')
+  const selectedSectorIds = ref<string[]>([])
 
   const rooms = computed(() => lookupsQuery.data.value?.rooms ?? [])
   const filteredSectors = computed(() => {
@@ -35,15 +36,21 @@ export const useInventoryStockMoveItem = (props: Readonly<MoveItemProps>) => {
   })
   const isMoveSaveDisabled = computed<boolean>(() => {
     const stock = props.stock
-    if (!stock || isSavingMove.value || selectedSectorId.value.trim() === '') return true
-    return String(stock.sector.id) === selectedSectorId.value
+    const nextSectorIds = parsePositiveIntegerList(selectedSectorIds.value).sort((left, right) => left - right)
+    const currentSectorIds = (stock?.sectors ?? []).map((sector) => sector.id).sort((left, right) => left - right)
+
+    if (!stock || isSavingMove.value || nextSectorIds.length === 0) {
+      return true
+    }
+
+    return JSON.stringify(nextSectorIds) === JSON.stringify(currentSectorIds)
   })
 
   const resetDraft = (): void => {
     const stock = props.stock
     const roomId = stock?.room?.id ?? stock?.sector?.room?.id ?? null
     selectedRoomId.value = roomId ? String(roomId) : ''
-    selectedSectorId.value = stock?.sector?.id ? String(stock.sector.id) : ''
+    selectedSectorIds.value = (stock?.sectors ?? []).map((sector) => String(sector.id))
   }
 
   const openMoveMode = (): void => {
@@ -60,15 +67,16 @@ export const useInventoryStockMoveItem = (props: Readonly<MoveItemProps>) => {
 
   const saveMove = async (): Promise<void> => {
     const stock = props.stock
-    const sectorId = Number.parseInt(selectedSectorId.value, 10)
-    if (!stock || !Number.isInteger(sectorId) || sectorId <= 0) {
-      toast.add({ title: 'Sector is required', color: 'warning', duration: 2500 })
+    const sectorIds = parsePositiveIntegerList(selectedSectorIds.value)
+
+    if (!stock || sectorIds.length === 0) {
+      toast.add({ title: 'At least one sector is required', color: 'warning', duration: 2500 })
       return
     }
 
     isSavingMove.value = true
     try {
-      await inventoryStockStore.updateStock(stock.id, { sector_id: sectorId })
+      await inventoryStockStore.updateStock(stock.id, { sector_ids: sectorIds })
       await queryClient.invalidateQueries({ queryKey: INVENTORY_STOCKS_QUERY_KEY })
       isMovingStock.value = false
       toast.add({ title: 'Location updated', color: 'success', duration: 2500 })
@@ -85,13 +93,8 @@ export const useInventoryStockMoveItem = (props: Readonly<MoveItemProps>) => {
   }
 
   watch(selectedRoomId, () => {
-    const currentSectorId = Number.parseInt(selectedSectorId.value, 10)
-    if (!Number.isInteger(currentSectorId) || currentSectorId <= 0) {
-      selectedSectorId.value = ''
-      return
-    }
-    const hasCurrentSector = filteredSectors.value.some((sector) => sector.id === currentSectorId)
-    if (!hasCurrentSector) selectedSectorId.value = ''
+    const allowedSectorIds = new Set(filteredSectors.value.map((sector) => String(sector.id)))
+    selectedSectorIds.value = selectedSectorIds.value.filter((sectorId) => allowedSectorIds.has(sectorId))
   })
 
   watch(
@@ -108,7 +111,7 @@ export const useInventoryStockMoveItem = (props: Readonly<MoveItemProps>) => {
     isMovingStock,
     isSavingMove,
     selectedRoomId,
-    selectedSectorId,
+    selectedSectorIds,
     rooms,
     filteredSectors,
     isLookupsLoading,

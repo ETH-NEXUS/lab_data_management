@@ -99,19 +99,25 @@ export const useInventoryStockDetailsPanel = (props: Readonly<InventoryStockDeta
   }
 
   /**
-   * Resolves one room/sector location label from stock values.
+   * Resolves one location label from stock values.
    *
    * Accepted stock example:
-   * - `{ room: { label: 'Room A' }, sector: { label: 'Shelf 3' } }`
+   * - `{ location_label: 'Room A / Shelf 3' }`
+   * - `{ location_label: 'C75 / 3.1, 3.2' }`
    *
    * Returned examples:
    * - `'Room A / Shelf 3'`
+   * - `'C75 / 3.1, 3.2'`
    * - `'—'`
    */
   const locationLabel = computed<string>(() => {
     const stock = props.stock
     if (!stock) {
       return t('inventory.stock_drawer.values.none')
+    }
+
+    if (stock.location_label?.trim()) {
+      return stock.location_label.trim()
     }
 
     const roomLabel =

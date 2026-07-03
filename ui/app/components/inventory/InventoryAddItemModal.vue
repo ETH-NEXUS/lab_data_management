@@ -227,28 +227,40 @@ const hasSelectedRoom = computed<boolean>(() => selectedRoomId.value > 0)
 
             <div class="space-y-1">
               <label class="block text-sm font-medium text-slate-700">Sector *</label>
-              <select
-                v-model="formState.sectorId"
-                class="w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700"
-                :disabled="lookupsQuery.isPending.value || !hasSelectedRoom"
+              <div
+                class="max-h-40 space-y-2 overflow-y-auto rounded-md border border-slate-200 bg-white px-3 py-2"
+                :class="{
+                  'cursor-not-allowed bg-slate-50 opacity-60': lookupsQuery.isPending.value || !hasSelectedRoom,
+                }"
               >
-                <option value="">
-                  {{
-                    !hasSelectedRoom
-                      ? 'Select room first'
-                      : lookupsQuery.isPending.value
-                      ? 'Loading sectors...'
-                      : sectorsErrorMessage
-                        ? 'Failed to load sectors'
-                        : sectorOptions.length > 0
-                          ? 'Select sector'
-                          : 'No sectors available'
-                  }}
-                </option>
-                <option v-for="sectorOption in sectorOptions" :key="sectorOption.id" :value="String(sectorOption.id)">
-                  {{ sectorOption.label }}
-                </option>
-              </select>
+                <label
+                  v-for="sectorOption in sectorOptions"
+                  :key="sectorOption.id"
+                  class="flex items-center gap-2 text-sm text-slate-700"
+                >
+                  <input
+                    v-model="formState.sectorIds"
+                    type="checkbox"
+                    :value="String(sectorOption.id)"
+                    :disabled="lookupsQuery.isPending.value || !hasSelectedRoom"
+                    class="h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500"
+                  >
+                  <span>{{ sectorOption.label }}</span>
+                </label>
+              </div>
+              <p class="text-xs text-slate-500">
+                {{
+                  !hasSelectedRoom
+                    ? 'Select room first'
+                    : lookupsQuery.isPending.value
+                    ? 'Loading sectors...'
+                    : sectorsErrorMessage
+                      ? 'Failed to load sectors'
+                      : sectorOptions.length > 0
+                        ? 'Select one or more sectors.'
+                        : 'No sectors available'
+                }}
+              </p>
               <p v-if="sectorsErrorMessage" class="text-xs text-red-600">
                 {{ sectorsErrorMessage }}
               </p>

@@ -298,7 +298,7 @@ export const useInventoryAddItemFormState = ({
   watch(
     () => formState.value.roomId,
     () => {
-      formState.value.sectorId = ''
+      formState.value.sectorIds = []
     },
   )
 

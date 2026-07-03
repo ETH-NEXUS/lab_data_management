@@ -6,7 +6,7 @@ type Props = {
   open: boolean
   isSavingMove: boolean
   selectedRoomId: string
-  selectedSectorId: string
+  selectedSectorIds: string[]
   rooms: InventoryRoom[]
   filteredSectors: InventorySector[]
   isLookupsLoading: boolean
@@ -19,7 +19,8 @@ const props = withDefaults(defineProps<Props>(), {
 })
 
 const emit = defineEmits<{
-  (e: 'update:selected-room-id' | 'update:selected-sector-id', value: string): void
+  (e: 'update:selected-room-id', value: string): void
+  (e: 'update:selected-sector-ids', value: string[]): void
   (e: 'cancel' | 'save'): void
 }>()
 
@@ -30,15 +31,15 @@ const selectedRoomIdModel = computed<string>({
   set: (value) => emit('update:selected-room-id', value),
 })
 
-const selectedSectorIdModel = computed<string>({
-  get: () => props.selectedSectorId,
-  set: (value) => emit('update:selected-sector-id', value),
+const selectedSectorIdsModel = computed<string[]>({
+  get: () => props.selectedSectorIds,
+  set: (value) => emit('update:selected-sector-ids', value),
 })
 </script>
 
 <template>
   <div v-if="props.open" class="space-y-3 rounded-lg border border-slate-200 bg-slate-50 p-3">
-    <div class="grid gap-3 sm:grid-cols-2">
+    <div class="grid gap-3">
       <div class="space-y-1">
         <label class="block text-sm font-medium text-slate-700">{{ t('inventory.stock_drawer.fields.room') }}</label>
         <select
@@ -60,24 +61,36 @@ const selectedSectorIdModel = computed<string>({
       </div>
       <div class="space-y-1">
         <label class="block text-sm font-medium text-slate-700">{{ t('inventory.stock_drawer.fields.sector') }}</label>
-        <select
-          v-model="selectedSectorIdModel"
-          class="w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 outline-none focus:border-blue-300 focus:ring-2 focus:ring-blue-300/50"
-          :disabled="props.isSavingMove || props.isLookupsLoading || props.selectedRoomId === ''"
+        <div
+          class="max-h-40 space-y-2 overflow-y-auto rounded-md border border-slate-200 bg-white px-3 py-2"
+          :class="{
+            'cursor-not-allowed bg-slate-50 opacity-60': props.isSavingMove || props.isLookupsLoading || props.selectedRoomId === '',
+          }"
         >
-          <option value="">
-            {{
-              props.selectedRoomId === ''
-                ? t('inventory.stock_drawer.move.select_room_first')
-                : props.filteredSectors.length > 0
-                  ? t('inventory.stock_drawer.move.select_sector')
-                  : t('inventory.stock_drawer.move.no_sectors_available')
-            }}
-          </option>
-          <option v-for="sector in props.filteredSectors" :key="sector.id" :value="String(sector.id)">
-            {{ sector.label || sector.name }}
-          </option>
-        </select>
+          <label
+            v-for="sector in props.filteredSectors"
+            :key="sector.id"
+            class="flex items-center gap-2 text-sm text-slate-700"
+          >
+            <input
+              v-model="selectedSectorIdsModel"
+              type="checkbox"
+              :value="String(sector.id)"
+              :disabled="props.isSavingMove || props.isLookupsLoading || props.selectedRoomId === ''"
+              class="h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500"
+            >
+            <span>{{ sector.label || sector.name }}</span>
+          </label>
+        </div>
+        <p class="text-xs text-slate-500">
+          {{
+            props.selectedRoomId === ''
+              ? t('inventory.stock_drawer.move.select_room_first')
+              : props.filteredSectors.length > 0
+                ? 'Select one or more sectors.'
+                : t('inventory.stock_drawer.move.no_sectors_available')
+          }}
+        </p>
       </div>
     </div>
 

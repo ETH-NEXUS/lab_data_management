@@ -287,7 +287,7 @@ class InventoryStockViewSet(viewsets.ModelViewSet):
             "additional_sectors",
             "additional_sectors__room",
         )
-        .order_by("material__product_name", "sector__room__name", "sector__name")
+        .order_by("-created_at")
     )
 
     def get_serializer_class(self):
@@ -402,6 +402,8 @@ class InventoryStockViewSet(viewsets.ModelViewSet):
 
             if ordering_fields:
                 queryset = queryset.order_by(*ordering_fields)
+        else:
+            queryset = queryset.order_by("-created_at")
 
         return queryset
 

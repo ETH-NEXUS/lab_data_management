@@ -9,6 +9,7 @@ import {
   formatDecimal,
   parseDecimal,
   parseInteger,
+  parsePositiveIntegerList,
 } from '~/components/inventory/add-item/inventoryAddItemForm.utils'
 import { useInventoryAddItemFormState } from '~/components/inventory/add-item/useInventoryAddItemFormState'
 import { getErrorMessage } from '~/utils/errors'
@@ -80,7 +81,7 @@ export const useInventoryAddItemForm = ({ open, onSaved }: UseInventoryAddItemFo
     const messages: string[] = []
     const itemTypeId = Number.parseInt(formState.value.itemTypeId, 10)
     const materialId = Number.parseInt(formState.value.materialId, 10)
-    const sectorId = Number.parseInt(formState.value.sectorId, 10)
+    const sectorIds = parsePositiveIntegerList(formState.value.sectorIds)
     const stockUnitId = Number.parseInt(formState.value.stockUnitId, 10)
     const quantityValue = parseDecimal(formState.value.quantity)
     const minimumQuantityValue = parseInteger(formState.value.minimumQuantity)
@@ -91,8 +92,8 @@ export const useInventoryAddItemForm = ({ open, onSaved }: UseInventoryAddItemFo
     if (!Number.isInteger(materialId) || materialId <= 0) {
       messages.push('Material is required.')
     }
-    if (!Number.isInteger(sectorId) || sectorId <= 0) {
-      messages.push('Sector is required.')
+    if (sectorIds.length === 0) {
+      messages.push('At least one sector is required.')
     }
     if (!Number.isInteger(stockUnitId) || stockUnitId <= 0) {
       messages.push('Stock unit is required.')
@@ -129,27 +130,27 @@ export const useInventoryAddItemForm = ({ open, onSaved }: UseInventoryAddItemFo
    * Builds API payload for inventory stock creation from form draft state.
    *
    * Accepted draft example:
-   * - `{ materialId: '12', sectorId: '7', stockUnitId: '31', quantity: '2.5', minimumQuantity: '1', lotNumber: 'ABC-42', expiryDate: '2026-06-30', notes: 'Top shelf', isFavorite: true }`
+   * - `{ materialId: '12', sectorIds: ['7', '8'], stockUnitId: '31', quantity: '2.5', minimumQuantity: '1', lotNumber: 'ABC-42', expiryDate: '2026-06-30', notes: 'Top shelf', isFavorite: true }`
    *
    * Returned payload example:
-   * - `{ material_id: 12, sector_id: 7, stock_unit_id: 31, quantity: '2.5', minimum_quantity: '1', lot_number: 'ABC-42', expiry_date: '2026-06-30', notes: 'Top shelf', is_favorite: true }`
+   * - `{ material_id: 12, sector_ids: [7, 8], stock_unit_id: 31, quantity: '2.5', minimum_quantity: '1', lot_number: 'ABC-42', expiry_date: '2026-06-30', notes: 'Top shelf', is_favorite: true }`
    */
   const buildCreateStockPayload = (): CreateInventoryStockPayload | null => {
     const materialId = Number.parseInt(formState.value.materialId, 10)
-    const sectorId = Number.parseInt(formState.value.sectorId, 10)
+    const sectorIds = parsePositiveIntegerList(formState.value.sectorIds)
     const stockUnitId = Number.parseInt(formState.value.stockUnitId, 10)
     const quantityValue = parseDecimal(formState.value.quantity)
     const minimumQuantityValue = parseInteger(formState.value.minimumQuantity)
 
     if (!Number.isInteger(materialId) || materialId <= 0) return null
-    if (!Number.isInteger(sectorId) || sectorId <= 0) return null
+    if (sectorIds.length === 0) return null
     if (!Number.isInteger(stockUnitId) || stockUnitId <= 0) return null
     if (quantityValue === null || quantityValue <= 0) return null
     if (minimumQuantityValue === null || minimumQuantityValue < 0) return null
 
     return {
       material_id: materialId,
-      sector_id: sectorId,
+      sector_ids: sectorIds,
       stock_unit_id: stockUnitId,
       quantity: String(quantityValue),
       minimum_quantity: String(minimumQuantityValue),

@@ -127,6 +127,7 @@ export type InventoryStockListItem = {
   id: number
   material: InventoryMaterialListItem
   sector: InventorySector
+  sectors: InventorySector[]
   room: InventoryRoom | null
   stock_unit: InventoryMaterialUnitSummary
   quantity: string
@@ -150,6 +151,7 @@ export type InventoryStockListItem = {
 export type InventoryStockDetail = InventoryStockListItem & {
   material_id?: number
   sector_id?: number
+  sector_ids?: number[]
   stock_unit_id?: number
 }
 
@@ -262,7 +264,7 @@ export type UpdateInventoryMaterialPayload = Partial<CreateInventoryMaterialPayl
 
 export type CreateInventoryStockPayload = {
   material_id: number
-  sector_id: number
+  sector_ids: number[]
   stock_unit_id: number
   quantity: string
   minimum_quantity: string

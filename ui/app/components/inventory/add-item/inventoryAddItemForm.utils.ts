@@ -2,7 +2,7 @@ export type AddItemFormState = {
   itemTypeId: string
   materialId: string
   roomId: string
-  sectorId: string
+  sectorIds: string[]
   stockUnitId: string
   quantity: string
   minimumQuantity: string
@@ -16,13 +16,13 @@ export type AddItemFormState = {
  * Builds empty draft values for the add-item stock form.
  *
  * Returned data example:
- * - `{ itemTypeId: '', materialId: '', roomId: '', sectorId: '', stockUnitId: '', quantity: '', minimumQuantity: '', lotNumber: '', expiryDate: '', notes: '', isFavorite: false }`
+ * - `{ itemTypeId: '', materialId: '', roomId: '', sectorIds: [], stockUnitId: '', quantity: '', minimumQuantity: '', lotNumber: '', expiryDate: '', notes: '', isFavorite: false }`
  */
 export const buildInitialFormState = (): AddItemFormState => ({
   itemTypeId: '',
   materialId: '',
   roomId: '',
-  sectorId: '',
+  sectorIds: [],
   stockUnitId: '',
   quantity: '',
   minimumQuantity: '',
@@ -95,6 +95,35 @@ export const parseInteger = (value: string | number | null | undefined): number 
   }
 
   return parsedValue
+}
+
+/**
+ * Parses a list of integer-like values into positive integer identifiers.
+ *
+ * Input examples:
+ * - `['5', '9']`
+ * - `['5', 'bad', '9']`
+ * - `[]`
+ *
+ * Returned examples:
+ * - `[5, 9]`
+ * - `[5, 9]`
+ * - `[]`
+ */
+export const parsePositiveIntegerList = (values: string[] | null | undefined): number[] => {
+  if (!Array.isArray(values)) {
+    return []
+  }
+
+  return values.reduce<number[]>((parsedValues, value) => {
+    const parsedValue = parseInteger(value)
+    if (parsedValue === null || parsedValue <= 0) {
+      return parsedValues
+    }
+
+    parsedValues.push(parsedValue)
+    return parsedValues
+  }, [])
 }
 
 /**
