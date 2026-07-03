@@ -131,7 +131,7 @@ export type InventoryStockListItem = {
   stock_unit: InventoryMaterialUnitSummary
   quantity: string
   minimum_quantity: string
-  inventory_status: 'low' | 'in stock'
+  inventory_status: 'out_of_stock' | 'low' | 'in stock'
   quantity_in_base_units: string
   minimum_quantity_in_base_units: string
   lot_number: string | null

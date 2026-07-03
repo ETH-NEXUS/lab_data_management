@@ -22,6 +22,8 @@ export const createInventoryStockTableColumns = (
   t: TranslateFn,
   onSelectStock: (stock: InventoryStockListItem) => void,
 ): ColumnDef<TableRow, unknown>[] => {
+  const outOfStockBadgeClass =
+    'inline-flex items-center rounded-full border border-rose-300 bg-rose-100 px-2 py-0.5 text-[11px] font-semibold text-rose-900'
   const lowStockBadgeClass =
     'inline-flex items-center rounded-full border border-amber-300 bg-amber-100 px-2 py-0.5 text-[11px] font-semibold text-amber-900'
   const inStockBadgeClass =
@@ -65,11 +67,16 @@ export const createInventoryStockTableColumns = (
       size: 122,
       cell: ({ row }) => {
         const stock = getStock(row.original)
-        const isLowStock = stock.inventory_status === 'low'
+        const badgeClass =
+          stock.inventory_status === 'out_of_stock'
+            ? outOfStockBadgeClass
+            : stock.inventory_status === 'low'
+              ? lowStockBadgeClass
+              : inStockBadgeClass
         return h(
           'span',
           {
-            class: isLowStock ? lowStockBadgeClass : inStockBadgeClass,
+            class: badgeClass,
           },
           getStatusLabel(t, stock.inventory_status),
         )

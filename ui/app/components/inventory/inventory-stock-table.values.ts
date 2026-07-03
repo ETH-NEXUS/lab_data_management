@@ -25,6 +25,10 @@ const formatNumericString = (value: string | null | undefined): string => {
 }
 
 export const getStatusLabel = (t: TranslateFn, status: InventoryStockListItem['inventory_status']): string => {
+  if (status === 'out_of_stock') {
+    return t('inventory.stock_table.status_labels.out_of_stock')
+  }
+
   return status === 'low'
     ? t('inventory.stock_table.status_labels.low')
     : t('inventory.stock_table.status_labels.in_stock')

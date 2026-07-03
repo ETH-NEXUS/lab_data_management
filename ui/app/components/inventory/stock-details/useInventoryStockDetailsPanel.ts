@@ -138,12 +138,20 @@ export const useInventoryStockDetailsPanel = (props: Readonly<InventoryStockDeta
       return t('inventory.stock_drawer.values.none')
     }
 
+    if (props.stock.inventory_status === 'out_of_stock') {
+      return t('inventory.stock_table.status_labels.out_of_stock')
+    }
+
     return props.stock.inventory_status === 'low'
       ? t('inventory.stock_table.status_labels.low')
       : t('inventory.stock_table.status_labels.in_stock')
   })
 
-  const inventoryStatusColor = computed<'warning' | 'success'>(() => {
+  const inventoryStatusColor = computed<'error' | 'warning' | 'success'>(() => {
+    if (props.stock?.inventory_status === 'out_of_stock') {
+      return 'error'
+    }
+
     return props.stock?.inventory_status === 'low' ? 'warning' : 'success'
   })
 

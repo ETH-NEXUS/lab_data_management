@@ -481,7 +481,7 @@
       },
       "columns": {
         "favorite": "Favorite",
-        "inventory_status": "Status",
+        "inventory_status": "Inventory Status",
         "product_name": "Product name",
         "quantity_with_stock_unit": "Quantity",
         "minimum_quantity": "Minimum quantity",
@@ -494,6 +494,7 @@
         "notes": "Notes"
       },
       "status_labels": {
+        "out_of_stock": "Out of stock",
         "in_stock": "In stock",
         "low": "Low stock"
       },
