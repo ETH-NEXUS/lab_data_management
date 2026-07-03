@@ -8,6 +8,7 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
 from .dynamic_models import InventoryStock, InventoryStockTablePreference, MaterialUsage, Order, Room, Sector
+from .pagination import InventoryStockPagination
 from .serializers.dynamic_models_serializers import (
     InventoryStockDetailSerializer,
     InventoryStockListSerializer,
@@ -265,6 +266,7 @@ class InventoryStockViewSet(viewsets.ModelViewSet):
 
     This is likely the most important endpoint for the first inventory UI.
     """
+    pagination_class = InventoryStockPagination
     queryset = (
         InventoryStock.objects.all()
         .select_related(
@@ -292,7 +294,13 @@ class InventoryStockViewSet(viewsets.ModelViewSet):
         return InventoryStockDetailSerializer
 
     def get_queryset(self):
-        queryset = super().get_queryset().filter(is_archived=False)
+        queryset = super().get_queryset().filter(is_archived=False).annotate(
+            inventory_status_rank=models.Case(
+                models.When(quantity__lt=models.F("minimum_quantity"), then=models.Value(1)),
+                default=models.Value(0),
+                output_field=models.IntegerField(),
+            ),
+        )
 
         search = self.request.query_params.get("search")
         room_id = self.request.query_params.get("room")
@@ -304,6 +312,7 @@ class InventoryStockViewSet(viewsets.ModelViewSet):
         is_favorite = self.request.query_params.get("is_favorite")
         inventory_status = self.request.query_params.get("inventory_status")
         lot_number = self.request.query_params.get("lot_number")
+        ordering = self.request.query_params.get("ordering")
 
         if search:
             queryset = queryset.filter(
@@ -346,17 +355,62 @@ class InventoryStockViewSet(viewsets.ModelViewSet):
         if lot_number:
             queryset = queryset.filter(lot_number__icontains=lot_number)
 
+        if ordering:
+            ordering_fields = []
+            ordering_map = {
+                "productName": ["material__product_name"],
+                "inventoryStatus": ["inventory_status_rank"],
+                "quantityWithStockUnit": ["quantity"],
+                "minimumQuantity": ["minimum_quantity"],
+                "location": ["sector__room__name", "sector__name"],
+                "deviceType": ["material__device_type__name"],
+                "itemType": ["material__item_type__name"],
+                "lotNumber": ["lot_number"],
+                "expiryDate": ["expiry_date"],
+                "notes": ["notes"],
+            }
+
+            for raw_value in ordering.split(","):
+                raw_value = raw_value.strip()
+                if raw_value == "":
+                    continue
+
+                is_descending = raw_value.startswith("-")
+                ordering_key = raw_value[1:] if is_descending else raw_value
+                mapped_fields = ordering_map.get(ordering_key)
+
+                if not mapped_fields:
+                    continue
+
+                for mapped_field in mapped_fields:
+                    ordering_fields.append(f"-{mapped_field}" if is_descending else mapped_field)
+
+            if ordering_fields:
+                queryset = queryset.order_by(*ordering_fields)
+
         return queryset
 
     @action(detail=False, methods=["get"])
     def favorites(self, request):
         queryset = self.get_queryset().filter(is_favorite=True)
+        page = self.paginate_queryset(queryset)
+
+        if page is not None:
+            serializer = InventoryStockListSerializer(page, many=True, context={"request": request})
+            return self.get_paginated_response(serializer.data)
+
         serializer = InventoryStockListSerializer(queryset, many=True, context={"request": request})
         return Response(serializer.data)
 
     @action(detail=False, methods=["get"])
     def low_stock(self, request):
         queryset = self.get_queryset().filter(quantity__lt=models.F("minimum_quantity"))
+        page = self.paginate_queryset(queryset)
+
+        if page is not None:
+            serializer = InventoryStockListSerializer(page, many=True, context={"request": request})
+            return self.get_paginated_response(serializer.data)
+
         serializer = InventoryStockListSerializer(queryset, many=True, context={"request": request})
         return Response(serializer.data)
 
@@ -370,6 +424,12 @@ class InventoryStockViewSet(viewsets.ModelViewSet):
             expiry_date__gte=today,
             expiry_date__lte=soon_date,
         )
+        page = self.paginate_queryset(queryset)
+
+        if page is not None:
+            serializer = InventoryStockListSerializer(page, many=True, context={"request": request})
+            return self.get_paginated_response(serializer.data)
+
         serializer = InventoryStockListSerializer(queryset, many=True, context={"request": request})
         return Response(serializer.data)
 
@@ -381,6 +441,12 @@ class InventoryStockViewSet(viewsets.ModelViewSet):
             expiry_date__isnull=False,
             expiry_date__lt=today,
         )
+        page = self.paginate_queryset(queryset)
+
+        if page is not None:
+            serializer = InventoryStockListSerializer(page, many=True, context={"request": request})
+            return self.get_paginated_response(serializer.data)
+
         serializer = InventoryStockListSerializer(queryset, many=True, context={"request": request})
         return Response(serializer.data)
 
