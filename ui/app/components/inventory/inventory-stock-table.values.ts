@@ -154,7 +154,7 @@ export const getInventoryStockTableSortValue = (
       return t('inventory.stock_table.values.none')
     }
 
-    return formatDateTime(stock.expiry_date, { dateStyle: 'medium' }, t('inventory.stock_table.values.none'))
+    return stock.expiry_date
   }
 
   if (columnId === 'notes') {

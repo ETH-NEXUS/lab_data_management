@@ -289,7 +289,7 @@ export const useInventoryStockDetailsPanel = (props: Readonly<InventoryStockDeta
       {
         label: t('inventory.stock_drawer.fields.expiry_date'),
         value: stock.expiry_date
-          ? formatDateTime(stock.expiry_date, { dateStyle: 'medium' }, t('inventory.stock_drawer.values.none'))
+          ? stock.expiry_date
           : t('inventory.stock_drawer.values.none'),
       },
       {
