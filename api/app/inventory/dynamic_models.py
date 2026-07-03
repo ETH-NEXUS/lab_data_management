@@ -213,11 +213,16 @@ class InventoryStock(models.Model):
     def inventory_status(self):
         """
         Equivalent of the Excel computed status:
-        - low if current quantity < minimum quantity
+        - out_of_stock if current quantity is zero
+        - low if current quantity is above zero but below minimum quantity
         - otherwise in stock
         """
+        if self.quantity == 0:
+            return "out_of_stock"
+
         if self.quantity < self.minimum_quantity:
             return "low"
+
         return "in stock"
 
 

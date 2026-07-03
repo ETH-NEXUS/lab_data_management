@@ -218,6 +218,33 @@ export const useInventoryStockDetailsPanel = (props: Readonly<InventoryStockDeta
     return labels.join(', ')
   })
 
+  const capacityWithUnitLabel = computed<string>(() => {
+    const stock = props.stock
+    if (!stock) {
+      return t('inventory.stock_drawer.values.none')
+    }
+
+    const capacityValue = toDisplayValue(stock.material.capacity_value)
+    const capacityUnit = toDisplayValue(stock.material.capacity_unit)
+
+    if (
+      capacityValue === t('inventory.stock_drawer.values.none') &&
+      capacityUnit === t('inventory.stock_drawer.values.none')
+    ) {
+      return t('inventory.stock_drawer.values.none')
+    }
+
+    if (capacityValue === t('inventory.stock_drawer.values.none')) {
+      return capacityUnit
+    }
+
+    if (capacityUnit === t('inventory.stock_drawer.values.none')) {
+      return capacityValue
+    }
+
+    return `${capacityValue} ${capacityUnit}`.trim()
+  })
+
   const operationalFields = computed<DrawerField[]>(() => {
     const stock = props.stock
     if (!stock) return []
@@ -298,12 +325,8 @@ export const useInventoryStockDetailsPanel = (props: Readonly<InventoryStockDeta
         wide: true,
       },
       {
-        label: t('inventory.stock_drawer.fields.capacity_value'),
-        value: toDisplayValue(stock.material.capacity_value),
-      },
-      {
-        label: t('inventory.stock_drawer.fields.capacity_unit'),
-        value: toDisplayValue(stock.material.capacity_unit),
+        label: t('inventory.stock_drawer.fields.capacity'),
+        value: capacityWithUnitLabel.value,
       },
       {
         label: t('inventory.stock_drawer.fields.description'),

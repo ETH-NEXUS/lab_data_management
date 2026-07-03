@@ -534,6 +534,7 @@
         "device_type": "Device type",
         "item_type": "Item type",
         "attributes": "Attributes",
+        "capacity": "Capacity",
         "capacity_value": "Capacity value",
         "capacity_unit": "Capacity unit",
         "description": "Description",

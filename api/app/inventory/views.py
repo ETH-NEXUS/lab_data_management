@@ -296,6 +296,7 @@ class InventoryStockViewSet(viewsets.ModelViewSet):
     def get_queryset(self):
         queryset = super().get_queryset().filter(is_archived=False).annotate(
             inventory_status_rank=models.Case(
+                models.When(quantity=0, then=models.Value(2)),
                 models.When(quantity__lt=models.F("minimum_quantity"), then=models.Value(1)),
                 default=models.Value(0),
                 output_field=models.IntegerField(),
@@ -347,7 +348,13 @@ class InventoryStockViewSet(viewsets.ModelViewSet):
             queryset = queryset.filter(is_favorite=is_favorite.lower() in ("true", "1", "yes"))
 
         if inventory_status == "low":
-            queryset = queryset.filter(quantity__lt=models.F("minimum_quantity"))
+            queryset = queryset.filter(
+                quantity__gt=0,
+                quantity__lt=models.F("minimum_quantity"),
+            )
+
+        if inventory_status == "out_of_stock":
+            queryset = queryset.filter(quantity=0)
 
         if inventory_status == "in_stock":
             queryset = queryset.filter(quantity__gte=models.F("minimum_quantity"))
