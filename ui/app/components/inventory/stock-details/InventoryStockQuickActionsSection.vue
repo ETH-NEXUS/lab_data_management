@@ -12,7 +12,7 @@ import { useInventoryMaterialQuery } from '~/composables/inventory/useInventoryM
 import { useInventoryStockMoveItem } from '~/components/inventory/stock-details/useInventoryStockMoveItem'
 import { useInventoryStockQuickAdjust } from '~/components/inventory/stock-details/useInventoryStockQuickAdjust'
 import { useInventoryStockRecordUsage } from '~/components/inventory/stock-details/useInventoryStockRecordUsage'
-import { INVENTORY_STOCKS_QUERY_KEY } from '~/types/inventory'
+import { INVENTORY_STOCK_PAGES_QUERY_KEY, INVENTORY_STOCKS_QUERY_KEY } from '~/types/inventory'
 import { getErrorMessage } from '~/utils/errors'
 
 type Props = {
@@ -115,6 +115,7 @@ const toggleFavorite = async (): Promise<void> => {
     }
 
     await queryClient.invalidateQueries({ queryKey: INVENTORY_STOCKS_QUERY_KEY })
+    await queryClient.invalidateQueries({ queryKey: INVENTORY_STOCK_PAGES_QUERY_KEY })
   } catch (err: unknown) {
     toast.add({
       title: 'Failed to update favorite state',
@@ -148,6 +149,7 @@ const confirmArchiveItem = async (): Promise<void> => {
   try {
     await inventoryStockStore.archiveStock(stock.id)
     await queryClient.invalidateQueries({ queryKey: INVENTORY_STOCKS_QUERY_KEY })
+    await queryClient.invalidateQueries({ queryKey: INVENTORY_STOCK_PAGES_QUERY_KEY })
     isArchiveConfirmOpen.value = false
     toast.add({
       title: 'Stock item archived',

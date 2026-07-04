@@ -1,7 +1,11 @@
 import { computed, ref, watch } from 'vue'
 import { useQueryClient } from '@tanstack/vue-query'
 import { useInventoryStockStore } from '~/stores/inventory/InventoryStock'
-import { INVENTORY_STOCKS_QUERY_KEY, type InventoryStockListItem } from '~/types/inventory'
+import {
+  INVENTORY_STOCK_PAGES_QUERY_KEY,
+  INVENTORY_STOCKS_QUERY_KEY,
+  type InventoryStockListItem,
+} from '~/types/inventory'
 import { getErrorMessage } from '~/utils/errors'
 
 type QuickAdjustProps = {
@@ -88,6 +92,7 @@ export const useInventoryStockQuickAdjust = (props: Readonly<QuickAdjustProps>) 
         notes: editNotes.value.trim() === '' ? null : editNotes.value.trim(),
       })
       await queryClient.invalidateQueries({ queryKey: INVENTORY_STOCKS_QUERY_KEY })
+      await queryClient.invalidateQueries({ queryKey: INVENTORY_STOCK_PAGES_QUERY_KEY })
       isEditingStock.value = false
       toast.add({ title: t('inventory.stock_drawer.quick_adjust.toasts.adjusted'), color: 'success', duration: 2500 })
     } catch (err: unknown) {

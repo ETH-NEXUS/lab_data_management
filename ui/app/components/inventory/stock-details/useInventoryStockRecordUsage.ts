@@ -4,6 +4,7 @@ import { useExperimentsQuery } from '~/composables/useExperimentQuery'
 import { useProjectsQuery } from '~/composables/useProjectsQuery'
 import { useInventoryUsageStore } from '~/stores/inventory/InventoryUsageStore'
 import {
+  INVENTORY_STOCK_PAGES_QUERY_KEY,
   INVENTORY_STOCKS_QUERY_KEY,
   INVENTORY_USAGES_QUERY_KEY,
   type InventoryMaterialDetail,
@@ -162,6 +163,7 @@ export const useInventoryStockRecordUsage = (props: Readonly<RecordUsageProps>) 
 
       await queryClient.invalidateQueries({ queryKey: INVENTORY_USAGES_QUERY_KEY })
       await queryClient.invalidateQueries({ queryKey: INVENTORY_STOCKS_QUERY_KEY })
+      await queryClient.invalidateQueries({ queryKey: INVENTORY_STOCK_PAGES_QUERY_KEY })
 
       isRecordingUsage.value = false
       resetDraft()

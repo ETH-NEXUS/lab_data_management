@@ -16,6 +16,7 @@ export const INVENTORY_ATTRIBUTES_ENDPOINT = 'inventory/material-attributes/'
 export const INVENTORY_UNITS_ENDPOINT = 'inventory/units-of-measure/'
 
 export const INVENTORY_STOCKS_QUERY_KEY = ['inventory-stocks']
+export const INVENTORY_STOCK_PAGES_QUERY_KEY = ['inventory-stocks-page']
 export const INVENTORY_MATERIALS_QUERY_KEY = ['inventory-materials']
 export const INVENTORY_MATERIAL_UNITS_QUERY_KEY = ['inventory-material-units']
 export const INVENTORY_ORDERS_QUERY_KEY = ['inventory-orders']

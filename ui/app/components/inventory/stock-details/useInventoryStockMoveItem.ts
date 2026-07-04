@@ -3,7 +3,11 @@ import { useQueryClient } from '@tanstack/vue-query'
 import { useInventoryLookupsQuery } from '~/composables/inventory/useInventoryLookupQuery'
 import { parsePositiveIntegerList } from '~/components/inventory/inventorySectorSelection.utils'
 import { useInventoryStockStore } from '~/stores/inventory/InventoryStock'
-import { INVENTORY_STOCKS_QUERY_KEY, type InventoryStockListItem } from '~/types/inventory'
+import {
+  INVENTORY_STOCK_PAGES_QUERY_KEY,
+  INVENTORY_STOCKS_QUERY_KEY,
+  type InventoryStockListItem,
+} from '~/types/inventory'
 import { getErrorMessage } from '~/utils/errors'
 
 type MoveItemProps = {
@@ -78,6 +82,7 @@ export const useInventoryStockMoveItem = (props: Readonly<MoveItemProps>) => {
     try {
       await inventoryStockStore.updateStock(stock.id, { sector_ids: sectorIds })
       await queryClient.invalidateQueries({ queryKey: INVENTORY_STOCKS_QUERY_KEY })
+      await queryClient.invalidateQueries({ queryKey: INVENTORY_STOCK_PAGES_QUERY_KEY })
       isMovingStock.value = false
       toast.add({ title: 'Location updated', color: 'success', duration: 2500 })
     } catch (err: unknown) {

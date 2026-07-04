@@ -5,6 +5,7 @@ import { useInventoryStockStore } from '~/stores/inventory/InventoryStock'
 import {
   getInventoryMaterialQueryKey,
   INVENTORY_MATERIALS_QUERY_KEY,
+  INVENTORY_STOCK_PAGES_QUERY_KEY,
   INVENTORY_STOCKS_QUERY_KEY,
   type CreateInventoryStockPayload,
   type UpdateInventoryMaterialPayload,
@@ -236,6 +237,7 @@ export const useInventoryAddItemForm = ({ open, onSaved }: UseInventoryAddItemFo
 
       await inventoryStockStore.createStock(payload)
       await queryClient.invalidateQueries({ queryKey: INVENTORY_STOCKS_QUERY_KEY })
+      await queryClient.invalidateQueries({ queryKey: INVENTORY_STOCK_PAGES_QUERY_KEY })
 
       toast.add({
         title: 'Item added',
