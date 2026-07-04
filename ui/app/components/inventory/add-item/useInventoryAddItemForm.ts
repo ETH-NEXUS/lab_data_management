@@ -235,7 +235,7 @@ export const useInventoryAddItemForm = ({ open, onSaved }: UseInventoryAddItemFo
         await queryClient.invalidateQueries({ queryKey: getInventoryMaterialQueryKey(selectedMaterialId.value) })
       }
 
-      await inventoryStockStore.createStock(payload)
+      const createdStock = await inventoryStockStore.createStock(payload)
       await queryClient.invalidateQueries({ queryKey: INVENTORY_STOCKS_QUERY_KEY })
       await queryClient.invalidateQueries({ queryKey: INVENTORY_STOCK_PAGES_QUERY_KEY })
 
@@ -246,6 +246,13 @@ export const useInventoryAddItemForm = ({ open, onSaved }: UseInventoryAddItemFo
       })
 
       onSaved()
+      await navigateTo({
+        path: '/inventory/all',
+        query: {
+          preset: 'all',
+          stock: String(createdStock.id),
+        },
+      })
     } catch (err: unknown) {
       toast.add({
         title: 'Failed to add item',
