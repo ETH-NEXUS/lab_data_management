@@ -45,7 +45,9 @@ const {
   isOrderPrefillDisabled,
   isSaveDisabled,
   isSubmitting,
+  isSelectedMaterialReagent,
   requestOrderPrefill,
+  setReagentSafetyDataSheet,
   submitForm,
 } = useInventoryAddItemForm({
   open: openRef,
@@ -76,6 +78,12 @@ const itemTypeOptions = computed<Array<{ id: number; label: string }>>(() => {
 const hasSelectedItemType = computed<boolean>(() => selectedItemTypeId.value > 0)
 const hasSelectedMaterial = computed<boolean>(() => selectedMaterialId.value > 0)
 const hasSelectedRoom = computed<boolean>(() => selectedRoomId.value > 0)
+
+const onSafetyDataSheetChange = (event: Event): void => {
+  const inputElement = event.target as HTMLInputElement | null
+  const selectedFile = inputElement?.files?.[0] ?? null
+  setReagentSafetyDataSheet(selectedFile)
+}
 </script>
 
 <template>
@@ -294,6 +302,43 @@ const hasSelectedRoom = computed<boolean>(() => selectedRoomId.value > 0)
                   <p class="text-xs font-medium uppercase tracking-wide text-slate-500">Supplier catalog number</p>
                   <p class="text-sm text-slate-700">
                     {{ hasSelectedMaterial ? (supplierDetails.vendorCatalogNumber || '—') : 'Select material first' }}
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <div v-if="isSelectedMaterialReagent" class="space-y-2 sm:col-span-2">
+              <p class="text-sm font-medium text-slate-700">Reagent metadata</p>
+              <div class="grid gap-3 rounded-lg border border-slate-200 bg-slate-50 p-3 sm:grid-cols-2">
+                <div class="space-y-1">
+                  <label class="block text-sm font-medium text-slate-700">Storage temperature *</label>
+                  <select
+                    v-model="formState.reagentStorageTemperature"
+                    class="w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700"
+                  >
+                    <option value="">Select storage temperature</option>
+                    <option value="4°C">4°C</option>
+                    <option value="RT">RT</option>
+                    <option value="-20°C">-20°C</option>
+                    <option value="-80°C">-80°C</option>
+                    <option value="LN">LN</option>
+                  </select>
+                </div>
+
+                <div class="space-y-1">
+                  <label class="block text-sm font-medium text-slate-700">Safety data sheet</label>
+                  <input
+                    type="file"
+                    accept=".pdf,.doc,.docx"
+                    class="w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700"
+                    @change="onSafetyDataSheetChange"
+                  >
+                  <p class="text-xs text-slate-500">
+                    {{
+                      formState.reagentSafetyDataSheet
+                        ? `Selected file: ${formState.reagentSafetyDataSheet.name}`
+                        : 'Optional. Upload one safety data sheet file.'
+                    }}
                   </p>
                 </div>
               </div>
