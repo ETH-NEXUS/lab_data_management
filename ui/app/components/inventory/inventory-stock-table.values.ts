@@ -135,10 +135,19 @@ export const getInventoryStockTableSortValue = (
   }
 
   if (columnId === 'itemType') {
-    return toLabel(
-      stock.material.item_type?.label || stock.material.item_type?.name,
-      t('inventory.stock_table.values.none'),
-    )
+    const itemTypeLabel = stock.material.item_type?.label || stock.material.item_type?.name || ''
+    const storageTemperatureLabel =
+      stock.material.storage_temperature_label || stock.material.storage_temperature || ''
+
+    if (itemTypeLabel.trim() === '') {
+      return t('inventory.stock_table.values.none')
+    }
+
+    if (storageTemperatureLabel.trim() === '') {
+      return itemTypeLabel.trim()
+    }
+
+    return `${itemTypeLabel.trim()} (${storageTemperatureLabel.trim()})`
   }
 
   if (columnId === 'attributes') {
