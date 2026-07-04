@@ -2,6 +2,7 @@ import { computed, nextTick, type ComputedRef } from 'vue'
 import { useQueryClient } from '@tanstack/vue-query'
 import { useInventoryMaterialStore } from '~/stores/inventory/InventoryMaterialStore'
 import { useInventoryStockStore } from '~/stores/inventory/InventoryStock'
+import { useInventoryStockTablePreferenceStore } from '~/stores/inventory/InventoryStockTablePreferenceStore'
 import {
   getInventoryMaterialQueryKey,
   INVENTORY_MATERIALS_QUERY_KEY,
@@ -32,6 +33,7 @@ export const useInventoryAddItemForm = ({ open, onSaved }: UseInventoryAddItemFo
   const queryClient = useQueryClient()
   const inventoryMaterialStore = useInventoryMaterialStore()
   const inventoryStockStore = useInventoryStockStore()
+  const stockTablePreferenceStore = useInventoryStockTablePreferenceStore()
   const isSubmitting = computed<boolean>(() => {
     return inventoryStockStore.isCreatingStock || inventoryMaterialStore.isUpdatingMaterial
   })
@@ -245,6 +247,7 @@ export const useInventoryAddItemForm = ({ open, onSaved }: UseInventoryAddItemFo
         duration: 2500,
       })
 
+      await stockTablePreferenceStore.updateGlobalFilterState('')
       onSaved()
       await navigateTo({
         path: '/inventory/all',

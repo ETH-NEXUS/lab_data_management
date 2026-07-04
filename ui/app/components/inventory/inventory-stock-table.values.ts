@@ -1,5 +1,4 @@
 import type { InventoryStockListItem, InventoryStockPreset } from '~/types/inventory'
-import { formatDateTime } from '~/utils/dateTime'
 
 export type TranslateFn = (key: string, named?: Record<string, unknown>) => string
 
@@ -147,7 +146,7 @@ export const getInventoryStockTableSortValue = (
       return itemTypeLabel.trim()
     }
 
-    return `${itemTypeLabel.trim()} (${storageTemperatureLabel.trim()})`
+    return `${itemTypeLabel.trim()} (storage temp: ${storageTemperatureLabel.trim()})`
   }
 
   if (columnId === 'attributes') {

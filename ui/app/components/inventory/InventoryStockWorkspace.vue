@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
-import type { PaginationState, SortingState } from '@tanstack/vue-table'
+import type { ColumnFiltersState, PaginationState, SortingState } from '@tanstack/vue-table'
 import InventoryStockDetailsPanel from '~/components/inventory/stock-details/InventoryStockDetailsPanel.vue'
 import InventoryStockTable from '~/components/inventory/InventoryStockTable.vue'
 import { useInventoryStockPageQuery } from '~/composables/inventory/useInventoryStockPageQuery'
@@ -27,6 +27,8 @@ const paginationState = ref<PaginationState>({
   pageIndex: 0,
   pageSize: 50,
 })
+const sortingState = ref<SortingState>([{ id: 'created_at', desc: true }])
+const columnFiltersState = ref<ColumnFiltersState>([])
 
 const effectivePreset = computed<InventoryStockPreset>(() => {
   return props.preset ?? stockTablePreferenceStore.presetState
@@ -37,7 +39,7 @@ const stockPageQueryParams = computed(() => {
     page: paginationState.value.pageIndex + 1,
     pageSize: paginationState.value.pageSize,
     search: stockTablePreferenceStore.globalFilterState,
-    sorting: stockTablePreferenceStore.sortingState,
+    sorting: sortingState.value,
   }
 })
 const stocksQuery = useInventoryStockPageQuery(stockPageQueryParams)
@@ -134,11 +136,7 @@ const updatePaginationState = (nextPaginationState: PaginationState): void => {
 }
 
 const updateSortingState = async (nextSortingState: SortingState): Promise<void> => {
-  paginationState.value = {
-    ...paginationState.value,
-    pageIndex: 0,
-  }
-  await stockTablePreferenceStore.updateSortingState(nextSortingState)
+  sortingState.value = nextSortingState
 }
 
 const updateGlobalFilterState = async (nextGlobalFilterState: string): Promise<void> => {
@@ -147,6 +145,10 @@ const updateGlobalFilterState = async (nextGlobalFilterState: string): Promise<v
     pageIndex: 0,
   }
   await stockTablePreferenceStore.updateGlobalFilterState(nextGlobalFilterState)
+}
+
+const updateColumnFiltersState = async (filters: ColumnFiltersState): Promise<void> => {
+  columnFiltersState.value = filters
 }
 
 watch(
@@ -214,13 +216,15 @@ watch(
           :stocks="stocks"
           :pagination-state="paginationState"
           :total-row-count="totalRowCount"
-          :sorting-state="stockTablePreferenceStore.sortingState"
+          :sorting-state="sortingState"
           :global-filter-state="stockTablePreferenceStore.globalFilterState"
+          :column-filters-state="columnFiltersState"
           :column-order-state="stockTablePreferenceStore.columnOrderState"
           :column-visibility-state="stockTablePreferenceStore.columnVisibilityState"
           @pagination-change="updatePaginationState"
           @sorting-change="updateSortingState"
           @global-filter-change="updateGlobalFilterState"
+          @column-filters-change="updateColumnFiltersState"
           @column-order-change="stockTablePreferenceStore.updateColumnOrderState"
           @column-visibility-change="stockTablePreferenceStore.updateColumnVisibilityState"
           @select-stock="openStockDetails"
