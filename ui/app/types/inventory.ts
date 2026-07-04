@@ -111,6 +111,9 @@ export type InventoryMaterialListItem = {
   capacity_value: string | null
   capacity_unit: string | null
   capacity_display: string | null
+  storage_temperature: string | null
+  storage_temperature_label: string | null
+  safety_data_sheet: string | null
   default_cost: string | null
   is_active: boolean
 }
@@ -252,6 +255,8 @@ export type CreateInventoryMaterialPayload = {
   attribute_ids?: number[]
   capacity_value?: string | null
   capacity_unit?: string | null
+  storage_temperature?: string | null
+  safety_data_sheet?: File | null
   description?: string | null
   default_cost?: string | null
   lifetime_days?: number | null

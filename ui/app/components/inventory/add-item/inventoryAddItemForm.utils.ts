@@ -3,6 +3,8 @@ export type AddItemFormState = {
   materialId: string
   roomId: string
   sectorIds: string[]
+  reagentStorageTemperature: string
+  reagentSafetyDataSheet: File | null
   stockUnitId: string
   quantity: string
   minimumQuantity: string
@@ -16,13 +18,15 @@ export type AddItemFormState = {
  * Builds empty draft values for the add-item stock form.
  *
  * Returned data example:
- * - `{ itemTypeId: '', materialId: '', roomId: '', sectorIds: [], stockUnitId: '', quantity: '', minimumQuantity: '', lotNumber: '', expiryDate: '', notes: '', isFavorite: false }`
+ * - `{ itemTypeId: '', materialId: '', roomId: '', sectorIds: [], reagentStorageTemperature: '', reagentSafetyDataSheet: null, stockUnitId: '', quantity: '', minimumQuantity: '', lotNumber: '', expiryDate: '', notes: '', isFavorite: false }`
  */
 export const buildInitialFormState = (): AddItemFormState => ({
   itemTypeId: '',
   materialId: '',
   roomId: '',
   sectorIds: [],
+  reagentStorageTemperature: '',
+  reagentSafetyDataSheet: null,
   stockUnitId: '',
   quantity: '',
   minimumQuantity: '',
