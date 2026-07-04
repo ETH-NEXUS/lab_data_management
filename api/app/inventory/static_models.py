@@ -339,6 +339,35 @@ class MaterialMaster(models.Model):
         help_text="Optional free-text description for extra metadata not captured elsewhere.",
     )
 
+    STORAGE_TEMPERATURE_4C = "4°C"
+    STORAGE_TEMPERATURE_RT = "RT"
+    STORAGE_TEMPERATURE_MINUS_20C = "-20°C"
+    STORAGE_TEMPERATURE_MINUS_80C = "-80°C"
+    STORAGE_TEMPERATURE_LN = "LN"
+
+    STORAGE_TEMPERATURE_CHOICES = [
+        (STORAGE_TEMPERATURE_4C, "4°C"),
+        (STORAGE_TEMPERATURE_RT, "RT"),
+        (STORAGE_TEMPERATURE_MINUS_20C, "-20°C"),
+        (STORAGE_TEMPERATURE_MINUS_80C, "-80°C"),
+        (STORAGE_TEMPERATURE_LN, "LN"),
+    ]
+
+    storage_temperature = models.CharField(
+        max_length=10,
+        null=True,
+        blank=True,
+        choices=STORAGE_TEMPERATURE_CHOICES,
+        help_text="Optional reagent storage temperature, e.g. 4°C, RT, -20°C, -80°C, or LN.",
+    )
+
+    safety_data_sheet = models.FileField(
+        null=True,
+        blank=True,
+        upload_to="inventory/safety_data_sheets/",
+        help_text="Optional safety data sheet attachment for this material.",
+    )
+
     default_cost = models.DecimalField(
         max_digits=12,
         decimal_places=2,

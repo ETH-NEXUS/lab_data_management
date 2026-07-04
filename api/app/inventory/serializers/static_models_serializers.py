@@ -159,6 +159,7 @@ class MaterialMasterListSerializer(serializers.ModelSerializer):
 
     capacity_display = serializers.SerializerMethodField()
     label = serializers.SerializerMethodField()
+    storage_temperature_label = serializers.SerializerMethodField()
 
     class Meta:
         model = MaterialMaster
@@ -177,6 +178,9 @@ class MaterialMasterListSerializer(serializers.ModelSerializer):
             "capacity_value",
             "capacity_unit",
             "capacity_display",
+            "storage_temperature",
+            "storage_temperature_label",
+            "safety_data_sheet",
             "default_cost",
             "is_active",
         )
@@ -192,6 +196,9 @@ class MaterialMasterListSerializer(serializers.ModelSerializer):
 
     def get_label(self, obj):
         return obj.product_name
+
+    def get_storage_temperature_label(self, obj):
+        return obj.get_storage_temperature_display() or None
 
 
 class MaterialMasterDetailSerializer(serializers.ModelSerializer):
@@ -256,6 +263,7 @@ class MaterialMasterDetailSerializer(serializers.ModelSerializer):
 
     capacity_display = serializers.SerializerMethodField()
     label = serializers.SerializerMethodField()
+    storage_temperature_label = serializers.SerializerMethodField()
 
     class Meta:
         model = MaterialMaster
@@ -280,6 +288,9 @@ class MaterialMasterDetailSerializer(serializers.ModelSerializer):
             "capacity_value",
             "capacity_unit",
             "capacity_display",
+            "storage_temperature",
+            "storage_temperature_label",
+            "safety_data_sheet",
             "description",
             "default_cost",
             "lifetime_days",
@@ -288,6 +299,23 @@ class MaterialMasterDetailSerializer(serializers.ModelSerializer):
             "is_active",
             "units",
         )
+
+    def validate(self, attrs):
+        item_type = attrs.get("item_type", getattr(self.instance, "item_type", None))
+        storage_temperature = attrs.get(
+            "storage_temperature",
+            getattr(self.instance, "storage_temperature", None),
+        )
+
+        item_type_name = (item_type.name if item_type else "").strip().lower()
+        is_reagent = item_type_name in {"reagent", "reagents"}
+
+        if is_reagent and not storage_temperature:
+            raise serializers.ValidationError({
+                "storage_temperature": "Storage temperature is required for reagents.",
+            })
+
+        return attrs
 
     def get_capacity_display(self, obj):
         if obj.capacity_value is None and not obj.capacity_unit:
@@ -300,3 +328,6 @@ class MaterialMasterDetailSerializer(serializers.ModelSerializer):
 
     def get_label(self, obj):
         return obj.product_name
+
+    def get_storage_temperature_label(self, obj):
+        return obj.get_storage_temperature_display() or None

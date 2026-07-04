@@ -1,6 +1,10 @@
 from django.urls import reverse
+from django.test import override_settings
+from django.core.files.uploadedfile import SimpleUploadedFile
 from rest_framework import status
 from rest_framework.test import APITestCase
+import shutil
+import tempfile
 
 from inventory.dynamic_models import InventoryStock, Room, Sector
 from inventory.static_models import ItemType, MaterialMaster, MaterialUnit, UnitOfMeasure
@@ -92,3 +96,123 @@ class InventoryStockMultiSectorTests(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data["count"], 1)
         self.assertEqual(response.data["results"][0]["id"], stock.id)
+
+    def test_patch_notes_keeps_existing_additional_sectors(self):
+        stock = InventoryStock.objects.create(
+            material=self.material,
+            sector=self.primary_sector,
+            stock_unit=self.stock_unit,
+            quantity="2",
+            minimum_quantity="1",
+            notes="Initial note",
+        )
+        stock.additional_sectors.add(self.secondary_sector)
+
+        response = self.client.patch(
+            reverse("inventory-stock-detail", args=[stock.id]),
+            {"notes": "Updated note"},
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+        stock.refresh_from_db()
+        self.assertEqual(stock.notes, "Updated note")
+        self.assertEqual(
+            list(stock.additional_sectors.order_by("id").values_list("id", flat=True)),
+            [self.secondary_sector.id],
+        )
+
+    def test_patch_sector_ids_replaces_multi_sector_assignment(self):
+        stock = InventoryStock.objects.create(
+            material=self.material,
+            sector=self.primary_sector,
+            stock_unit=self.stock_unit,
+            quantity="2",
+            minimum_quantity="1",
+        )
+        stock.additional_sectors.add(self.secondary_sector)
+
+        replacement_sector = Sector.objects.create(room=self.room, name="3.3")
+
+        response = self.client.patch(
+            reverse("inventory-stock-detail", args=[stock.id]),
+            {"sector_ids": [replacement_sector.id]},
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+        stock.refresh_from_db()
+        self.assertEqual(stock.sector_id, replacement_sector.id)
+        self.assertEqual(stock.additional_sectors.count(), 0)
+        self.assertEqual(response.data["location_label"], "C75 / 3.3")
+
+
+class InventoryMaterialReagentTests(APITestCase):
+    """
+    Covers reagent-specific material metadata.
+    """
+
+    def setUp(self):
+        self.media_root = tempfile.mkdtemp()
+        self.override_media = override_settings(MEDIA_ROOT=self.media_root)
+        self.override_media.enable()
+        self.addCleanup(self.override_media.disable)
+        self.addCleanup(shutil.rmtree, self.media_root, ignore_errors=True)
+
+        self.reagent_item_type = ItemType.objects.create(name="reagent")
+        self.device_item_type = ItemType.objects.create(name="device")
+
+    def test_create_reagent_requires_storage_temperature(self):
+        payload = {
+            "product_name": "PBS Buffer",
+            "item_type_id": self.reagent_item_type.id,
+        }
+
+        response = self.client.post(reverse("inventory-material-list"), payload, format="json")
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(
+            response.data["storage_temperature"][0],
+            "Storage temperature is required for reagents.",
+        )
+
+    def test_create_reagent_accepts_storage_temperature_and_sds(self):
+        payload = {
+            "product_name": "PBS Buffer",
+            "item_type_id": str(self.reagent_item_type.id),
+            "storage_temperature": "4°C",
+            "safety_data_sheet": SimpleUploadedFile(
+                "pbs-sds.pdf",
+                b"fake-pdf-content",
+                content_type="application/pdf",
+            ),
+        }
+
+        response = self.client.post(reverse("inventory-material-list"), payload, format="multipart")
+
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+
+        material = MaterialMaster.objects.get(id=response.data["id"])
+        self.assertEqual(material.storage_temperature, "4°C")
+        self.assertTrue(material.safety_data_sheet.name.endswith("pbs-sds.pdf"))
+        self.assertEqual(response.data["storage_temperature"], "4°C")
+        self.assertEqual(response.data["storage_temperature_label"], "4°C")
+        self.assertIn("pbs-sds.pdf", response.data["safety_data_sheet"])
+
+    def test_patch_non_reagent_allows_empty_storage_temperature(self):
+        material = MaterialMaster.objects.create(
+            product_name="Power Cable",
+            item_type=self.device_item_type,
+        )
+
+        response = self.client.patch(
+            reverse("inventory-material-detail", args=[material.id]),
+            {"description": "Updated device note"},
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        material.refresh_from_db()
+        self.assertEqual(material.description, "Updated device note")

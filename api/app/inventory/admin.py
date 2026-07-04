@@ -319,6 +319,8 @@ class MaterialMasterAdmin(admin.ModelAdmin):
                 "fields": (
                     "capacity_value",
                     "capacity_unit",
+                    "storage_temperature",
+                    "safety_data_sheet",
                     "default_cost",
                     "lifetime_days",
                     "description",
