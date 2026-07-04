@@ -1,9 +1,13 @@
 import { computed, nextTick, type ComputedRef } from 'vue'
 import { useQueryClient } from '@tanstack/vue-query'
+import { useInventoryMaterialStore } from '~/stores/inventory/InventoryMaterialStore'
 import { useInventoryStockStore } from '~/stores/inventory/InventoryStock'
 import {
+  getInventoryMaterialQueryKey,
+  INVENTORY_MATERIALS_QUERY_KEY,
   INVENTORY_STOCKS_QUERY_KEY,
   type CreateInventoryStockPayload,
+  type UpdateInventoryMaterialPayload,
 } from '~/types/inventory'
 import {
   formatDecimal,
@@ -25,8 +29,11 @@ type UseInventoryAddItemFormParams = {
 export const useInventoryAddItemForm = ({ open, onSaved }: UseInventoryAddItemFormParams) => {
   const toast = useToast()
   const queryClient = useQueryClient()
+  const inventoryMaterialStore = useInventoryMaterialStore()
   const inventoryStockStore = useInventoryStockStore()
-  const isSubmitting = computed<boolean>(() => inventoryStockStore.isCreatingStock)
+  const isSubmitting = computed<boolean>(() => {
+    return inventoryStockStore.isCreatingStock || inventoryMaterialStore.isUpdatingMaterial
+  })
 
   const {
     formState,
@@ -77,6 +84,15 @@ export const useInventoryAddItemForm = ({ open, onSaved }: UseInventoryAddItemFo
     }
   })
 
+  const isSelectedMaterialReagent = computed<boolean>(() => {
+    const itemTypeName =
+      selectedMaterialQuery.data.value?.item_type?.name ||
+      selectedMaterialQuery.data.value?.item_type?.label ||
+      ''
+
+    return itemTypeName.trim().toLowerCase() === 'reagent'
+  })
+
   const validationMessages = computed<string[]>(() => {
     const messages: string[] = []
     const itemTypeId = Number.parseInt(formState.value.itemTypeId, 10)
@@ -91,6 +107,9 @@ export const useInventoryAddItemForm = ({ open, onSaved }: UseInventoryAddItemFo
     }
     if (!Number.isInteger(materialId) || materialId <= 0) {
       messages.push('Material is required.')
+    }
+    if (isSelectedMaterialReagent.value && formState.value.reagentStorageTemperature.trim() === '') {
+      messages.push('Storage temperature is required for reagents.')
     }
     if (sectorIds.length === 0) {
       messages.push('At least one sector is required.')
@@ -161,6 +180,36 @@ export const useInventoryAddItemForm = ({ open, onSaved }: UseInventoryAddItemFo
     }
   }
 
+  /**
+   * Builds the optional material metadata update payload for reagent items.
+   *
+   * Returned payload examples:
+   * - `{ storage_temperature: '4°C' }`
+   * - `{ storage_temperature: 'RT', safety_data_sheet: File('sds.pdf') }`
+   * - `null`
+   */
+  const buildReagentMaterialUpdatePayload = (): UpdateInventoryMaterialPayload | null => {
+    if (!isSelectedMaterialReagent.value || selectedMaterialId.value <= 0) {
+      return null
+    }
+
+    const materialDetail = selectedMaterialQuery.data.value
+    const nextStorageTemperature = formState.value.reagentStorageTemperature.trim()
+    const nextSafetyDataSheet = formState.value.reagentSafetyDataSheet
+
+    const payload: UpdateInventoryMaterialPayload = {}
+
+    if (nextStorageTemperature !== '' && nextStorageTemperature !== (materialDetail?.storage_temperature || '')) {
+      payload.storage_temperature = nextStorageTemperature
+    }
+
+    if (nextSafetyDataSheet) {
+      payload.safety_data_sheet = nextSafetyDataSheet
+    }
+
+    return Object.keys(payload).length > 0 ? payload : null
+  }
+
   const submitForm = async (): Promise<void> => {
     if (isSaveDisabled.value) {
       return
@@ -177,6 +226,14 @@ export const useInventoryAddItemForm = ({ open, onSaved }: UseInventoryAddItemFo
     }
 
     try {
+      const reagentMaterialPayload = buildReagentMaterialUpdatePayload()
+
+      if (reagentMaterialPayload && selectedMaterialId.value > 0) {
+        await inventoryMaterialStore.updateMaterial(selectedMaterialId.value, reagentMaterialPayload)
+        await queryClient.invalidateQueries({ queryKey: INVENTORY_MATERIALS_QUERY_KEY })
+        await queryClient.invalidateQueries({ queryKey: getInventoryMaterialQueryKey(selectedMaterialId.value) })
+      }
+
       await inventoryStockStore.createStock(payload)
       await queryClient.invalidateQueries({ queryKey: INVENTORY_STOCKS_QUERY_KEY })
 
@@ -195,6 +252,10 @@ export const useInventoryAddItemForm = ({ open, onSaved }: UseInventoryAddItemFo
         duration: 4000,
       })
     }
+  }
+
+  const setReagentSafetyDataSheet = (file: File | null): void => {
+    formState.value.reagentSafetyDataSheet = file
   }
 
   const requestOrderPrefill = (): void => {
@@ -308,7 +369,9 @@ export const useInventoryAddItemForm = ({ open, onSaved }: UseInventoryAddItemFo
     isOrderPrefillDisabled,
     isSaveDisabled,
     isSubmitting,
+    isSelectedMaterialReagent,
     requestOrderPrefill,
+    setReagentSafetyDataSheet,
     submitForm,
   }
 }

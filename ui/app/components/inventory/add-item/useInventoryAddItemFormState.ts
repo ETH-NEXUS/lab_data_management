@@ -291,7 +291,21 @@ export const useInventoryAddItemFormState = ({
   watch(
     () => formState.value.materialId,
     () => {
+      formState.value.reagentStorageTemperature = ''
+      formState.value.reagentSafetyDataSheet = null
       formState.value.stockUnitId = ''
+    },
+  )
+
+  watch(
+    () => selectedMaterialQuery.data.value,
+    (materialDetail) => {
+      if (!materialDetail || materialDetail.id !== selectedMaterialId.value) {
+        return
+      }
+
+      formState.value.reagentStorageTemperature = materialDetail.storage_temperature || ''
+      formState.value.reagentSafetyDataSheet = null
     },
   )
 
