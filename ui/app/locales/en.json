@@ -553,7 +553,7 @@
         "updated_at": "Updated at",
         "serial_number": "Serial number",
         "order_number": "Order number",
-        "lifetime_days": "Lifetime (days)"
+        "lifetime_days": "Shelf life (days)"
       },
       "values": {
         "none": "—",
