@@ -123,6 +123,26 @@ export const createInventoryStockTableColumns = (
       enableColumnFilter: true,
       size: 150,
       meta: identityMeta,
+      cell: ({ row }) => {
+        const stock = getStock(row.original)
+        const itemTypeLabel =
+          stock.material.item_type?.label || stock.material.item_type?.name || t('inventory.stock_table.values.none')
+        const storageTemperatureLabel =
+          stock.material.storage_temperature_label || stock.material.storage_temperature || ''
+
+        if (storageTemperatureLabel.trim() === '') {
+          return itemTypeLabel
+        }
+
+        return h('div', { class: 'flex flex-col leading-tight' }, [
+          h('span', { class: 'text-slate-700' }, itemTypeLabel),
+          h(
+            'span',
+            { class: 'text-xs font-medium text-blue-700' },
+            `(storage temp: ${storageTemperatureLabel.trim()})`,
+          ),
+        ])
+      },
     },
     {
       id: 'attributes',
