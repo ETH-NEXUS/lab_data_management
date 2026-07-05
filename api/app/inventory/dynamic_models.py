@@ -185,6 +185,18 @@ class InventoryStock(models.Model):
         ),
     )
 
+    source_order = models.ForeignKey(
+        "Order",
+        on_delete=models.SET_NULL,
+        related_name="created_stock_entries",
+        null=True,
+        blank=True,
+        help_text=(
+            "Optional order that this stock entry was created from. "
+            "Used to trace one stock item back to the originating order."
+        ),
+    )
+
     created_at = models.DateTimeField(
         auto_now_add=True,
         help_text="When this stock entry was created in the system.",
