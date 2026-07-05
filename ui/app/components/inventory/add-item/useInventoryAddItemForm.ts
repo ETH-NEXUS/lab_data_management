@@ -163,6 +163,7 @@ export const useInventoryAddItemForm = ({ open, onSaved }: UseInventoryAddItemFo
     const stockUnitId = Number.parseInt(formState.value.stockUnitId, 10)
     const quantityValue = parseDecimal(formState.value.quantity)
     const minimumQuantityValue = parseInteger(formState.value.minimumQuantity)
+    const sourceOrderId = Number.parseInt(selectedOrderId.value, 10)
 
     if (!Number.isInteger(materialId) || materialId <= 0) return null
     if (sectorIds.length === 0) return null
@@ -176,6 +177,7 @@ export const useInventoryAddItemForm = ({ open, onSaved }: UseInventoryAddItemFo
       stock_unit_id: stockUnitId,
       quantity: String(quantityValue),
       minimum_quantity: String(minimumQuantityValue),
+      source_order_id: Number.isInteger(sourceOrderId) && sourceOrderId > 0 ? sourceOrderId : null,
       lot_number: formState.value.lotNumber.trim() || null,
       expiry_date: formState.value.expiryDate.trim() || null,
       notes: formState.value.notes.trim() || null,
