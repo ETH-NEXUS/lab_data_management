@@ -605,7 +605,7 @@
           "date": "Date",
           "amount": "Amount",
           "unit": "Unit",
-          "status": "Status",
+          "status": "Order Status",
           "ordered_by": "Ordered by",
           "project": "Project",
           "notes": "Notes"
