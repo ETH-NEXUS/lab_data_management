@@ -127,6 +127,22 @@ export type InventoryMaterialDetail = InventoryMaterialListItem & {
   units: InventoryMaterialUnitSummary[]
 }
 
+export type InventoryOrderSourceSummary = {
+  id: number
+  order_date: string
+  status: string
+  status_label: string
+  created_at: string
+}
+
+export type InventoryCreatedStockSummary = {
+  id: number
+  lot_number: string | null
+  expiry_date: string | null
+  location_label: string | null
+  created_at: string
+}
+
 export type InventoryStockListItem = {
   id: number
   material: InventoryMaterialListItem
@@ -143,6 +159,7 @@ export type InventoryStockListItem = {
   expiry_date: string | null
   is_favorite: boolean
   notes: string | null
+  source_order: InventoryOrderSourceSummary | null
   location_label: string | null
   stock_label: string | null
   is_low_stock: boolean
@@ -189,6 +206,7 @@ export type InventoryOrderListItem = {
   who_ordered: InventoryUserSummary | null
   project: InventoryProjectSummary | null
   notes: string | null
+  created_stock_entries: InventoryCreatedStockSummary[]
   created_at: string
   updated_at: string
 }

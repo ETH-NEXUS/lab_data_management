@@ -122,6 +122,7 @@ const {
       />
 
       <InventoryStockOrderSection
+        :source-order="props.stock.source_order"
         :order-entries="sortedOrderEntries"
         :is-orders-loading="ordersQuery.isPending.value"
       />

@@ -1,7 +1,9 @@
+import logging
 from datetime import timedelta
 from django.db import models
 from django.db.models import Prefetch, Q
 from django.utils import timezone
+from rest_framework import status
 from rest_framework import viewsets
 from rest_framework.decorators import action
 from rest_framework.permissions import IsAuthenticated
@@ -43,6 +45,8 @@ from .static_models import (
     Vendor,
 )
 from .serializers.static_models_serializers import VendorSerializer
+
+logger = logging.getLogger(__name__)
 
 
 def get_current_date_safe():
@@ -295,6 +299,22 @@ class InventoryStockViewSet(viewsets.ModelViewSet):
         if self.action == "list":
             return InventoryStockListSerializer
         return InventoryStockDetailSerializer
+
+    def create(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=False)
+
+        if serializer.errors:
+            logger.warning(
+                "Inventory stock create validation failed. payload=%s errors=%s",
+                dict(request.data),
+                serializer.errors,
+            )
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+        self.perform_create(serializer)
+        headers = self.get_success_headers(serializer.data)
+        return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
 
     def get_queryset(self):
         queryset = super().get_queryset().filter(is_archived=False).annotate(

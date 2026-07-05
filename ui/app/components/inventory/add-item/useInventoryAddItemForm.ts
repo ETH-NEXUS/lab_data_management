@@ -1,4 +1,4 @@
-import { computed, nextTick, type ComputedRef } from 'vue'
+import { computed, nextTick, ref, watch, type ComputedRef } from 'vue'
 import { useQueryClient } from '@tanstack/vue-query'
 import { useInventoryMaterialStore } from '~/stores/inventory/InventoryMaterialStore'
 import { useInventoryStockStore } from '~/stores/inventory/InventoryStock'
@@ -37,6 +37,8 @@ export const useInventoryAddItemForm = ({ open, onSaved }: UseInventoryAddItemFo
   const isSubmitting = computed<boolean>(() => {
     return inventoryStockStore.isCreatingStock || inventoryMaterialStore.isUpdatingMaterial
   })
+  const appliedSourceOrderId = ref<number | null>(null)
+  const appliedSourceMaterialId = ref<number | null>(null)
 
   const {
     formState,
@@ -163,7 +165,6 @@ export const useInventoryAddItemForm = ({ open, onSaved }: UseInventoryAddItemFo
     const stockUnitId = Number.parseInt(formState.value.stockUnitId, 10)
     const quantityValue = parseDecimal(formState.value.quantity)
     const minimumQuantityValue = parseInteger(formState.value.minimumQuantity)
-    const sourceOrderId = Number.parseInt(selectedOrderId.value, 10)
 
     if (!Number.isInteger(materialId) || materialId <= 0) return null
     if (sectorIds.length === 0) return null
@@ -171,13 +172,18 @@ export const useInventoryAddItemForm = ({ open, onSaved }: UseInventoryAddItemFo
     if (quantityValue === null || quantityValue <= 0) return null
     if (minimumQuantityValue === null || minimumQuantityValue < 0) return null
 
+    const shouldLinkSourceOrder =
+      appliedSourceOrderId.value !== null &&
+      appliedSourceMaterialId.value !== null &&
+      appliedSourceMaterialId.value === materialId
+
     return {
       material_id: materialId,
       sector_ids: sectorIds,
       stock_unit_id: stockUnitId,
       quantity: String(quantityValue),
       minimum_quantity: String(minimumQuantityValue),
-      source_order_id: Number.isInteger(sourceOrderId) && sourceOrderId > 0 ? sourceOrderId : null,
+      source_order_id: shouldLinkSourceOrder ? appliedSourceOrderId.value : undefined,
       lot_number: formState.value.lotNumber.trim() || null,
       expiry_date: formState.value.expiryDate.trim() || null,
       notes: formState.value.notes.trim() || null,
@@ -347,6 +353,9 @@ export const useInventoryAddItemForm = ({ open, onSaved }: UseInventoryAddItemFo
         formState.value.notes = orderNotes === '' ? `Order #${order.id}` : `Order #${order.id}: ${orderNotes}`
       }
 
+      appliedSourceOrderId.value = order.id
+      appliedSourceMaterialId.value = order.material.id
+
       toast.add({
         title: 'Form prefilled from order',
         color: 'success',
@@ -354,6 +363,39 @@ export const useInventoryAddItemForm = ({ open, onSaved }: UseInventoryAddItemFo
       })
     })()
   }
+
+  watch(open, (isOpen) => {
+    if (!isOpen) {
+      return
+    }
+
+    appliedSourceOrderId.value = null
+    appliedSourceMaterialId.value = null
+  })
+
+  watch(
+    () => selectedOrderId.value,
+    (nextSelectedOrderId) => {
+      if (nextSelectedOrderId.trim() !== '') {
+        appliedSourceOrderId.value = null
+        appliedSourceMaterialId.value = null
+      }
+    },
+  )
+
+  watch(
+    () => formState.value.materialId,
+    (nextMaterialId) => {
+      if (
+        appliedSourceMaterialId.value !== null &&
+        nextMaterialId.trim() !== '' &&
+        nextMaterialId !== String(appliedSourceMaterialId.value)
+      ) {
+        appliedSourceOrderId.value = null
+        appliedSourceMaterialId.value = null
+      }
+    },
+  )
 
   return {
     formState,

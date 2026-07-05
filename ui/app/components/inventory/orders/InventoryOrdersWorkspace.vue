@@ -14,6 +14,15 @@ import {
 import { formatDateTime } from '~/utils/dateTime'
 import { getErrorMessage } from '~/utils/errors'
 
+type Props = {
+  initialOrderId?: number | null
+}
+
+const props = defineProps<Props>()
+const emit = defineEmits<{
+  (e: 'update:selected-order-id', orderId: number | null): void
+}>()
+
 const { t } = useI18n()
 const toast = useToast()
 const queryClient = useQueryClient()
@@ -72,6 +81,11 @@ const closeCreateOrderModal = (): void => {
   isCreateOrderModalOpen.value = false
 }
 
+const setSelectedOrderId = (orderId: number | null): void => {
+  selectedOrderId.value = orderId
+  emit('update:selected-order-id', orderId)
+}
+
 const toDisplayValue = (value: unknown): string => {
   if (value == null) {
     return '—'
@@ -82,11 +96,21 @@ const toDisplayValue = (value: unknown): string => {
 }
 
 const openOrderDetails = (orderId: number): void => {
-  selectedOrderId.value = orderId
+  setSelectedOrderId(orderId)
 }
 
 const closeOrderDetails = (): void => {
-  selectedOrderId.value = null
+  setSelectedOrderId(null)
+}
+
+const openLinkedStock = async (stockId: number): Promise<void> => {
+  await navigateTo({
+    path: '/inventory/all',
+    query: {
+      preset: 'all',
+      stock: String(stockId),
+    },
+  })
 }
 
 const isUpdateStatusDisabled = computed<boolean>(() => {
@@ -209,9 +233,17 @@ watch(
     if (!orderId) return
     const hasMatch = orders.value.some((order) => order.id === orderId)
     if (!hasMatch) {
-      selectedOrderId.value = null
+      setSelectedOrderId(null)
     }
   },
+)
+
+watch(
+  () => props.initialOrderId,
+  (nextOrderId) => {
+    selectedOrderId.value = nextOrderId ?? null
+  },
+  { immediate: true },
 )
 </script>
 
@@ -309,6 +341,34 @@ watch(
               <p class="text-[11px] font-semibold tracking-[0.06em] text-slate-500 uppercase">Notes</p>
               <p class="mt-1 text-sm text-slate-800">{{ toDisplayValue(selectedOrder.notes) }}</p>
             </div>
+          </section>
+
+          <section class="space-y-2 rounded-xl border border-slate-200 bg-white p-4">
+            <p class="text-xs font-semibold tracking-[0.12em] text-slate-500 uppercase">Linked stock items</p>
+            <p v-if="selectedOrder.created_stock_entries.length === 0" class="text-sm text-slate-600">
+              No stock items linked to this order yet.
+            </p>
+            <ul v-else class="space-y-2">
+              <li
+                v-for="stockEntry in selectedOrder.created_stock_entries"
+                :key="stockEntry.id"
+                class="flex items-center justify-between gap-3 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2"
+              >
+                <div class="min-w-0">
+                  <p class="text-sm font-medium text-sky-700">Stock #{{ stockEntry.id }}</p>
+                  <p class="text-xs text-slate-600">
+                    Lot: {{ toDisplayValue(stockEntry.lot_number) }} · Location: {{ toDisplayValue(stockEntry.location_label) }}
+                  </p>
+                </div>
+                <UButton
+                  size="xs"
+                  color="primary"
+                  variant="soft"
+                  label="Open stock item"
+                  @click="openLinkedStock(stockEntry.id)"
+                />
+              </li>
+            </ul>
           </section>
 
           <section class="space-y-2 rounded-xl border border-slate-200 bg-white p-4">
