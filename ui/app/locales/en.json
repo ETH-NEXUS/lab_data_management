@@ -601,6 +601,7 @@
     "orders": {
       "table": {
         "columns": {
+          "order_number": "Order number",
           "product": "Product",
           "date": "Date",
           "amount": "Amount",

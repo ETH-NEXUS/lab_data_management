@@ -62,6 +62,9 @@ const statusBadgeClass = (status: string): string => {
       <thead class="border-b border-[var(--app-border)] bg-slate-50">
         <tr>
           <th class="px-3 py-2 text-left font-semibold text-slate-800">
+            {{ t('inventory.orders.table.columns.order_number') }}
+          </th>
+          <th class="px-3 py-2 text-left font-semibold text-slate-800">
             {{ t('inventory.orders.table.columns.product') }}
           </th>
           <th class="px-3 py-2 text-left font-semibold text-slate-800">
@@ -97,6 +100,9 @@ const statusBadgeClass = (status: string): string => {
             props.selectedOrderId === order.id ? 'bg-blue-50/50' : '',
           ]"
         >
+          <td class="px-3 py-2 text-slate-700">
+            {{ toDisplayValue(order.id) }}
+          </td>
           <td class="px-3 py-2 text-slate-700">
             <button
               type="button"
@@ -140,7 +146,7 @@ const statusBadgeClass = (status: string): string => {
         </tr>
 
         <tr v-if="sortedOrders.length === 0">
-          <td colspan="8" class="px-3 py-10 text-center text-sm text-slate-500">
+          <td colspan="9" class="px-3 py-10 text-center text-sm text-slate-500">
             {{ t('inventory.orders.table.empty') }}
           </td>
         </tr>
