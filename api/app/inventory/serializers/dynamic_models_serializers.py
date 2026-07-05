@@ -93,6 +93,46 @@ class SectorSummarySerializer(serializers.ModelSerializer):
         return str(obj)
 
 
+class InventoryStockSourceOrderSummarySerializer(serializers.ModelSerializer):
+    """
+    Minimal order summary embedded on stock responses.
+    """
+    status_label = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Order
+        fields = (
+            "id",
+            "order_date",
+            "status",
+            "status_label",
+            "created_at",
+        )
+
+    def get_status_label(self, obj):
+        return obj.get_status_display()
+
+
+class OrderCreatedStockSummarySerializer(serializers.ModelSerializer):
+    """
+    Minimal stock summary embedded on order responses.
+    """
+    location_label = serializers.SerializerMethodField()
+
+    class Meta:
+        model = InventoryStock
+        fields = (
+            "id",
+            "lot_number",
+            "expiry_date",
+            "location_label",
+            "created_at",
+        )
+
+    def get_location_label(self, obj):
+        return build_inventory_stock_location_label(obj)
+
+
 def get_inventory_stock_sectors(obj):
     """
     Returns the stock locations as one ordered list without duplicates.
@@ -170,6 +210,7 @@ class InventoryStockListSerializer(serializers.ModelSerializer):
     is_low_stock = serializers.SerializerMethodField()
     is_expired = serializers.SerializerMethodField()
     is_expiring_soon = serializers.SerializerMethodField()
+    source_order = InventoryStockSourceOrderSummarySerializer(read_only=True)
 
     class Meta:
         model = InventoryStock
@@ -189,6 +230,7 @@ class InventoryStockListSerializer(serializers.ModelSerializer):
             "expiry_date",
             "is_favorite",
             "notes",
+            "source_order",
             "location_label",
             "stock_label",
             "is_low_stock",
@@ -276,6 +318,14 @@ class InventoryStockDetailSerializer(serializers.ModelSerializer):
     minimum_quantity_in_base_units = serializers.ReadOnlyField()
     location_label = serializers.SerializerMethodField()
     stock_label = serializers.SerializerMethodField()
+    source_order = InventoryStockSourceOrderSummarySerializer(read_only=True)
+    source_order_id = serializers.PrimaryKeyRelatedField(
+        source="source_order",
+        queryset=Order.objects.all(),
+        write_only=True,
+        required=False,
+        allow_null=True,
+    )
 
     class Meta:
         model = InventoryStock
@@ -298,6 +348,8 @@ class InventoryStockDetailSerializer(serializers.ModelSerializer):
             "expiry_date",
             "is_favorite",
             "notes",
+            "source_order",
+            "source_order_id",
             "location_label",
             "stock_label",
             "created_at",
@@ -397,6 +449,7 @@ class OrderListSerializer(serializers.ModelSerializer):
     project = SimpleProjectSerializer(read_only=True)
 
     status_label = serializers.SerializerMethodField()
+    created_stock_entries = OrderCreatedStockSummarySerializer(many=True, read_only=True)
 
     class Meta:
         model = Order
@@ -411,6 +464,7 @@ class OrderListSerializer(serializers.ModelSerializer):
             "who_ordered",
             "project",
             "notes",
+            "created_stock_entries",
             "created_at",
             "updated_at",
         )
@@ -455,6 +509,7 @@ class OrderDetailSerializer(serializers.ModelSerializer):
     )
 
     status_label = serializers.SerializerMethodField()
+    created_stock_entries = OrderCreatedStockSummarySerializer(many=True, read_only=True)
 
     class Meta:
         model = Order
@@ -473,6 +528,7 @@ class OrderDetailSerializer(serializers.ModelSerializer):
             "project",
             "project_id",
             "notes",
+            "created_stock_entries",
             "created_at",
             "updated_at",
         )

@@ -280,6 +280,7 @@ class InventoryStockViewSet(viewsets.ModelViewSet):
             "sector__room",
             "stock_unit",
             "stock_unit__unit",
+            "source_order",
         )
         .prefetch_related(
             "material__attributes",
@@ -548,6 +549,16 @@ class OrderViewSet(viewsets.ModelViewSet):
         )
         .prefetch_related(
             "material__attributes",
+            Prefetch(
+                "created_stock_entries",
+                queryset=InventoryStock.objects.select_related(
+                    "sector",
+                    "sector__room",
+                ).prefetch_related(
+                    "additional_sectors",
+                    "additional_sectors__room",
+                ),
+            ),
         )
         .order_by("-order_date")
     )
