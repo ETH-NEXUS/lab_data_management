@@ -35,6 +35,7 @@ const isCreateOrderModalOpen = ref(false)
 const selectedOrderId = ref<number | null>(null)
 const selectedOrderStatus = ref('')
 const selectedProjectId = ref('')
+const selectedOrderDetailsTab = ref<'order' | 'stock_items'>('order')
 
 const orderStatusOptions = [
   { value: 'ordered', label: 'Ordered' },
@@ -224,6 +225,7 @@ watch(
   (order) => {
     selectedOrderStatus.value = order?.status ?? ''
     selectedProjectId.value = order?.project?.id ? String(order.project.id) : ''
+    selectedOrderDetailsTab.value = 'order'
   },
 )
 
@@ -306,127 +308,158 @@ watch(
         </header>
 
         <div class="space-y-4 overflow-y-auto px-5 py-4">
-          <section class="grid gap-2 sm:grid-cols-2">
-            <div class="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2">
-              <p class="text-[11px] font-semibold tracking-[0.06em] text-slate-500 uppercase">Date</p>
-              <p class="mt-1 text-sm text-slate-800">
-                {{ formatDateTime(selectedOrder.order_date, { dateStyle: 'medium' }, '—') }}
-              </p>
-            </div>
-            <div class="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2">
-              <p class="text-[11px] font-semibold tracking-[0.06em] text-slate-500 uppercase">Amount</p>
-              <p class="mt-1 text-sm text-slate-800">
-                {{ selectedOrder.amount }} {{ selectedOrder.order_unit.display_name }}
-              </p>
-            </div>
-            <div class="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2">
-              <p class="text-[11px] font-semibold tracking-[0.06em] text-slate-500 uppercase">Ordered by</p>
-              <p class="mt-1 text-sm text-slate-800">
-                {{
-                  toDisplayValue(
-                    selectedOrder.who_ordered?.label ||
-                      selectedOrder.who_ordered?.full_name ||
-                      selectedOrder.who_ordered?.username,
-                  )
-                }}
-              </p>
-            </div>
-            <div class="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2">
-              <p class="text-[11px] font-semibold tracking-[0.06em] text-slate-500 uppercase">Project</p>
-              <p class="mt-1 text-sm text-slate-800">
-                {{ toDisplayValue(selectedOrder.project?.label || selectedOrder.project?.name) }}
-              </p>
-            </div>
-            <div class="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 sm:col-span-2">
-              <p class="text-[11px] font-semibold tracking-[0.06em] text-slate-500 uppercase">Notes</p>
-              <p class="mt-1 text-sm text-slate-800">{{ toDisplayValue(selectedOrder.notes) }}</p>
-            </div>
-          </section>
+          <div class="inline-flex rounded-lg border border-slate-200 bg-slate-50 p-1">
+            <button
+              type="button"
+              :class="[
+                'rounded-md px-3 py-1.5 text-sm font-medium transition',
+                selectedOrderDetailsTab === 'order'
+                  ? 'bg-white text-slate-900 shadow-sm'
+                  : 'text-slate-600 hover:text-slate-900',
+              ]"
+              @click="selectedOrderDetailsTab = 'order'"
+            >
+              Order
+            </button>
+            <button
+              type="button"
+              :class="[
+                'rounded-md px-3 py-1.5 text-sm font-medium transition',
+                selectedOrderDetailsTab === 'stock_items'
+                  ? 'bg-white text-slate-900 shadow-sm'
+                  : 'text-slate-600 hover:text-slate-900',
+              ]"
+              @click="selectedOrderDetailsTab = 'stock_items'"
+            >
+              Stock items
+            </button>
+          </div>
 
-          <section class="space-y-2 rounded-xl border border-slate-200 bg-white p-4">
-            <p class="text-xs font-semibold tracking-[0.12em] text-slate-500 uppercase">Linked stock items</p>
-            <p v-if="selectedOrder.created_stock_entries.length === 0" class="text-sm text-slate-600">
-              No stock items linked to this order yet.
-            </p>
-            <ul v-else class="space-y-2">
-              <li
-                v-for="stockEntry in selectedOrder.created_stock_entries"
-                :key="stockEntry.id"
-                class="flex items-center justify-between gap-3 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2"
+          <template v-if="selectedOrderDetailsTab === 'order'">
+            <section class="grid gap-2 sm:grid-cols-2">
+              <div class="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2">
+                <p class="text-[11px] font-semibold tracking-[0.06em] text-slate-500 uppercase">Date</p>
+                <p class="mt-1 text-sm text-slate-800">
+                  {{ formatDateTime(selectedOrder.order_date, { dateStyle: 'medium' }, '—') }}
+                </p>
+              </div>
+              <div class="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2">
+                <p class="text-[11px] font-semibold tracking-[0.06em] text-slate-500 uppercase">Amount</p>
+                <p class="mt-1 text-sm text-slate-800">
+                  {{ selectedOrder.amount }} {{ selectedOrder.order_unit.display_name }}
+                </p>
+              </div>
+              <div class="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2">
+                <p class="text-[11px] font-semibold tracking-[0.06em] text-slate-500 uppercase">Ordered by</p>
+                <p class="mt-1 text-sm text-slate-800">
+                  {{
+                    toDisplayValue(
+                      selectedOrder.who_ordered?.label ||
+                        selectedOrder.who_ordered?.full_name ||
+                        selectedOrder.who_ordered?.username,
+                    )
+                  }}
+                </p>
+              </div>
+              <div class="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2">
+                <p class="text-[11px] font-semibold tracking-[0.06em] text-slate-500 uppercase">Project</p>
+                <p class="mt-1 text-sm text-slate-800">
+                  {{ toDisplayValue(selectedOrder.project?.label || selectedOrder.project?.name) }}
+                </p>
+              </div>
+              <div class="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 sm:col-span-2">
+                <p class="text-[11px] font-semibold tracking-[0.06em] text-slate-500 uppercase">Notes</p>
+                <p class="mt-1 text-sm text-slate-800">{{ toDisplayValue(selectedOrder.notes) }}</p>
+              </div>
+            </section>
+
+            <section class="space-y-2 rounded-xl border border-slate-200 bg-white p-4">
+              <p class="text-xs font-semibold tracking-[0.12em] text-slate-500 uppercase">Update status</p>
+              <select
+                v-model="selectedOrderStatus"
+                class="w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 outline-none focus:border-blue-300 focus:ring-2 focus:ring-blue-300/50"
+                :disabled="inventoryOrderStore.isUpdatingOrder"
               >
-                <div class="min-w-0">
-                  <p class="text-sm font-medium text-sky-700">Stock #{{ stockEntry.id }}</p>
-                  <p class="text-xs text-slate-600">
-                    Lot: {{ toDisplayValue(stockEntry.lot_number) }} · Location: {{ toDisplayValue(stockEntry.location_label) }}
-                  </p>
-                </div>
-                <UButton
-                  size="xs"
-                  color="primary"
-                  variant="soft"
-                  label="Open stock item"
-                  @click="openLinkedStock(stockEntry.id)"
-                />
-              </li>
-            </ul>
-          </section>
+                <option v-for="statusOption in orderStatusOptions" :key="statusOption.value" :value="statusOption.value">
+                  {{ statusOption.label }}
+                </option>
+              </select>
+              <UButton
+                color="primary"
+                label="Save status"
+                :loading="inventoryOrderStore.isUpdatingOrder"
+                :disabled="isUpdateStatusDisabled"
+                @click="updateSelectedOrderStatus"
+              />
+            </section>
 
-          <section class="space-y-2 rounded-xl border border-slate-200 bg-white p-4">
-            <p class="text-xs font-semibold tracking-[0.12em] text-slate-500 uppercase">Update status</p>
-            <select
-              v-model="selectedOrderStatus"
-              class="w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 outline-none focus:border-blue-300 focus:ring-2 focus:ring-blue-300/50"
-              :disabled="inventoryOrderStore.isUpdatingOrder"
-            >
-              <option v-for="statusOption in orderStatusOptions" :key="statusOption.value" :value="statusOption.value">
-                {{ statusOption.label }}
-              </option>
-            </select>
-            <UButton
-              color="primary"
-              label="Save status"
-              :loading="inventoryOrderStore.isUpdatingOrder"
-              :disabled="isUpdateStatusDisabled"
-              @click="updateSelectedOrderStatus"
-            />
-          </section>
+            <section class="space-y-2 rounded-xl border border-slate-200 bg-white p-4">
+              <p class="text-xs font-semibold tracking-[0.12em] text-slate-500 uppercase">Bind project</p>
+              <select
+                v-model="selectedProjectId"
+                class="w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 outline-none focus:border-blue-300 focus:ring-2 focus:ring-blue-300/50"
+                :disabled="inventoryOrderStore.isUpdatingOrder || projectsQuery.isPending.value"
+              >
+                <option value="">{{ projectsQuery.isPending.value ? 'Loading projects...' : 'No project' }}</option>
+                <option v-for="project in projectOptions" :key="project.id" :value="String(project.id)">
+                  {{ project.name }}
+                </option>
+              </select>
+              <p v-if="projectsErrorMessage" class="text-xs text-red-600">{{ projectsErrorMessage }}</p>
+              <UButton
+                color="primary"
+                label="Save project"
+                :loading="inventoryOrderStore.isUpdatingOrder"
+                :disabled="isUpdateProjectDisabled"
+                @click="updateSelectedOrderProject"
+              />
+            </section>
 
-          <section class="space-y-2 rounded-xl border border-slate-200 bg-white p-4">
-            <p class="text-xs font-semibold tracking-[0.12em] text-slate-500 uppercase">Bind project</p>
-            <select
-              v-model="selectedProjectId"
-              class="w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 outline-none focus:border-blue-300 focus:ring-2 focus:ring-blue-300/50"
-              :disabled="inventoryOrderStore.isUpdatingOrder || projectsQuery.isPending.value"
-            >
-              <option value="">{{ projectsQuery.isPending.value ? 'Loading projects...' : 'No project' }}</option>
-              <option v-for="project in projectOptions" :key="project.id" :value="String(project.id)">
-                {{ project.name }}
-              </option>
-            </select>
-            <p v-if="projectsErrorMessage" class="text-xs text-red-600">{{ projectsErrorMessage }}</p>
-            <UButton
-              color="primary"
-              label="Save project"
-              :loading="inventoryOrderStore.isUpdatingOrder"
-              :disabled="isUpdateProjectDisabled"
-              @click="updateSelectedOrderProject"
-            />
-          </section>
+            <section class="grid gap-2 sm:grid-cols-2">
+              <div class="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2">
+                <p class="text-[11px] font-semibold tracking-[0.06em] text-slate-500 uppercase">Created</p>
+                <p class="mt-1 text-sm text-slate-800">
+                  {{ formatDateTime(selectedOrder.created_at, { dateStyle: 'medium', timeStyle: 'short' }, '—') }}
+                </p>
+              </div>
+              <div class="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2">
+                <p class="text-[11px] font-semibold tracking-[0.06em] text-slate-500 uppercase">Updated</p>
+                <p class="mt-1 text-sm text-slate-800">
+                  {{ formatDateTime(selectedOrder.updated_at, { dateStyle: 'medium', timeStyle: 'short' }, '—') }}
+                </p>
+              </div>
+            </section>
+          </template>
 
-          <section class="grid gap-2 sm:grid-cols-2">
-            <div class="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2">
-              <p class="text-[11px] font-semibold tracking-[0.06em] text-slate-500 uppercase">Created</p>
-              <p class="mt-1 text-sm text-slate-800">
-                {{ formatDateTime(selectedOrder.created_at, { dateStyle: 'medium', timeStyle: 'short' }, '—') }}
+          <template v-else>
+            <section class="space-y-2 rounded-xl border border-slate-200 bg-white p-4">
+              <p class="text-xs font-semibold tracking-[0.12em] text-slate-500 uppercase">Linked stock items</p>
+              <p v-if="selectedOrder.created_stock_entries.length === 0" class="text-sm text-slate-600">
+                No stock items linked to this order yet.
               </p>
-            </div>
-            <div class="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2">
-              <p class="text-[11px] font-semibold tracking-[0.06em] text-slate-500 uppercase">Updated</p>
-              <p class="mt-1 text-sm text-slate-800">
-                {{ formatDateTime(selectedOrder.updated_at, { dateStyle: 'medium', timeStyle: 'short' }, '—') }}
-              </p>
-            </div>
-          </section>
+              <ul v-else class="space-y-2">
+                <li
+                  v-for="stockEntry in selectedOrder.created_stock_entries"
+                  :key="stockEntry.id"
+                  class="flex items-center justify-between gap-3 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2"
+                >
+                  <div class="min-w-0">
+                    <p class="text-sm font-medium text-sky-700">Stock #{{ stockEntry.id }}</p>
+                    <p class="text-xs text-slate-600">
+                      Lot: {{ toDisplayValue(stockEntry.lot_number) }} · Location: {{ toDisplayValue(stockEntry.location_label) }}
+                    </p>
+                  </div>
+                  <UButton
+                    size="xs"
+                    color="primary"
+                    variant="soft"
+                    label="Open stock item"
+                    @click="openLinkedStock(stockEntry.id)"
+                  />
+                </li>
+              </ul>
+            </section>
+          </template>
         </div>
       </aside>
     </div>
