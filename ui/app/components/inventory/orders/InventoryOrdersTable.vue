@@ -54,6 +54,16 @@ const statusBadgeClass = (status: string): string => {
 
   return 'border-blue-300 bg-blue-100 text-blue-900'
 }
+
+const openLinkedStock = (stockId: number): void => {
+  void navigateTo({
+    path: '/inventory/all',
+    query: {
+      preset: 'all',
+      stock: String(stockId),
+    },
+  })
+}
 </script>
 
 <template>
@@ -104,13 +114,24 @@ const statusBadgeClass = (status: string): string => {
             {{ toDisplayValue(order.id) }}
           </td>
           <td class="px-3 py-2 text-slate-700">
-            <button
-              type="button"
-              class="cursor-pointer text-left text-sky-700 hover:text-sky-800 hover:underline"
-              @click="emit('select-order', order.id)"
-            >
-              {{ toDisplayValue(order.material.label || order.material.product_name) }}
-            </button>
+            <div class="flex flex-col items-start gap-1">
+              <button
+                type="button"
+                class="cursor-pointer text-left text-sky-700 hover:text-sky-800 hover:underline"
+                @click="emit('select-order', order.id)"
+              >
+                {{ toDisplayValue(order.material.label || order.material.product_name) }}
+              </button>
+              <button
+                v-for="stockEntry in order.created_stock_entries"
+                :key="stockEntry.id"
+                type="button"
+                class="cursor-pointer text-left text-xs font-medium text-sky-700 hover:text-sky-800 hover:underline"
+                @click="openLinkedStock(stockEntry.id)"
+              >
+                [Stock #{{ stockEntry.id }}]
+              </button>
+            </div>
           </td>
           <td class="px-3 py-2 text-slate-700">
             {{ formatDateTime(order.order_date, { dateStyle: 'medium' }, '—') }}

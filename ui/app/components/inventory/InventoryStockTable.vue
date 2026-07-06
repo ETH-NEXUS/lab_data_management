@@ -40,6 +40,15 @@ const onSelectStock = (stock: InventoryStockListItem): void => {
   emit('select-stock', stock)
 }
 
+const onOpenRelatedOrder = (orderId: number): void => {
+  void navigateTo({
+    path: '/inventory/orders',
+    query: {
+      order: String(orderId),
+    },
+  })
+}
+
 /**
  * Returns custom table cell class for one row.
  *
@@ -64,7 +73,7 @@ const getStockRowCellClass = (row: Record<string, unknown>): string => {
  * Input callback example:
  * - `(stock) => emit('select-stock', stock)`
  */
-const tableColumns = computed(() => createInventoryStockTableColumns(t, onSelectStock))
+const tableColumns = computed(() => createInventoryStockTableColumns(t, onSelectStock, onOpenRelatedOrder))
 </script>
 
 <template>

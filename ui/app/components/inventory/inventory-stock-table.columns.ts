@@ -21,6 +21,7 @@ const getStock = (row: TableRow): InventoryStockListItem => {
 export const createInventoryStockTableColumns = (
   t: TranslateFn,
   onSelectStock: (stock: InventoryStockListItem) => void,
+  onOpenRelatedOrder: (orderId: number) => void,
 ): ColumnDef<TableRow, unknown>[] => {
   const outOfStockBadgeClass =
     'inline-flex items-center rounded-full border border-rose-300 bg-rose-100 px-2 py-0.5 text-[11px] font-semibold text-rose-900'
@@ -44,18 +45,33 @@ export const createInventoryStockTableColumns = (
         const stock = getStock(row.original)
         const productName = stock.material.product_name?.trim() || t('inventory.stock_table.values.none')
         const label = stock.is_favorite ? `★ ${productName}` : productName
+        const linkedOrderId = stock.source_order?.id ?? null
 
-        return h(
-          'button',
-          {
-            type: 'button',
-            class:
-              'inline-flex w-full cursor-pointer items-center justify-start rounded-sm px-1 py-0.5 text-left text-blue-700 transition hover:text-blue-800 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-300',
-            title: t('inventory.stock_table.columns.product_name'),
-            onClick: () => onSelectStock(stock),
-          },
-          label,
-        )
+        return h('div', { class: 'flex flex-col items-start gap-1' }, [
+          h(
+            'button',
+            {
+              type: 'button',
+              class:
+                'inline-flex w-full cursor-pointer items-center justify-start rounded-sm px-1 py-0.5 text-left text-blue-700 transition hover:text-blue-800 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-300',
+              title: t('inventory.stock_table.columns.product_name'),
+              onClick: () => onSelectStock(stock),
+            },
+            label,
+          ),
+          linkedOrderId === null
+            ? null
+            : h(
+                'button',
+                {
+                  type: 'button',
+                  class:
+                    'inline-flex cursor-pointer items-center rounded-sm px-1 py-0.5 text-xs font-medium text-sky-700 transition hover:text-sky-800 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-300',
+                  onClick: () => onOpenRelatedOrder(linkedOrderId),
+                },
+                `[Order #${linkedOrderId}]`,
+              ),
+        ])
       },
     },
     {
