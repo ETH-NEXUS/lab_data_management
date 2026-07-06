@@ -1,3 +1,3 @@
-- [x] Step 1: Add missing action.submit locale key used by management dynamic form
-- [x] Step 2: Implement native desktop drag-and-drop handling on management form inputs
-- [x] Step 3: Run lint and verify the management drag-and-drop path end-to-end
+- [x] Add archived stock API preset
+- [x] Extend UI preset routing
+- [x] Add archived dashboard card

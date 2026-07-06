@@ -1,6 +1,6 @@
 from rest_framework.routers import DefaultRouter
 
-from .views import (
+from .viewsets import (
     BrandViewSet,
     DeviceTypeViewSet,
     InventoryStockViewSet,

@@ -6,7 +6,7 @@ from rest_framework.test import APITestCase
 import shutil
 import tempfile
 
-from inventory.dynamic_models import InventoryStock, Room, Sector
+from inventory.dynamic_models import InventoryStock, Order, Room, Sector
 from inventory.static_models import ItemType, MaterialMaster, MaterialUnit, UnitOfMeasure
 
 
@@ -34,6 +34,13 @@ class InventoryStockMultiSectorTests(APITestCase):
         self.secondary_sector = Sector.objects.create(room=self.room, name="3.2")
         self.other_room = Room.objects.create(name="C41")
         self.other_room_sector = Sector.objects.create(room=self.other_room, name="1.1")
+        self.order = Order.objects.create(
+            material=self.material,
+            order_unit=self.stock_unit,
+            amount="2",
+            order_date="2026-07-05T10:00:00Z",
+            status=Order.STATUS_ORDERED,
+        )
 
     def test_create_stock_accepts_multiple_sector_ids(self):
         payload = {
@@ -147,6 +154,24 @@ class InventoryStockMultiSectorTests(APITestCase):
         self.assertEqual(stock.sector_id, replacement_sector.id)
         self.assertEqual(stock.additional_sectors.count(), 0)
         self.assertEqual(response.data["location_label"], "C75 / 3.3")
+
+    def test_create_stock_accepts_source_order_id(self):
+        payload = {
+            "material_id": self.material.id,
+            "sector_ids": [self.primary_sector.id],
+            "stock_unit_id": self.stock_unit.id,
+            "quantity": "2",
+            "minimum_quantity": "1",
+            "source_order_id": self.order.id,
+        }
+
+        response = self.client.post(reverse("inventory-stock-list"), payload, format="json")
+
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+
+        stock = InventoryStock.objects.get(id=response.data["id"])
+        self.assertEqual(stock.source_order_id, self.order.id)
+        self.assertEqual(response.data["source_order"]["id"], self.order.id)
 
 
 class InventoryMaterialReagentTests(APITestCase):
