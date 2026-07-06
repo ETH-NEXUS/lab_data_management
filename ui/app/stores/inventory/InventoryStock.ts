@@ -4,6 +4,7 @@ import {
   INVENTORY_ARCHIVE_STOCK_ERROR_MESSAGE,
   INVENTORY_CREATE_STOCK_ERROR_MESSAGE,
   INVENTORY_MARK_FAVORITE_ERROR_MESSAGE,
+  INVENTORY_RESTORE_STOCK_ERROR_MESSAGE,
   INVENTORY_UNMARK_FAVORITE_ERROR_MESSAGE,
   INVENTORY_UPDATE_STOCK_ERROR_MESSAGE,
   type CreateInventoryStockPayload,
@@ -18,6 +19,7 @@ export const useInventoryStockStore = defineStore('inventoryStockStore', () => {
   const isMarkingFavorite = ref(false)
   const isUnmarkingFavorite = ref(false)
   const isArchivingStock = ref(false)
+  const isRestoringStock = ref(false)
 
   const createStock = async (payload: CreateInventoryStockPayload): Promise<InventoryStockDetail> => {
     isCreatingStock.value = true
@@ -96,16 +98,33 @@ export const useInventoryStockStore = defineStore('inventoryStockStore', () => {
     }
   }
 
+  const restoreStock = async (stockId: number): Promise<InventoryStockDetail> => {
+    isRestoringStock.value = true
+    try {
+      return await requestApiData<InventoryStockDetail>(
+        `inventory/stocks/${stockId}/restore/`,
+        {
+          method: 'POST',
+        },
+        INVENTORY_RESTORE_STOCK_ERROR_MESSAGE,
+      )
+    } finally {
+      isRestoringStock.value = false
+    }
+  }
+
   return {
     isCreatingStock,
     isUpdatingStock,
     isMarkingFavorite,
     isUnmarkingFavorite,
     isArchivingStock,
+    isRestoringStock,
     createStock,
     updateStock,
     markFavorite,
     unmarkFavorite,
     archiveStock,
+    restoreStock,
   }
 })

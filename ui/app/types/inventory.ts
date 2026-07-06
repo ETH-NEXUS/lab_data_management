@@ -44,6 +44,7 @@ export const INVENTORY_UPDATE_USAGE_ERROR_MESSAGE = 'Failed to update material u
 export const INVENTORY_MARK_FAVORITE_ERROR_MESSAGE = 'Failed to mark stock item as favorite.'
 export const INVENTORY_UNMARK_FAVORITE_ERROR_MESSAGE = 'Failed to unmark stock item as favorite.'
 export const INVENTORY_ARCHIVE_STOCK_ERROR_MESSAGE = 'Failed to archive stock item.'
+export const INVENTORY_RESTORE_STOCK_ERROR_MESSAGE = 'Failed to restore stock item.'
 export const INVENTORY_STOCK_TABLE_PREFERENCE_ERROR_MESSAGE = 'Failed to load inventory stock table preference.'
 export const INVENTORY_UPDATE_STOCK_TABLE_PREFERENCE_ERROR_MESSAGE =
   'Failed to update inventory stock table preference.'
