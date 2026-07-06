@@ -28,8 +28,11 @@ class InventoryChangeRecord(models.Model):
 
     ACTION_STOCK_CREATED = "stock_created"
     ACTION_STOCK_UPDATED = "stock_updated"
+    ACTION_STOCK_DELETED = "stock_deleted"
     ACTION_STOCK_ARCHIVED = "stock_archived"
     ACTION_STOCK_RESTORED = "stock_restored"
+    ACTION_STOCK_FAVORITED = "stock_favorited"
+    ACTION_STOCK_UNFAVORITED = "stock_unfavorited"
     ACTION_ORDER_CREATED = "order_created"
     ACTION_ORDER_UPDATED = "order_updated"
     ACTION_ORDER_DELETED = "order_deleted"
@@ -40,8 +43,11 @@ class InventoryChangeRecord(models.Model):
     ACTION_CHOICES = [
         (ACTION_STOCK_CREATED, "Stock created"),
         (ACTION_STOCK_UPDATED, "Stock updated"),
+        (ACTION_STOCK_DELETED, "Stock deleted"),
         (ACTION_STOCK_ARCHIVED, "Stock archived"),
         (ACTION_STOCK_RESTORED, "Stock restored"),
+        (ACTION_STOCK_FAVORITED, "Stock favorited"),
+        (ACTION_STOCK_UNFAVORITED, "Stock unfavorited"),
         (ACTION_ORDER_CREATED, "Order created"),
         (ACTION_ORDER_UPDATED, "Order updated"),
         (ACTION_ORDER_DELETED, "Order deleted"),

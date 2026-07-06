@@ -1,12 +1,15 @@
 from datetime import timedelta
 
 from django.db import models
+from django.db import transaction
 from rest_framework import viewsets
 from rest_framework.decorators import action
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
 from ..dynamic_models import InventoryStock, InventoryStockTablePreference
+from ..history_models import InventoryChangeRecord
+from ..history_utils import record_inventory_action
 from ..pagination import InventoryStockPagination
 from ..serializers.dynamic_models_serializers import (
     InventoryStockDetailSerializer,
@@ -30,6 +33,69 @@ class InventoryStockViewSet(viewsets.ModelViewSet):
         if self.action == "list":
             return InventoryStockListSerializer
         return InventoryStockDetailSerializer
+
+    def _build_stock_history_note(self, stock):
+        """
+        Builds one small readable stock context string.
+
+        Returned data examples:
+        - "PCR Plates at C75 / 3.1"
+        - "Tips at C41 / 1.1"
+        """
+        material_name = stock.material.product_name if stock.material_id else "Unknown material"
+        sector_name = str(stock.sector) if stock.sector_id else "Unknown location"
+        return f"{material_name} at {sector_name}"
+
+    def perform_create(self, serializer):
+        with transaction.atomic():
+            stock = serializer.save()
+            performed_by = self.request.user if self.request.user.is_authenticated else None
+
+            record_inventory_action(
+                performed_action=InventoryChangeRecord.ACTION_STOCK_CREATED,
+                performed_by=performed_by,
+                inventory_stock=stock,
+                quantity_delta=stock.quantity,
+                quantity_unit=stock.stock_unit,
+                notes=f"Created stock entry for {self._build_stock_history_note(stock)}.",
+            )
+
+    def perform_update(self, serializer):
+        previous_stock = self.get_object()
+        previous_quantity = previous_stock.quantity
+        previous_notes = self._build_stock_history_note(previous_stock)
+
+        with transaction.atomic():
+            stock = serializer.save()
+            performed_by = self.request.user if self.request.user.is_authenticated else None
+            quantity_delta = stock.quantity - previous_quantity
+
+            record_inventory_action(
+                performed_action=InventoryChangeRecord.ACTION_STOCK_UPDATED,
+                performed_by=performed_by,
+                inventory_stock=stock,
+                quantity_delta=quantity_delta,
+                quantity_unit=stock.stock_unit,
+                notes=(
+                    f"Updated stock entry from {previous_notes} "
+                    f"to {self._build_stock_history_note(stock)}."
+                ),
+            )
+
+    def perform_destroy(self, instance):
+        performed_by = self.request.user if self.request.user.is_authenticated else None
+        stock_note = self._build_stock_history_note(instance)
+
+        with transaction.atomic():
+            record_inventory_action(
+                performed_action=InventoryChangeRecord.ACTION_STOCK_DELETED,
+                performed_by=performed_by,
+                inventory_stock=instance,
+                quantity_delta=instance.quantity,
+                quantity_unit=instance.stock_unit,
+                notes=f"Deleted stock entry for {stock_note}.",
+            )
+            instance.delete()
 
     def _get_filtered_stock_queryset(self, include_archived=False):
         queryset = build_inventory_stock_base_queryset()
@@ -120,32 +186,68 @@ class InventoryStockViewSet(viewsets.ModelViewSet):
     @action(detail=True, methods=["post"])
     def mark_favorite(self, request, pk=None):
         stock = self.get_object()
-        stock.is_favorite = True
-        stock.save(update_fields=["is_favorite"])
+        with transaction.atomic():
+            stock.is_favorite = True
+            stock.save(update_fields=["is_favorite"])
+            record_inventory_action(
+                performed_action=InventoryChangeRecord.ACTION_STOCK_FAVORITED,
+                performed_by=request.user if request.user.is_authenticated else None,
+                inventory_stock=stock,
+                quantity_delta=None,
+                quantity_unit=stock.stock_unit,
+                notes=f"Marked stock as favorite for {self._build_stock_history_note(stock)}.",
+            )
         serializer = InventoryStockDetailSerializer(stock, context={"request": request})
         return Response(serializer.data)
 
     @action(detail=True, methods=["post"])
     def unmark_favorite(self, request, pk=None):
         stock = self.get_object()
-        stock.is_favorite = False
-        stock.save(update_fields=["is_favorite"])
+        with transaction.atomic():
+            stock.is_favorite = False
+            stock.save(update_fields=["is_favorite"])
+            record_inventory_action(
+                performed_action=InventoryChangeRecord.ACTION_STOCK_UNFAVORITED,
+                performed_by=request.user if request.user.is_authenticated else None,
+                inventory_stock=stock,
+                quantity_delta=None,
+                quantity_unit=stock.stock_unit,
+                notes=f"Removed stock favorite flag for {self._build_stock_history_note(stock)}.",
+            )
         serializer = InventoryStockDetailSerializer(stock, context={"request": request})
         return Response(serializer.data)
 
     @action(detail=True, methods=["post"])
     def archive(self, request, pk=None):
         stock = self.get_object()
-        stock.is_archived = True
-        stock.save(update_fields=["is_archived"])
+        with transaction.atomic():
+            stock.is_archived = True
+            stock.save(update_fields=["is_archived"])
+            record_inventory_action(
+                performed_action=InventoryChangeRecord.ACTION_STOCK_ARCHIVED,
+                performed_by=request.user if request.user.is_authenticated else None,
+                inventory_stock=stock,
+                quantity_delta=None,
+                quantity_unit=stock.stock_unit,
+                notes=f"Archived stock entry for {self._build_stock_history_note(stock)}.",
+            )
         serializer = InventoryStockDetailSerializer(stock, context={"request": request})
         return Response(serializer.data)
 
     @action(detail=True, methods=["post"])
     def restore(self, request, pk=None):
         stock = self.get_object()
-        stock.is_archived = False
-        stock.save(update_fields=["is_archived"])
+        with transaction.atomic():
+            stock.is_archived = False
+            stock.save(update_fields=["is_archived"])
+            record_inventory_action(
+                performed_action=InventoryChangeRecord.ACTION_STOCK_RESTORED,
+                performed_by=request.user if request.user.is_authenticated else None,
+                inventory_stock=stock,
+                quantity_delta=None,
+                quantity_unit=stock.stock_unit,
+                notes=f"Restored stock entry for {self._build_stock_history_note(stock)}.",
+            )
         serializer = InventoryStockDetailSerializer(stock, context={"request": request})
         return Response(serializer.data)
 
