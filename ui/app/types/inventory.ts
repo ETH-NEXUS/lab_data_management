@@ -45,7 +45,8 @@ export const INVENTORY_MARK_FAVORITE_ERROR_MESSAGE = 'Failed to mark stock item 
 export const INVENTORY_UNMARK_FAVORITE_ERROR_MESSAGE = 'Failed to unmark stock item as favorite.'
 export const INVENTORY_ARCHIVE_STOCK_ERROR_MESSAGE = 'Failed to archive stock item.'
 export const INVENTORY_STOCK_TABLE_PREFERENCE_ERROR_MESSAGE = 'Failed to load inventory stock table preference.'
-export const INVENTORY_UPDATE_STOCK_TABLE_PREFERENCE_ERROR_MESSAGE = 'Failed to update inventory stock table preference.'
+export const INVENTORY_UPDATE_STOCK_TABLE_PREFERENCE_ERROR_MESSAGE =
+  'Failed to update inventory stock table preference.'
 
 export const getInventoryStockQueryKey = (stockId: number) => [...INVENTORY_STOCKS_QUERY_KEY, stockId]
 export const getInventoryMaterialQueryKey = (materialId: number) => [...INVENTORY_MATERIALS_QUERY_KEY, materialId]
@@ -238,7 +239,7 @@ export type InventoryUsageDetail = InventoryUsageListItem & {
   usage_unit_id?: number
 }
 
-export type InventoryStockPreset = 'all' | 'favorite' | 'low_stock' | 'expired'
+export type InventoryStockPreset = 'all' | 'favorite' | 'low_stock' | 'expired' | 'archived'
 
 export type InventoryStockTableSorting = {
   id: string

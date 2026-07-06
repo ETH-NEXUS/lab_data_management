@@ -31,13 +31,15 @@ const getStockEndpointForPreset = (preset: InventoryStockPreset): string => {
     return `${INVENTORY_STOCKS_ENDPOINT}expired/`
   }
 
+  if (preset === 'archived') {
+    return `${INVENTORY_STOCKS_ENDPOINT}archived/`
+  }
+
   return INVENTORY_STOCKS_ENDPOINT
 }
 
 const toOrderingValue = (sorting: InventoryStockTableSorting[]): string => {
-  return sorting
-    .map((sortRule) => (sortRule.desc ? `-${sortRule.id}` : sortRule.id))
-    .join(',')
+  return sorting.map((sortRule) => (sortRule.desc ? `-${sortRule.id}` : sortRule.id)).join(',')
 }
 
 const fetchInventoryStockPage = async (
@@ -70,9 +72,7 @@ const fetchInventoryStockPage = async (
   return data.value
 }
 
-export const useInventoryStockPageQuery = (
-  paramsRef: ComputedRef<InventoryStockPageQueryParams>,
-) =>
+export const useInventoryStockPageQuery = (paramsRef: ComputedRef<InventoryStockPageQueryParams>) =>
   useQuery({
     queryKey: computed(() => ['inventory-stocks-page', paramsRef.value]),
     queryFn: () => fetchInventoryStockPage(paramsRef.value),

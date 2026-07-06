@@ -89,6 +89,10 @@ const workspaceTitle = computed<string>(() => {
     return t('inventory.page.actions.expired_items.title')
   }
 
+  if (effectivePreset.value === 'archived') {
+    return t('inventory.page.actions.archived_items.title')
+  }
+
   return t('inventory.stock_workspace.title')
 })
 
@@ -103,6 +107,10 @@ const workspaceDescription = computed<string>(() => {
 
   if (effectivePreset.value === 'expired') {
     return t('inventory.page.actions.expired_items.description')
+  }
+
+  if (effectivePreset.value === 'archived') {
+    return t('inventory.page.actions.archived_items.description')
   }
 
   return t('inventory.stock_workspace.description')
