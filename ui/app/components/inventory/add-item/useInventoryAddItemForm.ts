@@ -40,6 +40,11 @@ export const useInventoryAddItemForm = ({ open, onSaved }: UseInventoryAddItemFo
   const appliedSourceOrderId = ref<number | null>(null)
   const appliedSourceMaterialId = ref<number | null>(null)
 
+  const resetAppliedSourceOrder = (): void => {
+    appliedSourceOrderId.value = null
+    appliedSourceMaterialId.value = null
+  }
+
   const {
     formState,
     selectedOrderId,
@@ -369,16 +374,14 @@ export const useInventoryAddItemForm = ({ open, onSaved }: UseInventoryAddItemFo
       return
     }
 
-    appliedSourceOrderId.value = null
-    appliedSourceMaterialId.value = null
+    resetAppliedSourceOrder()
   })
 
   watch(
     () => selectedOrderId.value,
     (nextSelectedOrderId) => {
       if (nextSelectedOrderId.trim() !== '') {
-        appliedSourceOrderId.value = null
-        appliedSourceMaterialId.value = null
+        resetAppliedSourceOrder()
       }
     },
   )
@@ -391,8 +394,7 @@ export const useInventoryAddItemForm = ({ open, onSaved }: UseInventoryAddItemFo
         nextMaterialId.trim() !== '' &&
         nextMaterialId !== String(appliedSourceMaterialId.value)
       ) {
-        appliedSourceOrderId.value = null
-        appliedSourceMaterialId.value = null
+        resetAppliedSourceOrder()
       }
     },
   )

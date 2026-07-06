@@ -255,7 +255,7 @@ watch(
         <p class="text-sm text-slate-600">Create new orders and review existing entries.</p>
       </div>
 
-      <UButton color="primary" icon="i-heroicons-plus" label="Register order" @click="openCreateOrderModal" />
+      <UButton color="primary" icon="i-heroicons-plus" label="Add order" @click="openCreateOrderModal" />
     </div>
 
     <div

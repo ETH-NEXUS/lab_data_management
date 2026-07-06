@@ -232,7 +232,7 @@ const submitForm = (): void => {
 <template>
   <UModal
     :open="props.open"
-    title="Register order"
+    title="Add order"
     description="Create a new inventory order entry."
     class="w-full sm:max-w-2xl"
     :ui="{ content: 'rounded-2xl bg-white shadow-md' }"
@@ -337,7 +337,7 @@ const submitForm = (): void => {
         <UButton variant="ghost" color="neutral" label="Cancel" :disabled="isSubmitting" @click="closeModal" />
         <UButton
           color="primary"
-          label="Register order"
+          label="Add order"
           :loading="isSubmitting"
           :disabled="!canSubmit"
           @click="submitForm"
