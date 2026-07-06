@@ -9,6 +9,7 @@ from rest_framework.response import Response
 
 from .dynamic_models import InventoryStock, InventoryStockTablePreference, MaterialUsage, Order, Room, Sector
 from .pagination import InventoryStockPagination
+from .stock_queryset import apply_inventory_stock_list_filters, build_inventory_stock_base_queryset
 from .serializers.dynamic_models_serializers import (
     InventoryStockDetailSerializer,
     InventoryStockListSerializer,
@@ -267,29 +268,7 @@ class InventoryStockViewSet(viewsets.ModelViewSet):
     This is likely the most important endpoint for the first inventory UI.
     """
     pagination_class = InventoryStockPagination
-    queryset = (
-        InventoryStock.objects.all()
-        .select_related(
-            "material",
-            "material__brand",
-            "material__manufacturer",
-            "material__vendor",
-            "material__item_type",
-            "material__device_type",
-            "sector",
-            "sector__room",
-            "stock_unit",
-            "stock_unit__unit",
-            "source_order",
-        )
-        .prefetch_related(
-            "material__attributes",
-            "material__units__unit",
-            "additional_sectors",
-            "additional_sectors__room",
-        )
-        .order_by("-created_at")
-    )
+    queryset = build_inventory_stock_base_queryset().order_by("-created_at")
 
     def get_serializer_class(self):
         if self.action == "list":
@@ -297,116 +276,8 @@ class InventoryStockViewSet(viewsets.ModelViewSet):
         return InventoryStockDetailSerializer
 
     def get_queryset(self):
-        queryset = super().get_queryset().filter(is_archived=False).annotate(
-            inventory_status_rank=models.Case(
-                models.When(quantity=0, then=models.Value(2)),
-                models.When(quantity__lt=models.F("minimum_quantity"), then=models.Value(1)),
-                default=models.Value(0),
-                output_field=models.IntegerField(),
-            ),
-        )
-
-        search = self.request.query_params.get("search")
-        room_id = self.request.query_params.get("room")
-        sector_id = self.request.query_params.get("sector")
-        item_type_id = self.request.query_params.get("item_type")
-        device_type_id = self.request.query_params.get("device_type")
-        manufacturer_id = self.request.query_params.get("manufacturer")
-        vendor_id = self.request.query_params.get("vendor")
-        is_favorite = self.request.query_params.get("is_favorite")
-        inventory_status = self.request.query_params.get("inventory_status")
-        lot_number = self.request.query_params.get("lot_number")
-        ordering = self.request.query_params.get("ordering")
-
-        if search:
-            queryset = queryset.filter(
-                Q(material__product_name__icontains=search)
-                | Q(material__manufacturer_catalog_number__icontains=search)
-                | Q(material__vendor_catalog_number__icontains=search)
-                | Q(lot_number__icontains=search)
-                | Q(notes__icontains=search)
-                | Q(sector__name__icontains=search)
-                | Q(sector__room__name__icontains=search)
-                | Q(additional_sectors__name__icontains=search)
-                | Q(additional_sectors__room__name__icontains=search)
-            ).distinct()
-
-        if room_id:
-            queryset = queryset.filter(
-                Q(sector__room_id=room_id) | Q(additional_sectors__room_id=room_id)
-            ).distinct()
-
-        if sector_id:
-            queryset = queryset.filter(
-                Q(sector_id=sector_id) | Q(additional_sectors__id=sector_id)
-            ).distinct()
-
-        if item_type_id:
-            queryset = queryset.filter(material__item_type_id=item_type_id)
-
-        if device_type_id:
-            queryset = queryset.filter(material__device_type_id=device_type_id)
-
-        if manufacturer_id:
-            queryset = queryset.filter(material__manufacturer_id=manufacturer_id)
-
-        if vendor_id:
-            queryset = queryset.filter(material__vendor_id=vendor_id)
-
-        if is_favorite is not None:
-            queryset = queryset.filter(is_favorite=is_favorite.lower() in ("true", "1", "yes"))
-
-        if inventory_status == "low":
-            queryset = queryset.filter(
-                quantity__gt=0,
-                quantity__lt=models.F("minimum_quantity"),
-            )
-
-        if inventory_status == "out_of_stock":
-            queryset = queryset.filter(quantity=0)
-
-        if inventory_status == "in_stock":
-            queryset = queryset.filter(quantity__gte=models.F("minimum_quantity"))
-
-        if lot_number:
-            queryset = queryset.filter(lot_number__icontains=lot_number)
-
-        if ordering:
-            ordering_fields = []
-            ordering_map = {
-                "productName": ["material__product_name"],
-                "inventoryStatus": ["inventory_status_rank"],
-                "quantityWithStockUnit": ["quantity"],
-                "minimumQuantity": ["minimum_quantity"],
-                "location": ["sector__room__name", "sector__name"],
-                "deviceType": ["material__device_type__name"],
-                "itemType": ["material__item_type__name"],
-                "lotNumber": ["lot_number"],
-                "expiryDate": ["expiry_date"],
-                "notes": ["notes"],
-            }
-
-            for raw_value in ordering.split(","):
-                raw_value = raw_value.strip()
-                if raw_value == "":
-                    continue
-
-                is_descending = raw_value.startswith("-")
-                ordering_key = raw_value[1:] if is_descending else raw_value
-                mapped_fields = ordering_map.get(ordering_key)
-
-                if not mapped_fields:
-                    continue
-
-                for mapped_field in mapped_fields:
-                    ordering_fields.append(f"-{mapped_field}" if is_descending else mapped_field)
-
-            if ordering_fields:
-                queryset = queryset.order_by(*ordering_fields)
-        else:
-            queryset = queryset.order_by("-created_at")
-
-        return queryset
+        queryset = build_inventory_stock_base_queryset().filter(is_archived=False)
+        return apply_inventory_stock_list_filters(queryset, self.request.query_params)
 
     @action(detail=False, methods=["get"])
     def favorites(self, request):
@@ -459,6 +330,19 @@ class InventoryStockViewSet(viewsets.ModelViewSet):
             expiry_date__isnull=False,
             expiry_date__lt=today,
         )
+        page = self.paginate_queryset(queryset)
+
+        if page is not None:
+            serializer = InventoryStockListSerializer(page, many=True, context={"request": request})
+            return self.get_paginated_response(serializer.data)
+
+        serializer = InventoryStockListSerializer(queryset, many=True, context={"request": request})
+        return Response(serializer.data)
+
+    @action(detail=False, methods=["get"])
+    def archived(self, request):
+        queryset = build_inventory_stock_base_queryset().filter(is_archived=True)
+        queryset = apply_inventory_stock_list_filters(queryset, request.query_params)
         page = self.paginate_queryset(queryset)
 
         if page is not None:
