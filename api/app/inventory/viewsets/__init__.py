@@ -1,3 +1,4 @@
+from .history import InventoryChangeRecordViewSet
 from .locations import RoomViewSet, SectorViewSet
 from .lookups import (
     BrandViewSet,
@@ -16,6 +17,7 @@ from .usages import MaterialUsageViewSet
 __all__ = [
     "BrandViewSet",
     "DeviceTypeViewSet",
+    "InventoryChangeRecordViewSet",
     "InventoryStockTablePreferenceViewSet",
     "InventoryStockViewSet",
     "ItemTypeViewSet",

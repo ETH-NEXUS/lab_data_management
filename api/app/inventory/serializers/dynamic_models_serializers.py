@@ -15,6 +15,7 @@ from inventory.dynamic_models import (
     Order,
     MaterialUsage,
 )
+from inventory.history_models import InventoryChangeRecord
 from inventory.static_models import MaterialMaster, MaterialUnit
 from inventory.serializers.shared_serializers import UserSummarySerializer
 from inventory.serializers.static_models_serializers import (
@@ -657,3 +658,57 @@ class MaterialUsageDetailSerializer(serializers.ModelSerializer):
         if not obj.inventory_stock_id:
             return None
         return MaterialMasterListSerializer(obj.inventory_stock.material).data
+
+
+class InventoryChangeRecordListSerializer(serializers.ModelSerializer):
+    performed_by = UserSummarySerializer(read_only=True)
+    inventory_stock = InventoryStockListSerializer(read_only=True)
+    order = OrderListSerializer(read_only=True)
+    material_usage = MaterialUsageListSerializer(read_only=True)
+    project = SimpleProjectSerializer(read_only=True)
+    experiment = SimpleExperimentSerializer(read_only=True)
+    quantity_unit = MaterialUnitSummarySerializer(read_only=True)
+
+    class Meta:
+        model = InventoryChangeRecord
+        fields = (
+            "id",
+            "performed_action",
+            "performed_by",
+            "performed_at",
+            "inventory_stock",
+            "order",
+            "material_usage",
+            "project",
+            "experiment",
+            "quantity_delta",
+            "quantity_unit",
+            "notes",
+        )
+
+
+class InventoryChangeRecordDetailSerializer(serializers.ModelSerializer):
+    performed_by = UserSummarySerializer(read_only=True)
+    inventory_stock = InventoryStockDetailSerializer(read_only=True)
+    order = OrderDetailSerializer(read_only=True)
+    material_usage = MaterialUsageDetailSerializer(read_only=True)
+    project = SimpleProjectSerializer(read_only=True)
+    experiment = SimpleExperimentSerializer(read_only=True)
+    quantity_unit = MaterialUnitSummarySerializer(read_only=True)
+
+    class Meta:
+        model = InventoryChangeRecord
+        fields = (
+            "id",
+            "performed_action",
+            "performed_by",
+            "performed_at",
+            "inventory_stock",
+            "order",
+            "material_usage",
+            "project",
+            "experiment",
+            "quantity_delta",
+            "quantity_unit",
+            "notes",
+        )

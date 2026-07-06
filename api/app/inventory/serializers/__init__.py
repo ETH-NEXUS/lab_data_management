@@ -22,6 +22,8 @@ from .dynamic_models_serializers import (
     RoomSerializer,
     SectorSerializer,
     SectorSummarySerializer,
+    InventoryChangeRecordDetailSerializer,
+    InventoryChangeRecordListSerializer,
     InventoryStockListSerializer,
     InventoryStockDetailSerializer,
     OrderListSerializer,
