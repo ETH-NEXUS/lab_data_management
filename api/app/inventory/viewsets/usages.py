@@ -1,9 +1,12 @@
 from django.db.models import Q
+from django.db import transaction
 from rest_framework import viewsets
 from rest_framework.decorators import action
 from rest_framework.response import Response
 
 from ..dynamic_models import MaterialUsage
+from ..history_models import InventoryChangeRecord
+from ..history_utils import record_inventory_action
 from ..serializers.dynamic_models_serializers import MaterialUsageDetailSerializer, MaterialUsageListSerializer
 
 
@@ -38,6 +41,84 @@ class MaterialUsageViewSet(viewsets.ModelViewSet):
         if self.action == "list":
             return MaterialUsageListSerializer
         return MaterialUsageDetailSerializer
+
+    def _build_usage_history_note(self, material_usage):
+        """
+        Builds one small readable usage context string.
+
+        Returned data examples:
+        - "PCR Plates used for Project A"
+        - "Tips used for Project A / Experiment B"
+        """
+        material_name = "Unknown material"
+        if material_usage.inventory_stock_id and material_usage.inventory_stock.material_id:
+            material_name = material_usage.inventory_stock.material.product_name
+
+        project_name = material_usage.project.name if material_usage.project_id else "Unknown project"
+
+        if material_usage.experiment_id:
+            return f"{material_name} used for {project_name} / {material_usage.experiment.name}"
+
+        return f"{material_name} used for {project_name}"
+
+    def perform_create(self, serializer):
+        with transaction.atomic():
+            material_usage = serializer.save()
+            performed_by = self.request.user if self.request.user.is_authenticated else None
+
+            record_inventory_action(
+                performed_action=InventoryChangeRecord.ACTION_USAGE_CREATED,
+                performed_by=performed_by,
+                inventory_stock=material_usage.inventory_stock,
+                material_usage=material_usage,
+                project=material_usage.project,
+                experiment=material_usage.experiment,
+                quantity_delta=material_usage.quantity_used,
+                quantity_unit=material_usage.usage_unit,
+                notes=f"Created usage entry for {self._build_usage_history_note(material_usage)}.",
+            )
+
+    def perform_update(self, serializer):
+        previous_usage = self.get_object()
+        previous_quantity = previous_usage.quantity_used
+        previous_note = self._build_usage_history_note(previous_usage)
+
+        with transaction.atomic():
+            material_usage = serializer.save()
+            performed_by = self.request.user if self.request.user.is_authenticated else None
+
+            record_inventory_action(
+                performed_action=InventoryChangeRecord.ACTION_USAGE_UPDATED,
+                performed_by=performed_by,
+                inventory_stock=material_usage.inventory_stock,
+                material_usage=material_usage,
+                project=material_usage.project,
+                experiment=material_usage.experiment,
+                quantity_delta=material_usage.quantity_used - previous_quantity,
+                quantity_unit=material_usage.usage_unit,
+                notes=(
+                    f"Updated usage entry from {previous_note} "
+                    f"to {self._build_usage_history_note(material_usage)}."
+                ),
+            )
+
+    def perform_destroy(self, instance):
+        performed_by = self.request.user if self.request.user.is_authenticated else None
+        usage_note = self._build_usage_history_note(instance)
+
+        with transaction.atomic():
+            record_inventory_action(
+                performed_action=InventoryChangeRecord.ACTION_USAGE_DELETED,
+                performed_by=performed_by,
+                inventory_stock=instance.inventory_stock,
+                material_usage=instance,
+                project=instance.project,
+                experiment=instance.experiment,
+                quantity_delta=instance.quantity_used,
+                quantity_unit=instance.usage_unit,
+                notes=f"Deleted usage entry for {usage_note}.",
+            )
+            instance.delete()
 
     def get_queryset(self):
         queryset = super().get_queryset()
