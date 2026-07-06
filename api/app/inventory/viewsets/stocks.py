@@ -132,6 +132,14 @@ class InventoryStockViewSet(viewsets.ModelViewSet):
         serializer = InventoryStockDetailSerializer(stock, context={"request": request})
         return Response(serializer.data)
 
+    @action(detail=True, methods=["post"])
+    def restore(self, request, pk=None):
+        stock = self.get_object()
+        stock.is_archived = False
+        stock.save(update_fields=["is_archived"])
+        serializer = InventoryStockDetailSerializer(stock, context={"request": request})
+        return Response(serializer.data)
+
 
 class InventoryStockTablePreferenceViewSet(viewsets.GenericViewSet):
     """
