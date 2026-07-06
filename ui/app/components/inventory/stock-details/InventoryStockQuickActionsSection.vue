@@ -22,10 +22,18 @@ type Props = {
 
 const props = defineProps<Props>()
 const toast = useToast()
+const route = useRoute()
 const queryClient = useQueryClient()
 const inventoryStockStore = useInventoryStockStore()
-const { isMarkingFavorite, isUnmarkingFavorite, isArchivingStock } = storeToRefs(inventoryStockStore)
+const { isMarkingFavorite, isUnmarkingFavorite, isArchivingStock, isRestoringStock } = storeToRefs(inventoryStockStore)
 const isArchiveConfirmOpen = ref(false)
+
+const isArchivedView = computed<boolean>(() => {
+  const presetValue = route.query.preset
+  const normalizedPreset = Array.isArray(presetValue) ? presetValue[0] : presetValue
+
+  return normalizedPreset === 'archived'
+})
 
 const selectedMaterialId = computed<number>(() => {
   return props.stock?.material?.id ?? 0
@@ -165,22 +173,48 @@ const confirmArchiveItem = async (): Promise<void> => {
     })
   }
 }
+
+const restoreItem = async (): Promise<void> => {
+  const stock = props.stock
+  if (!stock || isRestoringStock.value) return
+
+  try {
+    await inventoryStockStore.restoreStock(stock.id)
+    await queryClient.invalidateQueries({ queryKey: INVENTORY_STOCKS_QUERY_KEY })
+    await queryClient.invalidateQueries({ queryKey: INVENTORY_STOCK_PAGES_QUERY_KEY })
+    toast.add({
+      title: 'Stock item restored',
+      color: 'success',
+      duration: 2500,
+    })
+  } catch (err: unknown) {
+    toast.add({
+      title: 'Failed to restore stock item',
+      description: getErrorMessage(err),
+      color: 'error',
+      duration: 4000,
+    })
+  }
+}
 </script>
 
 <template>
   <section class="space-y-3 rounded-xl border border-slate-200 bg-white p-4">
     <InventoryStockQuickActionsBar
       :is-favorite="Boolean(props.stock?.is_favorite)"
+      :is-archived-view="isArchivedView"
       :is-editing-stock="isEditingStock"
       :is-moving-stock="isMovingStock"
       :is-recording-usage="isRecordingUsage"
       :is-toggling-favorite="isTogglingFavorite"
       :is-archiving-stock="isArchivingStock"
+      :is-restoring-stock="isRestoringStock"
       @adjust-stock="openEditMode"
       @move-item="openMoveMode"
       @record-usage="openUsageMode"
       @toggle-favorite="toggleFavorite"
       @archive-item="openArchiveConfirmation"
+      @restore-item="restoreItem"
     />
 
     <UModal

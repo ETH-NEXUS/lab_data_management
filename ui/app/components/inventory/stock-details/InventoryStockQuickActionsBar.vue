@@ -1,17 +1,19 @@
 <script setup lang="ts">
 type Props = {
   isFavorite: boolean
+  isArchivedView: boolean
   isEditingStock: boolean
   isMovingStock: boolean
   isRecordingUsage: boolean
   isTogglingFavorite: boolean
   isArchivingStock: boolean
+  isRestoringStock: boolean
 }
 
 const props = defineProps<Props>()
 
 const emit = defineEmits<{
-  (e: 'adjust-stock' | 'move-item' | 'record-usage' | 'toggle-favorite' | 'archive-item'): void
+  (e: 'adjust-stock' | 'move-item' | 'record-usage' | 'toggle-favorite' | 'archive-item' | 'restore-item'): void
 }>()
 
 const { t } = useI18n()
@@ -56,13 +58,13 @@ const { t } = useI18n()
         @click="emit('toggle-favorite')"
       />
       <UButton
-        color="neutral"
+        :color="props.isArchivedView ? 'primary' : 'neutral'"
         variant="soft"
         size="xs"
-        label="Archive item"
-        :disabled="props.isArchivingStock"
-        :loading="props.isArchivingStock"
-        @click="emit('archive-item')"
+        :label="props.isArchivedView ? 'Restore item' : 'Archive item'"
+        :disabled="props.isArchivedView ? props.isRestoringStock : props.isArchivingStock"
+        :loading="props.isArchivedView ? props.isRestoringStock : props.isArchivingStock"
+        @click="props.isArchivedView ? emit('restore-item') : emit('archive-item')"
       />
     </div>
   </div>

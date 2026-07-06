@@ -31,9 +31,19 @@ class InventoryStockViewSet(viewsets.ModelViewSet):
             return InventoryStockListSerializer
         return InventoryStockDetailSerializer
 
-    def get_queryset(self):
-        queryset = build_inventory_stock_base_queryset().filter(is_archived=False)
+    def _get_filtered_stock_queryset(self, include_archived=False):
+        queryset = build_inventory_stock_base_queryset()
+
+        if not include_archived:
+            queryset = queryset.filter(is_archived=False)
+
         return apply_inventory_stock_list_filters(queryset, self.request.query_params)
+
+    def get_queryset(self):
+        if self.action in {"retrieve", "archive", "restore"}:
+            return self._get_filtered_stock_queryset(include_archived=True)
+
+        return self._get_filtered_stock_queryset()
 
     @action(detail=False, methods=["get"])
     def favorites(self, request):
@@ -97,8 +107,7 @@ class InventoryStockViewSet(viewsets.ModelViewSet):
 
     @action(detail=False, methods=["get"])
     def archived(self, request):
-        queryset = build_inventory_stock_base_queryset().filter(is_archived=True)
-        queryset = apply_inventory_stock_list_filters(queryset, request.query_params)
+        queryset = self._get_filtered_stock_queryset(include_archived=True).filter(is_archived=True)
         page = self.paginate_queryset(queryset)
 
         if page is not None:
