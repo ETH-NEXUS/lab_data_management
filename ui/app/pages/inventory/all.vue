@@ -17,10 +17,12 @@ const goBackToInventory = (): void => {
  * Accepted query examples:
  * - `?preset=all`
  * - `?preset=favorite`
+ * - `?preset=archived`
  *
  * Returned examples:
  * - `'all'`
  * - `'favorite'`
+ * - `'archived'`
  * - fallback `'all'` for unknown/missing values
  */
 const selectedPreset = computed<InventoryStockPreset | undefined>(() => {
@@ -30,6 +32,7 @@ const selectedPreset = computed<InventoryStockPreset | undefined>(() => {
   if (normalizedPreset === 'favorite') return 'favorite'
   if (normalizedPreset === 'low_stock') return 'low_stock'
   if (normalizedPreset === 'expired') return 'expired'
+  if (normalizedPreset === 'archived') return 'archived'
   if (normalizedPreset === 'all') return 'all'
   return undefined
 })

@@ -50,6 +50,11 @@ const onSelectAction = (actionId: string): void => {
     return
   }
 
+  if (actionId === 'archived_items') {
+    navigateTo('/inventory/all?preset=archived')
+    return
+  }
+
   const titleKey = `inventory.page.actions.${actionId}.title`
   const actionTitle = t(titleKey)
   const placeholderSuffix = t('inventory.page.placeholder_suffix')

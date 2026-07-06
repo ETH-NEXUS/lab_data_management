@@ -1,10 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import InventoryActionCard from '~/components/inventory/InventoryActionCard.vue'
-import {
-  getStocksForPreset,
-  sortStocksLikeInventoryTable,
-} from '~/components/inventory/inventory-stock-table.values'
+import { getStocksForPreset, sortStocksLikeInventoryTable } from '~/components/inventory/inventory-stock-table.values'
 import { useInventoryStocksQuery } from '~/composables/inventory/useInventoryStockQuery'
 import { useInventoryStockTablePreferenceStore } from '~/stores/inventory/InventoryStockTablePreferenceStore'
 import type { InventoryStockListItem, InventoryStockPreset } from '~/types/inventory'
@@ -95,6 +92,14 @@ const previewCards = computed<InventoryPreviewCard[]>(() => [
     preset: 'low_stock',
     items: getPreviewItems('low_stock'),
   },
+  {
+    id: 'archived_items',
+    title: t('inventory.page.actions.archived_items.title'),
+    description: t('inventory.page.actions.archived_items.description'),
+    icon: 'i-heroicons-archive-box',
+    preset: 'archived',
+    items: [],
+  },
 ])
 
 const openPreset = (preset: InventoryStockPreset): void => {
@@ -121,11 +126,7 @@ const getPreviewMeta = (stock: InventoryStockListItem, preset: InventoryStockPre
 <template>
   <section class="space-y-3">
     <div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-      <UCard
-        v-for="card in previewCards"
-        :key="card.id"
-        :ui="{ root: 'core-card divide-y divide-slate-200/70' }"
-      >
+      <UCard v-for="card in previewCards" :key="card.id" :ui="{ root: 'core-card divide-y divide-slate-200/70' }">
         <template #header>
           <div class="flex items-start justify-between gap-3">
             <div class="space-y-1">
@@ -138,18 +139,16 @@ const getPreviewMeta = (stock: InventoryStockListItem, preset: InventoryStockPre
               <p class="text-sm text-slate-600">{{ card.description }}</p>
             </div>
 
-            <UButton
-              variant="ghost"
-              color="neutral"
-              icon="i-heroicons-arrow-right"
-              @click="openPreset(card.preset)"
-            />
+            <UButton variant="ghost" color="neutral" icon="i-heroicons-arrow-right" @click="openPreset(card.preset)" />
           </div>
         </template>
 
         <div class="space-y-2">
           <p v-if="stocksQuery.isPending.value" class="text-sm text-slate-600">
             {{ t('inventory.stock_workspace.loading') }}
+          </p>
+          <p v-else-if="card.preset === 'archived'" class="text-sm text-slate-600">
+            {{ card.description }}
           </p>
           <p v-else-if="card.items.length === 0" class="text-sm text-slate-600">
             {{ t('inventory.stock_workspace.empty') }}
@@ -170,10 +169,7 @@ const getPreviewMeta = (stock: InventoryStockListItem, preset: InventoryStockPre
                   {{ getPreviewMeta(stock, card.preset) }}
                 </p>
               </div>
-              <UIcon
-                name="i-heroicons-arrow-top-right-on-square"
-                class="mt-0.5 h-4 w-4 shrink-0 text-slate-400"
-              />
+              <UIcon name="i-heroicons-arrow-top-right-on-square" class="mt-0.5 h-4 w-4 shrink-0 text-slate-400" />
             </button>
           </template>
         </div>
