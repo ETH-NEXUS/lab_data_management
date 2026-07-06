@@ -98,7 +98,7 @@ const {
     />
 
     <div class="space-y-5 overflow-y-auto px-5 py-4">
-      <InventoryStockQuickActionsSection :open="props.open" :stock="props.stock" />
+      <InventoryStockQuickActionsSection :open="props.open" :stock="props.stock" @close="emit('close')" />
 
       <InventoryStockOperationalSection
         :inventory-status-label="inventoryStatusLabel"

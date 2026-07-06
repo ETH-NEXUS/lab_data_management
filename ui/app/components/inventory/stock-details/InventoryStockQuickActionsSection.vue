@@ -21,6 +21,9 @@ type Props = {
 }
 
 const props = defineProps<Props>()
+const emit = defineEmits<{
+  (e: 'close'): void
+}>()
 const toast = useToast()
 const route = useRoute()
 const queryClient = useQueryClient()
@@ -182,6 +185,7 @@ const restoreItem = async (): Promise<void> => {
     await inventoryStockStore.restoreStock(stock.id)
     await queryClient.invalidateQueries({ queryKey: INVENTORY_STOCKS_QUERY_KEY })
     await queryClient.invalidateQueries({ queryKey: INVENTORY_STOCK_PAGES_QUERY_KEY })
+    emit('close')
     toast.add({
       title: 'Stock item restored',
       color: 'success',
