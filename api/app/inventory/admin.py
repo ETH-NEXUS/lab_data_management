@@ -24,6 +24,7 @@ from .dynamic_models import (
     Room,
     Sector,
 )
+from .history_models import InventoryChangeRecord
 
 
 # =========================================================
@@ -785,3 +786,91 @@ class InventoryStockTablePreferenceAdmin(admin.ModelAdmin):
         "updated_at",
     )
     list_per_page = 100
+
+
+# =========================================================
+# Inventory history admin
+# =========================================================
+
+@admin.register(InventoryChangeRecord)
+class InventoryChangeRecordAdmin(admin.ModelAdmin):
+    list_display = (
+        "performed_action",
+        "performed_by",
+        "inventory_stock",
+        "order",
+        "material_usage",
+        "project",
+        "experiment",
+        "quantity_delta",
+        "quantity_unit",
+        "performed_at",
+    )
+    list_filter = (
+        "performed_action",
+        "performed_by",
+        "project",
+        "experiment",
+        "quantity_unit",
+        "performed_at",
+    )
+    search_fields = (
+        "performed_action",
+        "notes",
+        "inventory_stock__material__product_name",
+        "order__material__product_name",
+        "material_usage__inventory_stock__material__product_name",
+        "project__name",
+        "experiment__name",
+        "performed_by__username",
+        "performed_by__first_name",
+        "performed_by__last_name",
+        "performed_by__email",
+    )
+    autocomplete_fields = (
+        "performed_by",
+        "inventory_stock",
+        "order",
+        "material_usage",
+        "project",
+        "experiment",
+        "quantity_unit",
+    )
+    readonly_fields = ("performed_at",)
+    list_per_page = 100
+    date_hierarchy = "performed_at"
+
+    fieldsets = (
+        (
+            "Action",
+            {
+                "fields": (
+                    "performed_action",
+                    "performed_by",
+                    "performed_at",
+                )
+            },
+        ),
+        (
+            "Related records",
+            {
+                "fields": (
+                    "inventory_stock",
+                    "order",
+                    "material_usage",
+                    "project",
+                    "experiment",
+                )
+            },
+        ),
+        (
+            "Quantity and notes",
+            {
+                "fields": (
+                    "quantity_delta",
+                    "quantity_unit",
+                    "notes",
+                )
+            },
+        ),
+    )

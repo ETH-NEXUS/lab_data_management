@@ -3,6 +3,7 @@ from rest_framework.routers import DefaultRouter
 from .viewsets import (
     BrandViewSet,
     DeviceTypeViewSet,
+    InventoryChangeRecordViewSet,
     InventoryStockViewSet,
     InventoryStockTablePreferenceViewSet,
     ItemTypeViewSet,
@@ -33,6 +34,7 @@ router.register(r"inventory/material-units", MaterialUnitViewSet, basename="inve
 router.register(r"inventory/rooms", RoomViewSet, basename="inventory-room")
 router.register(r"inventory/sectors", SectorViewSet, basename="inventory-sector")
 router.register(r"inventory/stocks", InventoryStockViewSet, basename="inventory-stock")
+router.register(r"inventory/history", InventoryChangeRecordViewSet, basename="inventory-history")
 router.register(r"inventory/stock-table-preferences", InventoryStockTablePreferenceViewSet, basename="inventory-stock-table-preference")
 router.register(r"inventory/orders", OrderViewSet, basename="inventory-order")
 router.register(r"inventory/material-usages", MaterialUsageViewSet, basename="inventory-material-usage")
