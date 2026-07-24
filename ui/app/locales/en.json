@@ -485,6 +485,8 @@
         "product_name": "Product name",
         "quantity_with_stock_unit": "Quantity",
         "minimum_quantity": "Minimum quantity",
+        "quantity_in_base_units": "Quantity (base units)",
+        "minimum_quantity_in_base_units": "Minimum quantity (base units)",
         "location": "Location",
         "device_type": "Device type",
         "item_type": "Item type",
@@ -502,6 +504,7 @@
         "serial_number": "Serial number",
         "order_number": "Order number",
         "lifetime_days": "Shelf life (days)",
+        "safety_data_sheet": "Safety data sheet",
         "lot_number": "Lot number",
         "expiry_date": "Expiry date",
         "notes": "Notes"
@@ -516,7 +519,8 @@
         "no": "No",
         "none": "—",
         "no_notes": "No notes",
-        "unknown_location": "Unknown location"
+        "unknown_location": "Unknown location",
+        "view_document": "View"
       }
     },
     "stock_drawer": {

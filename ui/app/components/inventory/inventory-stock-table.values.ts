@@ -6,8 +6,11 @@ const toLabel = (value: string | null | undefined, fallback: string): string => 
   return value?.trim() || fallback
 }
 
-const formatNumericString = (value: string | null | undefined): string => {
-  const rawValue = value?.trim() || ''
+// Accepts both a string (e.g. `'12.50'`, as most decimal API fields send) and a
+// number (e.g. `12.5`, as the two `ReadOnlyField()`-backed base-unit fields send),
+// so this never crashes regardless of which shape the API returns.
+const formatNumericString = (value: string | number | null | undefined): string => {
+  const rawValue = value == null ? '' : String(value).trim()
   if (rawValue === '') {
     return ''
   }
@@ -128,6 +131,18 @@ export const getInventoryStockTableSortValue = (
     return toLabel(formatNumericString(stock.minimum_quantity), t('inventory.stock_table.values.none'))
   }
 
+  // Accepted data example: `{ quantity_in_base_units: '192.000000' }`
+  // Returned data example: `'192'`
+  if (columnId === 'quantityInBaseUnits') {
+    return toLabel(formatNumericString(stock.quantity_in_base_units), t('inventory.stock_table.values.none'))
+  }
+
+  // Accepted data example: `{ minimum_quantity_in_base_units: '96.000000' }`
+  // Returned data example: `'96'`
+  if (columnId === 'minimumQuantityInBaseUnits') {
+    return toLabel(formatNumericString(stock.minimum_quantity_in_base_units), t('inventory.stock_table.values.none'))
+  }
+
   if (columnId === 'location') {
     return toLabel(stock.location_label, t('inventory.stock_table.values.unknown_location'))
   }
@@ -237,6 +252,14 @@ export const getInventoryStockTableSortValue = (
     return stock.material.lifetime_days == null
       ? t('inventory.stock_table.values.none')
       : String(stock.material.lifetime_days)
+  }
+
+  // Accepted data example: `{ safety_data_sheet: '/media/inventory/safety_data_sheets/sds.pdf' }`
+  // Returned data example: `'Yes'`
+  if (columnId === 'safetyDataSheet') {
+    return stock.material.safety_data_sheet
+      ? t('inventory.stock_table.values.yes')
+      : t('inventory.stock_table.values.no')
   }
 
   if (columnId === 'lotNumber') {

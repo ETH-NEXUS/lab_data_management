@@ -124,6 +124,24 @@ export const createInventoryStockTableColumns = (
       enableColumnFilter: true,
       size: 130,
     },
+    // Batch 4: converted quantities from the stock detail drawer's "Unit conversion" section.
+    // Not backed by a database column, so sorting stays disabled (no ordering_map entry).
+    {
+      id: 'quantityInBaseUnits',
+      accessorFn: (row) => getInventoryStockTableSortValue(getStock(row), 'quantityInBaseUnits', t),
+      header: t('inventory.stock_table.columns.quantity_in_base_units'),
+      enableSorting: false,
+      enableColumnFilter: true,
+      size: 150,
+    },
+    {
+      id: 'minimumQuantityInBaseUnits',
+      accessorFn: (row) => getInventoryStockTableSortValue(getStock(row), 'minimumQuantityInBaseUnits', t),
+      header: t('inventory.stock_table.columns.minimum_quantity_in_base_units'),
+      enableSorting: false,
+      enableColumnFilter: true,
+      size: 150,
+    },
     {
       id: 'location',
       accessorFn: (row) => getInventoryStockTableSortValue(getStock(row), 'location', t),
@@ -282,6 +300,36 @@ export const createInventoryStockTableColumns = (
       enableColumnFilter: true,
       size: 140,
       meta: identityMeta,
+    },
+    // Renders a link to the uploaded file when present, otherwise a plain "—".
+    // Accepted data example: `{ material: { safety_data_sheet: '/media/.../sds.pdf' } }`
+    {
+      id: 'safetyDataSheet',
+      accessorFn: (row) => getInventoryStockTableSortValue(getStock(row), 'safetyDataSheet', t),
+      header: t('inventory.stock_table.columns.safety_data_sheet'),
+      enableSorting: false,
+      enableColumnFilter: false,
+      size: 130,
+      meta: identityMeta,
+      cell: ({ row }) => {
+        const stock = getStock(row.original)
+        const safetyDataSheetUrl = stock.material.safety_data_sheet
+
+        if (!safetyDataSheetUrl) {
+          return t('inventory.stock_table.values.none')
+        }
+
+        return h(
+          'a',
+          {
+            href: safetyDataSheetUrl,
+            target: '_blank',
+            rel: 'noopener noreferrer',
+            class: 'text-blue-700 hover:text-blue-800 hover:underline',
+          },
+          t('inventory.stock_table.values.view_document'),
+        )
+      },
     },
     {
       id: 'lotNumber',

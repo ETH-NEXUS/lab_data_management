@@ -190,36 +190,23 @@ export const useInventoryAddItemFormState = ({
     }))
   })
 
+  // The room is already chosen via a separate control before this list is shown,
+  // so the option label only needs the sector's own name, not "Room / Sector".
   const sectorOptions = computed<Array<{ id: number; label: string }>>(() => {
-    const sectors = [...(lookupsQuery.data.value?.sectors ?? [])]
-    sectors.sort((leftSector, rightSector) => {
-      const leftRoomLabel = (leftSector.room?.label || leftSector.room?.name || '').toLowerCase()
-      const rightRoomLabel = (rightSector.room?.label || rightSector.room?.name || '').toLowerCase()
-      if (leftRoomLabel !== rightRoomLabel) {
-        return leftRoomLabel.localeCompare(rightRoomLabel)
-      }
+    const sectorsInSelectedRoom = (lookupsQuery.data.value?.sectors ?? []).filter(
+      (sector) => selectedRoomId.value > 0 && sector.room?.id === selectedRoomId.value,
+    )
 
-      const leftSectorLabel = (leftSector.label || leftSector.name || '').toLowerCase()
-      const rightSectorLabel = (rightSector.label || rightSector.name || '').toLowerCase()
-      return leftSectorLabel.localeCompare(rightSectorLabel)
+    sectorsInSelectedRoom.sort((leftSector, rightSector) => {
+      const leftLabel = (leftSector.name || '').toLowerCase()
+      const rightLabel = (rightSector.name || '').toLowerCase()
+      return leftLabel.localeCompare(rightLabel)
     })
 
-    return sectors
-      .filter((sector) => {
-        if (selectedRoomId.value <= 0) {
-          return false
-        }
-
-        return sector.room?.id === selectedRoomId.value
-      })
-      .map((sector) => {
-      const roomLabel = sector.room?.label || sector.room?.name || 'Unknown room'
-      const sectorLabel = sector.name || `Sector #${sector.id}`
-      return {
-        id: sector.id,
-        label: sector.label || `${roomLabel} / ${sectorLabel}`,
-      }
-      })
+    return sectorsInSelectedRoom.map((sector) => ({
+      id: sector.id,
+      label: sector.name || `Sector #${sector.id}`,
+    }))
   })
 
   const stockUnitOptions = computed<Array<{ id: number; label: string }>>(() => {
