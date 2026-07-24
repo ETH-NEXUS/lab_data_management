@@ -493,6 +493,11 @@
         "brand": "Brand",
         "manufacturer": "Manufacturer",
         "vendor": "Vendor",
+        "manufacturer_catalog_number": "Manufacturer catalog number",
+        "vendor_catalog_number": "Vendor catalog number",
+        "capacity": "Capacity",
+        "default_cost": "Default cost",
+        "is_active": "Active",
         "lot_number": "Lot number",
         "expiry_date": "Expiry date",
         "notes": "Notes"

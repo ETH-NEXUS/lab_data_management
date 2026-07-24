@@ -183,6 +183,36 @@ export const getInventoryStockTableSortValue = (
     )
   }
 
+  // Accepted data example: `{ manufacturer_catalog_number: '30038616' }`
+  // Returned data example: `'30038616'`
+  if (columnId === 'manufacturerCatalogNumber') {
+    return toLabel(stock.material.manufacturer_catalog_number, t('inventory.stock_table.values.none'))
+  }
+
+  // Accepted data example: `{ vendor_catalog_number: '3815' }`
+  // Returned data example: `'3815'`
+  if (columnId === 'vendorCatalogNumber') {
+    return toLabel(stock.material.vendor_catalog_number, t('inventory.stock_table.values.none'))
+  }
+
+  // Accepted data example: `{ capacity_display: '200 ul' }`
+  // Returned data example: `'200 ul'`
+  if (columnId === 'capacity') {
+    return toLabel(stock.material.capacity_display, t('inventory.stock_table.values.none'))
+  }
+
+  // Accepted data example: `{ default_cost: '12.50' }`
+  // Returned data example: `'12.5'`
+  if (columnId === 'defaultCost') {
+    return toLabel(formatNumericString(stock.material.default_cost), t('inventory.stock_table.values.none'))
+  }
+
+  // Accepted data example: `{ is_active: true }`
+  // Returned data example: `'Yes'`
+  if (columnId === 'isActive') {
+    return stock.material.is_active ? t('inventory.stock_table.values.yes') : t('inventory.stock_table.values.no')
+  }
+
   if (columnId === 'lotNumber') {
     return toLabel(stock.lot_number, t('inventory.stock_table.values.none'))
   }
