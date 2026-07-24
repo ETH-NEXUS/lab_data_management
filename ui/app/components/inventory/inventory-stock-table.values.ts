@@ -110,6 +110,12 @@ export const getInventoryStockTableSortValue = (
     return toLabel(stock.material.product_name, t('inventory.stock_table.values.none'))
   }
 
+  // Accepted data example: `{ is_favorite: true }`
+  // Returned data example: `'Yes'`
+  if (columnId === 'favorite') {
+    return stock.is_favorite ? t('inventory.stock_table.values.yes') : t('inventory.stock_table.values.no')
+  }
+
   if (columnId === 'inventoryStatus') {
     return getStatusLabel(t, stock.inventory_status)
   }
@@ -134,23 +140,47 @@ export const getInventoryStockTableSortValue = (
   }
 
   if (columnId === 'itemType') {
-    const itemTypeLabel = stock.material.item_type?.label || stock.material.item_type?.name || ''
-    const storageTemperatureLabel =
-      stock.material.storage_temperature_label || stock.material.storage_temperature || ''
+    return toLabel(
+      stock.material.item_type?.label || stock.material.item_type?.name,
+      t('inventory.stock_table.values.none'),
+    )
+  }
 
-    if (itemTypeLabel.trim() === '') {
-      return t('inventory.stock_table.values.none')
-    }
-
-    if (storageTemperatureLabel.trim() === '') {
-      return itemTypeLabel.trim()
-    }
-
-    return `${itemTypeLabel.trim()} (storage temp: ${storageTemperatureLabel.trim()})`
+  // Accepted data example: `{ storage_temperature_label: '4°C', storage_temperature: '4C' }`
+  // Returned data example: `'4°C'`
+  if (columnId === 'storageTemperature') {
+    return toLabel(
+      stock.material.storage_temperature_label || stock.material.storage_temperature,
+      t('inventory.stock_table.values.none'),
+    )
   }
 
   if (columnId === 'attributes') {
     return getAttributes(stock, t)
+  }
+
+  // Accepted data example: `{ brand: { name: 'Costar', label: 'Costar' } }`
+  // Returned data example: `'Costar'`
+  if (columnId === 'brand') {
+    return toLabel(stock.material.brand?.label || stock.material.brand?.name, t('inventory.stock_table.values.none'))
+  }
+
+  // Accepted data example: `{ manufacturer: { name: 'Corning', label: 'Corning' } }`
+  // Returned data example: `'Corning'`
+  if (columnId === 'manufacturer') {
+    return toLabel(
+      stock.material.manufacturer?.label || stock.material.manufacturer?.name,
+      t('inventory.stock_table.values.none'),
+    )
+  }
+
+  // Accepted data example: `{ vendor: { name: 'Huberlab', label: 'Huberlab' } }`
+  // Returned data example: `'Huberlab'`
+  if (columnId === 'vendor') {
+    return toLabel(
+      stock.material.vendor?.label || stock.material.vendor?.name,
+      t('inventory.stock_table.values.none'),
+    )
   }
 
   if (columnId === 'lotNumber') {

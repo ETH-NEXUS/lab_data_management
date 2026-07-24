@@ -488,7 +488,11 @@
         "location": "Location",
         "device_type": "Device type",
         "item_type": "Item type",
+        "storage_temperature": "Storage temperature",
         "attributes": "Attributes",
+        "brand": "Brand",
+        "manufacturer": "Manufacturer",
+        "vendor": "Vendor",
         "lot_number": "Lot number",
         "expiry_date": "Expiry date",
         "notes": "Notes"

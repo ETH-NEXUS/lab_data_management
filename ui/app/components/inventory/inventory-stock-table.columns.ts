@@ -74,6 +74,16 @@ export const createInventoryStockTableColumns = (
         ])
       },
     },
+    // Shows the same favorite flag already visible as a star in the product name,
+    // as a plain sortable/filterable "Yes"/"No" column.
+    {
+      id: 'favorite',
+      accessorFn: (row) => getInventoryStockTableSortValue(getStock(row), 'favorite', t),
+      header: t('inventory.stock_table.columns.favorite'),
+      enableSorting: true,
+      enableColumnFilter: true,
+      size: 100,
+    },
     {
       id: 'inventoryStatus',
       accessorFn: (row) => getInventoryStockTableSortValue(getStock(row), 'inventoryStatus', t),
@@ -139,26 +149,16 @@ export const createInventoryStockTableColumns = (
       enableColumnFilter: true,
       size: 150,
       meta: identityMeta,
-      cell: ({ row }) => {
-        const stock = getStock(row.original)
-        const itemTypeLabel =
-          stock.material.item_type?.label || stock.material.item_type?.name || t('inventory.stock_table.values.none')
-        const storageTemperatureLabel =
-          stock.material.storage_temperature_label || stock.material.storage_temperature || ''
-
-        if (storageTemperatureLabel.trim() === '') {
-          return itemTypeLabel
-        }
-
-        return h('div', { class: 'flex flex-col leading-tight' }, [
-          h('span', { class: 'text-slate-700' }, itemTypeLabel),
-          h(
-            'span',
-            { class: 'text-xs font-medium text-blue-700' },
-            `(storage temp: ${storageTemperatureLabel.trim()})`,
-          ),
-        ])
-      },
+    },
+    // Split out of the itemType cell into its own column so it can be sorted/filtered on its own.
+    {
+      id: 'storageTemperature',
+      accessorFn: (row) => getInventoryStockTableSortValue(getStock(row), 'storageTemperature', t),
+      header: t('inventory.stock_table.columns.storage_temperature'),
+      enableSorting: true,
+      enableColumnFilter: true,
+      size: 140,
+      meta: identityMeta,
     },
     {
       id: 'attributes',
@@ -167,6 +167,35 @@ export const createInventoryStockTableColumns = (
       enableSorting: true,
       enableColumnFilter: true,
       size: 180,
+      meta: identityMeta,
+    },
+    // Batch 1: material identity fields already shown in the stock detail drawer's
+    // "Supplier and catalog" section, now also available directly in the table.
+    {
+      id: 'brand',
+      accessorFn: (row) => getInventoryStockTableSortValue(getStock(row), 'brand', t),
+      header: t('inventory.stock_table.columns.brand'),
+      enableSorting: true,
+      enableColumnFilter: true,
+      size: 140,
+      meta: identityMeta,
+    },
+    {
+      id: 'manufacturer',
+      accessorFn: (row) => getInventoryStockTableSortValue(getStock(row), 'manufacturer', t),
+      header: t('inventory.stock_table.columns.manufacturer'),
+      enableSorting: true,
+      enableColumnFilter: true,
+      size: 150,
+      meta: identityMeta,
+    },
+    {
+      id: 'vendor',
+      accessorFn: (row) => getInventoryStockTableSortValue(getStock(row), 'vendor', t),
+      header: t('inventory.stock_table.columns.vendor'),
+      enableSorting: true,
+      enableColumnFilter: true,
+      size: 150,
       meta: identityMeta,
     },
     {
