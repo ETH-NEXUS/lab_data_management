@@ -182,6 +182,10 @@ class MaterialMasterListSerializer(serializers.ModelSerializer):
             "storage_temperature_label",
             "safety_data_sheet",
             "default_cost",
+            "description",
+            "lifetime_days",
+            "serial_number",
+            "order_number",
             "is_active",
         )
 
