@@ -213,6 +213,32 @@ export const getInventoryStockTableSortValue = (
     return stock.material.is_active ? t('inventory.stock_table.values.yes') : t('inventory.stock_table.values.no')
   }
 
+  // Accepted data example: `{ description: 'Sterile PCR-clean tips' }`
+  // Returned data example: `'Sterile PCR-clean tips'`
+  if (columnId === 'description') {
+    return toLabel(stock.material.description, t('inventory.stock_table.values.none'))
+  }
+
+  // Accepted data example: `{ serial_number: 'SN-4821' }`
+  // Returned data example: `'SN-4821'`
+  if (columnId === 'serialNumber') {
+    return toLabel(stock.material.serial_number, t('inventory.stock_table.values.none'))
+  }
+
+  // Accepted data example: `{ order_number: 'PO-2026-0113' }`
+  // Returned data example: `'PO-2026-0113'`
+  if (columnId === 'orderNumber') {
+    return toLabel(stock.material.order_number, t('inventory.stock_table.values.none'))
+  }
+
+  // Accepted data example: `{ lifetime_days: 365 }`
+  // Returned data example: `'365'`
+  if (columnId === 'lifetimeDays') {
+    return stock.material.lifetime_days == null
+      ? t('inventory.stock_table.values.none')
+      : String(stock.material.lifetime_days)
+  }
+
   if (columnId === 'lotNumber') {
     return toLabel(stock.lot_number, t('inventory.stock_table.values.none'))
   }

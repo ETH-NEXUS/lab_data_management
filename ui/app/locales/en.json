@@ -498,6 +498,10 @@
         "capacity": "Capacity",
         "default_cost": "Default cost",
         "is_active": "Active",
+        "description": "Description",
+        "serial_number": "Serial number",
+        "order_number": "Order number",
+        "lifetime_days": "Shelf life (days)",
         "lot_number": "Lot number",
         "expiry_date": "Expiry date",
         "notes": "Notes"
