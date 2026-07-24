@@ -118,14 +118,14 @@ export type InventoryMaterialListItem = {
   storage_temperature_label: string | null
   safety_data_sheet: string | null
   default_cost: string | null
-  is_active: boolean
-}
-
-export type InventoryMaterialDetail = InventoryMaterialListItem & {
   description: string | null
   lifetime_days: number | null
   serial_number: string | null
   order_number: string | null
+  is_active: boolean
+}
+
+export type InventoryMaterialDetail = InventoryMaterialListItem & {
   units: InventoryMaterialUnitSummary[]
 }
 

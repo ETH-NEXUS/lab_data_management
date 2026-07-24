@@ -126,15 +126,31 @@ def apply_inventory_stock_list_filters(queryset, query_params):
         ordering_fields = []
         ordering_map = {
             "productName": ["material__product_name"],
+            "favorite": ["is_favorite"],
             "inventoryStatus": ["inventory_status_rank"],
             "quantityWithStockUnit": ["quantity"],
             "minimumQuantity": ["minimum_quantity"],
             "location": ["sector__room__name", "sector__name"],
             "deviceType": ["material__device_type__name"],
             "itemType": ["material__item_type__name"],
+            "storageTemperature": ["material__storage_temperature"],
+            "brand": ["material__brand__name"],
+            "manufacturer": ["material__manufacturer__name"],
+            "vendor": ["material__vendor__name"],
+            "manufacturerCatalogNumber": ["material__manufacturer_catalog_number"],
+            "vendorCatalogNumber": ["material__vendor_catalog_number"],
+            "capacity": ["material__capacity_value"],
+            "defaultCost": ["material__default_cost"],
+            "isActive": ["material__is_active"],
+            "description": ["material__description"],
+            "serialNumber": ["material__serial_number"],
+            "orderNumber": ["material__order_number"],
+            "lifetimeDays": ["material__lifetime_days"],
             "lotNumber": ["lot_number"],
             "expiryDate": ["expiry_date"],
             "notes": ["notes"],
+            "createdAt": ["created_at"],
+            "updatedAt": ["updated_at"],
         }
 
         for raw_value in ordering.split(","):
