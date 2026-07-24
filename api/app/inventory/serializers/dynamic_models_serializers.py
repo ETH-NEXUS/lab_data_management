@@ -206,8 +206,10 @@ class InventoryStockListSerializer(serializers.ModelSerializer):
     inventory_status = serializers.ReadOnlyField()
     # Explicit DecimalField (not ReadOnlyField) so these computed values serialize
     # as strings, matching every other decimal quantity in this API (e.g. `quantity`).
-    quantity_in_base_units = serializers.DecimalField(max_digits=12, decimal_places=6, read_only=True)
-    minimum_quantity_in_base_units = serializers.DecimalField(max_digits=12, decimal_places=6, read_only=True)
+    # max_digits is higher than `quantity`'s own 12: this value is quantity * base_units_per_unit,
+    # a product of two 12-digit decimals, so its integer part can be up to twice as wide.
+    quantity_in_base_units = serializers.DecimalField(max_digits=24, decimal_places=6, read_only=True)
+    minimum_quantity_in_base_units = serializers.DecimalField(max_digits=24, decimal_places=6, read_only=True)
     location_label = serializers.SerializerMethodField()
     stock_label = serializers.SerializerMethodField()
     is_low_stock = serializers.SerializerMethodField()
@@ -319,8 +321,10 @@ class InventoryStockDetailSerializer(serializers.ModelSerializer):
     inventory_status = serializers.ReadOnlyField()
     # Explicit DecimalField (not ReadOnlyField) so these computed values serialize
     # as strings, matching every other decimal quantity in this API (e.g. `quantity`).
-    quantity_in_base_units = serializers.DecimalField(max_digits=12, decimal_places=6, read_only=True)
-    minimum_quantity_in_base_units = serializers.DecimalField(max_digits=12, decimal_places=6, read_only=True)
+    # max_digits is higher than `quantity`'s own 12: this value is quantity * base_units_per_unit,
+    # a product of two 12-digit decimals, so its integer part can be up to twice as wide.
+    quantity_in_base_units = serializers.DecimalField(max_digits=24, decimal_places=6, read_only=True)
+    minimum_quantity_in_base_units = serializers.DecimalField(max_digits=24, decimal_places=6, read_only=True)
     location_label = serializers.SerializerMethodField()
     stock_label = serializers.SerializerMethodField()
     source_order = InventoryStockSourceOrderSummarySerializer(read_only=True)

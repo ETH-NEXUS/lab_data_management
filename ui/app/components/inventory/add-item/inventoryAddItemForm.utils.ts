@@ -5,6 +5,17 @@ export type AddItemFormState = {
   sectorIds: string[]
   reagentStorageTemperature: string
   reagentSafetyDataSheet: File | null
+  // Optional material details. Left blank, they don't change the material at all;
+  // filled in, they get PATCHed onto the selected material when the item is saved.
+  additionalBrandId: string
+  additionalDefaultCost: string
+  additionalManufacturerId: string
+  additionalVendorId: string
+  additionalManufacturerCatalogNumber: string
+  additionalVendorCatalogNumber: string
+  additionalCapacityValue: string
+  additionalCapacityUnit: string
+  additionalDescription: string
   stockUnitId: string
   quantity: string
   minimumQuantity: string
@@ -18,7 +29,7 @@ export type AddItemFormState = {
  * Builds empty draft values for the add-item stock form.
  *
  * Returned data example:
- * - `{ itemTypeId: '', materialId: '', roomId: '', sectorIds: [], reagentStorageTemperature: '', reagentSafetyDataSheet: null, stockUnitId: '', quantity: '', minimumQuantity: '', lotNumber: '', expiryDate: '', notes: '', isFavorite: false }`
+ * - `{ itemTypeId: '', materialId: '', roomId: '', sectorIds: [], reagentStorageTemperature: '', reagentSafetyDataSheet: null, additionalBrandId: '', additionalDefaultCost: '', additionalManufacturerId: '', additionalVendorId: '', additionalManufacturerCatalogNumber: '', additionalVendorCatalogNumber: '', additionalCapacityValue: '', additionalCapacityUnit: '', additionalDescription: '', stockUnitId: '', quantity: '', minimumQuantity: '', lotNumber: '', expiryDate: '', notes: '', isFavorite: false }`
  */
 export const buildInitialFormState = (): AddItemFormState => ({
   itemTypeId: '',
@@ -27,6 +38,15 @@ export const buildInitialFormState = (): AddItemFormState => ({
   sectorIds: [],
   reagentStorageTemperature: '',
   reagentSafetyDataSheet: null,
+  additionalBrandId: '',
+  additionalDefaultCost: '',
+  additionalManufacturerId: '',
+  additionalVendorId: '',
+  additionalManufacturerCatalogNumber: '',
+  additionalVendorCatalogNumber: '',
+  additionalCapacityValue: '',
+  additionalCapacityUnit: '',
+  additionalDescription: '',
   stockUnitId: '',
   quantity: '',
   minimumQuantity: '',

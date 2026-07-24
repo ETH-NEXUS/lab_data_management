@@ -27,10 +27,12 @@ const {
   selectedMaterialId,
   selectedRoomId,
   roomOptions,
-  supplierDetails,
   filteredMaterials,
   orderPrefillOptions,
   sectorOptions,
+  brandOptions,
+  manufacturerOptions,
+  vendorOptions,
   stockUnitOptions,
   isStockUnitsLoading,
   materialsQuery,
@@ -274,35 +276,115 @@ const onSafetyDataSheetChange = (event: Event): void => {
               </p>
             </div>
 
-            <div class="space-y-2 sm:col-span-2">
-              <p class="text-sm font-medium text-slate-700">Supplier and catalog</p>
+            <div v-if="hasSelectedMaterial" class="space-y-2 sm:col-span-2">
+              <p class="text-sm font-medium text-slate-700">Additional material details</p>
+              <p class="text-xs text-slate-500">
+                Optional. Fill in anything missing on this material so you don't have to edit it later from the table.
+              </p>
               <div class="grid gap-3 rounded-lg border border-slate-200 bg-slate-50 p-3 sm:grid-cols-2">
                 <div class="space-y-1">
-                  <p class="text-xs font-medium uppercase tracking-wide text-slate-500">Manufacturer</p>
-                  <p class="text-sm text-slate-700">
-                    {{ hasSelectedMaterial ? (supplierDetails.manufacturer || '—') : 'Select material first' }}
-                  </p>
+                  <label class="block text-sm font-medium text-slate-700">Brand</label>
+                  <select
+                    v-model="formState.additionalBrandId"
+                    class="w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700"
+                    :disabled="lookupsQuery.isPending.value"
+                  >
+                    <option value="">No brand</option>
+                    <option v-for="brandOption in brandOptions" :key="brandOption.id" :value="String(brandOption.id)">
+                      {{ brandOption.label }}
+                    </option>
+                  </select>
                 </div>
 
                 <div class="space-y-1">
-                  <p class="text-xs font-medium uppercase tracking-wide text-slate-500">Supplier</p>
-                  <p class="text-sm text-slate-700">
-                    {{ hasSelectedMaterial ? (supplierDetails.vendor || '—') : 'Select material first' }}
-                  </p>
+                  <label class="block text-sm font-medium text-slate-700">Default cost</label>
+                  <input
+                    v-model="formState.additionalDefaultCost"
+                    type="text"
+                    inputmode="decimal"
+                    placeholder="e.g. 12.50"
+                    class="w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700"
+                  />
                 </div>
 
                 <div class="space-y-1">
-                  <p class="text-xs font-medium uppercase tracking-wide text-slate-500">Manufacturer catalog number</p>
-                  <p class="text-sm text-slate-700">
-                    {{ hasSelectedMaterial ? (supplierDetails.manufacturerCatalogNumber || '—') : 'Select material first' }}
-                  </p>
+                  <label class="block text-sm font-medium text-slate-700">Manufacturer</label>
+                  <select
+                    v-model="formState.additionalManufacturerId"
+                    class="w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700"
+                    :disabled="lookupsQuery.isPending.value"
+                  >
+                    <option value="">No manufacturer</option>
+                    <option
+                      v-for="manufacturerOption in manufacturerOptions"
+                      :key="manufacturerOption.id"
+                      :value="String(manufacturerOption.id)"
+                    >
+                      {{ manufacturerOption.label }}
+                    </option>
+                  </select>
                 </div>
 
                 <div class="space-y-1">
-                  <p class="text-xs font-medium uppercase tracking-wide text-slate-500">Supplier catalog number</p>
-                  <p class="text-sm text-slate-700">
-                    {{ hasSelectedMaterial ? (supplierDetails.vendorCatalogNumber || '—') : 'Select material first' }}
-                  </p>
+                  <label class="block text-sm font-medium text-slate-700">Supplier</label>
+                  <select
+                    v-model="formState.additionalVendorId"
+                    class="w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700"
+                    :disabled="lookupsQuery.isPending.value"
+                  >
+                    <option value="">No supplier</option>
+                    <option v-for="vendorOption in vendorOptions" :key="vendorOption.id" :value="String(vendorOption.id)">
+                      {{ vendorOption.label }}
+                    </option>
+                  </select>
+                </div>
+
+                <div class="space-y-1">
+                  <label class="block text-sm font-medium text-slate-700">Manufacturer catalog number</label>
+                  <input
+                    v-model="formState.additionalManufacturerCatalogNumber"
+                    type="text"
+                    class="w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700"
+                  />
+                </div>
+
+                <div class="space-y-1">
+                  <label class="block text-sm font-medium text-slate-700">Supplier catalog number</label>
+                  <input
+                    v-model="formState.additionalVendorCatalogNumber"
+                    type="text"
+                    class="w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700"
+                  />
+                </div>
+
+                <div class="space-y-1">
+                  <label class="block text-sm font-medium text-slate-700">Capacity value</label>
+                  <input
+                    v-model="formState.additionalCapacityValue"
+                    type="text"
+                    inputmode="decimal"
+                    placeholder="e.g. 200"
+                    class="w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700"
+                  />
+                </div>
+
+                <div class="space-y-1">
+                  <label class="block text-sm font-medium text-slate-700">Capacity unit</label>
+                  <input
+                    v-model="formState.additionalCapacityUnit"
+                    type="text"
+                    placeholder="e.g. ul, ml, mm"
+                    class="w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700"
+                  />
+                </div>
+
+                <div class="space-y-1 sm:col-span-2">
+                  <label class="block text-sm font-medium text-slate-700">Description</label>
+                  <textarea
+                    v-model="formState.additionalDescription"
+                    rows="2"
+                    class="w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700"
+                  />
                 </div>
               </div>
             </div>
@@ -388,12 +470,13 @@ const onSafetyDataSheetChange = (event: Event): void => {
             </div>
 
             <div class="space-y-1">
-              <label class="block text-sm font-medium text-slate-700">Minimum quantity *</label>
+              <label class="block text-sm font-medium text-slate-700">Minimum quantity</label>
               <input
                 v-model="formState.minimumQuantity"
                 type="number"
                 min="0"
                 step="1"
+                placeholder="0"
                 inputmode="numeric"
                 class="w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700"
               />

@@ -28,6 +28,9 @@ type UseInventoryAddItemFormStateResult = {
   selectedOrder: ComputedRef<InventoryOrderListItem | null>
   orderPrefillOptions: ComputedRef<Array<{ id: number; label: string }>>
   sectorOptions: ComputedRef<Array<{ id: number; label: string }>>
+  brandOptions: ComputedRef<Array<{ id: number; label: string }>>
+  manufacturerOptions: ComputedRef<Array<{ id: number; label: string }>>
+  vendorOptions: ComputedRef<Array<{ id: number; label: string }>>
   stockUnitOptions: ComputedRef<Array<{ id: number; label: string }>>
   isStockUnitsLoading: ComputedRef<boolean>
   materialsQuery: ReturnType<typeof useInventoryMaterialsQuery>
@@ -209,6 +212,53 @@ export const useInventoryAddItemFormState = ({
     }))
   })
 
+  // Batch 1: brand options for the general "Additional material details" section.
+  const brandOptions = computed<Array<{ id: number; label: string }>>(() => {
+    const brands = [...(lookupsQuery.data.value?.brands ?? [])]
+
+    brands.sort((leftBrand, rightBrand) => {
+      const leftLabel = (leftBrand.label || leftBrand.name || '').toLowerCase()
+      const rightLabel = (rightBrand.label || rightBrand.name || '').toLowerCase()
+      return leftLabel.localeCompare(rightLabel)
+    })
+
+    return brands.map((brand) => ({
+      id: brand.id,
+      label: brand.label || brand.name || `Brand #${brand.id}`,
+    }))
+  })
+
+  // Batch 2: manufacturer/vendor options for the "Additional material details" section.
+  const manufacturerOptions = computed<Array<{ id: number; label: string }>>(() => {
+    const manufacturers = [...(lookupsQuery.data.value?.manufacturers ?? [])]
+
+    manufacturers.sort((leftManufacturer, rightManufacturer) => {
+      const leftLabel = (leftManufacturer.label || leftManufacturer.name || '').toLowerCase()
+      const rightLabel = (rightManufacturer.label || rightManufacturer.name || '').toLowerCase()
+      return leftLabel.localeCompare(rightLabel)
+    })
+
+    return manufacturers.map((manufacturer) => ({
+      id: manufacturer.id,
+      label: manufacturer.label || manufacturer.name || `Manufacturer #${manufacturer.id}`,
+    }))
+  })
+
+  const vendorOptions = computed<Array<{ id: number; label: string }>>(() => {
+    const vendors = [...(lookupsQuery.data.value?.vendors ?? [])]
+
+    vendors.sort((leftVendor, rightVendor) => {
+      const leftLabel = (leftVendor.label || leftVendor.name || '').toLowerCase()
+      const rightLabel = (rightVendor.label || rightVendor.name || '').toLowerCase()
+      return leftLabel.localeCompare(rightLabel)
+    })
+
+    return vendors.map((vendor) => ({
+      id: vendor.id,
+      label: vendor.label || vendor.name || `Vendor #${vendor.id}`,
+    }))
+  })
+
   const stockUnitOptions = computed<Array<{ id: number; label: string }>>(() => {
     const material = selectedMaterialQuery.data.value
     const units = material?.units ?? []
@@ -280,6 +330,15 @@ export const useInventoryAddItemFormState = ({
     () => {
       formState.value.reagentStorageTemperature = ''
       formState.value.reagentSafetyDataSheet = null
+      formState.value.additionalBrandId = ''
+      formState.value.additionalDefaultCost = ''
+      formState.value.additionalManufacturerId = ''
+      formState.value.additionalVendorId = ''
+      formState.value.additionalManufacturerCatalogNumber = ''
+      formState.value.additionalVendorCatalogNumber = ''
+      formState.value.additionalCapacityValue = ''
+      formState.value.additionalCapacityUnit = ''
+      formState.value.additionalDescription = ''
       formState.value.stockUnitId = ''
     },
   )
@@ -293,6 +352,17 @@ export const useInventoryAddItemFormState = ({
 
       formState.value.reagentStorageTemperature = materialDetail.storage_temperature || ''
       formState.value.reagentSafetyDataSheet = null
+      formState.value.additionalBrandId = materialDetail.brand?.id ? String(materialDetail.brand.id) : ''
+      formState.value.additionalDefaultCost = materialDetail.default_cost || ''
+      formState.value.additionalManufacturerId = materialDetail.manufacturer?.id
+        ? String(materialDetail.manufacturer.id)
+        : ''
+      formState.value.additionalVendorId = materialDetail.vendor?.id ? String(materialDetail.vendor.id) : ''
+      formState.value.additionalManufacturerCatalogNumber = materialDetail.manufacturer_catalog_number || ''
+      formState.value.additionalVendorCatalogNumber = materialDetail.vendor_catalog_number || ''
+      formState.value.additionalCapacityValue = materialDetail.capacity_value || ''
+      formState.value.additionalCapacityUnit = materialDetail.capacity_unit || ''
+      formState.value.additionalDescription = materialDetail.description || ''
     },
   )
 
@@ -318,6 +388,9 @@ export const useInventoryAddItemFormState = ({
     selectedOrder,
     orderPrefillOptions,
     sectorOptions,
+    brandOptions,
+    manufacturerOptions,
+    vendorOptions,
     stockUnitOptions,
     isStockUnitsLoading,
     materialsQuery,

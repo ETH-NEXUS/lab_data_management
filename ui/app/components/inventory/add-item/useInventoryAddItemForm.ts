@@ -60,6 +60,9 @@ export const useInventoryAddItemForm = ({ open, onSaved }: UseInventoryAddItemFo
     selectedOrder,
     orderPrefillOptions,
     sectorOptions,
+    brandOptions,
+    manufacturerOptions,
+    vendorOptions,
     stockUnitOptions,
     isStockUnitsLoading,
     materialsQuery,
@@ -70,29 +73,6 @@ export const useInventoryAddItemForm = ({ open, onSaved }: UseInventoryAddItemFo
     stockUnitsErrorMessage,
     ordersErrorMessage,
   } = useInventoryAddItemFormState({ open })
-
-  /**
-   * Builds read-only supplier and catalog display values from the selected material.
-   *
-   * Returned data example:
-   * - `{ manufacturer: 'Corning', vendor: 'Huberlab', manufacturerCatalogNumber: '3005', vendorCatalogNumber: 'H-42' }`
-   * - `{ manufacturer: null, vendor: null, manufacturerCatalogNumber: null, vendorCatalogNumber: null }`
-   */
-  const supplierDetails = computed<{
-    manufacturer: string | null
-    vendor: string | null
-    manufacturerCatalogNumber: string | null
-    vendorCatalogNumber: string | null
-  }>(() => {
-    const material = selectedMaterialQuery.data.value
-
-    return {
-      manufacturer: material?.manufacturer?.label || material?.manufacturer?.name || null,
-      vendor: material?.vendor?.label || material?.vendor?.name || null,
-      manufacturerCatalogNumber: material?.manufacturer_catalog_number || null,
-      vendorCatalogNumber: material?.vendor_catalog_number || null,
-    }
-  })
 
   const isSelectedMaterialReagent = computed<boolean>(() => {
     const itemTypeName =
@@ -130,7 +110,8 @@ export const useInventoryAddItemForm = ({ open, onSaved }: UseInventoryAddItemFo
     if (quantityValue === null || quantityValue <= 0) {
       messages.push('Quantity must be greater than zero.')
     }
-    if (minimumQuantityValue === null || minimumQuantityValue < 0) {
+    // Optional: left blank, it defaults to 0. Only flag it if something was typed and it's invalid.
+    if (formState.value.minimumQuantity.trim() !== '' && (minimumQuantityValue === null || minimumQuantityValue < 0)) {
       messages.push('Minimum quantity must be a whole number that is zero or greater.')
     }
 
@@ -169,7 +150,9 @@ export const useInventoryAddItemForm = ({ open, onSaved }: UseInventoryAddItemFo
     const sectorIds = parsePositiveIntegerList(formState.value.sectorIds)
     const stockUnitId = Number.parseInt(formState.value.stockUnitId, 10)
     const quantityValue = parseDecimal(formState.value.quantity)
-    const minimumQuantityValue = parseInteger(formState.value.minimumQuantity)
+    // Optional: blank means "use the default of 0", same as the model's own default.
+    const isMinimumQuantityBlank = formState.value.minimumQuantity.trim() === ''
+    const minimumQuantityValue = isMinimumQuantityBlank ? 0 : parseInteger(formState.value.minimumQuantity)
 
     if (!Number.isInteger(materialId) || materialId <= 0) return null
     if (sectorIds.length === 0) return null
@@ -226,6 +209,78 @@ export const useInventoryAddItemForm = ({ open, onSaved }: UseInventoryAddItemFo
     return Object.keys(payload).length > 0 ? payload : null
   }
 
+  /**
+   * Builds the optional material metadata update payload for the general
+   * "Additional material details" section. Every field here is optional:
+   * left blank, it's simply skipped and the material is left unchanged.
+   *
+   * Returned payload examples:
+   * - `{ brand_id: 4 }`
+   * - `{ default_cost: '12.50' }`
+   * - `null`
+   */
+  const buildAdditionalMaterialUpdatePayload = (): UpdateInventoryMaterialPayload | null => {
+    if (selectedMaterialId.value <= 0) {
+      return null
+    }
+
+    const materialDetail = selectedMaterialQuery.data.value
+    const payload: UpdateInventoryMaterialPayload = {}
+
+    const nextBrandId = Number.parseInt(formState.value.additionalBrandId, 10)
+    const currentBrandId = materialDetail?.brand?.id ?? null
+    if (Number.isInteger(nextBrandId) && nextBrandId > 0 && nextBrandId !== currentBrandId) {
+      payload.brand_id = nextBrandId
+    }
+
+    const nextDefaultCost = formState.value.additionalDefaultCost.trim()
+    if (nextDefaultCost !== '' && nextDefaultCost !== (materialDetail?.default_cost || '')) {
+      payload.default_cost = nextDefaultCost
+    }
+
+    const nextManufacturerId = Number.parseInt(formState.value.additionalManufacturerId, 10)
+    const currentManufacturerId = materialDetail?.manufacturer?.id ?? null
+    if (Number.isInteger(nextManufacturerId) && nextManufacturerId > 0 && nextManufacturerId !== currentManufacturerId) {
+      payload.manufacturer_id = nextManufacturerId
+    }
+
+    const nextVendorId = Number.parseInt(formState.value.additionalVendorId, 10)
+    const currentVendorId = materialDetail?.vendor?.id ?? null
+    if (Number.isInteger(nextVendorId) && nextVendorId > 0 && nextVendorId !== currentVendorId) {
+      payload.vendor_id = nextVendorId
+    }
+
+    const nextManufacturerCatalogNumber = formState.value.additionalManufacturerCatalogNumber.trim()
+    if (
+      nextManufacturerCatalogNumber !== '' &&
+      nextManufacturerCatalogNumber !== (materialDetail?.manufacturer_catalog_number || '')
+    ) {
+      payload.manufacturer_catalog_number = nextManufacturerCatalogNumber
+    }
+
+    const nextVendorCatalogNumber = formState.value.additionalVendorCatalogNumber.trim()
+    if (nextVendorCatalogNumber !== '' && nextVendorCatalogNumber !== (materialDetail?.vendor_catalog_number || '')) {
+      payload.vendor_catalog_number = nextVendorCatalogNumber
+    }
+
+    const nextCapacityValue = formState.value.additionalCapacityValue.trim()
+    if (nextCapacityValue !== '' && nextCapacityValue !== (materialDetail?.capacity_value || '')) {
+      payload.capacity_value = nextCapacityValue
+    }
+
+    const nextCapacityUnit = formState.value.additionalCapacityUnit.trim()
+    if (nextCapacityUnit !== '' && nextCapacityUnit !== (materialDetail?.capacity_unit || '')) {
+      payload.capacity_unit = nextCapacityUnit
+    }
+
+    const nextDescription = formState.value.additionalDescription.trim()
+    if (nextDescription !== '' && nextDescription !== (materialDetail?.description || '')) {
+      payload.description = nextDescription
+    }
+
+    return Object.keys(payload).length > 0 ? payload : null
+  }
+
   const submitForm = async (): Promise<void> => {
     if (isSaveDisabled.value) {
       return
@@ -242,10 +297,17 @@ export const useInventoryAddItemForm = ({ open, onSaved }: UseInventoryAddItemFo
     }
 
     try {
+      // Two independent optional payloads (reagent fields, general additional fields)
+      // are merged into one PATCH so the material is only ever updated once.
       const reagentMaterialPayload = buildReagentMaterialUpdatePayload()
+      const additionalMaterialPayload = buildAdditionalMaterialUpdatePayload()
+      const materialUpdatePayload =
+        reagentMaterialPayload || additionalMaterialPayload
+          ? { ...additionalMaterialPayload, ...reagentMaterialPayload }
+          : null
 
-      if (reagentMaterialPayload && selectedMaterialId.value > 0) {
-        await inventoryMaterialStore.updateMaterial(selectedMaterialId.value, reagentMaterialPayload)
+      if (materialUpdatePayload && selectedMaterialId.value > 0) {
+        await inventoryMaterialStore.updateMaterial(selectedMaterialId.value, materialUpdatePayload)
         await queryClient.invalidateQueries({ queryKey: INVENTORY_MATERIALS_QUERY_KEY })
         await queryClient.invalidateQueries({ queryKey: getInventoryMaterialQueryKey(selectedMaterialId.value) })
       }
@@ -406,13 +468,15 @@ export const useInventoryAddItemForm = ({ open, onSaved }: UseInventoryAddItemFo
     selectedMaterialId,
     selectedRoomId,
     roomOptions,
-    supplierDetails,
     filteredMaterials,
     filteredOrders,
     sortedMaterials,
     sortedOrders,
     orderPrefillOptions,
     sectorOptions,
+    brandOptions,
+    manufacturerOptions,
+    vendorOptions,
     stockUnitOptions,
     isStockUnitsLoading,
     materialsQuery,
