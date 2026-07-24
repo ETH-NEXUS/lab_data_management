@@ -204,8 +204,10 @@ class InventoryStockListSerializer(serializers.ModelSerializer):
 
     room = serializers.SerializerMethodField()
     inventory_status = serializers.ReadOnlyField()
-    quantity_in_base_units = serializers.ReadOnlyField()
-    minimum_quantity_in_base_units = serializers.ReadOnlyField()
+    # Explicit DecimalField (not ReadOnlyField) so these computed values serialize
+    # as strings, matching every other decimal quantity in this API (e.g. `quantity`).
+    quantity_in_base_units = serializers.DecimalField(max_digits=12, decimal_places=6, read_only=True)
+    minimum_quantity_in_base_units = serializers.DecimalField(max_digits=12, decimal_places=6, read_only=True)
     location_label = serializers.SerializerMethodField()
     stock_label = serializers.SerializerMethodField()
     is_low_stock = serializers.SerializerMethodField()
@@ -315,8 +317,10 @@ class InventoryStockDetailSerializer(serializers.ModelSerializer):
     )
 
     inventory_status = serializers.ReadOnlyField()
-    quantity_in_base_units = serializers.ReadOnlyField()
-    minimum_quantity_in_base_units = serializers.ReadOnlyField()
+    # Explicit DecimalField (not ReadOnlyField) so these computed values serialize
+    # as strings, matching every other decimal quantity in this API (e.g. `quantity`).
+    quantity_in_base_units = serializers.DecimalField(max_digits=12, decimal_places=6, read_only=True)
+    minimum_quantity_in_base_units = serializers.DecimalField(max_digits=12, decimal_places=6, read_only=True)
     location_label = serializers.SerializerMethodField()
     stock_label = serializers.SerializerMethodField()
     source_order = InventoryStockSourceOrderSummarySerializer(read_only=True)
