@@ -176,6 +176,15 @@ class InventoryStock(models.Model):
         help_text="Optional flag if we want to hide archived stock items.",
     )
 
+    archived_at = models.DateTimeField(
+        null=True,
+        blank=True,
+        help_text=(
+            "When this stock entry was most recently archived. "
+            "Cleared when the entry is restored."
+        ),
+    )
+
     notes = models.TextField(
         null=True,
         blank=True,
