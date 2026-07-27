@@ -459,6 +459,9 @@
           "title": "Low stock items",
           "description": "Review items that are below minimum quantity."
         },
+        "empty_or_low_stock_items": {
+          "title": "Items empty or low in stock"
+        },
         "archived_items": {
           "title": "Archived items",
           "description": "Access archived inventory records."

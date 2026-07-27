@@ -4,6 +4,7 @@ import InventoryActionCard from '~/components/inventory/InventoryActionCard.vue'
 import {
   formatNumericString,
   getStocksForPreset,
+  getStatusLabel,
   sortStocksLikeInventoryTable,
 } from '~/components/inventory/inventory-stock-table.values'
 import { useInventoryStocksQuery } from '~/composables/inventory/useInventoryStockQuery'
@@ -90,7 +91,7 @@ const previewCards = computed<InventoryPreviewCard[]>(() => [
   },
   {
     id: 'low_stock_items',
-    title: t('inventory.page.actions.low_stock_items.title'),
+    title: t('inventory.page.actions.empty_or_low_stock_items.title'),
     description: t('inventory.page.actions.low_stock_items.description'),
     icon: 'i-heroicons-exclamation-triangle',
     preset: 'low_stock',
@@ -124,6 +125,14 @@ const getPreviewMeta = (stock: InventoryStockListItem, preset: InventoryStockPre
   }
 
   return stock.location_label ?? t('inventory.stock_table.values.unknown_location')
+}
+
+const getInventoryStatusColor = (stock: InventoryStockListItem): 'error' | 'warning' | 'success' => {
+  if (stock.inventory_status === 'out_of_stock') {
+    return 'error'
+  }
+
+  return stock.inventory_status === 'low' ? 'warning' : 'success'
 }
 </script>
 
@@ -171,6 +180,14 @@ const getPreviewMeta = (stock: InventoryStockListItem, preset: InventoryStockPre
                 </p>
               </div>
               <div class="flex min-w-0 items-center gap-2">
+                <UBadge
+                  v-if="card.preset === 'low_stock'"
+                  :color="getInventoryStatusColor(stock)"
+                  variant="soft"
+                  size="xs"
+                >
+                  {{ getStatusLabel(t, stock.inventory_status) }}
+                </UBadge>
                 <p class="max-w-28 truncate text-right text-xs text-slate-500">
                   {{ getPreviewMeta(stock, card.preset) }}
                 </p>
