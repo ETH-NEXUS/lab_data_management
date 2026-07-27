@@ -439,6 +439,9 @@
           "title": "Expired items",
           "description": "Review items past expiration date."
         },
+        "recently_expired_items": {
+          "title": "Recently expired items"
+        },
         "devices": {
           "title": "Devices",
           "description": "Manage registered devices and equipment."

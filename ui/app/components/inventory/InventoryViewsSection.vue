@@ -69,13 +69,20 @@ const onSelectAction = (actionId: string): void => {
 
 const getPreviewItems = (preset: InventoryStockPreset): InventoryStockListItem[] => {
   const presetStocks = getStocksForPreset(stocks.value, preset)
+
+  if (preset === 'expired') {
+    return [...presetStocks]
+      .sort((leftStock, rightStock) => (rightStock.expiry_date ?? '').localeCompare(leftStock.expiry_date ?? ''))
+      .slice(0, 5)
+  }
+
   return sortStocksLikeInventoryTable(presetStocks, stockTablePreferenceStore.sortingState, t).slice(0, 5)
 }
 
 const previewCards = computed<InventoryPreviewCard[]>(() => [
   {
     id: 'expired_items',
-    title: t('inventory.page.actions.expired_items.title'),
+    title: t('inventory.page.actions.recently_expired_items.title'),
     description: t('inventory.page.actions.expired_items.description'),
     icon: 'i-heroicons-clock',
     preset: 'expired',
