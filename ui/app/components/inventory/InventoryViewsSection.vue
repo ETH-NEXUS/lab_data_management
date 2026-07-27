@@ -1,7 +1,11 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import InventoryActionCard from '~/components/inventory/InventoryActionCard.vue'
-import { getStocksForPreset, sortStocksLikeInventoryTable } from '~/components/inventory/inventory-stock-table.values'
+import {
+  formatNumericString,
+  getStocksForPreset,
+  sortStocksLikeInventoryTable,
+} from '~/components/inventory/inventory-stock-table.values'
 import { useInventoryStocksQuery } from '~/composables/inventory/useInventoryStockQuery'
 import { useInventoryStockTablePreferenceStore } from '~/stores/inventory/InventoryStockTablePreferenceStore'
 import type { InventoryStockListItem, InventoryStockPreset } from '~/types/inventory'
@@ -116,7 +120,7 @@ const getPreviewMeta = (stock: InventoryStockListItem, preset: InventoryStockPre
   }
 
   if (preset === 'low_stock') {
-    return `${stock.quantity} / ${stock.minimum_quantity}`
+    return `${formatNumericString(stock.quantity)} / ${formatNumericString(stock.minimum_quantity)}`
   }
 
   return stock.location_label ?? t('inventory.stock_table.values.unknown_location')
