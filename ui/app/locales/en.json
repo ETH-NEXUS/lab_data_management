@@ -526,6 +526,9 @@
     "stock_drawer": {
       "title": "Stock item details",
       "subtitle": "Stock item #{id}",
+      "badges": {
+        "storage_temperature": "Store at {value}"
+      },
       "sections": {
         "operational": "Operational overview",
         "unit_conversion": "Unit conversion",
