@@ -339,6 +339,10 @@ export const useInventoryAddItemFormState = ({
       formState.value.additionalCapacityValue = ''
       formState.value.additionalCapacityUnit = ''
       formState.value.additionalDescription = ''
+      formState.value.additionalSerialNumber = ''
+      formState.value.additionalOrderNumber = ''
+      formState.value.additionalLifetimeDays = ''
+      formState.value.additionalIsActive = ''
       formState.value.stockUnitId = ''
     },
   )
@@ -363,6 +367,12 @@ export const useInventoryAddItemFormState = ({
       formState.value.additionalCapacityValue = materialDetail.capacity_value || ''
       formState.value.additionalCapacityUnit = materialDetail.capacity_unit || ''
       formState.value.additionalDescription = materialDetail.description || ''
+      formState.value.additionalSerialNumber = materialDetail.serial_number || ''
+      formState.value.additionalOrderNumber = materialDetail.order_number || ''
+      formState.value.additionalLifetimeDays =
+        materialDetail.lifetime_days == null ? '' : String(materialDetail.lifetime_days)
+      // additionalIsActive intentionally stays '' (not prefilled): '' means
+      // "don't change" for this tri-state field, unlike the other text fields above.
     },
   )
 

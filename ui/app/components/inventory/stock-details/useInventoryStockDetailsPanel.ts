@@ -161,6 +161,18 @@ export const useInventoryStockDetailsPanel = (props: Readonly<InventoryStockDeta
     return props.stock?.inventory_status === 'low' ? 'warning' : 'success'
   })
 
+  // Reagent-only field on the material. Surfaced as an emphasized badge (not
+  // buried in the material identity grid) because handling it wrong matters.
+  const storageTemperatureLabel = computed<string | null>(() => {
+    const stock = props.stock
+    if (!stock) {
+      return null
+    }
+
+    const label = stock.material.storage_temperature_label || stock.material.storage_temperature || ''
+    return label.trim() === '' ? null : label.trim()
+  })
+
   const stockUnitLabel = computed<string>(() => {
     if (!props.stock) {
       return t('inventory.stock_drawer.values.none')
@@ -485,6 +497,7 @@ export const useInventoryStockDetailsPanel = (props: Readonly<InventoryStockDeta
   return {
     inventoryStatusLabel,
     inventoryStatusColor,
+    storageTemperatureLabel,
     operationalFields,
     unitConversionFields,
     materialIdentityFields,

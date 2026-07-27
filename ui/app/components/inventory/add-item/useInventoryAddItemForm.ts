@@ -278,6 +278,36 @@ export const useInventoryAddItemForm = ({ open, onSaved }: UseInventoryAddItemFo
       payload.description = nextDescription
     }
 
+    const nextSerialNumber = formState.value.additionalSerialNumber.trim()
+    if (nextSerialNumber !== '' && nextSerialNumber !== (materialDetail?.serial_number || '')) {
+      payload.serial_number = nextSerialNumber
+    }
+
+    const nextOrderNumber = formState.value.additionalOrderNumber.trim()
+    if (nextOrderNumber !== '' && nextOrderNumber !== (materialDetail?.order_number || '')) {
+      payload.order_number = nextOrderNumber
+    }
+
+    const nextLifetimeDaysText = formState.value.additionalLifetimeDays.trim()
+    if (nextLifetimeDaysText !== '') {
+      const nextLifetimeDays = Number.parseInt(nextLifetimeDaysText, 10)
+      if (
+        Number.isInteger(nextLifetimeDays) &&
+        nextLifetimeDays >= 0 &&
+        nextLifetimeDays !== materialDetail?.lifetime_days
+      ) {
+        payload.lifetime_days = nextLifetimeDays
+      }
+    }
+
+    const nextIsActiveText = formState.value.additionalIsActive
+    if (nextIsActiveText !== '') {
+      const nextIsActive = nextIsActiveText === 'true'
+      if (nextIsActive !== materialDetail?.is_active) {
+        payload.is_active = nextIsActive
+      }
+    }
+
     return Object.keys(payload).length > 0 ? payload : null
   }
 
