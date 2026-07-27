@@ -9,6 +9,7 @@ python manage.py makemigrations
 python manage.py migrate
 python manage.py initadmin
 python manage.py db init
+python manage.py import_static_inventory_seed
 
 cat README.md > docs/docs/cl_tools.md
 
