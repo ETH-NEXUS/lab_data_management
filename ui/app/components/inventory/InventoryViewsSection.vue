@@ -116,7 +116,7 @@ const getPreviewMeta = (stock: InventoryStockListItem, preset: InventoryStockPre
   }
 
   if (preset === 'low_stock') {
-    return stock.location_label ?? t('inventory.stock_table.values.unknown_location')
+    return `${stock.quantity} / ${stock.minimum_quantity}`
   }
 
   return stock.location_label ?? t('inventory.stock_table.values.unknown_location')
@@ -158,18 +158,20 @@ const getPreviewMeta = (stock: InventoryStockListItem, preset: InventoryStockPre
               v-for="stock in card.items"
               :key="`${card.id}-${stock.id}`"
               type="button"
-              class="flex w-full items-start justify-between gap-3 rounded-md px-2 py-2 text-left hover:bg-slate-50"
+              class="grid w-full grid-cols-[minmax(0,1fr)_auto] items-center gap-3 rounded-md px-2 py-2 text-left hover:bg-slate-50"
               @click="openStockPreviewItem(card.preset, stock.id)"
             >
               <div class="min-w-0">
                 <p class="truncate text-sm font-medium text-slate-800">
                   {{ stock.material.product_name }}
                 </p>
-                <p class="truncate text-xs text-slate-500">
+              </div>
+              <div class="flex min-w-0 items-center gap-2">
+                <p class="max-w-28 truncate text-right text-xs text-slate-500">
                   {{ getPreviewMeta(stock, card.preset) }}
                 </p>
+                <UIcon name="i-heroicons-arrow-top-right-on-square" class="h-4 w-4 shrink-0 text-slate-400" />
               </div>
-              <UIcon name="i-heroicons-arrow-top-right-on-square" class="mt-0.5 h-4 w-4 shrink-0 text-slate-400" />
             </button>
           </template>
         </div>
