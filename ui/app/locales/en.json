@@ -446,6 +446,11 @@
           "title": "Devices",
           "description": "Manage registered devices and equipment."
         },
+        "specific_for_device": {
+          "title": "Specific for Device",
+          "description": "Select a device to view matching inventory items.",
+          "placeholder": "Select device"
+        },
         "recent_activities": {
           "title": "Recent activities",
           "description": "Inspect latest inventory changes."

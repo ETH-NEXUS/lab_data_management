@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, ref } from 'vue'
 import InventoryActionCard from '~/components/inventory/InventoryActionCard.vue'
 import {
   formatNumericString,
@@ -11,6 +11,7 @@ import {
   useInventoryStockPageQuery,
   type InventoryStockPageQueryParams,
 } from '~/composables/inventory/useInventoryStockPageQuery'
+import { useInventoryLookupsQuery } from '~/composables/inventory/useInventoryLookupQuery'
 import { useInventoryStocksQuery } from '~/composables/inventory/useInventoryStockQuery'
 import { useInventoryStockTablePreferenceStore } from '~/stores/inventory/InventoryStockTablePreferenceStore'
 import type { InventoryStockListItem, InventoryStockPreset } from '~/types/inventory'
@@ -38,8 +39,31 @@ const emit = defineEmits<{
 
 const { t } = useI18n()
 const stocksQuery = useInventoryStocksQuery()
+const lookupsQuery = useInventoryLookupsQuery()
 const stockTablePreferenceStore = useInventoryStockTablePreferenceStore()
 const stocks = computed<InventoryStockListItem[]>(() => stocksQuery.data.value ?? [])
+const selectedDeviceTypeId = ref<string>('')
+const deviceTypeOptions = computed(() => {
+  return (lookupsQuery.data.value?.deviceTypes ?? []).map((deviceType) => ({
+    label: deviceType.label || deviceType.name,
+    value: String(deviceType.id),
+  }))
+})
+const selectedDeviceId = computed<number | null>(() => {
+  const parsedDeviceId = Number.parseInt(selectedDeviceTypeId.value, 10)
+  return Number.isInteger(parsedDeviceId) && parsedDeviceId > 0 ? parsedDeviceId : null
+})
+const isDeviceSelected = computed<boolean>(() => selectedDeviceId.value !== null)
+const deviceStockQueryParams = computed<InventoryStockPageQueryParams>(() => ({
+  preset: 'all',
+  page: 1,
+  pageSize: 5,
+  search: '',
+  sorting: [],
+  deviceTypeId: selectedDeviceId.value,
+}))
+const deviceStocksQuery = useInventoryStockPageQuery(deviceStockQueryParams)
+const deviceStocks = computed<InventoryStockListItem[]>(() => deviceStocksQuery.data.value?.results ?? [])
 const archivedStockQueryParams = computed<InventoryStockPageQueryParams>(() => ({
   preset: 'archived',
   page: 1,
@@ -231,6 +255,62 @@ const isPreviewLoading = (preset: InventoryStockPreset): boolean => {
         size="view"
         @select="onSelectAction"
       />
+
+      <UCard :ui="{ root: 'core-card divide-y divide-slate-200/70' }">
+        <template #header>
+          <div class="space-y-3">
+            <div class="flex items-center gap-2">
+              <span class="inventory-icon-chip">
+                <UIcon name="i-heroicons-cpu-chip" class="size-5" />
+              </span>
+              <p class="text-sm font-semibold text-slate-800">
+                {{ t('inventory.page.actions.specific_for_device.title') }}
+              </p>
+            </div>
+            <USelect
+              v-model="selectedDeviceTypeId"
+              :items="deviceTypeOptions"
+              value-key="value"
+              label-key="label"
+              :placeholder="t('inventory.page.actions.specific_for_device.placeholder')"
+              class="w-full"
+            />
+          </div>
+        </template>
+
+        <div class="space-y-2">
+          <p v-if="lookupsQuery.isPending.value" class="text-sm text-slate-600">
+            {{ t('inventory.stock_workspace.loading') }}
+          </p>
+          <p v-else-if="!isDeviceSelected" class="text-sm text-slate-600">
+            {{ t('inventory.page.actions.specific_for_device.description') }}
+          </p>
+          <p v-else-if="deviceStocksQuery.isPending.value" class="text-sm text-slate-600">
+            {{ t('inventory.stock_workspace.loading') }}
+          </p>
+          <p v-else-if="deviceStocks.length === 0" class="text-sm text-slate-600">
+            {{ t('inventory.stock_workspace.empty') }}
+          </p>
+          <button
+            v-for="stock in deviceStocks"
+            v-else
+            :key="`device-${stock.id}`"
+            type="button"
+            class="grid w-full grid-cols-[minmax(0,1fr)_auto] items-center gap-3 rounded-md px-2 py-2 text-left hover:bg-slate-50"
+            @click="openStockPreviewItem('all', stock.id)"
+          >
+            <p class="min-w-0 truncate text-sm font-medium text-slate-800">
+              {{ stock.material.product_name }}
+            </p>
+            <div class="flex min-w-0 items-center gap-2">
+              <p class="max-w-28 truncate text-right text-xs text-slate-500">
+                {{ stock.location_label ?? t('inventory.stock_table.values.unknown_location') }}
+              </p>
+              <UIcon name="i-heroicons-arrow-top-right-on-square" class="h-4 w-4 shrink-0 text-slate-400" />
+            </div>
+          </button>
+        </div>
+      </UCard>
     </div>
   </section>
 </template>

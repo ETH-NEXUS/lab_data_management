@@ -16,6 +16,7 @@ export type InventoryStockPageQueryParams = {
   pageSize: number
   search: string
   sorting: InventoryStockTableSorting[]
+  deviceTypeId?: number | null
 }
 
 const getStockEndpointForPreset = (preset: InventoryStockPreset): string => {
@@ -53,6 +54,10 @@ const fetchInventoryStockPage = async (
 
   if (params.search.trim() !== '') {
     requestParams.search = params.search.trim()
+  }
+
+  if (params.deviceTypeId && params.deviceTypeId > 0) {
+    requestParams.device_type = String(params.deviceTypeId)
   }
 
   const orderingValue = toOrderingValue(params.sorting)
