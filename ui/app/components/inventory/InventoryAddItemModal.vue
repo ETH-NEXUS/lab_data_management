@@ -386,6 +386,48 @@ const onSafetyDataSheetChange = (event: Event): void => {
                     class="w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700"
                   />
                 </div>
+
+                <div class="space-y-1">
+                  <label class="block text-sm font-medium text-slate-700">Serial number</label>
+                  <input
+                    v-model="formState.additionalSerialNumber"
+                    type="text"
+                    class="w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700"
+                  />
+                </div>
+
+                <div class="space-y-1">
+                  <label class="block text-sm font-medium text-slate-700">Order number</label>
+                  <input
+                    v-model="formState.additionalOrderNumber"
+                    type="text"
+                    class="w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700"
+                  />
+                </div>
+
+                <div class="space-y-1">
+                  <label class="block text-sm font-medium text-slate-700">Shelf life (days)</label>
+                  <input
+                    v-model="formState.additionalLifetimeDays"
+                    type="number"
+                    min="0"
+                    step="1"
+                    inputmode="numeric"
+                    class="w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700"
+                  />
+                </div>
+
+                <div class="space-y-1">
+                  <label class="block text-sm font-medium text-slate-700">Active</label>
+                  <select
+                    v-model="formState.additionalIsActive"
+                    class="w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700"
+                  >
+                    <option value="">Don't change</option>
+                    <option value="true">Active</option>
+                    <option value="false">Inactive</option>
+                  </select>
+                </div>
               </div>
             </div>
 
