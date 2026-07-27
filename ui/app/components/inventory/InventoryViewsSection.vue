@@ -7,9 +7,14 @@ import {
   getStatusLabel,
   sortStocksLikeInventoryTable,
 } from '~/components/inventory/inventory-stock-table.values'
+import {
+  useInventoryStockPageQuery,
+  type InventoryStockPageQueryParams,
+} from '~/composables/inventory/useInventoryStockPageQuery'
 import { useInventoryStocksQuery } from '~/composables/inventory/useInventoryStockQuery'
 import { useInventoryStockTablePreferenceStore } from '~/stores/inventory/InventoryStockTablePreferenceStore'
 import type { InventoryStockListItem, InventoryStockPreset } from '~/types/inventory'
+import { formatDateTime } from '~/utils/dateTime'
 
 type InventoryActionItem = {
   id: string
@@ -35,6 +40,15 @@ const { t } = useI18n()
 const stocksQuery = useInventoryStocksQuery()
 const stockTablePreferenceStore = useInventoryStockTablePreferenceStore()
 const stocks = computed<InventoryStockListItem[]>(() => stocksQuery.data.value ?? [])
+const archivedStockQueryParams = computed<InventoryStockPageQueryParams>(() => ({
+  preset: 'archived',
+  page: 1,
+  pageSize: 5,
+  search: '',
+  sorting: [{ id: 'archivedAt', desc: true }],
+}))
+const archivedStocksQuery = useInventoryStockPageQuery(archivedStockQueryParams)
+const archivedStocks = computed<InventoryStockListItem[]>(() => archivedStocksQuery.data.value?.results ?? [])
 
 /**
  * Creates lower-grid actions in the existing card visual style.
@@ -106,11 +120,11 @@ const previewCards = computed<InventoryPreviewCard[]>(() => [
   },
   {
     id: 'archived_items',
-    title: t('inventory.page.actions.archived_items.title'),
+    title: t('inventory.page.actions.recently_archived_items.title'),
     description: t('inventory.page.actions.archived_items.description'),
     icon: 'i-heroicons-archive-box',
     preset: 'archived',
-    items: [],
+    items: archivedStocks.value,
   },
 ])
 
@@ -127,6 +141,10 @@ const getPreviewMeta = (stock: InventoryStockListItem, preset: InventoryStockPre
     return stock.expiry_date ?? t('inventory.stock_table.values.none')
   }
 
+  if (preset === 'archived') {
+    return formatDateTime(stock.archived_at, { dateStyle: 'medium' }, t('inventory.stock_table.values.none'))
+  }
+
   if (preset === 'low_stock') {
     return `${formatNumericString(stock.quantity)} / ${formatNumericString(stock.minimum_quantity)}`
   }
@@ -140,6 +158,10 @@ const getInventoryStatusColor = (stock: InventoryStockListItem): 'error' | 'warn
   }
 
   return stock.inventory_status === 'low' ? 'warning' : 'success'
+}
+
+const isPreviewLoading = (preset: InventoryStockPreset): boolean => {
+  return preset === 'archived' ? archivedStocksQuery.isPending.value : stocksQuery.isPending.value
 }
 </script>
 
@@ -164,11 +186,8 @@ const getInventoryStatusColor = (stock: InventoryStockListItem): 'error' | 'warn
         </template>
 
         <div class="space-y-2">
-          <p v-if="stocksQuery.isPending.value" class="text-sm text-slate-600">
+          <p v-if="isPreviewLoading(card.preset)" class="text-sm text-slate-600">
             {{ t('inventory.stock_workspace.loading') }}
-          </p>
-          <p v-else-if="card.preset === 'archived'" class="text-sm text-slate-600">
-            {{ card.description }}
           </p>
           <p v-else-if="card.items.length === 0" class="text-sm text-slate-600">
             {{ t('inventory.stock_workspace.empty') }}

@@ -160,6 +160,8 @@ export type InventoryStockListItem = {
   lot_number: string | null
   expiry_date: string | null
   is_favorite: boolean
+  is_archived: boolean
+  archived_at: string | null
   notes: string | null
   source_order: InventoryOrderSourceSummary | null
   location_label: string | null

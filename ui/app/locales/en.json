@@ -468,6 +468,9 @@
         "archived_items": {
           "title": "Archived items",
           "description": "Access archived inventory records."
+        },
+        "recently_archived_items": {
+          "title": "Recently archived items"
         }
       },
       "placeholder_suffix": "to be implemented"
