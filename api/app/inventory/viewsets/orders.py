@@ -153,3 +153,26 @@ class OrderViewSet(viewsets.ModelViewSet):
         queryset = self.get_queryset().filter(status=Order.STATUS_PRODUCT_ARRIVED)
         serializer = OrderListSerializer(queryset, many=True, context={"request": request})
         return Response(serializer.data)
+
+    @action(detail=False, methods=["get"])
+    def awaiting_check_in(self, request):
+        """
+        Returns arrived orders that do not yet have a linked stock entry.
+
+        Returned order example:
+        - {
+            "id": 42,
+            "status": "product_arrived",
+            "created_stock_entries": []
+          }
+        """
+        queryset = (
+            self.get_queryset()
+            .filter(
+                status=Order.STATUS_PRODUCT_ARRIVED,
+                created_stock_entries__isnull=True,
+            )
+            .order_by("-order_date", "-id")
+        )
+        serializer = OrderListSerializer(queryset, many=True, context={"request": request})
+        return Response(serializer.data)

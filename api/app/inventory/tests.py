@@ -233,6 +233,35 @@ class InventoryStockMultiSectorTests(APITestCase):
         self.assertFalse(later_stock.is_archived)
         self.assertIsNone(later_stock.archived_at)
 
+    def test_awaiting_check_in_endpoint_excludes_orders_with_linked_stock(self):
+        awaiting_check_in_order = Order.objects.create(
+            material=self.material,
+            order_unit=self.stock_unit,
+            amount="2",
+            order_date="2026-07-05T10:00:00Z",
+            status=Order.STATUS_PRODUCT_ARRIVED,
+        )
+        checked_in_order = Order.objects.create(
+            material=self.material,
+            order_unit=self.stock_unit,
+            amount="2",
+            order_date="2026-07-04T10:00:00Z",
+            status=Order.STATUS_PRODUCT_ARRIVED,
+        )
+        InventoryStock.objects.create(
+            material=self.material,
+            sector=self.primary_sector,
+            stock_unit=self.stock_unit,
+            quantity="2",
+            minimum_quantity="1",
+            source_order=checked_in_order,
+        )
+
+        response = self.client.get(reverse("inventory-order-awaiting-check-in"))
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual([order_data["id"] for order_data in response.data], [awaiting_check_in_order.id])
+
 
 class InventoryMaterialReagentTests(APITestCase):
     """
