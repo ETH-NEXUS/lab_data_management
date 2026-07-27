@@ -57,6 +57,7 @@ const selectedStockOrderEntries = computed<InventoryOrderListItem[]>(() => {
 const {
   inventoryStatusLabel,
   inventoryStatusColor,
+  storageTemperatureLabel,
   operationalFields,
   unitConversionFields,
   materialIdentityFields,
@@ -103,6 +104,7 @@ const {
       <InventoryStockOperationalSection
         :inventory-status-label="inventoryStatusLabel"
         :inventory-status-color="inventoryStatusColor"
+        :storage-temperature-label="storageTemperatureLabel"
         :fields="operationalFields"
       />
 

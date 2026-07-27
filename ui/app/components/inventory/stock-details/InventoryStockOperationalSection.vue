@@ -7,7 +7,8 @@ type OperationalField = {
 
 type Props = {
   inventoryStatusLabel: string
-  inventoryStatusColor: 'warning' | 'success'
+  inventoryStatusColor: 'error' | 'warning' | 'success'
+  storageTemperatureLabel: string | null
   fields: OperationalField[]
 }
 
@@ -23,6 +24,9 @@ const { t } = useI18n()
         {{ t('inventory.stock_drawer.sections.operational') }}
       </p>
       <UBadge :color="props.inventoryStatusColor" variant="soft">{{ props.inventoryStatusLabel }}</UBadge>
+      <UBadge v-if="props.storageTemperatureLabel" color="info" variant="solid">
+        {{ t('inventory.stock_drawer.badges.storage_temperature', { value: props.storageTemperatureLabel }) }}
+      </UBadge>
     </div>
 
     <div class="grid gap-2 sm:grid-cols-2">
