@@ -28,7 +28,20 @@
     "Hand pipette",
     "LiHa",
     "MCA96",
-    "MCA384"
+    "MCA384",
+    "Prime",
+    "Echo",
+    "CertusFlex",
+    "PlateLoc",
+    "XPeel",
+    "BioTek EL406",
+    "SciPrint",
+    "ViaFill",
+    "Freedom Evo",
+    "Fluent",
+    "Biomek FXp",
+    "OT-2",
+    "Lightcycler"
   ],
   "item_types": [
     "tip box",
