@@ -148,6 +148,7 @@ def apply_inventory_stock_list_filters(queryset, query_params):
             "lifetimeDays": ["material__lifetime_days"],
             "lotNumber": ["lot_number"],
             "expiryDate": ["expiry_date"],
+            "archivedAt": ["archived_at"],
             "notes": ["notes"],
             "createdAt": ["created_at"],
             "updatedAt": ["updated_at"],

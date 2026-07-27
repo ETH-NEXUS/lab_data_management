@@ -2,6 +2,7 @@ from datetime import timedelta
 
 from django.db import models
 from django.db import transaction
+from django.utils import timezone
 from rest_framework import viewsets
 from rest_framework.decorators import action
 from rest_framework.permissions import IsAuthenticated
@@ -174,6 +175,8 @@ class InventoryStockViewSet(viewsets.ModelViewSet):
     @action(detail=False, methods=["get"])
     def archived(self, request):
         queryset = self._get_filtered_stock_queryset(include_archived=True).filter(is_archived=True)
+        if not request.query_params.get("ordering"):
+            queryset = queryset.order_by("-archived_at", "-id")
         page = self.paginate_queryset(queryset)
 
         if page is not None:
@@ -222,7 +225,8 @@ class InventoryStockViewSet(viewsets.ModelViewSet):
         stock = self.get_object()
         with transaction.atomic():
             stock.is_archived = True
-            stock.save(update_fields=["is_archived"])
+            stock.archived_at = timezone.now()
+            stock.save(update_fields=["is_archived", "archived_at"])
             record_inventory_action(
                 performed_action=InventoryChangeRecord.ACTION_STOCK_ARCHIVED,
                 performed_by=request.user if request.user.is_authenticated else None,
@@ -239,7 +243,8 @@ class InventoryStockViewSet(viewsets.ModelViewSet):
         stock = self.get_object()
         with transaction.atomic():
             stock.is_archived = False
-            stock.save(update_fields=["is_archived"])
+            stock.archived_at = None
+            stock.save(update_fields=["is_archived", "archived_at"])
             record_inventory_action(
                 performed_action=InventoryChangeRecord.ACTION_STOCK_RESTORED,
                 performed_by=request.user if request.user.is_authenticated else None,

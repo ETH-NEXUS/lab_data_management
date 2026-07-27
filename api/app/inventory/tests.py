@@ -1,6 +1,9 @@
+from datetime import timedelta
+
 from django.urls import reverse
 from django.test import override_settings
 from django.core.files.uploadedfile import SimpleUploadedFile
+from django.utils import timezone
 from rest_framework import status
 from rest_framework.test import APITestCase
 import shutil
@@ -172,6 +175,63 @@ class InventoryStockMultiSectorTests(APITestCase):
         stock = InventoryStock.objects.get(id=response.data["id"])
         self.assertEqual(stock.source_order_id, self.order.id)
         self.assertEqual(response.data["source_order"]["id"], self.order.id)
+
+    def test_archive_sets_timestamp_and_creates_history_record(self):
+        stock = InventoryStock.objects.create(
+            material=self.material,
+            sector=self.primary_sector,
+            stock_unit=self.stock_unit,
+            quantity="2",
+            minimum_quantity="1",
+        )
+
+        response = self.client.post(reverse("inventory-stock-archive", args=[stock.id]))
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertTrue(response.data["is_archived"])
+        self.assertIsNotNone(response.data["archived_at"])
+
+        stock.refresh_from_db()
+        self.assertIsNotNone(stock.archived_at)
+        self.assertTrue(
+            stock.change_records.filter(performed_action="stock_archived").exists()
+        )
+
+    def test_archived_endpoint_orders_by_archive_timestamp_and_restore_clears_it(self):
+        earlier_stock = InventoryStock.objects.create(
+            material=self.material,
+            sector=self.primary_sector,
+            stock_unit=self.stock_unit,
+            quantity="2",
+            minimum_quantity="1",
+        )
+        later_stock = InventoryStock.objects.create(
+            material=self.material,
+            sector=self.primary_sector,
+            stock_unit=self.stock_unit,
+            quantity="2",
+            minimum_quantity="1",
+        )
+
+        self.client.post(reverse("inventory-stock-archive", args=[earlier_stock.id]))
+        self.client.post(reverse("inventory-stock-archive", args=[later_stock.id]))
+        earlier_stock.archived_at = timezone.now() - timedelta(days=1)
+        earlier_stock.save(update_fields=["archived_at"])
+
+        archived_response = self.client.get(reverse("inventory-stock-archived"))
+        restore_response = self.client.post(reverse("inventory-stock-restore", args=[later_stock.id]))
+
+        self.assertEqual(archived_response.status_code, status.HTTP_200_OK)
+        self.assertEqual(
+            [stock_data["id"] for stock_data in archived_response.data["results"]],
+            [later_stock.id, earlier_stock.id],
+        )
+        self.assertEqual(restore_response.status_code, status.HTTP_200_OK)
+        self.assertIsNone(restore_response.data["archived_at"])
+
+        later_stock.refresh_from_db()
+        self.assertFalse(later_stock.is_archived)
+        self.assertIsNone(later_stock.archived_at)
 
 
 class InventoryMaterialReagentTests(APITestCase):
