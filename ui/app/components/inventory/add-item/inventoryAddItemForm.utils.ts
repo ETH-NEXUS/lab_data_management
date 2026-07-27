@@ -16,6 +16,11 @@ export type AddItemFormState = {
   additionalCapacityValue: string
   additionalCapacityUnit: string
   additionalDescription: string
+  additionalSerialNumber: string
+  additionalOrderNumber: string
+  additionalLifetimeDays: string
+  // '' = don't change, 'true' = active, 'false' = inactive.
+  additionalIsActive: string
   stockUnitId: string
   quantity: string
   minimumQuantity: string
@@ -29,7 +34,7 @@ export type AddItemFormState = {
  * Builds empty draft values for the add-item stock form.
  *
  * Returned data example:
- * - `{ itemTypeId: '', materialId: '', roomId: '', sectorIds: [], reagentStorageTemperature: '', reagentSafetyDataSheet: null, additionalBrandId: '', additionalDefaultCost: '', additionalManufacturerId: '', additionalVendorId: '', additionalManufacturerCatalogNumber: '', additionalVendorCatalogNumber: '', additionalCapacityValue: '', additionalCapacityUnit: '', additionalDescription: '', stockUnitId: '', quantity: '', minimumQuantity: '', lotNumber: '', expiryDate: '', notes: '', isFavorite: false }`
+ * - `{ itemTypeId: '', materialId: '', roomId: '', sectorIds: [], reagentStorageTemperature: '', reagentSafetyDataSheet: null, additionalBrandId: '', additionalDefaultCost: '', additionalManufacturerId: '', additionalVendorId: '', additionalManufacturerCatalogNumber: '', additionalVendorCatalogNumber: '', additionalCapacityValue: '', additionalCapacityUnit: '', additionalDescription: '', additionalSerialNumber: '', additionalOrderNumber: '', additionalLifetimeDays: '', additionalIsActive: '', stockUnitId: '', quantity: '', minimumQuantity: '', lotNumber: '', expiryDate: '', notes: '', isFavorite: false }`
  */
 export const buildInitialFormState = (): AddItemFormState => ({
   itemTypeId: '',
@@ -47,6 +52,10 @@ export const buildInitialFormState = (): AddItemFormState => ({
   additionalCapacityValue: '',
   additionalCapacityUnit: '',
   additionalDescription: '',
+  additionalSerialNumber: '',
+  additionalOrderNumber: '',
+  additionalLifetimeDays: '',
+  additionalIsActive: '',
   stockUnitId: '',
   quantity: '',
   minimumQuantity: '',

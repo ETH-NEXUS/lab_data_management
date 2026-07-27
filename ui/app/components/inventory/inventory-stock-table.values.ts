@@ -9,7 +9,7 @@ const toLabel = (value: string | null | undefined, fallback: string): string => 
 // Accepts both a string (e.g. `'12.50'`, as most decimal API fields send) and a
 // number (e.g. `12.5`, as the two `ReadOnlyField()`-backed base-unit fields send),
 // so this never crashes regardless of which shape the API returns.
-const formatNumericString = (value: string | number | null | undefined): string => {
+export const formatNumericString = (value: string | number | null | undefined): string => {
   const rawValue = value == null ? '' : String(value).trim()
   if (rawValue === '') {
     return ''
