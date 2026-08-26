@@ -14,8 +14,9 @@ import {
 import { useInventoryLookupsQuery } from '~/composables/inventory/useInventoryLookupQuery'
 import { useInventoryAwaitingCheckInOrdersQuery } from '~/composables/inventory/useInventoryOrderQuery'
 import { useInventoryStocksQuery } from '~/composables/inventory/useInventoryStockQuery'
+import { useInventoryUsagesQuery } from '~/composables/inventory/useInventoryUsageQuery'
 import { useInventoryStockTablePreferenceStore } from '~/stores/inventory/InventoryStockTablePreferenceStore'
-import type { InventoryStockListItem, InventoryStockPreset } from '~/types/inventory'
+import type { InventoryStockListItem, InventoryStockPreset, InventoryUsageListItem } from '~/types/inventory'
 import { formatDateTime } from '~/utils/dateTime'
 
 type InventoryActionItem = {
@@ -42,6 +43,7 @@ const { t } = useI18n()
 const stocksQuery = useInventoryStocksQuery()
 const lookupsQuery = useInventoryLookupsQuery()
 const awaitingCheckInOrdersQuery = useInventoryAwaitingCheckInOrdersQuery()
+const usagesQuery = useInventoryUsagesQuery()
 const stockTablePreferenceStore = useInventoryStockTablePreferenceStore()
 const stocks = computed<InventoryStockListItem[]>(() => stocksQuery.data.value ?? [])
 const selectedDeviceTypeId = ref<string>('')
@@ -76,6 +78,11 @@ const archivedStockQueryParams = computed<InventoryStockPageQueryParams>(() => (
 }))
 const archivedStocksQuery = useInventoryStockPageQuery(archivedStockQueryParams)
 const archivedStocks = computed<InventoryStockListItem[]>(() => archivedStocksQuery.data.value?.results ?? [])
+const recentProjectUsages = computed<InventoryUsageListItem[]>(() => {
+  return [...(usagesQuery.data.value ?? [])]
+    .sort((leftUsage, rightUsage) => new Date(rightUsage.used_at).getTime() - new Date(leftUsage.used_at).getTime())
+    .slice(0, 5)
+})
 
 /**
  * Creates lower-grid actions in the existing card visual style.
@@ -90,12 +97,6 @@ const inventoryViews = computed<InventoryActionItem[]>(() => [
     description: t('inventory.page.actions.recent_activities.description'),
     icon: 'i-heroicons-bolt',
   },
-  {
-    id: 'recently_linked_items',
-    title: t('inventory.page.actions.recently_linked_items.title'),
-    description: t('inventory.page.actions.recently_linked_items.description'),
-    icon: 'i-heroicons-link',
-  },
 ])
 
 const onSelectAction = (actionId: string): void => {
@@ -104,6 +105,14 @@ const onSelectAction = (actionId: string): void => {
 
 const openOrder = (orderId: number): void => {
   navigateTo(`/inventory/orders?order=${orderId}`)
+}
+
+const openUsages = (): void => {
+  navigateTo('/inventory/usages')
+}
+
+const getUsageItemName = (usage: InventoryUsageListItem): string => {
+  return usage.material?.product_name ?? usage.inventory_stock.material.product_name
 }
 
 const getPreviewItems = (preset: InventoryStockPreset): InventoryStockListItem[] => {
@@ -311,6 +320,56 @@ const isPreviewLoading = (preset: InventoryStockPreset): boolean => {
               </div>
             </button>
           </template>
+        </div>
+      </UCard>
+
+      <UCard :ui="{ root: 'core-card divide-y divide-slate-200/70' }">
+        <template #header>
+          <div class="flex items-start gap-2">
+            <span class="inventory-icon-chip">
+              <UIcon name="i-heroicons-link" class="size-5" />
+            </span>
+            <div>
+              <p class="text-sm font-semibold text-slate-800">
+                {{ t('inventory.page.actions.recently_linked_harvest_projects.title') }}
+              </p>
+              <p class="text-sm text-slate-600">
+                {{ t('inventory.page.actions.recently_linked_harvest_projects.description') }}
+              </p>
+            </div>
+          </div>
+        </template>
+
+        <div class="space-y-2">
+          <p v-if="usagesQuery.isPending.value" class="text-sm text-slate-600">
+            {{ t('inventory.stock_workspace.loading') }}
+          </p>
+          <p v-else-if="recentProjectUsages.length === 0" class="text-sm text-slate-600">
+            {{ t('inventory.stock_workspace.empty') }}
+          </p>
+          <template v-else>
+            <button
+              v-for="usage in recentProjectUsages"
+              :key="usage.id"
+              type="button"
+              class="grid w-full grid-cols-[minmax(0,1fr)_auto] items-center gap-3 rounded-md px-2 py-2 text-left hover:bg-slate-50"
+              @click="openUsages"
+            >
+              <p class="min-w-0 truncate text-sm font-medium text-slate-800">
+                {{ getUsageItemName(usage) }}
+              </p>
+              <div class="flex min-w-0 items-center gap-2">
+                <p class="max-w-28 truncate text-right text-xs text-slate-500">
+                  {{ usage.project.label || usage.project.name }}
+                </p>
+                <UIcon name="i-heroicons-arrow-top-right-on-square" class="h-4 w-4 shrink-0 text-slate-400" />
+              </div>
+            </button>
+          </template>
+          <p class="border-t border-slate-100 pt-2 text-xs text-slate-500">
+            temporal dev info: the connection to a harvest project happens via material usage - record a material usage
+            and you will see the items here
+          </p>
         </div>
       </UCard>
 

@@ -464,6 +464,10 @@
           "title": "Recently linked items",
           "description": "See recently connected records."
         },
+        "recently_linked_harvest_projects": {
+          "title": "Items recently linked to a Harvest project",
+          "description": "Latest material usage records linked to projects."
+        },
         "reserved_items": {
           "title": "Reserved items",
           "description": "Track currently reserved stock."
