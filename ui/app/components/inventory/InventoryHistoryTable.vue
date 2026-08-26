@@ -12,6 +12,7 @@ import { formatDateTime } from '~/utils/dateTime'
 
 type Props = {
   records: InventoryHistoryListItem[]
+  mode?: 'activity' | 'check_in_out'
 }
 
 const props = defineProps<Props>()
@@ -19,6 +20,16 @@ const emit = defineEmits<{
   (e: 'select-record', record: InventoryHistoryListItem): void
 }>()
 const { t } = useI18n()
+
+const getActionLabel = (record: InventoryHistoryListItem): string => {
+  if (props.mode === 'check_in_out') {
+    return record.performed_action === 'usage_created'
+      ? t('inventory.page.actions.recent_check_in_out.check_out')
+      : t('inventory.page.actions.recent_check_in_out.check_in')
+  }
+
+  return getHistoryRecordActionLabel(record)
+}
 
 const selectRecord = (record: InventoryHistoryListItem): void => {
   emit('select-record', record)
@@ -63,7 +74,7 @@ const selectRecord = (record: InventoryHistoryListItem): void => {
           @click="selectRecord(record)"
         >
           <td class="px-3 py-2 font-medium whitespace-nowrap text-slate-800">
-            {{ getHistoryRecordActionLabel(record) }}
+            {{ getActionLabel(record) }}
           </td>
           <td class="max-w-52 truncate px-3 py-2 text-slate-700">
             {{ getHistoryRecordItemName(record, t('inventory.stock_table.values.none')) }}

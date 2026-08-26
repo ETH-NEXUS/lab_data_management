@@ -23,23 +23,36 @@ const openRecord = (record: InventoryHistoryListItem): void => {
     navigateTo(targetPath)
   }
 }
+
+const openHistory = (): void => {
+  navigateTo('/inventory/check-in-out-history')
+}
 </script>
 
 <template>
   <UCard :ui="{ root: 'core-card divide-y divide-slate-200/70' }">
     <template #header>
-      <div class="flex items-start gap-2">
-        <span class="inventory-icon-chip">
-          <UIcon name="i-heroicons-arrow-left-right" class="size-5" />
-        </span>
-        <div>
-          <p class="text-sm font-semibold text-slate-800">
-            {{ t('inventory.page.actions.recent_check_in_out.title') }}
-          </p>
-          <p class="text-sm text-slate-600">
-            {{ t('inventory.page.actions.recent_check_in_out.description') }}
-          </p>
+      <div class="flex items-start justify-between gap-3">
+        <div class="flex items-start gap-2">
+          <span class="inventory-icon-chip">
+            <UIcon name="i-heroicons-arrow-left-right" class="size-5" />
+          </span>
+          <div>
+            <p class="text-sm font-semibold text-slate-800">
+              {{ t('inventory.page.actions.recent_check_in_out.title') }}
+            </p>
+            <p class="text-sm text-slate-600">
+              {{ t('inventory.page.actions.recent_check_in_out.description') }}
+            </p>
+          </div>
         </div>
+        <UButton
+          variant="ghost"
+          color="neutral"
+          icon="i-heroicons-arrow-right"
+          :aria-label="t('inventory.page.actions.recent_check_in_out.view_all')"
+          @click="openHistory"
+        />
       </div>
     </template>
 

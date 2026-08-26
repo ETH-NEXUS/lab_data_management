@@ -465,7 +465,8 @@
           "title": "Recent check-ins / check-outs",
           "description": "See who moved which inventory items and why.",
           "check_in": "Check-in",
-          "check_out": "Check-out"
+          "check_out": "Check-out",
+          "view_all": "View all check-ins and check-outs"
         },
         "recently_linked_items": {
           "title": "Recently linked items",
@@ -522,6 +523,11 @@
         "performed_at": "Performed at",
         "open": "Open source record"
       }
+    },
+    "check_in_out_workspace": {
+      "title": "Check-in / check-out history",
+      "description": "Latest inventory additions and withdrawals, 20 records per page.",
+      "loading": "Loading check-in and check-out history..."
     },
     "stock_table": {
       "groups": {

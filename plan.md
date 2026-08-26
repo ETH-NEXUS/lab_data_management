@@ -49,4 +49,4 @@ in `useInventoryAddItemForm.ts`.
 # Part F: paginated check-in/check-out table
 
 - [x] UI data: add a server-paginated check-in/check-out query.
-- [ ] UI: add the check-in/check-out table, page navigation, and dashboard link.
+- [x] UI: add the check-in/check-out table, page navigation, and dashboard link.
