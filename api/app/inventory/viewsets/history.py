@@ -2,6 +2,7 @@ from django.db.models import Q
 from rest_framework import viewsets
 
 from ..history_models import InventoryChangeRecord
+from ..pagination import InventoryHistoryPagination
 from ..serializers.dynamic_models_serializers import (
     InventoryChangeRecordDetailSerializer,
     InventoryChangeRecordListSerializer,
@@ -9,6 +10,7 @@ from ..serializers.dynamic_models_serializers import (
 
 
 class InventoryChangeRecordViewSet(viewsets.ReadOnlyModelViewSet):
+    pagination_class = InventoryHistoryPagination
     queryset = (
         InventoryChangeRecord.objects.all()
         .select_related(

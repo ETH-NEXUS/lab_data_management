@@ -307,6 +307,23 @@ class InventoryStockMultiSectorTests(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual([order_data["id"] for order_data in response.data], [awaiting_check_in_order.id])
 
+    def test_history_endpoint_paginates_results(self):
+        for _index in range(6):
+            InventoryChangeRecord.objects.create(
+                performed_action=InventoryChangeRecord.ACTION_STOCK_CREATED,
+                performed_by=self.first_user,
+            )
+
+        response = self.client.get(
+            reverse("inventory-history-list"),
+            {"page": 1, "page_size": 5},
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data["count"], 6)
+        self.assertEqual(len(response.data["results"]), 5)
+        self.assertIsNotNone(response.data["next"])
+
 
 class InventoryMaterialReagentTests(APITestCase):
     """
