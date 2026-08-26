@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
-import InventoryActionCard from '~/components/inventory/InventoryActionCard.vue'
 import {
   formatNumericString,
   getStocksForPreset,
@@ -19,13 +18,6 @@ import { useInventoryStockTablePreferenceStore } from '~/stores/inventory/Invent
 import type { InventoryStockListItem, InventoryStockPreset, InventoryUsageListItem } from '~/types/inventory'
 import { formatDateTime } from '~/utils/dateTime'
 
-type InventoryActionItem = {
-  id: string
-  title: string
-  description: string
-  icon: string
-}
-
 type InventoryPreviewCard = {
   id: string
   title: string
@@ -34,10 +26,6 @@ type InventoryPreviewCard = {
   preset: InventoryStockPreset
   items: InventoryStockListItem[]
 }
-
-const emit = defineEmits<{
-  (e: 'select-action', actionId: string): void
-}>()
 
 const { t } = useI18n()
 const stocksQuery = useInventoryStocksQuery()
@@ -83,25 +71,6 @@ const recentProjectUsages = computed<InventoryUsageListItem[]>(() => {
     .sort((leftUsage, rightUsage) => new Date(rightUsage.used_at).getTime() - new Date(leftUsage.used_at).getTime())
     .slice(0, 5)
 })
-
-/**
- * Creates lower-grid actions in the existing card visual style.
- *
- * Returned data example:
- * - `[{ id: 'recent_activities', title: 'Recent activities', description: 'Inspect latest inventory changes.', icon: 'i-heroicons-bolt' }]`
- */
-const inventoryViews = computed<InventoryActionItem[]>(() => [
-  {
-    id: 'recent_activities',
-    title: t('inventory.page.actions.recent_activities.title'),
-    description: t('inventory.page.actions.recent_activities.description'),
-    icon: 'i-heroicons-bolt',
-  },
-])
-
-const onSelectAction = (actionId: string): void => {
-  emit('select-action', actionId)
-}
 
 const openOrder = (orderId: number): void => {
   navigateTo(`/inventory/orders?order=${orderId}`)
@@ -258,13 +227,9 @@ const isPreviewLoading = (preset: InventoryStockPreset): boolean => {
         </div>
       </UCard>
 
-      <InventoryActionCard
-        v-for="action in inventoryViews"
-        :key="action.id"
-        :item="action"
-        size="view"
-        @select="onSelectAction"
-      />
+      <InventoryRecentActivitiesCard />
+
+      <InventoryCheckInOutCard />
 
       <UCard :ui="{ root: 'core-card divide-y divide-slate-200/70' }">
         <template #header>

@@ -24,7 +24,7 @@ const onSelectAction = (actionId: string): void => {
   <section class="inventory-shell px-4 sm:px-6 lg:px-8">
     <div class="mx-auto w-full max-w-6xl space-y-7">
       <InventoryQuickActionsSection @select-action="onSelectAction" />
-      <InventoryViewsSection @select-action="onSelectAction" />
+      <InventoryViewsSection />
     </div>
   </section>
 </template>

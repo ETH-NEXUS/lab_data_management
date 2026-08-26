@@ -460,6 +460,12 @@
           "title": "Recent activities",
           "description": "Inspect latest inventory changes."
         },
+        "recent_check_in_out": {
+          "title": "Recent check-ins / check-outs",
+          "description": "See who moved which inventory items and why.",
+          "check_in": "Check-in",
+          "check_out": "Check-out"
+        },
         "recently_linked_items": {
           "title": "Recently linked items",
           "description": "See recently connected records."
