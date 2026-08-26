@@ -167,9 +167,11 @@ class InventoryStock(models.Model):
         help_text="Expiry date for this specific lot / batch if applicable.",
     )
 
-    is_favorite = models.BooleanField(
-        default=False,
-        help_text="Optional flag if we want to mark favorite / pinned stock items.",
+    favorite_users = models.ManyToManyField(
+        User,
+        blank=True,
+        related_name="favorite_inventory_stocks",
+        help_text="Users who marked this stock entry as a favorite.",
     )
     is_archived = models.BooleanField(
         default=False,

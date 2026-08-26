@@ -167,7 +167,6 @@ class InventoryStockInline(admin.TabularInline):
         "minimum_quantity",
         "lot_number",
         "expiry_date",
-        "is_favorite",
         "notes",
     )
     verbose_name = "Stock entry"
@@ -468,16 +467,6 @@ class SectorAdmin(admin.ModelAdmin):
 # Inventory stock admin
 # =========================================================
 
-@admin.action(description="Mark selected stock entries as favorite")
-def mark_stock_favorite(modeladmin, request, queryset):
-    queryset.update(is_favorite=True)
-
-
-@admin.action(description="Unmark selected stock entries as favorite")
-def unmark_stock_favorite(modeladmin, request, queryset):
-    queryset.update(is_favorite=False)
-
-
 @admin.register(InventoryStock)
 class InventoryStockAdmin(admin.ModelAdmin):
     list_display = (
@@ -491,11 +480,9 @@ class InventoryStockAdmin(admin.ModelAdmin):
         "quantity_in_base_units_display",
         "lot_number",
         "expiry_date",
-        "is_favorite",
         "updated_at",
     )
     list_filter = (
-        "is_favorite",
         "sector__room",
         "material__item_type",
         "material__device_type",
@@ -522,12 +509,7 @@ class InventoryStockAdmin(admin.ModelAdmin):
         "quantity_in_base_units_display",
         "minimum_quantity_in_base_units_display",
     )
-    list_editable = (
-        "quantity",
-        "minimum_quantity",
-        "is_favorite",
-    )
-    actions = (mark_stock_favorite, unmark_stock_favorite)
+    list_editable = ("quantity", "minimum_quantity")
     list_per_page = 100
     date_hierarchy = "updated_at"
 
@@ -567,7 +549,6 @@ class InventoryStockAdmin(admin.ModelAdmin):
             "Extra",
             {
                 "fields": (
-                    "is_favorite",
                     "notes",
                     "created_at",
                     "updated_at",

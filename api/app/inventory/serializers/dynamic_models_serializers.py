@@ -215,6 +215,7 @@ class InventoryStockListSerializer(serializers.ModelSerializer):
     is_low_stock = serializers.SerializerMethodField()
     is_expired = serializers.SerializerMethodField()
     is_expiring_soon = serializers.SerializerMethodField()
+    is_favorite = serializers.SerializerMethodField()
     source_order = InventoryStockSourceOrderSummarySerializer(read_only=True)
 
     class Meta:
@@ -284,6 +285,14 @@ class InventoryStockListSerializer(serializers.ModelSerializer):
 
         return today <= obj.expiry_date <= soon_date
 
+    def get_is_favorite(self, obj):
+        request = self.context.get("request")
+
+        if request is None or not request.user.is_authenticated:
+            return False
+
+        return any(user.id == request.user.id for user in obj.favorite_users.all())
+
 
 class InventoryStockDetailSerializer(serializers.ModelSerializer):
     """
@@ -337,6 +346,7 @@ class InventoryStockDetailSerializer(serializers.ModelSerializer):
         required=False,
         allow_null=True,
     )
+    is_favorite = serializers.SerializerMethodField()
 
     class Meta:
         model = InventoryStock
@@ -454,6 +464,14 @@ class InventoryStockDetailSerializer(serializers.ModelSerializer):
         if unit_name:
             return f"{obj.quantity} {unit_name}"
         return str(obj.quantity)
+
+    def get_is_favorite(self, obj):
+        request = self.context.get("request")
+
+        if request is None or not request.user.is_authenticated:
+            return False
+
+        return any(user.id == request.user.id for user in obj.favorite_users.all())
 
 
 class OrderListSerializer(serializers.ModelSerializer):

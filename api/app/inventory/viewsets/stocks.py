@@ -1,7 +1,9 @@
 from datetime import timedelta
 
+from django.contrib.auth import get_user_model
 from django.db import models
 from django.db import transaction
+from django.db.models import Prefetch
 from django.utils import timezone
 from rest_framework import viewsets
 from rest_framework.decorators import action
@@ -19,6 +21,8 @@ from ..serializers.dynamic_models_serializers import (
 )
 from ..stock_queryset import apply_inventory_stock_list_filters, build_inventory_stock_base_queryset
 from .shared import get_current_date_safe
+
+User = get_user_model()
 
 
 class InventoryStockViewSet(viewsets.ModelViewSet):
@@ -104,7 +108,21 @@ class InventoryStockViewSet(viewsets.ModelViewSet):
         if not include_archived:
             queryset = queryset.filter(is_archived=False)
 
-        return apply_inventory_stock_list_filters(queryset, self.request.query_params)
+        queryset = apply_inventory_stock_list_filters(
+            queryset,
+            self.request.query_params,
+            self.request.user,
+        )
+
+        if self.request.user.is_authenticated:
+            return queryset.prefetch_related(
+                Prefetch(
+                    "favorite_users",
+                    queryset=User.objects.filter(id=self.request.user.id),
+                )
+            )
+
+        return queryset
 
     def get_queryset(self):
         if self.action in {"retrieve", "archive", "restore"}:
@@ -114,7 +132,7 @@ class InventoryStockViewSet(viewsets.ModelViewSet):
 
     @action(detail=False, methods=["get"])
     def favorites(self, request):
-        queryset = self.get_queryset().filter(is_favorite=True)
+        queryset = self.get_queryset().filter(favorite_users=request.user)
         page = self.paginate_queryset(queryset)
 
         if page is not None:
@@ -190,8 +208,7 @@ class InventoryStockViewSet(viewsets.ModelViewSet):
     def mark_favorite(self, request, pk=None):
         stock = self.get_object()
         with transaction.atomic():
-            stock.is_favorite = True
-            stock.save(update_fields=["is_favorite"])
+            stock.favorite_users.add(request.user)
             record_inventory_action(
                 performed_action=InventoryChangeRecord.ACTION_STOCK_FAVORITED,
                 performed_by=request.user if request.user.is_authenticated else None,
@@ -207,8 +224,7 @@ class InventoryStockViewSet(viewsets.ModelViewSet):
     def unmark_favorite(self, request, pk=None):
         stock = self.get_object()
         with transaction.atomic():
-            stock.is_favorite = False
-            stock.save(update_fields=["is_favorite"])
+            stock.favorite_users.remove(request.user)
             record_inventory_action(
                 performed_action=InventoryChangeRecord.ACTION_STOCK_UNFAVORITED,
                 performed_by=request.user if request.user.is_authenticated else None,

@@ -26,4 +26,3 @@ class InventoryCsvColumns:
     ASSIGNED_PROJECT = "Assigned Project"
     ORDER_DATE = "Order Date"
     NOTES = "Notes"
-    FAVORITES = "Favorites"

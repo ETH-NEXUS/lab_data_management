@@ -32,7 +32,6 @@ from ..utils.parsing import (
     clean_value,
     merge_notes,
     split_attributes,
-    to_bool,
     to_decimal,
 )
 
@@ -206,7 +205,6 @@ def _upsert_inventory_stock(
     lot_number,
     expiry_date,
     notes,
-    is_favorite,
 ):
     """
     Create or update a stock row.
@@ -225,11 +223,10 @@ def _upsert_inventory_stock(
             "quantity": quantity,
             "minimum_quantity": minimum_quantity,
             "notes": notes,
-            "is_favorite": is_favorite,
         },
     )
 
-    # Preserve old notes / favorite if row already existed and new import is partial
+    # Preserve old notes if the row already existed and new import is partial.
     if not created:
         updated_fields = []
 
@@ -237,10 +234,6 @@ def _upsert_inventory_stock(
         if stock.notes != merged_notes:
             stock.notes = merged_notes
             updated_fields.append("notes")
-
-        if is_favorite and not stock.is_favorite:
-            stock.is_favorite = True
-            updated_fields.append("is_favorite")
 
         if updated_fields:
             stock.save(update_fields=updated_fields)
@@ -341,7 +334,6 @@ def import_inventory_row(row):
     assigned_project_name = clean_value(row.get("Assigned Project"))
     order_date_raw = clean_value(row.get("Order Date"))
     notes = clean_value(row.get("Notes"))
-    favorites_raw = clean_value(row.get("Favorites"))
 
     expiry_date = parse_flexible_date(expiry_date_raw)
     order_date = parse_flexible_datetime(order_date_raw)
@@ -408,8 +400,6 @@ def import_inventory_row(row):
         )
 
     if sector:
-        is_favorite = to_bool(favorites_raw)
-
         _upsert_inventory_stock(
             material=material,
             sector=sector,
@@ -419,7 +409,6 @@ def import_inventory_row(row):
             lot_number=lot_number,
             expiry_date=expiry_date,
             notes=notes,
-            is_favorite=is_favorite,
         )
 
     if order_status_raw or who_ordered or assigned_project_name or order_date_raw:

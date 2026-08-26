@@ -1,5 +1,6 @@
 from datetime import timedelta
 
+from django.contrib.auth import get_user_model
 from django.urls import reverse
 from django.test import override_settings
 from django.core.files.uploadedfile import SimpleUploadedFile
@@ -12,6 +13,8 @@ import tempfile
 from inventory.dynamic_models import InventoryStock, Order, Room, Sector
 from inventory.static_models import ItemType, MaterialMaster, MaterialUnit, UnitOfMeasure
 
+User = get_user_model()
+
 
 class InventoryStockMultiSectorTests(APITestCase):
     """
@@ -19,6 +22,15 @@ class InventoryStockMultiSectorTests(APITestCase):
     """
 
     def setUp(self):
+        self.first_user = User.objects.create_user(
+            username="first-inventory-user",
+            password="test-password",
+        )
+        self.second_user = User.objects.create_user(
+            username="second-inventory-user",
+            password="test-password",
+        )
+        self.client.force_authenticate(user=self.first_user)
         self.item_type = ItemType.objects.create(name="Consumable")
         self.unit_of_measure = UnitOfMeasure.objects.create(name="box")
         self.material = MaterialMaster.objects.create(
@@ -28,7 +40,6 @@ class InventoryStockMultiSectorTests(APITestCase):
         self.stock_unit = MaterialUnit.objects.create(
             material=self.material,
             unit=self.unit_of_measure,
-            display_name="box",
             base_units_per_unit="1",
             is_stock_unit=True,
         )
@@ -70,6 +81,30 @@ class InventoryStockMultiSectorTests(APITestCase):
             [sector["id"] for sector in response.data["sectors"]],
             [self.primary_sector.id, self.secondary_sector.id],
         )
+
+    def test_favorites_only_include_the_current_users_entries(self):
+        stock = InventoryStock.objects.create(
+            material=self.material,
+            sector=self.primary_sector,
+            stock_unit=self.stock_unit,
+            quantity="2",
+            minimum_quantity="1",
+        )
+
+        self.client.force_authenticate(user=self.first_user)
+        mark_response = self.client.post(reverse("inventory-stock-mark-favorite", args=[stock.id]))
+        own_favorites_response = self.client.get(reverse("inventory-stock-favorites"))
+
+        self.client.force_authenticate(user=self.second_user)
+        other_favorites_response = self.client.get(reverse("inventory-stock-favorites"))
+        other_detail_response = self.client.get(reverse("inventory-stock-detail", args=[stock.id]))
+
+        self.assertEqual(mark_response.status_code, status.HTTP_200_OK)
+        self.assertTrue(mark_response.data["is_favorite"])
+        self.assertEqual(own_favorites_response.data["count"], 1)
+        self.assertEqual(own_favorites_response.data["results"][0]["id"], stock.id)
+        self.assertEqual(other_favorites_response.data["count"], 0)
+        self.assertFalse(other_detail_response.data["is_favorite"])
 
     def test_create_stock_rejects_sectors_from_multiple_rooms(self):
         payload = {

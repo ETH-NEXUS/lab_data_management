@@ -35,7 +35,7 @@ def build_inventory_stock_base_queryset():
     )
 
 
-def apply_inventory_stock_list_filters(queryset, query_params):
+def apply_inventory_stock_list_filters(queryset, query_params, favorite_user=None):
     """
     Applies the shared stock-table filters and ordering for stock list endpoints.
 
@@ -103,9 +103,15 @@ def apply_inventory_stock_list_filters(queryset, query_params):
         filtered_queryset = filtered_queryset.filter(material__vendor_id=vendor_id)
 
     if is_favorite is not None:
-        filtered_queryset = filtered_queryset.filter(
-            is_favorite=is_favorite.lower() in ("true", "1", "yes")
-        )
+        wants_favorites = is_favorite.lower() in ("true", "1", "yes")
+
+        if favorite_user is None or not favorite_user.is_authenticated:
+            if wants_favorites:
+                return filtered_queryset.none()
+        elif wants_favorites:
+            filtered_queryset = filtered_queryset.filter(favorite_users=favorite_user)
+        else:
+            filtered_queryset = filtered_queryset.exclude(favorite_users=favorite_user)
 
     if inventory_status == "low":
         filtered_queryset = filtered_queryset.filter(
