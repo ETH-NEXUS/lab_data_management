@@ -9,28 +9,18 @@ import {
 } from '~/types/inventory'
 
 const fetchInventoryHistory = async (): Promise<InventoryHistoryListItem[]> => {
-  const allItems: InventoryHistoryListItem[] = []
-  const visitedEndpoints = new Set<string>()
-  let nextEndpoint: string | null = INVENTORY_HISTORY_ENDPOINT
-
-  while (nextEndpoint) {
-    if (visitedEndpoints.has(nextEndpoint)) break
-    visitedEndpoints.add(nextEndpoint)
-
-    const { data, error } = await useAPI<ListResponse<InventoryHistoryListItem>>(nextEndpoint, {
+  const { data, error } = await useAPI<ListResponse<InventoryHistoryListItem>>(
+    `${INVENTORY_HISTORY_ENDPOINT}?page=1&page_size=5`,
+    {
       method: 'GET',
-    })
+    },
+  )
 
-    if (error.value || !data.value) {
-      throw (error.value ?? new Error(INVENTORY_HISTORY_ERROR_MESSAGE)) as Error
-    }
-
-    const parsedPage = parseListPage(data.value)
-    allItems.push(...parsedPage.items)
-    nextEndpoint = parsedPage.nextEndpoint
+  if (error.value || !data.value) {
+    throw (error.value ?? new Error(INVENTORY_HISTORY_ERROR_MESSAGE)) as Error
   }
 
-  return allItems
+  return parseListPage(data.value).items
 }
 
 export const useInventoryHistoryQuery = () =>
