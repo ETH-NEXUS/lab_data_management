@@ -1,6 +1,12 @@
 <script setup lang="ts">
 import { computed } from 'vue'
-import { formatNumericString } from '~/components/inventory/inventory-stock-table.values'
+import {
+  getHistoryRecordItemName,
+  getHistoryRecordProjectExperimentLabel,
+  getHistoryRecordQuantityLabel,
+  getHistoryRecordTargetPath,
+  getHistoryRecordUserName,
+} from '~/components/inventory/inventory-history.values'
 import { useInventoryCheckInOutHistoryQuery } from '~/composables/inventory/useInventoryCheckInOutHistoryQuery'
 import type { InventoryHistoryListItem } from '~/types/inventory'
 import { formatDateTime } from '~/utils/dateTime'
@@ -11,46 +17,10 @@ const checkInOutRecords = computed<InventoryHistoryListItem[]>(() => checkInOutH
 
 const isCheckOut = (record: InventoryHistoryListItem): boolean => record.performed_action === 'usage_created'
 
-const getItemName = (record: InventoryHistoryListItem): string => {
-  return (
-    record.inventory_stock?.material.product_name ??
-    record.material_usage?.material?.product_name ??
-    record.material_usage?.inventory_stock.material.product_name ??
-    t('inventory.stock_table.values.none')
-  )
-}
-
-const getUserName = (record: InventoryHistoryListItem): string => {
-  return record.performed_by?.label || record.performed_by?.full_name || record.performed_by?.username || 'System'
-}
-
-const getQuantityLabel = (record: InventoryHistoryListItem): string => {
-  const quantity = record.quantity_delta ? formatNumericString(record.quantity_delta) : '—'
-  const unit = record.quantity_unit?.display_name || record.quantity_unit?.unit.label || ''
-  return `${quantity} ${unit}`.trim()
-}
-
-const getProjectExperimentLabel = (record: InventoryHistoryListItem): string => {
-  const project = record.project ?? record.material_usage?.project ?? record.order?.project
-  const experiment = record.experiment ?? record.material_usage?.experiment
-  const projectName = project?.label || project?.name
-  const experimentName = experiment?.label || experiment?.name
-
-  if (projectName && experimentName) {
-    return `${projectName} · ${experimentName}`
-  }
-
-  return projectName || experimentName || '—'
-}
-
 const openRecord = (record: InventoryHistoryListItem): void => {
-  if (record.inventory_stock) {
-    navigateTo(`/inventory/all?preset=all&stock=${record.inventory_stock.id}`)
-    return
-  }
-
-  if (record.material_usage) {
-    navigateTo('/inventory/usages')
+  const targetPath = getHistoryRecordTargetPath(record)
+  if (targetPath) {
+    navigateTo(targetPath)
   }
 }
 </script>
@@ -95,10 +65,12 @@ const openRecord = (record: InventoryHistoryListItem): void => {
                 ? t('inventory.page.actions.recent_check_in_out.check_out')
                 : t('inventory.page.actions.recent_check_in_out.check_in')
             }}
-            · {{ getItemName(record) }}
+            · {{ getHistoryRecordItemName(record, t('inventory.stock_table.values.none')) }}
           </p>
           <p class="truncate text-xs text-slate-600">
-            {{ getUserName(record) }} · {{ getQuantityLabel(record) }} · {{ getProjectExperimentLabel(record) }}
+            {{ getHistoryRecordUserName(record, 'System') }} ·
+            {{ getHistoryRecordQuantityLabel(record, t('inventory.stock_table.values.none')) }} ·
+            {{ getHistoryRecordProjectExperimentLabel(record, t('inventory.stock_table.values.none')) }}
           </p>
           <p class="text-xs text-slate-500">
             {{ formatDateTime(record.performed_at, { dateStyle: 'medium', timeStyle: 'short' }) }}

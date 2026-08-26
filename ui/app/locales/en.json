@@ -458,7 +458,8 @@
         },
         "recent_activities": {
           "title": "Recent activities",
-          "description": "Inspect latest inventory changes."
+          "description": "Inspect latest inventory changes.",
+          "view_all": "View all activities"
         },
         "recent_check_in_out": {
           "title": "Recent check-ins / check-outs",
@@ -501,6 +502,26 @@
       "loading": "Loading inventory stock items...",
       "empty": "No inventory stock items found.",
       "error": "Failed to load inventory stock items."
+    },
+    "history_workspace": {
+      "title": "Inventory activity history",
+      "description": "Latest inventory changes, 20 records per page.",
+      "loading": "Loading inventory history...",
+      "empty": "No inventory activity found.",
+      "pagination": {
+        "page": "Page {current} of {total}",
+        "previous": "Previous page",
+        "next": "Next page"
+      },
+      "table": {
+        "action": "Action",
+        "item": "Item",
+        "user": "User",
+        "quantity": "Quantity",
+        "context": "Project / experiment",
+        "performed_at": "Performed at",
+        "open": "Open source record"
+      }
     },
     "stock_table": {
       "groups": {
