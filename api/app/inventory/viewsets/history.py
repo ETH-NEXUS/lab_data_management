@@ -88,6 +88,7 @@ class InventoryChangeRecordViewSet(viewsets.ReadOnlyModelViewSet):
         project_id = self.request.query_params.get("project")
         experiment_id = self.request.query_params.get("experiment")
         material_id = self.request.query_params.get("material")
+        activity_group = self.request.query_params.get("activity_group")
         search = self.request.query_params.get("search")
 
         if performed_action:
@@ -116,6 +117,16 @@ class InventoryChangeRecordViewSet(viewsets.ReadOnlyModelViewSet):
                 Q(inventory_stock__material_id=material_id)
                 | Q(order__material_id=material_id)
                 | Q(material_usage__inventory_stock__material_id=material_id)
+            )
+
+        if activity_group == "check_in_out":
+            queryset = queryset.filter(
+                Q(performed_action=InventoryChangeRecord.ACTION_STOCK_CREATED)
+                | Q(
+                    performed_action=InventoryChangeRecord.ACTION_STOCK_UPDATED,
+                    quantity_delta__gt=0,
+                )
+                | Q(performed_action=InventoryChangeRecord.ACTION_USAGE_CREATED)
             )
 
         if search:

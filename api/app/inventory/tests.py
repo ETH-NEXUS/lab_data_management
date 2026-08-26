@@ -324,6 +324,44 @@ class InventoryStockMultiSectorTests(APITestCase):
         self.assertEqual(len(response.data["results"]), 5)
         self.assertIsNotNone(response.data["next"])
 
+    def test_history_endpoint_filters_check_in_and_check_out_records(self):
+        check_in_record = InventoryChangeRecord.objects.create(
+            performed_action=InventoryChangeRecord.ACTION_STOCK_CREATED,
+            performed_by=self.first_user,
+            quantity_delta="2",
+        )
+        stock_increase_record = InventoryChangeRecord.objects.create(
+            performed_action=InventoryChangeRecord.ACTION_STOCK_UPDATED,
+            performed_by=self.first_user,
+            quantity_delta="1",
+        )
+        check_out_record = InventoryChangeRecord.objects.create(
+            performed_action=InventoryChangeRecord.ACTION_USAGE_CREATED,
+            performed_by=self.first_user,
+            quantity_delta="1",
+        )
+        InventoryChangeRecord.objects.create(
+            performed_action=InventoryChangeRecord.ACTION_STOCK_UPDATED,
+            performed_by=self.first_user,
+            quantity_delta="-1",
+        )
+        InventoryChangeRecord.objects.create(
+            performed_action=InventoryChangeRecord.ACTION_STOCK_ARCHIVED,
+            performed_by=self.first_user,
+        )
+
+        response = self.client.get(
+            reverse("inventory-history-list"),
+            {"activity_group": "check_in_out", "page": 1, "page_size": 5},
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data["count"], 3)
+        self.assertEqual(
+            {record["id"] for record in response.data["results"]},
+            {check_in_record.id, stock_increase_record.id, check_out_record.id},
+        )
+
 
 class InventoryMaterialReagentTests(APITestCase):
     """
