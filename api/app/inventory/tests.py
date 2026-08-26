@@ -10,7 +10,9 @@ from rest_framework.test import APITestCase
 import shutil
 import tempfile
 
+from core.models import Project
 from inventory.dynamic_models import InventoryStock, Order, Room, Sector
+from inventory.history_models import InventoryChangeRecord
 from inventory.static_models import ItemType, MaterialMaster, MaterialUnit, UnitOfMeasure
 
 User = get_user_model()
@@ -48,12 +50,14 @@ class InventoryStockMultiSectorTests(APITestCase):
         self.secondary_sector = Sector.objects.create(room=self.room, name="3.2")
         self.other_room = Room.objects.create(name="C41")
         self.other_room_sector = Sector.objects.create(room=self.other_room, name="1.1")
+        self.project = Project.objects.create(name="Inventory test project")
         self.order = Order.objects.create(
             material=self.material,
             order_unit=self.stock_unit,
             amount="2",
             order_date="2026-07-05T10:00:00Z",
             status=Order.STATUS_ORDERED,
+            project=self.project,
         )
 
     def test_create_stock_accepts_multiple_sector_ids(self):
@@ -208,8 +212,14 @@ class InventoryStockMultiSectorTests(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
 
         stock = InventoryStock.objects.get(id=response.data["id"])
+        history_record = stock.change_records.get(
+            performed_action=InventoryChangeRecord.ACTION_STOCK_CREATED,
+        )
         self.assertEqual(stock.source_order_id, self.order.id)
         self.assertEqual(response.data["source_order"]["id"], self.order.id)
+        self.assertEqual(history_record.performed_by, self.first_user)
+        self.assertEqual(history_record.order_id, self.order.id)
+        self.assertEqual(history_record.project_id, self.project.id)
 
     def test_archive_sets_timestamp_and_creates_history_record(self):
         stock = InventoryStock.objects.create(

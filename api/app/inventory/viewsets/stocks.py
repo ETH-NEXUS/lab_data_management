@@ -55,11 +55,15 @@ class InventoryStockViewSet(viewsets.ModelViewSet):
         with transaction.atomic():
             stock = serializer.save()
             performed_by = self.request.user if self.request.user.is_authenticated else None
+            source_order = stock.source_order
+            project = source_order.project if source_order else None
 
             record_inventory_action(
                 performed_action=InventoryChangeRecord.ACTION_STOCK_CREATED,
                 performed_by=performed_by,
                 inventory_stock=stock,
+                order=source_order,
+                project=project,
                 quantity_delta=stock.quantity,
                 quantity_unit=stock.stock_unit,
                 notes=f"Created stock entry for {self._build_stock_history_note(stock)}.",
