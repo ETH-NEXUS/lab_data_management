@@ -3,6 +3,7 @@ export const INVENTORY_MATERIALS_ENDPOINT = 'inventory/materials/'
 export const INVENTORY_MATERIAL_UNITS_ENDPOINT = 'inventory/material-units/'
 export const INVENTORY_ORDERS_ENDPOINT = 'inventory/orders/'
 export const INVENTORY_USAGES_ENDPOINT = 'inventory/material-usages/'
+export const INVENTORY_HISTORY_ENDPOINT = 'inventory/history/'
 export const INVENTORY_STOCK_TABLE_PREFERENCES_ENDPOINT = 'inventory/stock-table-preferences/'
 
 export const INVENTORY_ROOMS_ENDPOINT = 'inventory/rooms/'
@@ -21,6 +22,7 @@ export const INVENTORY_MATERIALS_QUERY_KEY = ['inventory-materials']
 export const INVENTORY_MATERIAL_UNITS_QUERY_KEY = ['inventory-material-units']
 export const INVENTORY_ORDERS_QUERY_KEY = ['inventory-orders']
 export const INVENTORY_USAGES_QUERY_KEY = ['inventory-usages']
+export const INVENTORY_HISTORY_QUERY_KEY = ['inventory-history']
 export const INVENTORY_LOOKUPS_QUERY_KEY = ['inventory-lookups']
 export const INVENTORY_STOCK_TABLE_PREFERENCES_QUERY_KEY = ['inventory-stock-table-preferences']
 
@@ -33,6 +35,7 @@ export const INVENTORY_ORDERS_ERROR_MESSAGE = 'Failed to load inventory orders.'
 export const INVENTORY_ORDER_ERROR_MESSAGE = 'Failed to load inventory order.'
 export const INVENTORY_USAGES_ERROR_MESSAGE = 'Failed to load material usages.'
 export const INVENTORY_USAGE_ERROR_MESSAGE = 'Failed to load material usage.'
+export const INVENTORY_HISTORY_ERROR_MESSAGE = 'Failed to load inventory history.'
 export const INVENTORY_CREATE_STOCK_ERROR_MESSAGE = 'Failed to create inventory stock item.'
 export const INVENTORY_UPDATE_STOCK_ERROR_MESSAGE = 'Failed to update inventory stock item.'
 export const INVENTORY_CREATE_MATERIAL_ERROR_MESSAGE = 'Failed to create inventory material.'
@@ -240,6 +243,21 @@ export type InventoryUsageDetail = InventoryUsageListItem & {
   experiment_id?: number | null
   inventory_stock_id?: number
   usage_unit_id?: number
+}
+
+export type InventoryHistoryListItem = {
+  id: number
+  performed_action: string
+  performed_by: InventoryUserSummary | null
+  performed_at: string
+  inventory_stock: InventoryStockListItem | null
+  order: InventoryOrderListItem | null
+  material_usage: InventoryUsageListItem | null
+  project: InventoryProjectSummary | null
+  experiment: InventoryExperimentSummary | null
+  quantity_delta: string | null
+  quantity_unit: InventoryMaterialUnitSummary | null
+  notes: string | null
 }
 
 export type InventoryStockPreset = 'all' | 'favorite' | 'low_stock' | 'expired' | 'archived'
