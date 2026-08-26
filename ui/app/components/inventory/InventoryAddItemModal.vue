@@ -542,13 +542,6 @@ const onSafetyDataSheetChange = (event: Event): void => {
               />
             </div>
 
-            <div class="flex items-end pb-1">
-              <label class="inline-flex items-center gap-2 text-sm text-slate-700">
-                <input v-model="formState.isFavorite" type="checkbox" />
-                Mark as favorite
-              </label>
-            </div>
-
             <div class="space-y-1 sm:col-span-2">
               <label class="block text-sm font-medium text-slate-700">Notes</label>
               <textarea

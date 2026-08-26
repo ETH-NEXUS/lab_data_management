@@ -299,7 +299,6 @@ export type CreateInventoryStockPayload = {
   source_order_id?: number | null
   lot_number?: string | null
   expiry_date?: string | null
-  is_favorite?: boolean
   notes?: string | null
 }
 

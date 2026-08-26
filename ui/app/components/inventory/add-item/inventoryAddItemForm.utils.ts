@@ -27,14 +27,13 @@ export type AddItemFormState = {
   lotNumber: string
   expiryDate: string
   notes: string
-  isFavorite: boolean
 }
 
 /**
  * Builds empty draft values for the add-item stock form.
  *
  * Returned data example:
- * - `{ itemTypeId: '', materialId: '', roomId: '', sectorIds: [], reagentStorageTemperature: '', reagentSafetyDataSheet: null, additionalBrandId: '', additionalDefaultCost: '', additionalManufacturerId: '', additionalVendorId: '', additionalManufacturerCatalogNumber: '', additionalVendorCatalogNumber: '', additionalCapacityValue: '', additionalCapacityUnit: '', additionalDescription: '', additionalSerialNumber: '', additionalOrderNumber: '', additionalLifetimeDays: '', additionalIsActive: '', stockUnitId: '', quantity: '', minimumQuantity: '', lotNumber: '', expiryDate: '', notes: '', isFavorite: false }`
+ * - `{ itemTypeId: '', materialId: '', roomId: '', sectorIds: [], reagentStorageTemperature: '', reagentSafetyDataSheet: null, additionalBrandId: '', additionalDefaultCost: '', additionalManufacturerId: '', additionalVendorId: '', additionalManufacturerCatalogNumber: '', additionalVendorCatalogNumber: '', additionalCapacityValue: '', additionalCapacityUnit: '', additionalDescription: '', additionalSerialNumber: '', additionalOrderNumber: '', additionalLifetimeDays: '', additionalIsActive: '', stockUnitId: '', quantity: '', minimumQuantity: '', lotNumber: '', expiryDate: '', notes: '' }`
  */
 export const buildInitialFormState = (): AddItemFormState => ({
   itemTypeId: '',
@@ -62,7 +61,6 @@ export const buildInitialFormState = (): AddItemFormState => ({
   lotNumber: '',
   expiryDate: '',
   notes: '',
-  isFavorite: false,
 })
 
 /**

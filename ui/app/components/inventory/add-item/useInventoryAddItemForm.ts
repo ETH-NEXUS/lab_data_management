@@ -140,10 +140,10 @@ export const useInventoryAddItemForm = ({ open, onSaved }: UseInventoryAddItemFo
    * Builds API payload for inventory stock creation from form draft state.
    *
    * Accepted draft example:
-   * - `{ materialId: '12', sectorIds: ['7', '8'], stockUnitId: '31', quantity: '2.5', minimumQuantity: '1', lotNumber: 'ABC-42', expiryDate: '2026-06-30', notes: 'Top shelf', isFavorite: true }`
+   * - `{ materialId: '12', sectorIds: ['7', '8'], stockUnitId: '31', quantity: '2.5', minimumQuantity: '1', lotNumber: 'ABC-42', expiryDate: '2026-06-30', notes: 'Top shelf' }`
    *
    * Returned payload example:
-   * - `{ material_id: 12, sector_ids: [7, 8], stock_unit_id: 31, quantity: '2.5', minimum_quantity: '1', lot_number: 'ABC-42', expiry_date: '2026-06-30', notes: 'Top shelf', is_favorite: true }`
+   * - `{ material_id: 12, sector_ids: [7, 8], stock_unit_id: 31, quantity: '2.5', minimum_quantity: '1', lot_number: 'ABC-42', expiry_date: '2026-06-30', notes: 'Top shelf' }`
    */
   const buildCreateStockPayload = (): CreateInventoryStockPayload | null => {
     const materialId = Number.parseInt(formState.value.materialId, 10)
@@ -175,7 +175,6 @@ export const useInventoryAddItemForm = ({ open, onSaved }: UseInventoryAddItemFo
       lot_number: formState.value.lotNumber.trim() || null,
       expiry_date: formState.value.expiryDate.trim() || null,
       notes: formState.value.notes.trim() || null,
-      is_favorite: formState.value.isFavorite,
     }
   }
 
