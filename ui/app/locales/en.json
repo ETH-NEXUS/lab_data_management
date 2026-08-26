@@ -451,6 +451,11 @@
           "description": "Select a device to view matching inventory items.",
           "placeholder": "Select device"
         },
+        "awaiting_check_in": {
+          "title": "Orders awaiting check-in",
+          "description": "Review arrived orders that have no stock item yet.",
+          "open_order": "Open order"
+        },
         "recent_activities": {
           "title": "Recent activities",
           "description": "Inspect latest inventory changes."

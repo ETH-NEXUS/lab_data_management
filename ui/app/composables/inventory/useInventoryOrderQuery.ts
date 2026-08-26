@@ -49,10 +49,28 @@ const fetchInventoryOrder = async (orderId: number): Promise<InventoryOrderDetai
   return data.value
 }
 
+const fetchAwaitingCheckInOrders = async (): Promise<InventoryOrderListItem[]> => {
+  const { data, error } = await useAPI<InventoryOrderListItem[]>(`${INVENTORY_ORDERS_ENDPOINT}awaiting_check_in/`, {
+    method: 'GET',
+  })
+
+  if (error.value || !data.value) {
+    throw (error.value ?? new Error(INVENTORY_ORDERS_ERROR_MESSAGE)) as Error
+  }
+
+  return data.value
+}
+
 export const useInventoryOrdersQuery = () =>
   useQuery({
     queryKey: INVENTORY_ORDERS_QUERY_KEY,
     queryFn: fetchInventoryOrders,
+  })
+
+export const useInventoryAwaitingCheckInOrdersQuery = () =>
+  useQuery({
+    queryKey: [...INVENTORY_ORDERS_QUERY_KEY, 'awaiting-check-in'],
+    queryFn: fetchAwaitingCheckInOrders,
   })
 
 export const useInventoryOrderQuery = (orderIdRef: ComputedRef<number>) =>

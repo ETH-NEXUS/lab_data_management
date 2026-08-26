@@ -12,6 +12,7 @@ import {
   type InventoryStockPageQueryParams,
 } from '~/composables/inventory/useInventoryStockPageQuery'
 import { useInventoryLookupsQuery } from '~/composables/inventory/useInventoryLookupQuery'
+import { useInventoryAwaitingCheckInOrdersQuery } from '~/composables/inventory/useInventoryOrderQuery'
 import { useInventoryStocksQuery } from '~/composables/inventory/useInventoryStockQuery'
 import { useInventoryStockTablePreferenceStore } from '~/stores/inventory/InventoryStockTablePreferenceStore'
 import type { InventoryStockListItem, InventoryStockPreset } from '~/types/inventory'
@@ -40,6 +41,7 @@ const emit = defineEmits<{
 const { t } = useI18n()
 const stocksQuery = useInventoryStocksQuery()
 const lookupsQuery = useInventoryLookupsQuery()
+const awaitingCheckInOrdersQuery = useInventoryAwaitingCheckInOrdersQuery()
 const stockTablePreferenceStore = useInventoryStockTablePreferenceStore()
 const stocks = computed<InventoryStockListItem[]>(() => stocksQuery.data.value ?? [])
 const selectedDeviceTypeId = ref<string>('')
@@ -64,6 +66,7 @@ const deviceStockQueryParams = computed<InventoryStockPageQueryParams>(() => ({
 }))
 const deviceStocksQuery = useInventoryStockPageQuery(deviceStockQueryParams)
 const deviceStocks = computed<InventoryStockListItem[]>(() => deviceStocksQuery.data.value?.results ?? [])
+const awaitingCheckInOrders = computed(() => (awaitingCheckInOrdersQuery.data.value ?? []).slice(0, 5))
 const archivedStockQueryParams = computed<InventoryStockPageQueryParams>(() => ({
   preset: 'archived',
   page: 1,
@@ -78,15 +81,9 @@ const archivedStocks = computed<InventoryStockListItem[]>(() => archivedStocksQu
  * Creates lower-grid actions in the existing card visual style.
  *
  * Returned data example:
- * - `[{ id: 'devices', title: 'Devices', description: 'Manage equipment...', icon: 'i-heroicons-computer-desktop' }]`
+ * - `[{ id: 'recent_activities', title: 'Recent activities', description: 'Inspect latest inventory changes.', icon: 'i-heroicons-bolt' }]`
  */
 const inventoryViews = computed<InventoryActionItem[]>(() => [
-  {
-    id: 'devices',
-    title: t('inventory.page.actions.devices.title'),
-    description: t('inventory.page.actions.devices.description'),
-    icon: 'i-heroicons-computer-desktop',
-  },
   {
     id: 'recent_activities',
     title: t('inventory.page.actions.recent_activities.title'),
@@ -103,6 +100,10 @@ const inventoryViews = computed<InventoryActionItem[]>(() => [
 
 const onSelectAction = (actionId: string): void => {
   emit('select-action', actionId)
+}
+
+const openOrder = (orderId: number): void => {
+  navigateTo(`/inventory/orders?order=${orderId}`)
 }
 
 const getPreviewItems = (preset: InventoryStockPreset): InventoryStockListItem[] => {
@@ -291,24 +292,67 @@ const isPreviewLoading = (preset: InventoryStockPreset): boolean => {
           <p v-else-if="deviceStocks.length === 0" class="text-sm text-slate-600">
             {{ t('inventory.stock_workspace.empty') }}
           </p>
-          <button
-            v-for="stock in deviceStocks"
-            v-else
-            :key="`device-${stock.id}`"
-            type="button"
-            class="grid w-full grid-cols-[minmax(0,1fr)_auto] items-center gap-3 rounded-md px-2 py-2 text-left hover:bg-slate-50"
-            @click="openStockPreviewItem('all', stock.id)"
-          >
-            <p class="min-w-0 truncate text-sm font-medium text-slate-800">
-              {{ stock.material.product_name }}
-            </p>
-            <div class="flex min-w-0 items-center gap-2">
-              <p class="max-w-28 truncate text-right text-xs text-slate-500">
-                {{ stock.location_label ?? t('inventory.stock_table.values.unknown_location') }}
+          <template v-else>
+            <button
+              v-for="stock in deviceStocks"
+              :key="`device-${stock.id}`"
+              type="button"
+              class="grid w-full grid-cols-[minmax(0,1fr)_auto] items-center gap-3 rounded-md px-2 py-2 text-left hover:bg-slate-50"
+              @click="openStockPreviewItem('all', stock.id)"
+            >
+              <p class="min-w-0 truncate text-sm font-medium text-slate-800">
+                {{ stock.material.product_name }}
               </p>
-              <UIcon name="i-heroicons-arrow-top-right-on-square" class="h-4 w-4 shrink-0 text-slate-400" />
+              <div class="flex min-w-0 items-center gap-2">
+                <p class="max-w-28 truncate text-right text-xs text-slate-500">
+                  {{ stock.location_label ?? t('inventory.stock_table.values.unknown_location') }}
+                </p>
+                <UIcon name="i-heroicons-arrow-top-right-on-square" class="h-4 w-4 shrink-0 text-slate-400" />
+              </div>
+            </button>
+          </template>
+        </div>
+      </UCard>
+
+      <UCard :ui="{ root: 'core-card divide-y divide-slate-200/70' }">
+        <template #header>
+          <div class="flex items-start gap-2">
+            <span class="inventory-icon-chip">
+              <UIcon name="i-heroicons-truck" class="size-5" />
+            </span>
+            <div>
+              <p class="text-sm font-semibold text-slate-800">
+                {{ t('inventory.page.actions.awaiting_check_in.title') }}
+              </p>
+              <p class="text-sm text-slate-600">{{ t('inventory.page.actions.awaiting_check_in.description') }}</p>
             </div>
-          </button>
+          </div>
+        </template>
+
+        <div class="space-y-2">
+          <p v-if="awaitingCheckInOrdersQuery.isPending.value" class="text-sm text-slate-600">
+            {{ t('inventory.stock_workspace.loading') }}
+          </p>
+          <p v-else-if="awaitingCheckInOrders.length === 0" class="text-sm text-slate-600">
+            {{ t('inventory.stock_workspace.empty') }}
+          </p>
+          <div
+            v-for="order in awaitingCheckInOrders"
+            :key="order.id"
+            class="flex items-center gap-2 rounded-md px-2 py-2"
+          >
+            <p class="min-w-0 flex-1 truncate text-sm font-medium text-slate-800">
+              {{ order.material.product_name }}
+            </p>
+            <UButton
+              variant="ghost"
+              color="neutral"
+              icon="i-heroicons-arrow-top-right-on-square"
+              :aria-label="t('inventory.page.actions.awaiting_check_in.open_order')"
+              :title="t('inventory.page.actions.awaiting_check_in.open_order')"
+              @click="openOrder(order.id)"
+            />
+          </div>
         </div>
       </UCard>
     </div>
