@@ -82,6 +82,9 @@ const dashboardTilePreferences = computed(() => dashboardTilePreferencesQuery.da
 const visibleDashboardTileKeys = computed<Set<string>>(() => {
   return new Set(dashboardTilePreferences.value.filter((tile) => tile.is_visible).map((tile) => tile.key))
 })
+const dashboardTilePositions = computed<Map<string, number>>(() => {
+  return new Map(dashboardTilePreferences.value.map((tile) => [tile.key, tile.position]))
+})
 
 const openOrder = (orderId: number): void => {
   navigateTo(`/inventory/orders?order=${orderId}`)
@@ -92,6 +95,10 @@ const openUsages = (): void => {
 }
 
 const isDashboardTileVisible = (tileKey: string): boolean => visibleDashboardTileKeys.value.has(tileKey)
+
+const getDashboardTilePosition = (tileKey: string): number => {
+  return dashboardTilePositions.value.get(tileKey) ?? Number.MAX_SAFE_INTEGER
+}
 
 const saveDashboardTileKeys = async (tileKeys: string[]): Promise<void> => {
   try {
@@ -209,10 +216,17 @@ const isPreviewLoading = (preset: InventoryStockPreset): boolean => {
       {{ t('inventory.dashboard_tiles.error') }}
     </p>
     <div v-else class="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+      <p
+        v-if="visibleDashboardTileKeys.size === 0"
+        class="rounded-lg border border-dashed border-slate-200 px-4 py-5 text-sm text-slate-600 sm:col-span-2 xl:col-span-3"
+      >
+        {{ t('inventory.dashboard_tiles.empty_dashboard') }}
+      </p>
       <UCard
         v-for="card in visiblePreviewCards"
         :key="card.id"
         :ui="{ root: 'core-card divide-y divide-slate-200/70' }"
+        :style="{ order: getDashboardTilePosition(card.id) }"
       >
         <template #header>
           <div class="flex items-start justify-between gap-3">
@@ -269,11 +283,21 @@ const isPreviewLoading = (preset: InventoryStockPreset): boolean => {
         </div>
       </UCard>
 
-      <InventoryRecentActivitiesCard v-if="isDashboardTileVisible('recent_activities')" />
+      <InventoryRecentActivitiesCard
+        v-if="isDashboardTileVisible('recent_activities')"
+        :style="{ order: getDashboardTilePosition('recent_activities') }"
+      />
 
-      <InventoryCheckInOutCard v-if="isDashboardTileVisible('check_in_out')" />
+      <InventoryCheckInOutCard
+        v-if="isDashboardTileVisible('check_in_out')"
+        :style="{ order: getDashboardTilePosition('check_in_out') }"
+      />
 
-      <UCard v-if="isDashboardTileVisible('device_items')" :ui="{ root: 'core-card divide-y divide-slate-200/70' }">
+      <UCard
+        v-if="isDashboardTileVisible('device_items')"
+        :ui="{ root: 'core-card divide-y divide-slate-200/70' }"
+        :style="{ order: getDashboardTilePosition('device_items') }"
+      >
         <template #header>
           <div class="space-y-3">
             <div class="flex items-center gap-2">
@@ -333,6 +357,7 @@ const isPreviewLoading = (preset: InventoryStockPreset): boolean => {
       <UCard
         v-if="isDashboardTileVisible('ldm_experiment_usages')"
         :ui="{ root: 'core-card divide-y divide-slate-200/70' }"
+        :style="{ order: getDashboardTilePosition('ldm_experiment_usages') }"
       >
         <template #header>
           <div class="flex items-start gap-2">
@@ -385,6 +410,7 @@ const isPreviewLoading = (preset: InventoryStockPreset): boolean => {
       <UCard
         v-if="isDashboardTileVisible('harvest_project_usages')"
         :ui="{ root: 'core-card divide-y divide-slate-200/70' }"
+        :style="{ order: getDashboardTilePosition('harvest_project_usages') }"
       >
         <template #header>
           <div class="flex items-start gap-2">
@@ -441,6 +467,7 @@ const isPreviewLoading = (preset: InventoryStockPreset): boolean => {
       <UCard
         v-if="isDashboardTileVisible('awaiting_check_in')"
         :ui="{ root: 'core-card divide-y divide-slate-200/70' }"
+        :style="{ order: getDashboardTilePosition('awaiting_check_in') }"
       >
         <template #header>
           <div class="flex items-start gap-2">

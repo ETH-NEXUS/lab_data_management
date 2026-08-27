@@ -506,13 +506,19 @@
     },
     "dashboard_tiles": {
       "title": "Customize dashboard",
-      "description": "Choose the 4 to 6 inventory cards that are most useful for your work.",
+      "description": "Choose the inventory cards that are most useful for your work and arrange their order.",
       "configure": "Customize dashboard",
-      "selected_count": "{count} of {maximum} cards selected",
+      "selected_count": "{count} cards selected",
+      "selected_title": "Displayed cards",
+      "available_title": "Available cards",
+      "no_selected_tiles": "No cards are selected.",
+      "move_up": "Move card up",
+      "move_down": "Move card down",
       "cancel": "Cancel",
       "save": "Save dashboard",
       "loading": "Loading your dashboard settings...",
-      "error": "Failed to load dashboard settings."
+      "error": "Failed to load dashboard settings.",
+      "empty_dashboard": "No dashboard cards are selected. Use Customize dashboard to add cards."
     },
     "stock_workspace": {
       "title": "Inventory stock",

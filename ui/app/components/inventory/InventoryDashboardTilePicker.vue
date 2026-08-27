@@ -17,16 +17,17 @@ const emit = defineEmits<{
 const { t } = useI18n()
 const isOpen = ref(false)
 const selectedTileKeys = ref<string[]>([])
-const minimumTileCount = 4
-const maximumTileCount = 6
 
-const sortedTiles = computed<InventoryDashboardTilePreference[]>(() => {
-  return [...props.tiles].sort((leftTile, rightTile) => leftTile.position - rightTile.position)
+const selectedTiles = computed<InventoryDashboardTilePreference[]>(() => {
+  return selectedTileKeys.value
+    .map((tileKey) => props.tiles.find((tile) => tile.key === tileKey))
+    .filter((tile): tile is InventoryDashboardTilePreference => tile !== undefined)
 })
 
-const selectedTileCount = computed<number>(() => selectedTileKeys.value.length)
-const canSave = computed<boolean>(() => {
-  return selectedTileCount.value >= minimumTileCount && selectedTileCount.value <= maximumTileCount
+const availableTiles = computed<InventoryDashboardTilePreference[]>(() => {
+  return props.tiles
+    .filter((tile) => !isTileSelected(tile.key))
+    .sort((leftTile, rightTile) => leftTile.position - rightTile.position)
 })
 
 watch(
@@ -42,26 +43,29 @@ watch(
 
 const isTileSelected = (tileKey: string): boolean => selectedTileKeys.value.includes(tileKey)
 
-const isTileDisabled = (tileKey: string): boolean => {
-  if (isTileSelected(tileKey)) {
-    return selectedTileCount.value <= minimumTileCount
-  }
-
-  return selectedTileCount.value >= maximumTileCount
-}
-
 const toggleTile = (tileKey: string, isSelected: boolean): void => {
-  if (isSelected && !isTileSelected(tileKey) && selectedTileCount.value < maximumTileCount) {
+  if (isSelected && !isTileSelected(tileKey)) {
     selectedTileKeys.value.push(tileKey)
   }
 
-  if (!isSelected && isTileSelected(tileKey) && selectedTileCount.value > minimumTileCount) {
+  if (!isSelected && isTileSelected(tileKey)) {
     selectedTileKeys.value = selectedTileKeys.value.filter((selectedTileKey) => selectedTileKey !== tileKey)
   }
 }
 
+const moveTile = (tileKey: string, offset: -1 | 1): void => {
+  const currentIndex = selectedTileKeys.value.indexOf(tileKey)
+  const nextIndex = currentIndex + offset
+
+  if (currentIndex < 0 || nextIndex < 0 || nextIndex >= selectedTileKeys.value.length) return
+
+  const nextTileKeys = [...selectedTileKeys.value]
+  const [tileToMove] = nextTileKeys.splice(currentIndex, 1)
+  nextTileKeys.splice(nextIndex, 0, tileToMove)
+  selectedTileKeys.value = nextTileKeys
+}
+
 const saveSelection = (): void => {
-  if (!canSave.value) return
   emit('save', selectedTileKeys.value)
 }
 </script>
@@ -88,19 +92,65 @@ const saveSelection = (): void => {
       <template #body>
         <div class="space-y-4 p-6">
           <p class="text-sm text-slate-600">
-            {{ t('inventory.dashboard_tiles.selected_count', { count: selectedTileCount, maximum: maximumTileCount }) }}
+            {{ t('inventory.dashboard_tiles.selected_count', { count: selectedTileKeys.length }) }}
           </p>
 
           <div class="space-y-2">
+            <p class="text-sm font-semibold text-slate-800">
+              {{ t('inventory.dashboard_tiles.selected_title') }}
+            </p>
+            <div
+              v-for="(tile, index) in selectedTiles"
+              :key="tile.key"
+              class="flex items-center gap-3 rounded-lg border border-slate-200 px-3 py-2"
+            >
+              <label class="flex min-w-0 flex-1 cursor-pointer items-center gap-3">
+                <UCheckbox
+                  :model-value="true"
+                  :disabled="props.isSaving"
+                  @update:model-value="(isSelected) => toggleTile(tile.key, Boolean(isSelected))"
+                />
+                <span class="truncate text-sm font-medium text-slate-800">{{ tile.name }}</span>
+              </label>
+              <UButton
+                variant="ghost"
+                color="neutral"
+                icon="i-heroicons-arrow-up"
+                :aria-label="t('inventory.dashboard_tiles.move_up')"
+                :title="t('inventory.dashboard_tiles.move_up')"
+                :disabled="props.isSaving || index === 0"
+                @click="moveTile(tile.key, -1)"
+              />
+              <UButton
+                variant="ghost"
+                color="neutral"
+                icon="i-heroicons-arrow-down"
+                :aria-label="t('inventory.dashboard_tiles.move_down')"
+                :title="t('inventory.dashboard_tiles.move_down')"
+                :disabled="props.isSaving || index === selectedTiles.length - 1"
+                @click="moveTile(tile.key, 1)"
+              />
+            </div>
+            <p
+              v-if="selectedTiles.length === 0"
+              class="rounded-lg border border-dashed border-slate-200 px-3 py-2 text-sm text-slate-600"
+            >
+              {{ t('inventory.dashboard_tiles.no_selected_tiles') }}
+            </p>
+          </div>
+
+          <div v-if="availableTiles.length > 0" class="space-y-2">
+            <p class="text-sm font-semibold text-slate-800">
+              {{ t('inventory.dashboard_tiles.available_title') }}
+            </p>
             <label
-              v-for="tile in sortedTiles"
+              v-for="tile in availableTiles"
               :key="tile.key"
               class="flex cursor-pointer items-center gap-3 rounded-lg border border-slate-200 px-3 py-2 hover:bg-slate-50"
-              :class="{ 'cursor-not-allowed opacity-60': isTileDisabled(tile.key) }"
             >
               <UCheckbox
-                :model-value="isTileSelected(tile.key)"
-                :disabled="props.isSaving || isTileDisabled(tile.key)"
+                :model-value="false"
+                :disabled="props.isSaving"
                 @update:model-value="(isSelected) => toggleTile(tile.key, Boolean(isSelected))"
               />
               <span class="text-sm font-medium text-slate-800">{{ tile.name }}</span>
@@ -122,7 +172,7 @@ const saveSelection = (): void => {
             color="primary"
             :label="t('inventory.dashboard_tiles.save')"
             :loading="props.isSaving"
-            :disabled="props.isSaving || !canSave"
+            :disabled="props.isSaving"
             @click="saveSelection"
           />
         </div>
