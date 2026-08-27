@@ -1,5 +1,12 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
+import InventoryAwaitingCheckInCard from './InventoryAwaitingCheckInCard.vue'
+import InventoryCheckInOutCard from './InventoryCheckInOutCard.vue'
+import InventoryDashboardTilePicker from './InventoryDashboardTilePicker.vue'
+import InventoryDevicePreviewCard from './InventoryDevicePreviewCard.vue'
+import InventoryRecentActivitiesCard from './InventoryRecentActivitiesCard.vue'
+import InventoryStockPreviewCard from './InventoryStockPreviewCard.vue'
+import InventoryUsagePreviewCard from './InventoryUsagePreviewCard.vue'
 import {
   useInventoryStockPageQuery,
   type InventoryStockPageQueryParams,

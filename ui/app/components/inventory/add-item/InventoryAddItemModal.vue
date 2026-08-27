@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
-import InventoryAddItemValidationSection from '~/components/inventory/add-item/InventoryAddItemValidationSection.vue'
-import { useInventoryAddItemForm } from '~/components/inventory/add-item/useInventoryAddItemForm'
+import InventoryAddItemValidationSection from './InventoryAddItemValidationSection.vue'
+import { useInventoryAddItemForm } from './useInventoryAddItemForm'
 
 type Props = {
   open: boolean

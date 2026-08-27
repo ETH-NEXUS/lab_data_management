@@ -12,7 +12,7 @@ import {
   type UpdateInventoryMaterialPayload,
 } from '~/types/inventory'
 import { formatDecimal, parseDecimal, parseInteger } from '~/components/inventory/add-item/inventoryAddItemForm.utils'
-import { parsePositiveIntegerList } from '~/components/inventory/inventorySectorSelection.utils'
+import { parsePositiveIntegerList } from './inventorySectorSelection.utils'
 import { useInventoryAddItemFormState } from '~/components/inventory/add-item/useInventoryAddItemFormState'
 import { getErrorMessage } from '~/utils/errors'
 

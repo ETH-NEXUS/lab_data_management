@@ -6,7 +6,7 @@ import {
   getInventoryStockTableSortValue,
   getStatusLabel,
   type TranslateFn,
-} from '~/components/inventory/inventory-stock-table.values'
+} from './inventory-stock-table.values'
 
 const getStock = (row: TableRow): InventoryStockListItem => {
   return row as InventoryStockListItem

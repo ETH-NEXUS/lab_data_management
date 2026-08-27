@@ -8,7 +8,7 @@ import type {
   VisibilityState,
 } from '@tanstack/vue-table'
 import BaseDataTable from '~/components/tables/BaseDataTable.vue'
-import { createInventoryStockTableColumns } from '~/components/inventory/inventory-stock-table.columns'
+import { createInventoryStockTableColumns } from './inventory-stock-table.columns'
 import type { InventoryStockListItem } from '~/types/inventory'
 
 type Props = {

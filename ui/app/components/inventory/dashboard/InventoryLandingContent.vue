@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import InventoryQuickActionsSection from '~/components/inventory/InventoryQuickActionsSection.vue'
-import InventoryViewsSection from '~/components/inventory/InventoryViewsSection.vue'
+import InventoryQuickActionsSection from './InventoryQuickActionsSection.vue'
+import InventoryViewsSection from './InventoryViewsSection.vue'
 
 const emit = defineEmits<{
   (e: 'select-action', actionId: string): void

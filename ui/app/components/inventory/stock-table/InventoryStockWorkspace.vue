@@ -2,7 +2,7 @@
 import { computed, ref, watch } from 'vue'
 import type { ColumnFiltersState, PaginationState, SortingState } from '@tanstack/vue-table'
 import InventoryStockDetailsPanel from '~/components/inventory/stock-details/InventoryStockDetailsPanel.vue'
-import InventoryStockTable from '~/components/inventory/InventoryStockTable.vue'
+import InventoryStockTable from './InventoryStockTable.vue'
 import { useInventoryStockPageQuery } from '~/composables/inventory/useInventoryStockPageQuery'
 import { useInventoryStockQuery } from '~/composables/inventory/useInventoryStockQuery'
 import { useInventoryStockTablePreferenceStore } from '~/stores/inventory/InventoryStockTablePreferenceStore'

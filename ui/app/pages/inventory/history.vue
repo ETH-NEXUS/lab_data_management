@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import InventoryHistoryWorkspace from '~/components/inventory/InventoryHistoryWorkspace.vue'
+import InventoryHistoryWorkspace from '~/components/inventory/history/InventoryHistoryWorkspace.vue'
 
 const { t } = useI18n()
 

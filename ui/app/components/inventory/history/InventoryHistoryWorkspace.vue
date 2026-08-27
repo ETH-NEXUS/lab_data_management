@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
-import InventoryHistoryTable from '~/components/inventory/InventoryHistoryTable.vue'
-import { getHistoryRecordTargetPath } from '~/components/inventory/inventory-history.values'
+import InventoryHistoryTable from './InventoryHistoryTable.vue'
+import { getHistoryRecordTargetPath } from './inventory-history.values'
 import { useInventoryHistoryPageQuery } from '~/composables/inventory/useInventoryHistoryPageQuery'
 import type { InventoryHistoryPageQueryParams } from '~/composables/inventory/inventoryHistoryQuery.utils'
 import type { InventoryHistoryListItem } from '~/types/inventory'

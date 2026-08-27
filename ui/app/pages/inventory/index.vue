@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref } from 'vue'
-import InventoryAddItemModal from '~/components/inventory/InventoryAddItemModal.vue'
-import InventoryLandingContent from '~/components/inventory/InventoryLandingContent.vue'
+import InventoryAddItemModal from '~/components/inventory/add-item/InventoryAddItemModal.vue'
+import InventoryLandingContent from '~/components/inventory/dashboard/InventoryLandingContent.vue'
 
 const { t } = useI18n()
 const isAddItemModalOpen = ref(false)

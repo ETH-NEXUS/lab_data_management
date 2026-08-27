@@ -6,7 +6,7 @@ import {
   getHistoryRecordQuantityLabel,
   getHistoryRecordRowClass,
   getHistoryRecordUserName,
-} from '~/components/inventory/inventory-history.values'
+} from './inventory-history.values'
 import type { InventoryHistoryListItem } from '~/types/inventory'
 import { formatDateTime } from '~/utils/dateTime'
 

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { formatNumericString, getStatusLabel } from '~/components/inventory/inventory-stock-table.values'
+import { formatNumericString, getStatusLabel } from '~/components/inventory/stock-table/inventory-stock-table.values'
 import type { InventoryStockListItem, InventoryStockPreset } from '~/types/inventory'
 import { formatDateTime } from '~/utils/dateTime'
 

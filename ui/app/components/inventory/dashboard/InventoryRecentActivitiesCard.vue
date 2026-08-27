@@ -6,7 +6,7 @@ import {
   getHistoryRecordRowClass,
   getHistoryRecordTargetPath,
   getHistoryRecordUserName,
-} from '~/components/inventory/inventory-history.values'
+} from '~/components/inventory/history/inventory-history.values'
 import { useInventoryHistoryQuery } from '~/composables/inventory/useInventoryHistoryQuery'
 import type { InventoryHistoryListItem } from '~/types/inventory'
 import { formatDateTime } from '~/utils/dateTime'

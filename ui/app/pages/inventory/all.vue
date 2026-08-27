@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed } from 'vue'
-import InventoryStockWorkspace from '~/components/inventory/InventoryStockWorkspace.vue'
+import InventoryStockWorkspace from '~/components/inventory/stock-table/InventoryStockWorkspace.vue'
 import type { InventoryStockPreset } from '~/types/inventory'
 
 const { t } = useI18n()

@@ -1,4 +1,4 @@
-import { formatNumericString } from '~/components/inventory/inventory-stock-table.values'
+import { formatNumericString } from '~/components/inventory/stock-table/inventory-stock-table.values'
 import type { InventoryHistoryListItem } from '~/types/inventory'
 
 const additionActions = new Set(['stock_created', 'order_created', 'stock_restored'])
