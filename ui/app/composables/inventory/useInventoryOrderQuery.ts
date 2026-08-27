@@ -50,9 +50,12 @@ const fetchInventoryOrder = async (orderId: number): Promise<InventoryOrderDetai
 }
 
 const fetchAwaitingCheckInOrders = async (): Promise<InventoryOrderListItem[]> => {
-  const { data, error } = await useAPI<InventoryOrderListItem[]>(`${INVENTORY_ORDERS_ENDPOINT}awaiting_check_in/`, {
-    method: 'GET',
-  })
+  const { data, error } = await useAPI<InventoryOrderListItem[]>(
+    `${INVENTORY_ORDERS_ENDPOINT}recent_awaiting_check_in/`,
+    {
+      method: 'GET',
+    },
+  )
 
   if (error.value || !data.value) {
     throw (error.value ?? new Error(INVENTORY_ORDERS_ERROR_MESSAGE)) as Error
@@ -69,7 +72,7 @@ export const useInventoryOrdersQuery = () =>
 
 export const useInventoryAwaitingCheckInOrdersQuery = () =>
   useQuery({
-    queryKey: [...INVENTORY_ORDERS_QUERY_KEY, 'awaiting-check-in'],
+    queryKey: [...INVENTORY_ORDERS_QUERY_KEY, 'recent-awaiting-check-in'],
     queryFn: fetchAwaitingCheckInOrders,
   })
 

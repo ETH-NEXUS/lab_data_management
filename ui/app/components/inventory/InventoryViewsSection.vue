@@ -13,7 +13,7 @@ import {
 import { useInventoryLookupsQuery } from '~/composables/inventory/useInventoryLookupQuery'
 import { useInventoryAwaitingCheckInOrdersQuery } from '~/composables/inventory/useInventoryOrderQuery'
 import { useInventoryStocksQuery } from '~/composables/inventory/useInventoryStockQuery'
-import { useInventoryUsagesQuery } from '~/composables/inventory/useInventoryUsageQuery'
+import { useInventoryRecentProjectUsagesQuery } from '~/composables/inventory/useInventoryUsageQuery'
 import { useInventoryStockTablePreferenceStore } from '~/stores/inventory/InventoryStockTablePreferenceStore'
 import type { InventoryStockListItem, InventoryStockPreset, InventoryUsageListItem } from '~/types/inventory'
 import { formatDateTime } from '~/utils/dateTime'
@@ -31,7 +31,7 @@ const { t } = useI18n()
 const stocksQuery = useInventoryStocksQuery()
 const lookupsQuery = useInventoryLookupsQuery()
 const awaitingCheckInOrdersQuery = useInventoryAwaitingCheckInOrdersQuery()
-const usagesQuery = useInventoryUsagesQuery()
+const recentProjectUsagesQuery = useInventoryRecentProjectUsagesQuery()
 const stockTablePreferenceStore = useInventoryStockTablePreferenceStore()
 const stocks = computed<InventoryStockListItem[]>(() => stocksQuery.data.value ?? [])
 const selectedDeviceTypeId = ref<string>('')
@@ -56,7 +56,7 @@ const deviceStockQueryParams = computed<InventoryStockPageQueryParams>(() => ({
 }))
 const deviceStocksQuery = useInventoryStockPageQuery(deviceStockQueryParams)
 const deviceStocks = computed<InventoryStockListItem[]>(() => deviceStocksQuery.data.value?.results ?? [])
-const awaitingCheckInOrders = computed(() => (awaitingCheckInOrdersQuery.data.value ?? []).slice(0, 5))
+const awaitingCheckInOrders = computed(() => awaitingCheckInOrdersQuery.data.value ?? [])
 const archivedStockQueryParams = computed<InventoryStockPageQueryParams>(() => ({
   preset: 'archived',
   page: 1,
@@ -66,11 +66,7 @@ const archivedStockQueryParams = computed<InventoryStockPageQueryParams>(() => (
 }))
 const archivedStocksQuery = useInventoryStockPageQuery(archivedStockQueryParams)
 const archivedStocks = computed<InventoryStockListItem[]>(() => archivedStocksQuery.data.value?.results ?? [])
-const recentProjectUsages = computed<InventoryUsageListItem[]>(() => {
-  return [...(usagesQuery.data.value ?? [])]
-    .sort((leftUsage, rightUsage) => new Date(rightUsage.used_at).getTime() - new Date(leftUsage.used_at).getTime())
-    .slice(0, 5)
-})
+const recentProjectUsages = computed<InventoryUsageListItem[]>(() => recentProjectUsagesQuery.data.value ?? [])
 
 const openOrder = (orderId: number): void => {
   navigateTo(`/inventory/orders?order=${orderId}`)
@@ -306,7 +302,7 @@ const isPreviewLoading = (preset: InventoryStockPreset): boolean => {
         </template>
 
         <div class="space-y-2">
-          <p v-if="usagesQuery.isPending.value" class="text-sm text-slate-600">
+          <p v-if="recentProjectUsagesQuery.isPending.value" class="text-sm text-slate-600">
             {{ t('inventory.stock_workspace.loading') }}
           </p>
           <p v-else-if="recentProjectUsages.length === 0" class="text-sm text-slate-600">
