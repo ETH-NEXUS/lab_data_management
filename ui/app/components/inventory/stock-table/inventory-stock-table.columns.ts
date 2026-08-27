@@ -2,11 +2,7 @@ import { h } from 'vue'
 import type { ColumnDef } from '@tanstack/vue-table'
 import type { TableRow } from '~/components/tables/base-data-table.utils'
 import type { InventoryStockListItem } from '~/types/inventory'
-import {
-  getInventoryStockTableSortValue,
-  getStatusLabel,
-  type TranslateFn,
-} from './inventory-stock-table.values'
+import { getInventoryStockTableSortValue, getStatusLabel, type TranslateFn } from './inventory-stock-table.values'
 
 const getStock = (row: TableRow): InventoryStockListItem => {
   return row as InventoryStockListItem

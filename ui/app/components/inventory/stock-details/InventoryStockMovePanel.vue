@@ -64,7 +64,8 @@ const selectedSectorIdsModel = computed<string[]>({
         <div
           class="max-h-40 space-y-2 overflow-y-auto rounded-md border border-slate-200 bg-white px-3 py-2"
           :class="{
-            'cursor-not-allowed bg-slate-50 opacity-60': props.isSavingMove || props.isLookupsLoading || props.selectedRoomId === '',
+            'cursor-not-allowed bg-slate-50 opacity-60':
+              props.isSavingMove || props.isLookupsLoading || props.selectedRoomId === '',
           }"
         >
           <label
@@ -78,7 +79,7 @@ const selectedSectorIdsModel = computed<string[]>({
               :value="String(sector.id)"
               :disabled="props.isSavingMove || props.isLookupsLoading || props.selectedRoomId === ''"
               class="h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500"
-            >
+            />
             <span>{{ sector.label || sector.name }}</span>
           </label>
         </div>

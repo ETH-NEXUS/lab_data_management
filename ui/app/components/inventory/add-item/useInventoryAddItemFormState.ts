@@ -5,8 +5,9 @@ import {
   useInventoryMaterialsQuery,
 } from '~/composables/inventory/useInventoryMaterialQuery'
 import { useInventoryOrdersQuery } from '~/composables/inventory/useInventoryOrderQuery'
-import { type InventoryMaterialListItem, type InventoryOrderListItem } from '~/types/inventory'
-import { type AddItemFormState, buildInitialFormState } from '~/components/inventory/add-item/inventoryAddItemForm.utils'
+import type { InventoryMaterialListItem, InventoryOrderListItem } from '~/types/inventory'
+import { buildInitialFormState } from '~/components/inventory/add-item/inventoryAddItemForm.utils'
+import type { AddItemFormState } from '~/components/inventory/add-item/inventoryAddItemForm.utils'
 import { getErrorMessage } from '~/utils/errors'
 
 type UseInventoryAddItemFormStateParams = {

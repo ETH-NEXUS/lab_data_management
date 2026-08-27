@@ -192,10 +192,7 @@ export const getInventoryStockTableSortValue = (
   // Accepted data example: `{ vendor: { name: 'Huberlab', label: 'Huberlab' } }`
   // Returned data example: `'Huberlab'`
   if (columnId === 'vendor') {
-    return toLabel(
-      stock.material.vendor?.label || stock.material.vendor?.name,
-      t('inventory.stock_table.values.none'),
-    )
+    return toLabel(stock.material.vendor?.label || stock.material.vendor?.name, t('inventory.stock_table.values.none'))
   }
 
   // Accepted data example: `{ manufacturer_catalog_number: '30038616' }`

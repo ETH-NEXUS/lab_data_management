@@ -300,9 +300,7 @@ export const useInventoryStockDetailsPanel = (props: Readonly<InventoryStockDeta
       },
       {
         label: t('inventory.stock_drawer.fields.expiry_date'),
-        value: stock.expiry_date
-          ? stock.expiry_date
-          : t('inventory.stock_drawer.values.none'),
+        value: stock.expiry_date ? stock.expiry_date : t('inventory.stock_drawer.values.none'),
       },
       {
         label: t('inventory.stock_drawer.fields.notes'),

@@ -335,13 +335,7 @@ const submitForm = (): void => {
     <template #footer>
       <div class="flex w-full justify-end gap-2 px-6 pb-6">
         <UButton variant="ghost" color="neutral" label="Cancel" :disabled="isSubmitting" @click="closeModal" />
-        <UButton
-          color="primary"
-          label="Add order"
-          :loading="isSubmitting"
-          :disabled="!canSubmit"
-          @click="submitForm"
-        />
+        <UButton color="primary" label="Add order" :loading="isSubmitting" :disabled="!canSubmit" @click="submitForm" />
       </div>
     </template>
   </UModal>

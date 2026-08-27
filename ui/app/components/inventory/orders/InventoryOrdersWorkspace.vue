@@ -380,7 +380,11 @@ watch(
                 class="w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 outline-none focus:border-blue-300 focus:ring-2 focus:ring-blue-300/50"
                 :disabled="inventoryOrderStore.isUpdatingOrder"
               >
-                <option v-for="statusOption in orderStatusOptions" :key="statusOption.value" :value="statusOption.value">
+                <option
+                  v-for="statusOption in orderStatusOptions"
+                  :key="statusOption.value"
+                  :value="statusOption.value"
+                >
                   {{ statusOption.label }}
                 </option>
               </select>
@@ -446,7 +450,8 @@ watch(
                   <div class="min-w-0">
                     <p class="text-sm font-medium text-sky-700">Stock #{{ stockEntry.id }}</p>
                     <p class="text-xs text-slate-600">
-                      Lot: {{ toDisplayValue(stockEntry.lot_number) }} · Location: {{ toDisplayValue(stockEntry.location_label) }}
+                      Lot: {{ toDisplayValue(stockEntry.lot_number) }} · Location:
+                      {{ toDisplayValue(stockEntry.location_label) }}
                     </p>
                   </div>
                   <UButton

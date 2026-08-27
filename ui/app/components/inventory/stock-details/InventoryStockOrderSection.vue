@@ -47,19 +47,19 @@ const responsibleUsers = computed<string[]>(() => {
     </p>
 
     <div class="space-y-2 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2">
-      <p class="text-[11px] font-semibold tracking-[0.06em] text-slate-500 uppercase">
-        Source order
-      </p>
-      <p v-if="!props.sourceOrder" class="text-sm text-slate-600">
-        This stock item is not linked to an order.
-      </p>
+      <p class="text-[11px] font-semibold tracking-[0.06em] text-slate-500 uppercase">Source order</p>
+      <p v-if="!props.sourceOrder" class="text-sm text-slate-600">This stock item is not linked to an order.</p>
       <div v-else class="flex items-center justify-between gap-3">
         <div class="min-w-0 text-sm text-slate-700">
-          <p class="font-medium">
-            Order #{{ props.sourceOrder.id }}
-          </p>
+          <p class="font-medium">Order #{{ props.sourceOrder.id }}</p>
           <p class="text-slate-500">
-            {{ formatDateTime(props.sourceOrder.order_date, { dateStyle: 'medium' }, t('inventory.stock_drawer.values.none')) }}
+            {{
+              formatDateTime(
+                props.sourceOrder.order_date,
+                { dateStyle: 'medium' },
+                t('inventory.stock_drawer.values.none'),
+              )
+            }}
             · {{ props.sourceOrder.status_label || props.sourceOrder.status }}
           </p>
         </div>

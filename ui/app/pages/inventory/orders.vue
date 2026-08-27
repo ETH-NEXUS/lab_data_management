@@ -48,10 +48,7 @@ const updateSelectedOrderId = async (orderId: number | null): Promise<void> => {
         @click="goBackToInventory"
       />
 
-      <InventoryOrdersWorkspace
-        :initial-order-id="selectedOrderId"
-        @update:selected-order-id="updateSelectedOrderId"
-      />
+      <InventoryOrdersWorkspace :initial-order-id="selectedOrderId" @update:selected-order-id="updateSelectedOrderId" />
     </div>
   </section>
 </template>
