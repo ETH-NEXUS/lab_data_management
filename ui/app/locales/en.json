@@ -454,7 +454,8 @@
         "awaiting_check_in": {
           "title": "Orders awaiting check-in",
           "description": "Review arrived orders that have no stock item yet.",
-          "open_order": "Open order"
+          "open_order": "Open order",
+          "error": "Failed to load orders awaiting check-in."
         },
         "recent_activities": {
           "title": "Recent activities",
@@ -474,7 +475,8 @@
         },
         "recently_linked_harvest_projects": {
           "title": "Items recently linked to a Harvest project",
-          "description": "Latest material usage records linked to projects."
+          "description": "Latest material usage records linked to projects.",
+          "error": "Failed to load recent project usages."
         },
         "reserved_items": {
           "title": "Reserved items",

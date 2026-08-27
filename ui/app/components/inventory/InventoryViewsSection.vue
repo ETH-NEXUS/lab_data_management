@@ -305,6 +305,9 @@ const isPreviewLoading = (preset: InventoryStockPreset): boolean => {
           <p v-if="recentProjectUsagesQuery.isPending.value" class="text-sm text-slate-600">
             {{ t('inventory.stock_workspace.loading') }}
           </p>
+          <p v-else-if="recentProjectUsagesQuery.error.value" class="text-sm text-red-600">
+            {{ t('inventory.page.actions.recently_linked_harvest_projects.error') }}
+          </p>
           <p v-else-if="recentProjectUsages.length === 0" class="text-sm text-slate-600">
             {{ t('inventory.stock_workspace.empty') }}
           </p>
@@ -352,6 +355,9 @@ const isPreviewLoading = (preset: InventoryStockPreset): boolean => {
         <div class="space-y-2">
           <p v-if="awaitingCheckInOrdersQuery.isPending.value" class="text-sm text-slate-600">
             {{ t('inventory.stock_workspace.loading') }}
+          </p>
+          <p v-else-if="awaitingCheckInOrdersQuery.error.value" class="text-sm text-red-600">
+            {{ t('inventory.page.actions.awaiting_check_in.error') }}
           </p>
           <p v-else-if="awaitingCheckInOrders.length === 0" class="text-sm text-slate-600">
             {{ t('inventory.stock_workspace.empty') }}
