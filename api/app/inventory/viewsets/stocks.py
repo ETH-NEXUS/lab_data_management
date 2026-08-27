@@ -344,7 +344,7 @@ class InventoryDashboardTilePreferenceViewSet(viewsets.GenericViewSet):
         ]
 
         if missing_preferences:
-            InventoryDashboardTilePreference.objects.bulk_create(missing_preferences)
+            InventoryDashboardTilePreference.objects.bulk_create(missing_preferences, ignore_conflicts=True)
 
         return self.get_queryset().order_by("position", "tile__default_position")
 

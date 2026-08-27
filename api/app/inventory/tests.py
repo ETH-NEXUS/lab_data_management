@@ -476,6 +476,24 @@ class InventoryStockMultiSectorTests(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(sum(preference["is_visible"] for preference in response.data), len(tile_keys))
 
+    def test_dashboard_tile_preferences_reject_duplicate_tile_keys(self):
+        response = self.client.put(
+            reverse("inventory-dashboard-tile-preference-current"),
+            {"tile_keys": ["low_stock_items", "low_stock_items"]},
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+    def test_dashboard_tile_preferences_reject_unknown_tile_keys(self):
+        response = self.client.put(
+            reverse("inventory-dashboard-tile-preference-current"),
+            {"tile_keys": ["not_an_inventory_dashboard_tile"]},
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
     def test_history_endpoint_paginates_results(self):
         for _index in range(6):
             InventoryChangeRecord.objects.create(
