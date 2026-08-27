@@ -42,6 +42,7 @@ const {
   isSaving: isSavingDashboardTiles,
   saveTileKeys,
 } = useInventoryDashboardTilePreferences()
+const dashboardTileSaveVersion = ref(0)
 const stockTablePreferenceStore = useInventoryStockTablePreferenceStore()
 const stocks = computed<InventoryStockListItem[]>(() => stocksQuery.data.value ?? [])
 const selectedDeviceTypeId = ref<string>('')
@@ -103,6 +104,7 @@ const getDashboardTilePosition = (tileKey: string): number => {
 const saveDashboardTileKeys = async (tileKeys: string[]): Promise<void> => {
   try {
     await saveTileKeys(tileKeys)
+    dashboardTileSaveVersion.value += 1
   } catch {
     // useAPI already shows a readable request error toast.
   }
@@ -206,6 +208,8 @@ const isPreviewLoading = (preset: InventoryStockPreset): boolean => {
       :tiles="dashboardTilePreferences"
       :is-loading="dashboardTilePreferencesQuery.isPending.value"
       :is-saving="isSavingDashboardTiles"
+      :has-error="Boolean(dashboardTilePreferencesQuery.error.value)"
+      :save-version="dashboardTileSaveVersion"
       @save="saveDashboardTileKeys"
     />
 

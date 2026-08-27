@@ -6,6 +6,8 @@ type Props = {
   tiles: InventoryDashboardTilePreference[]
   isLoading: boolean
   isSaving: boolean
+  hasError: boolean
+  saveVersion: number
 }
 
 const props = defineProps<Props>()
@@ -39,6 +41,13 @@ watch(
       .map((tile) => tile.key)
   },
   { immediate: true },
+)
+
+watch(
+  () => props.saveVersion,
+  () => {
+    isOpen.value = false
+  },
 )
 
 const isTileSelected = (tileKey: string): boolean => selectedTileKeys.value.includes(tileKey)
@@ -77,7 +86,7 @@ const saveSelection = (): void => {
       color="neutral"
       icon="i-heroicons-adjustments-horizontal"
       :label="t('inventory.dashboard_tiles.configure')"
-      :disabled="props.isLoading"
+      :disabled="props.isLoading || props.hasError"
       @click="isOpen = true"
     />
 
