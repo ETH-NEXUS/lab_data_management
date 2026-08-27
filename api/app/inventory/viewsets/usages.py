@@ -156,3 +156,15 @@ class MaterialUsageViewSet(viewsets.ModelViewSet):
 
         serializer = MaterialUsageListSerializer(queryset, many=True, context={"request": request})
         return Response(serializer.data)
+
+    @action(detail=False, methods=["get"])
+    def recent_project(self, request):
+        """
+        Returns the five latest material usages that are linked to a project.
+
+        Returned item example:
+        - {"id": 42, "project": {"name": "Project A"}, "used_at": "2026-08-27T10:00:00Z"}
+        """
+        queryset = self.get_queryset().filter(project__isnull=False)[:5]
+        serializer = MaterialUsageListSerializer(queryset, many=True, context={"request": request})
+        return Response(serializer.data)

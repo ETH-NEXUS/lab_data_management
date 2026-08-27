@@ -11,7 +11,7 @@ import shutil
 import tempfile
 
 from core.models import Project
-from inventory.dynamic_models import InventoryStock, Order, Room, Sector
+from inventory.dynamic_models import InventoryStock, MaterialUsage, Order, Room, Sector
 from inventory.history_models import InventoryChangeRecord
 from inventory.static_models import ItemType, MaterialMaster, MaterialUnit, UnitOfMeasure
 
@@ -334,6 +334,47 @@ class InventoryStockMultiSectorTests(APITestCase):
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual([order_data["id"] for order_data in response.data], [awaiting_check_in_order.id])
+
+    def test_awaiting_check_in_endpoint_returns_only_the_latest_five_orders(self):
+        for day in range(1, 7):
+            Order.objects.create(
+                material=self.material,
+                order_unit=self.stock_unit,
+                amount="2",
+                order_date=f"2026-07-0{day}T10:00:00Z",
+                status=Order.STATUS_PRODUCT_ARRIVED,
+            )
+
+        response = self.client.get(reverse("inventory-order-recent-awaiting-check-in"))
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(response.data), 5)
+        self.assertEqual(response.data[0]["order_date"][:10], "2026-07-06")
+
+    def test_recent_project_usages_endpoint_returns_only_the_latest_five_usages(self):
+        stock = InventoryStock.objects.create(
+            material=self.material,
+            sector=self.primary_sector,
+            stock_unit=self.stock_unit,
+            quantity="12",
+            minimum_quantity="1",
+        )
+
+        for day in range(1, 7):
+            usage = MaterialUsage.objects.create(
+                project=self.project,
+                inventory_stock=stock,
+                usage_unit=self.stock_unit,
+                quantity_used="1",
+            )
+            usage.used_at = timezone.now() - timedelta(days=day)
+            usage.save(update_fields=["used_at"])
+
+        response = self.client.get(reverse("inventory-material-usage-recent-project"))
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(response.data), 5)
+        self.assertEqual(response.data[0]["used_at"][:10], str((timezone.now() - timedelta(days=1)).date()))
 
     def test_history_endpoint_paginates_results(self):
         for _index in range(6):
