@@ -508,6 +508,7 @@
       "title": "Inventory activity history",
       "description": "Latest inventory changes, 20 records per page.",
       "loading": "Loading inventory history...",
+      "error": "Failed to load inventory history.",
       "empty": "No inventory activity found.",
       "pagination": {
         "page": "Page {current} of {total}",

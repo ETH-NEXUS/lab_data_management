@@ -80,6 +80,10 @@ export const getHistoryRecordProjectExperimentLabel = (record: InventoryHistoryL
  * - `'/inventory/usages'`
  */
 export const getHistoryRecordTargetPath = (record: InventoryHistoryListItem): string | null => {
+  if (record.material_usage) {
+    return '/inventory/usages'
+  }
+
   if (record.inventory_stock) {
     return `/inventory/all?preset=all&stock=${record.inventory_stock.id}`
   }
@@ -88,5 +92,5 @@ export const getHistoryRecordTargetPath = (record: InventoryHistoryListItem): st
     return `/inventory/orders?order=${record.order.id}`
   }
 
-  return record.material_usage ? '/inventory/usages' : null
+  return null
 }

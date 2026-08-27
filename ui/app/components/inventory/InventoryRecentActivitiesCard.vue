@@ -64,6 +64,9 @@ const openHistory = (): void => {
       <p v-if="historyQuery.isPending.value" class="text-sm text-slate-600">
         {{ t('inventory.stock_workspace.loading') }}
       </p>
+      <p v-else-if="historyQuery.error.value" class="text-sm text-red-600">
+        {{ t('inventory.history_workspace.error') }}
+      </p>
       <p v-else-if="recentActivities.length === 0" class="text-sm text-slate-600">
         {{ t('inventory.stock_workspace.empty') }}
       </p>
