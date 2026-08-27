@@ -61,6 +61,18 @@ const fetchRecentProjectUsages = async (): Promise<InventoryUsageListItem[]> => 
   return data.value
 }
 
+const fetchRecentExperimentUsages = async (): Promise<InventoryUsageListItem[]> => {
+  const { data, error } = await useAPI<InventoryUsageListItem[]>(`${INVENTORY_USAGES_ENDPOINT}recent_experiment/`, {
+    method: 'GET',
+  })
+
+  if (error.value || !data.value) {
+    throw (error.value ?? new Error(INVENTORY_USAGES_ERROR_MESSAGE)) as Error
+  }
+
+  return data.value
+}
+
 export const useInventoryUsagesQuery = () =>
   useQuery({
     queryKey: INVENTORY_USAGES_QUERY_KEY,
@@ -71,6 +83,12 @@ export const useInventoryRecentProjectUsagesQuery = () =>
   useQuery({
     queryKey: [...INVENTORY_USAGES_QUERY_KEY, 'recent-project'],
     queryFn: fetchRecentProjectUsages,
+  })
+
+export const useInventoryRecentExperimentUsagesQuery = () =>
+  useQuery({
+    queryKey: [...INVENTORY_USAGES_QUERY_KEY, 'recent-experiment'],
+    queryFn: fetchRecentExperimentUsages,
   })
 
 export const useInventoryUsageQuery = (usageIdRef: ComputedRef<number>) =>

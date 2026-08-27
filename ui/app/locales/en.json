@@ -478,6 +478,11 @@
           "description": "Latest material usage records linked to projects.",
           "error": "Failed to load recent project usages."
         },
+        "recently_linked_ldm_experiments": {
+          "title": "Items recently linked to an LDM experiment",
+          "description": "Latest material usage records linked to experiments.",
+          "error": "Failed to load recent experiment usages."
+        },
         "reserved_items": {
           "title": "Reserved items",
           "description": "Track currently reserved stock."
