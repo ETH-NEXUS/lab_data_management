@@ -11,7 +11,7 @@ import shutil
 import tempfile
 
 from core.models import Experiment, Project
-from inventory.dynamic_models import InventoryStock, MaterialUsage, Order, Room, Sector
+from inventory.dynamic_models import InventoryDashboardTilePreference, InventoryStock, MaterialUsage, Order, Room, Sector
 from inventory.history_models import InventoryChangeRecord
 from inventory.static_models import ItemType, MaterialMaster, MaterialUnit, UnitOfMeasure
 
@@ -417,6 +417,50 @@ class InventoryStockMultiSectorTests(APITestCase):
         self.assertEqual(len(response.data), 5)
         self.assertEqual(response.data[0]["used_at"][:10], str((timezone.now() - timedelta(days=1)).date()))
         self.assertTrue(all(usage["experiment"]["id"] == experiment.id for usage in response.data))
+
+    def test_dashboard_tile_preferences_are_created_for_the_current_user(self):
+        response = self.client.get(reverse("inventory-dashboard-tile-preference-current"))
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(response.data), 10)
+        self.assertEqual(sum(preference["is_visible"] for preference in response.data), 6)
+        self.assertEqual(
+            InventoryDashboardTilePreference.objects.filter(user=self.first_user).count(),
+            10,
+        )
+
+    def test_dashboard_tile_preferences_are_saved_per_user(self):
+        selected_tile_keys = [
+            "low_stock_items",
+            "awaiting_check_in",
+            "favorite_items",
+            "device_items",
+        ]
+
+        response = self.client.put(
+            reverse("inventory-dashboard-tile-preference-current"),
+            {"tile_keys": selected_tile_keys},
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        visible_tile_keys = [preference["key"] for preference in response.data if preference["is_visible"]]
+        self.assertEqual(visible_tile_keys, selected_tile_keys)
+
+        self.client.force_authenticate(user=self.second_user)
+        second_user_response = self.client.get(reverse("inventory-dashboard-tile-preference-current"))
+
+        self.assertEqual(second_user_response.status_code, status.HTTP_200_OK)
+        self.assertEqual(sum(preference["is_visible"] for preference in second_user_response.data), 6)
+
+    def test_dashboard_tile_preferences_require_between_four_and_six_tiles(self):
+        response = self.client.put(
+            reverse("inventory-dashboard-tile-preference-current"),
+            {"tile_keys": ["low_stock_items", "favorite_items", "expired_items"]},
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
     def test_history_endpoint_paginates_results(self):
         for _index in range(6):

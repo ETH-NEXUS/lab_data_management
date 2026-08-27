@@ -10,7 +10,9 @@ from core.serializers import SimpleProjectSerializer, SimpleExperimentSerializer
 from inventory.dynamic_models import (
     Room,
     Sector,
+    InventoryDashboardTile,
     InventoryStock,
+    InventoryDashboardTilePreference,
     InventoryStockTablePreference,
     Order,
     MaterialUsage,
@@ -593,6 +595,56 @@ class InventoryStockTablePreferenceSerializer(serializers.ModelSerializer):
             "created_at",
             "updated_at",
         )
+
+
+class InventoryDashboardTilePreferenceSerializer(serializers.ModelSerializer):
+    """
+    Returns one available tile with the current user's saved configuration.
+
+    Returned data example:
+    - {"key": "low_stock_items", "name": "Items empty or low in stock", "is_visible": true, "position": 1}
+    """
+
+    key = serializers.CharField(source="tile.key", read_only=True)
+    name = serializers.CharField(source="tile.name", read_only=True)
+
+    class Meta:
+        model = InventoryDashboardTilePreference
+        fields = (
+            "key",
+            "name",
+            "is_visible",
+            "position",
+        )
+
+
+class InventoryDashboardTilePreferenceUpdateSerializer(serializers.Serializer):
+    """
+    Validates the ordered visible tile keys selected by one user.
+
+    Accepted data example:
+    - {"tile_keys": ["low_stock_items", "favorite_items", "expired_items", "awaiting_check_in"]}
+    """
+
+    tile_keys = serializers.ListField(
+        child=serializers.CharField(max_length=100),
+        min_length=4,
+        max_length=6,
+    )
+
+    def validate_tile_keys(self, tile_keys):
+        if len(set(tile_keys)) != len(tile_keys):
+            raise serializers.ValidationError("Each dashboard tile can be selected only once.")
+
+        available_tile_keys = set(
+            InventoryDashboardTile.objects.filter(key__in=tile_keys).values_list("key", flat=True)
+        )
+        unknown_tile_keys = set(tile_keys) - available_tile_keys
+
+        if unknown_tile_keys:
+            raise serializers.ValidationError("One or more dashboard tiles are not available.")
+
+        return tile_keys
 
 
 class MaterialUsageListSerializer(serializers.ModelSerializer):

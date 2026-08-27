@@ -515,3 +515,88 @@ class InventoryStockTablePreference(models.Model):
 
     def __str__(self):
         return f"{self.user} / {self.table_key}"
+
+
+class InventoryDashboardTile(models.Model):
+    """
+    One available inventory dashboard tile.
+
+    The seeded records define the cards that the UI can offer to a user.
+    The key stays stable for frontend code, while the name is available for
+    administration and future configuration screens.
+    """
+
+    key = models.CharField(
+        max_length=100,
+        unique=True,
+        help_text="Stable frontend key, e.g. low_stock_items.",
+    )
+
+    name = models.CharField(
+        max_length=255,
+        help_text="Readable dashboard tile name, e.g. Items empty or low in stock.",
+    )
+
+    default_position = models.PositiveSmallIntegerField(
+        help_text="Position used when this tile is selected for a new user.",
+    )
+
+    is_default_visible = models.BooleanField(
+        default=False,
+        help_text="Whether this tile is selected for a new user by default.",
+    )
+
+    class Meta:
+        ordering = ["default_position", "id"]
+        verbose_name = "Inventory dashboard tile"
+        verbose_name_plural = "Inventory dashboard tiles"
+
+    def __str__(self):
+        return self.name
+
+
+class InventoryDashboardTilePreference(models.Model):
+    """
+    Stores one user's dashboard tile visibility and order.
+
+    Example stored state:
+    - user = Alice
+    - tile = low_stock_items
+    - is_visible = True
+    - position = 1
+    """
+
+    user = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name="inventory_dashboard_tile_preferences",
+        help_text="User who owns this dashboard configuration.",
+    )
+
+    tile = models.ForeignKey(
+        InventoryDashboardTile,
+        on_delete=models.CASCADE,
+        related_name="user_preferences",
+        help_text="Dashboard tile configured by this user.",
+    )
+
+    is_visible = models.BooleanField(
+        default=False,
+        help_text="Whether the tile appears on the user's dashboard.",
+    )
+
+    position = models.PositiveSmallIntegerField(
+        help_text="Display order when the tile is visible.",
+    )
+
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["user_id", "position", "tile_id"]
+        unique_together = ("user", "tile")
+        verbose_name = "Inventory dashboard tile preference"
+        verbose_name_plural = "Inventory dashboard tile preferences"
+
+    def __str__(self):
+        return f"{self.user} / {self.tile}"

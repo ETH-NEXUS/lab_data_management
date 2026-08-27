@@ -10,12 +10,19 @@ from rest_framework.decorators import action
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
-from ..dynamic_models import InventoryStock, InventoryStockTablePreference
+from ..dynamic_models import (
+    InventoryDashboardTile,
+    InventoryDashboardTilePreference,
+    InventoryStock,
+    InventoryStockTablePreference,
+)
 from ..history_models import InventoryChangeRecord
 from ..history_utils import record_inventory_action
 from ..pagination import InventoryStockPagination
 from ..serializers.dynamic_models_serializers import (
     InventoryStockDetailSerializer,
+    InventoryDashboardTilePreferenceSerializer,
+    InventoryDashboardTilePreferenceUpdateSerializer,
     InventoryStockListSerializer,
     InventoryStockTablePreferenceSerializer,
 )
@@ -309,4 +316,58 @@ class InventoryStockTablePreferenceViewSet(viewsets.GenericViewSet):
             user=request.user,
             table_key=InventoryStockTablePreference.TABLE_KEY_INVENTORY_STOCK,
         )
+        return Response(serializer.data)
+
+
+class InventoryDashboardTilePreferenceViewSet(viewsets.GenericViewSet):
+    """
+    Reads and updates one authenticated user's inventory dashboard tiles.
+    """
+
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        return InventoryDashboardTilePreference.objects.filter(user=self.request.user).select_related("tile")
+
+    def _get_user_preferences(self):
+        tiles = list(InventoryDashboardTile.objects.all())
+        existing_tile_ids = set(self.get_queryset().values_list("tile_id", flat=True))
+        missing_preferences = [
+            InventoryDashboardTilePreference(
+                user=self.request.user,
+                tile=tile,
+                is_visible=tile.is_default_visible,
+                position=tile.default_position,
+            )
+            for tile in tiles
+            if tile.id not in existing_tile_ids
+        ]
+
+        if missing_preferences:
+            InventoryDashboardTilePreference.objects.bulk_create(missing_preferences)
+
+        return self.get_queryset().order_by("position", "tile__default_position")
+
+    @action(detail=False, methods=["get", "put"])
+    def current(self, request):
+        preferences = self._get_user_preferences()
+
+        if request.method == "GET":
+            serializer = InventoryDashboardTilePreferenceSerializer(preferences, many=True)
+            return Response(serializer.data)
+
+        update_serializer = InventoryDashboardTilePreferenceUpdateSerializer(data=request.data)
+        update_serializer.is_valid(raise_exception=True)
+        selected_tile_keys = update_serializer.validated_data["tile_keys"]
+        selected_positions = {
+            tile_key: position
+            for position, tile_key in enumerate(selected_tile_keys, start=1)
+        }
+
+        for preference in preferences:
+            preference.is_visible = preference.tile.key in selected_positions
+            preference.position = selected_positions.get(preference.tile.key, preference.tile.default_position)
+
+        InventoryDashboardTilePreference.objects.bulk_update(preferences, ["is_visible", "position"])
+        serializer = InventoryDashboardTilePreferenceSerializer(self._get_user_preferences(), many=True)
         return Response(serializer.data)

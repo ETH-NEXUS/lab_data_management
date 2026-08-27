@@ -11,12 +11,13 @@ from .lookups import (
 )
 from .materials import MaterialMasterViewSet, MaterialUnitViewSet
 from .orders import OrderViewSet
-from .stocks import InventoryStockTablePreferenceViewSet, InventoryStockViewSet
+from .stocks import InventoryDashboardTilePreferenceViewSet, InventoryStockTablePreferenceViewSet, InventoryStockViewSet
 from .usages import MaterialUsageViewSet
 
 __all__ = [
     "BrandViewSet",
     "DeviceTypeViewSet",
+    "InventoryDashboardTilePreferenceViewSet",
     "InventoryChangeRecordViewSet",
     "InventoryStockTablePreferenceViewSet",
     "InventoryStockViewSet",
