@@ -79,15 +79,17 @@ export const useInventoryUsagesQuery = () =>
     queryFn: fetchInventoryUsages,
   })
 
-export const useInventoryRecentProjectUsagesQuery = () =>
+export const useInventoryRecentProjectUsagesQuery = (enabledRef?: ComputedRef<boolean>) =>
   useQuery({
     queryKey: [...INVENTORY_USAGES_QUERY_KEY, 'recent-project'],
+    enabled: computed(() => enabledRef?.value ?? true),
     queryFn: fetchRecentProjectUsages,
   })
 
-export const useInventoryRecentExperimentUsagesQuery = () =>
+export const useInventoryRecentExperimentUsagesQuery = (enabledRef?: ComputedRef<boolean>) =>
   useQuery({
     queryKey: [...INVENTORY_USAGES_QUERY_KEY, 'recent-experiment'],
+    enabled: computed(() => enabledRef?.value ?? true),
     queryFn: fetchRecentExperimentUsages,
   })
 

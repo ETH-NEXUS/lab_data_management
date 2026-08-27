@@ -1,3 +1,4 @@
+import { computed, type ComputedRef } from 'vue'
 import { useQuery } from '@tanstack/vue-query'
 import { useAPI } from '~/composables/useAPI'
 import { parseListPage, type ListResponse } from '~/composables/inventory/listResponse'
@@ -80,8 +81,9 @@ const fetchInventoryLookups = async (): Promise<InventoryLookupBundle> => {
   }
 }
 
-export const useInventoryLookupsQuery = () =>
+export const useInventoryLookupsQuery = (enabledRef?: ComputedRef<boolean>) =>
   useQuery({
     queryKey: INVENTORY_LOOKUPS_QUERY_KEY,
+    enabled: computed(() => enabledRef?.value ?? true),
     queryFn: fetchInventoryLookups,
   })

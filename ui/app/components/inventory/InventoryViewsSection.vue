@@ -37,11 +37,6 @@ type VisibleDashboardTile = {
 }
 
 const { t } = useI18n()
-const stocksQuery = useInventoryStocksQuery()
-const lookupsQuery = useInventoryLookupsQuery()
-const awaitingCheckInOrdersQuery = useInventoryAwaitingCheckInOrdersQuery()
-const recentProjectUsagesQuery = useInventoryRecentProjectUsagesQuery()
-const recentExperimentUsagesQuery = useInventoryRecentExperimentUsagesQuery()
 const {
   preferenceQuery: dashboardTilePreferencesQuery,
   isSaving: isSavingDashboardTiles,
@@ -49,6 +44,27 @@ const {
 } = useInventoryDashboardTilePreferences()
 const dashboardTileSaveVersion = ref(0)
 const stockTablePreferenceStore = useInventoryStockTablePreferenceStore()
+const dashboardTilePreferences = computed(() => dashboardTilePreferencesQuery.data.value ?? [])
+const visibleDashboardTileKeys = computed<Set<string>>(() => {
+  return new Set(dashboardTilePreferences.value.filter((tile) => tile.is_visible).map((tile) => tile.key))
+})
+const arePreviewTilesVisible = computed<boolean>(() => {
+  return ['expired_items', 'favorite_items', 'low_stock_items'].some((tileKey) =>
+    visibleDashboardTileKeys.value.has(tileKey),
+  )
+})
+const isArchivedTileVisible = computed<boolean>(() => visibleDashboardTileKeys.value.has('archived_items'))
+const isDeviceTileVisible = computed<boolean>(() => visibleDashboardTileKeys.value.has('device_items'))
+const isAwaitingCheckInTileVisible = computed<boolean>(() => visibleDashboardTileKeys.value.has('awaiting_check_in'))
+const isProjectUsageTileVisible = computed<boolean>(() => visibleDashboardTileKeys.value.has('harvest_project_usages'))
+const isExperimentUsageTileVisible = computed<boolean>(() =>
+  visibleDashboardTileKeys.value.has('ldm_experiment_usages'),
+)
+const stocksQuery = useInventoryStocksQuery(arePreviewTilesVisible)
+const lookupsQuery = useInventoryLookupsQuery(isDeviceTileVisible)
+const awaitingCheckInOrdersQuery = useInventoryAwaitingCheckInOrdersQuery(isAwaitingCheckInTileVisible)
+const recentProjectUsagesQuery = useInventoryRecentProjectUsagesQuery(isProjectUsageTileVisible)
+const recentExperimentUsagesQuery = useInventoryRecentExperimentUsagesQuery(isExperimentUsageTileVisible)
 const stocks = computed<InventoryStockListItem[]>(() => stocksQuery.data.value ?? [])
 const selectedDeviceTypeId = ref<string>('')
 const deviceTypeOptions = computed(() => {
@@ -70,7 +86,8 @@ const deviceStockQueryParams = computed<InventoryStockPageQueryParams>(() => ({
   sorting: [],
   deviceTypeId: selectedDeviceId.value,
 }))
-const deviceStocksQuery = useInventoryStockPageQuery(deviceStockQueryParams)
+const isDeviceStocksQueryEnabled = computed<boolean>(() => isDeviceTileVisible.value && isDeviceSelected.value)
+const deviceStocksQuery = useInventoryStockPageQuery(deviceStockQueryParams, isDeviceStocksQueryEnabled)
 const deviceStocks = computed<InventoryStockListItem[]>(() => deviceStocksQuery.data.value?.results ?? [])
 const awaitingCheckInOrders = computed(() => awaitingCheckInOrdersQuery.data.value ?? [])
 const archivedStockQueryParams = computed<InventoryStockPageQueryParams>(() => ({
@@ -80,11 +97,10 @@ const archivedStockQueryParams = computed<InventoryStockPageQueryParams>(() => (
   search: '',
   sorting: [{ id: 'archivedAt', desc: true }],
 }))
-const archivedStocksQuery = useInventoryStockPageQuery(archivedStockQueryParams)
+const archivedStocksQuery = useInventoryStockPageQuery(archivedStockQueryParams, isArchivedTileVisible)
 const archivedStocks = computed<InventoryStockListItem[]>(() => archivedStocksQuery.data.value?.results ?? [])
 const recentProjectUsages = computed<InventoryUsageListItem[]>(() => recentProjectUsagesQuery.data.value ?? [])
 const recentExperimentUsages = computed<InventoryUsageListItem[]>(() => recentExperimentUsagesQuery.data.value ?? [])
-const dashboardTilePreferences = computed(() => dashboardTilePreferencesQuery.data.value ?? [])
 
 const openOrder = (orderId: number): void => {
   navigateTo(`/inventory/orders?order=${orderId}`)

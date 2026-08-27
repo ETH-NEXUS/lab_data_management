@@ -77,8 +77,12 @@ const fetchInventoryStockPage = async (
   return data.value
 }
 
-export const useInventoryStockPageQuery = (paramsRef: ComputedRef<InventoryStockPageQueryParams>) =>
+export const useInventoryStockPageQuery = (
+  paramsRef: ComputedRef<InventoryStockPageQueryParams>,
+  enabledRef?: ComputedRef<boolean>,
+) =>
   useQuery({
     queryKey: computed(() => ['inventory-stocks-page', paramsRef.value]),
+    enabled: computed(() => enabledRef?.value ?? true),
     queryFn: () => fetchInventoryStockPage(paramsRef.value),
   })

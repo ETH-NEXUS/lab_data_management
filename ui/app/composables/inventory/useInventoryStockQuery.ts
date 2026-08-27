@@ -49,9 +49,10 @@ const fetchInventoryStock = async (stockId: number): Promise<InventoryStockDetai
   return data.value
 }
 
-export const useInventoryStocksQuery = () =>
+export const useInventoryStocksQuery = (enabledRef?: ComputedRef<boolean>) =>
   useQuery({
     queryKey: INVENTORY_STOCKS_QUERY_KEY,
+    enabled: computed(() => enabledRef?.value ?? true),
     queryFn: fetchInventoryStocks,
   })
 

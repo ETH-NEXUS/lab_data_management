@@ -70,9 +70,10 @@ export const useInventoryOrdersQuery = () =>
     queryFn: fetchInventoryOrders,
   })
 
-export const useInventoryAwaitingCheckInOrdersQuery = () =>
+export const useInventoryAwaitingCheckInOrdersQuery = (enabledRef?: ComputedRef<boolean>) =>
   useQuery({
     queryKey: [...INVENTORY_ORDERS_QUERY_KEY, 'recent-awaiting-check-in'],
+    enabled: computed(() => enabledRef?.value ?? true),
     queryFn: fetchAwaitingCheckInOrders,
   })
 
