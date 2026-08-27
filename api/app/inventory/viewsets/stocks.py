@@ -155,7 +155,10 @@ class InventoryStockViewSet(viewsets.ModelViewSet):
 
     @action(detail=False, methods=["get"])
     def low_stock(self, request):
-        queryset = self.get_queryset().filter(quantity__lt=models.F("minimum_quantity"))
+        queryset = self.get_queryset().filter(
+            models.Q(quantity__lte=0)
+            | models.Q(quantity__lt=models.F("minimum_quantity"))
+        )
         page = self.paginate_queryset(queryset)
 
         if page is not None:

@@ -110,6 +110,21 @@ class InventoryStockMultiSectorTests(APITestCase):
         self.assertEqual(other_favorites_response.data["count"], 0)
         self.assertFalse(other_detail_response.data["is_favorite"])
 
+    def test_low_stock_includes_an_empty_item_with_a_zero_minimum_quantity(self):
+        empty_stock = InventoryStock.objects.create(
+            material=self.material,
+            sector=self.primary_sector,
+            stock_unit=self.stock_unit,
+            quantity="0",
+            minimum_quantity="0",
+        )
+
+        response = self.client.get(reverse("inventory-stock-low-stock"))
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data["count"], 1)
+        self.assertEqual(response.data["results"][0]["id"], empty_stock.id)
+
     def test_stock_list_sorts_favorites_for_current_user(self):
         non_favorite_stock = InventoryStock.objects.create(
             material=self.material,
