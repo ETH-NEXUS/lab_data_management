@@ -31,6 +31,11 @@ type InventoryPreviewCard = {
   items: InventoryStockListItem[]
 }
 
+type VisibleDashboardTile = {
+  key: string
+  previewCard?: InventoryPreviewCard
+}
+
 const { t } = useI18n()
 const stocksQuery = useInventoryStocksQuery()
 const lookupsQuery = useInventoryLookupsQuery()
@@ -80,12 +85,6 @@ const archivedStocks = computed<InventoryStockListItem[]>(() => archivedStocksQu
 const recentProjectUsages = computed<InventoryUsageListItem[]>(() => recentProjectUsagesQuery.data.value ?? [])
 const recentExperimentUsages = computed<InventoryUsageListItem[]>(() => recentExperimentUsagesQuery.data.value ?? [])
 const dashboardTilePreferences = computed(() => dashboardTilePreferencesQuery.data.value ?? [])
-const visibleDashboardTileKeys = computed<Set<string>>(() => {
-  return new Set(dashboardTilePreferences.value.filter((tile) => tile.is_visible).map((tile) => tile.key))
-})
-const dashboardTilePositions = computed<Map<string, number>>(() => {
-  return new Map(dashboardTilePreferences.value.map((tile) => [tile.key, tile.position]))
-})
 
 const openOrder = (orderId: number): void => {
   navigateTo(`/inventory/orders?order=${orderId}`)
@@ -93,12 +92,6 @@ const openOrder = (orderId: number): void => {
 
 const openUsages = (): void => {
   navigateTo('/inventory/usages')
-}
-
-const isDashboardTileVisible = (tileKey: string): boolean => visibleDashboardTileKeys.value.has(tileKey)
-
-const getDashboardTilePosition = (tileKey: string): number => {
-  return dashboardTilePositions.value.get(tileKey) ?? Number.MAX_SAFE_INTEGER
 }
 
 const saveDashboardTileKeys = async (tileKeys: string[]): Promise<void> => {
@@ -161,8 +154,16 @@ const previewCards = computed<InventoryPreviewCard[]>(() => [
   },
 ])
 
-const visiblePreviewCards = computed<InventoryPreviewCard[]>(() => {
-  return previewCards.value.filter((card) => visibleDashboardTileKeys.value.has(card.id))
+const visibleDashboardTiles = computed<VisibleDashboardTile[]>(() => {
+  const previewCardsById = new Map(previewCards.value.map((card) => [card.id, card]))
+
+  return dashboardTilePreferences.value
+    .filter((tile) => tile.is_visible)
+    .sort((leftTile, rightTile) => leftTile.position - rightTile.position)
+    .map((tile) => ({
+      key: tile.key,
+      previewCard: previewCardsById.get(tile.key),
+    }))
 })
 
 const openPreset = (preset: InventoryStockPreset): void => {
@@ -221,301 +222,283 @@ const isPreviewLoading = (preset: InventoryStockPreset): boolean => {
     </p>
     <div v-else class="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
       <p
-        v-if="visibleDashboardTileKeys.size === 0"
+        v-if="visibleDashboardTiles.length === 0"
         class="rounded-lg border border-dashed border-slate-200 px-4 py-5 text-sm text-slate-600 sm:col-span-2 xl:col-span-3"
       >
         {{ t('inventory.dashboard_tiles.empty_dashboard') }}
       </p>
-      <UCard
-        v-for="card in visiblePreviewCards"
-        :key="card.id"
-        :ui="{ root: 'core-card divide-y divide-slate-200/70' }"
-        :style="{ order: getDashboardTilePosition(card.id) }"
-      >
-        <template #header>
-          <div class="flex items-start justify-between gap-3">
-            <div class="space-y-1">
+      <template v-for="tile in visibleDashboardTiles" :key="tile.key">
+        <template v-if="tile.previewCard">
+          <UCard :key="tile.key" :ui="{ root: 'core-card divide-y divide-slate-200/70' }">
+            <template #header>
+              <div class="flex items-start justify-between gap-3">
+                <div class="space-y-1">
+                  <div class="flex items-center gap-2">
+                    <span class="inventory-icon-chip">
+                      <UIcon :name="tile.previewCard.icon" class="size-5" />
+                    </span>
+                    <p class="text-sm font-semibold text-slate-800">{{ tile.previewCard.title }}</p>
+                  </div>
+                  <p class="text-sm text-slate-600">{{ tile.previewCard.description }}</p>
+                </div>
+
+                <UButton
+                  variant="ghost"
+                  color="neutral"
+                  icon="i-heroicons-arrow-right"
+                  @click="openPreset(tile.previewCard.preset)"
+                />
+              </div>
+            </template>
+
+            <div class="space-y-2">
+              <p v-if="isPreviewLoading(tile.previewCard.preset)" class="text-sm text-slate-600">
+                {{ t('inventory.stock_workspace.loading') }}
+              </p>
+              <p v-else-if="tile.previewCard.items.length === 0" class="text-sm text-slate-600">
+                {{ t('inventory.stock_workspace.empty') }}
+              </p>
+              <template v-else>
+                <button
+                  v-for="stock in tile.previewCard.items"
+                  :key="`${tile.previewCard.id}-${stock.id}`"
+                  type="button"
+                  class="grid w-full grid-cols-[minmax(0,1fr)_auto] items-center gap-3 rounded-md px-2 py-2 text-left hover:bg-slate-50"
+                  @click="openStockPreviewItem(tile.previewCard.preset, stock.id)"
+                >
+                  <div class="min-w-0">
+                    <p class="truncate text-sm font-medium text-slate-800">
+                      {{ stock.material.product_name }}
+                    </p>
+                  </div>
+                  <div class="flex min-w-0 items-center gap-2">
+                    <UBadge
+                      v-if="tile.previewCard.preset === 'low_stock'"
+                      :color="getInventoryStatusColor(stock)"
+                      variant="soft"
+                      size="xs"
+                    >
+                      {{ getStatusLabel(t, stock.inventory_status) }}
+                    </UBadge>
+                    <p class="max-w-28 truncate text-right text-xs text-slate-500">
+                      {{ getPreviewMeta(stock, tile.previewCard.preset) }}
+                    </p>
+                    <UIcon name="i-heroicons-arrow-top-right-on-square" class="h-4 w-4 shrink-0 text-slate-400" />
+                  </div>
+                </button>
+              </template>
+            </div>
+          </UCard>
+        </template>
+
+        <InventoryRecentActivitiesCard v-if="tile.key === 'recent_activities'" />
+
+        <InventoryCheckInOutCard v-if="tile.key === 'check_in_out'" />
+
+        <UCard v-if="tile.key === 'device_items'" :ui="{ root: 'core-card divide-y divide-slate-200/70' }">
+          <template #header>
+            <div class="space-y-3">
               <div class="flex items-center gap-2">
                 <span class="inventory-icon-chip">
-                  <UIcon :name="card.icon" class="size-5" />
+                  <UIcon name="i-heroicons-cpu-chip" class="size-5" />
                 </span>
-                <p class="text-sm font-semibold text-slate-800">{{ card.title }}</p>
+                <p class="text-sm font-semibold text-slate-800">
+                  {{ t('inventory.page.actions.specific_for_device.title') }}
+                </p>
               </div>
-              <p class="text-sm text-slate-600">{{ card.description }}</p>
+              <USelect
+                v-model="selectedDeviceTypeId"
+                :items="deviceTypeOptions"
+                value-key="value"
+                label-key="label"
+                :placeholder="t('inventory.page.actions.specific_for_device.placeholder')"
+                class="w-full"
+              />
             </div>
+          </template>
 
-            <UButton variant="ghost" color="neutral" icon="i-heroicons-arrow-right" @click="openPreset(card.preset)" />
-          </div>
-        </template>
-
-        <div class="space-y-2">
-          <p v-if="isPreviewLoading(card.preset)" class="text-sm text-slate-600">
-            {{ t('inventory.stock_workspace.loading') }}
-          </p>
-          <p v-else-if="card.items.length === 0" class="text-sm text-slate-600">
-            {{ t('inventory.stock_workspace.empty') }}
-          </p>
-          <template v-else>
-            <button
-              v-for="stock in card.items"
-              :key="`${card.id}-${stock.id}`"
-              type="button"
-              class="grid w-full grid-cols-[minmax(0,1fr)_auto] items-center gap-3 rounded-md px-2 py-2 text-left hover:bg-slate-50"
-              @click="openStockPreviewItem(card.preset, stock.id)"
-            >
-              <div class="min-w-0">
-                <p class="truncate text-sm font-medium text-slate-800">
+          <div class="space-y-2">
+            <p v-if="lookupsQuery.isPending.value" class="text-sm text-slate-600">
+              {{ t('inventory.stock_workspace.loading') }}
+            </p>
+            <p v-else-if="!isDeviceSelected" class="text-sm text-slate-600">
+              {{ t('inventory.page.actions.specific_for_device.description') }}
+            </p>
+            <p v-else-if="deviceStocksQuery.isPending.value" class="text-sm text-slate-600">
+              {{ t('inventory.stock_workspace.loading') }}
+            </p>
+            <p v-else-if="deviceStocks.length === 0" class="text-sm text-slate-600">
+              {{ t('inventory.stock_workspace.empty') }}
+            </p>
+            <template v-else>
+              <button
+                v-for="stock in deviceStocks"
+                :key="`device-${stock.id}`"
+                type="button"
+                class="grid w-full grid-cols-[minmax(0,1fr)_auto] items-center gap-3 rounded-md px-2 py-2 text-left hover:bg-slate-50"
+                @click="openStockPreviewItem('all', stock.id)"
+              >
+                <p class="min-w-0 truncate text-sm font-medium text-slate-800">
                   {{ stock.material.product_name }}
                 </p>
-              </div>
-              <div class="flex min-w-0 items-center gap-2">
-                <UBadge
-                  v-if="card.preset === 'low_stock'"
-                  :color="getInventoryStatusColor(stock)"
-                  variant="soft"
-                  size="xs"
-                >
-                  {{ getStatusLabel(t, stock.inventory_status) }}
-                </UBadge>
-                <p class="max-w-28 truncate text-right text-xs text-slate-500">
-                  {{ getPreviewMeta(stock, card.preset) }}
-                </p>
-                <UIcon name="i-heroicons-arrow-top-right-on-square" class="h-4 w-4 shrink-0 text-slate-400" />
-              </div>
-            </button>
-          </template>
-        </div>
-      </UCard>
+                <div class="flex min-w-0 items-center gap-2">
+                  <p class="max-w-28 truncate text-right text-xs text-slate-500">
+                    {{ stock.location_label ?? t('inventory.stock_table.values.unknown_location') }}
+                  </p>
+                  <UIcon name="i-heroicons-arrow-top-right-on-square" class="h-4 w-4 shrink-0 text-slate-400" />
+                </div>
+              </button>
+            </template>
+          </div>
+        </UCard>
 
-      <InventoryRecentActivitiesCard
-        v-if="isDashboardTileVisible('recent_activities')"
-        :style="{ order: getDashboardTilePosition('recent_activities') }"
-      />
-
-      <InventoryCheckInOutCard
-        v-if="isDashboardTileVisible('check_in_out')"
-        :style="{ order: getDashboardTilePosition('check_in_out') }"
-      />
-
-      <UCard
-        v-if="isDashboardTileVisible('device_items')"
-        :ui="{ root: 'core-card divide-y divide-slate-200/70' }"
-        :style="{ order: getDashboardTilePosition('device_items') }"
-      >
-        <template #header>
-          <div class="space-y-3">
-            <div class="flex items-center gap-2">
+        <UCard v-if="tile.key === 'ldm_experiment_usages'" :ui="{ root: 'core-card divide-y divide-slate-200/70' }">
+          <template #header>
+            <div class="flex items-start gap-2">
               <span class="inventory-icon-chip">
-                <UIcon name="i-heroicons-cpu-chip" class="size-5" />
+                <UIcon name="i-heroicons-beaker" class="size-5" />
               </span>
-              <p class="text-sm font-semibold text-slate-800">
-                {{ t('inventory.page.actions.specific_for_device.title') }}
-              </p>
-            </div>
-            <USelect
-              v-model="selectedDeviceTypeId"
-              :items="deviceTypeOptions"
-              value-key="value"
-              label-key="label"
-              :placeholder="t('inventory.page.actions.specific_for_device.placeholder')"
-              class="w-full"
-            />
-          </div>
-        </template>
-
-        <div class="space-y-2">
-          <p v-if="lookupsQuery.isPending.value" class="text-sm text-slate-600">
-            {{ t('inventory.stock_workspace.loading') }}
-          </p>
-          <p v-else-if="!isDeviceSelected" class="text-sm text-slate-600">
-            {{ t('inventory.page.actions.specific_for_device.description') }}
-          </p>
-          <p v-else-if="deviceStocksQuery.isPending.value" class="text-sm text-slate-600">
-            {{ t('inventory.stock_workspace.loading') }}
-          </p>
-          <p v-else-if="deviceStocks.length === 0" class="text-sm text-slate-600">
-            {{ t('inventory.stock_workspace.empty') }}
-          </p>
-          <template v-else>
-            <button
-              v-for="stock in deviceStocks"
-              :key="`device-${stock.id}`"
-              type="button"
-              class="grid w-full grid-cols-[minmax(0,1fr)_auto] items-center gap-3 rounded-md px-2 py-2 text-left hover:bg-slate-50"
-              @click="openStockPreviewItem('all', stock.id)"
-            >
-              <p class="min-w-0 truncate text-sm font-medium text-slate-800">
-                {{ stock.material.product_name }}
-              </p>
-              <div class="flex min-w-0 items-center gap-2">
-                <p class="max-w-28 truncate text-right text-xs text-slate-500">
-                  {{ stock.location_label ?? t('inventory.stock_table.values.unknown_location') }}
+              <div>
+                <p class="text-sm font-semibold text-slate-800">
+                  {{ t('inventory.page.actions.recently_linked_ldm_experiments.title') }}
                 </p>
-                <UIcon name="i-heroicons-arrow-top-right-on-square" class="h-4 w-4 shrink-0 text-slate-400" />
-              </div>
-            </button>
-          </template>
-        </div>
-      </UCard>
-
-      <UCard
-        v-if="isDashboardTileVisible('ldm_experiment_usages')"
-        :ui="{ root: 'core-card divide-y divide-slate-200/70' }"
-        :style="{ order: getDashboardTilePosition('ldm_experiment_usages') }"
-      >
-        <template #header>
-          <div class="flex items-start gap-2">
-            <span class="inventory-icon-chip">
-              <UIcon name="i-heroicons-beaker" class="size-5" />
-            </span>
-            <div>
-              <p class="text-sm font-semibold text-slate-800">
-                {{ t('inventory.page.actions.recently_linked_ldm_experiments.title') }}
-              </p>
-              <p class="text-sm text-slate-600">
-                {{ t('inventory.page.actions.recently_linked_ldm_experiments.description') }}
-              </p>
-            </div>
-          </div>
-        </template>
-
-        <div class="space-y-2">
-          <p v-if="recentExperimentUsagesQuery.isPending.value" class="text-sm text-slate-600">
-            {{ t('inventory.stock_workspace.loading') }}
-          </p>
-          <p v-else-if="recentExperimentUsagesQuery.error.value" class="text-sm text-red-600">
-            {{ t('inventory.page.actions.recently_linked_ldm_experiments.error') }}
-          </p>
-          <p v-else-if="recentExperimentUsages.length === 0" class="text-sm text-slate-600">
-            {{ t('inventory.stock_workspace.empty') }}
-          </p>
-          <template v-else>
-            <button
-              v-for="usage in recentExperimentUsages"
-              :key="usage.id"
-              type="button"
-              class="grid w-full grid-cols-[minmax(0,1fr)_auto] items-center gap-3 rounded-md px-2 py-2 text-left hover:bg-slate-50"
-              @click="openUsages"
-            >
-              <p class="min-w-0 truncate text-sm font-medium text-slate-800">
-                {{ getUsageItemName(usage) }}
-              </p>
-              <div class="flex min-w-0 items-center gap-2">
-                <p class="max-w-28 truncate text-right text-xs text-slate-500">
-                  {{ usage.experiment?.name ?? t('inventory.stock_table.values.none') }}
+                <p class="text-sm text-slate-600">
+                  {{ t('inventory.page.actions.recently_linked_ldm_experiments.description') }}
                 </p>
-                <UIcon name="i-heroicons-arrow-top-right-on-square" class="h-4 w-4 shrink-0 text-slate-400" />
               </div>
-            </button>
-          </template>
-        </div>
-      </UCard>
-
-      <UCard
-        v-if="isDashboardTileVisible('harvest_project_usages')"
-        :ui="{ root: 'core-card divide-y divide-slate-200/70' }"
-        :style="{ order: getDashboardTilePosition('harvest_project_usages') }"
-      >
-        <template #header>
-          <div class="flex items-start gap-2">
-            <span class="inventory-icon-chip">
-              <UIcon name="i-heroicons-link" class="size-5" />
-            </span>
-            <div>
-              <p class="text-sm font-semibold text-slate-800">
-                {{ t('inventory.page.actions.recently_linked_harvest_projects.title') }}
-              </p>
-              <p class="text-sm text-slate-600">
-                {{ t('inventory.page.actions.recently_linked_harvest_projects.description') }}
-              </p>
             </div>
-          </div>
-        </template>
-
-        <div class="space-y-2">
-          <p v-if="recentProjectUsagesQuery.isPending.value" class="text-sm text-slate-600">
-            {{ t('inventory.stock_workspace.loading') }}
-          </p>
-          <p v-else-if="recentProjectUsagesQuery.error.value" class="text-sm text-red-600">
-            {{ t('inventory.page.actions.recently_linked_harvest_projects.error') }}
-          </p>
-          <p v-else-if="recentProjectUsages.length === 0" class="text-sm text-slate-600">
-            {{ t('inventory.stock_workspace.empty') }}
-          </p>
-          <template v-else>
-            <button
-              v-for="usage in recentProjectUsages"
-              :key="usage.id"
-              type="button"
-              class="grid w-full grid-cols-[minmax(0,1fr)_auto] items-center gap-3 rounded-md px-2 py-2 text-left hover:bg-slate-50"
-              @click="openUsages"
-            >
-              <p class="min-w-0 truncate text-sm font-medium text-slate-800">
-                {{ getUsageItemName(usage) }}
-              </p>
-              <div class="flex min-w-0 items-center gap-2">
-                <p class="max-w-28 truncate text-right text-xs text-slate-500">
-                  {{ usage.project.label || usage.project.name }}
-                </p>
-                <UIcon name="i-heroicons-arrow-top-right-on-square" class="h-4 w-4 shrink-0 text-slate-400" />
-              </div>
-            </button>
           </template>
-          <p class="border-t border-slate-100 pt-2 text-xs text-slate-500">
-            temporal dev info: the connection to a harvest project happens via material usage - record a material usage
-            and you will see the items here
-          </p>
-        </div>
-      </UCard>
 
-      <UCard
-        v-if="isDashboardTileVisible('awaiting_check_in')"
-        :ui="{ root: 'core-card divide-y divide-slate-200/70' }"
-        :style="{ order: getDashboardTilePosition('awaiting_check_in') }"
-      >
-        <template #header>
-          <div class="flex items-start gap-2">
-            <span class="inventory-icon-chip">
-              <UIcon name="i-heroicons-truck" class="size-5" />
-            </span>
-            <div>
-              <p class="text-sm font-semibold text-slate-800">
-                {{ t('inventory.page.actions.awaiting_check_in.title') }}
-              </p>
-              <p class="text-sm text-slate-600">{{ t('inventory.page.actions.awaiting_check_in.description') }}</p>
-            </div>
-          </div>
-        </template>
-
-        <div class="space-y-2">
-          <p v-if="awaitingCheckInOrdersQuery.isPending.value" class="text-sm text-slate-600">
-            {{ t('inventory.stock_workspace.loading') }}
-          </p>
-          <p v-else-if="awaitingCheckInOrdersQuery.error.value" class="text-sm text-red-600">
-            {{ t('inventory.page.actions.awaiting_check_in.error') }}
-          </p>
-          <p v-else-if="awaitingCheckInOrders.length === 0" class="text-sm text-slate-600">
-            {{ t('inventory.stock_workspace.empty') }}
-          </p>
-          <div
-            v-for="order in awaitingCheckInOrders"
-            :key="order.id"
-            class="flex items-center gap-2 rounded-md px-2 py-2"
-          >
-            <p class="min-w-0 flex-1 truncate text-sm font-medium text-slate-800">
-              {{ order.material.product_name }}
+          <div class="space-y-2">
+            <p v-if="recentExperimentUsagesQuery.isPending.value" class="text-sm text-slate-600">
+              {{ t('inventory.stock_workspace.loading') }}
             </p>
-            <UButton
-              variant="ghost"
-              color="neutral"
-              icon="i-heroicons-arrow-top-right-on-square"
-              :aria-label="t('inventory.page.actions.awaiting_check_in.open_order')"
-              :title="t('inventory.page.actions.awaiting_check_in.open_order')"
-              @click="openOrder(order.id)"
-            />
+            <p v-else-if="recentExperimentUsagesQuery.error.value" class="text-sm text-red-600">
+              {{ t('inventory.page.actions.recently_linked_ldm_experiments.error') }}
+            </p>
+            <p v-else-if="recentExperimentUsages.length === 0" class="text-sm text-slate-600">
+              {{ t('inventory.stock_workspace.empty') }}
+            </p>
+            <template v-else>
+              <button
+                v-for="usage in recentExperimentUsages"
+                :key="usage.id"
+                type="button"
+                class="grid w-full grid-cols-[minmax(0,1fr)_auto] items-center gap-3 rounded-md px-2 py-2 text-left hover:bg-slate-50"
+                @click="openUsages"
+              >
+                <p class="min-w-0 truncate text-sm font-medium text-slate-800">
+                  {{ getUsageItemName(usage) }}
+                </p>
+                <div class="flex min-w-0 items-center gap-2">
+                  <p class="max-w-28 truncate text-right text-xs text-slate-500">
+                    {{ usage.experiment?.name ?? t('inventory.stock_table.values.none') }}
+                  </p>
+                  <UIcon name="i-heroicons-arrow-top-right-on-square" class="h-4 w-4 shrink-0 text-slate-400" />
+                </div>
+              </button>
+            </template>
           </div>
-        </div>
-      </UCard>
+        </UCard>
+
+        <UCard v-if="tile.key === 'harvest_project_usages'" :ui="{ root: 'core-card divide-y divide-slate-200/70' }">
+          <template #header>
+            <div class="flex items-start gap-2">
+              <span class="inventory-icon-chip">
+                <UIcon name="i-heroicons-link" class="size-5" />
+              </span>
+              <div>
+                <p class="text-sm font-semibold text-slate-800">
+                  {{ t('inventory.page.actions.recently_linked_harvest_projects.title') }}
+                </p>
+                <p class="text-sm text-slate-600">
+                  {{ t('inventory.page.actions.recently_linked_harvest_projects.description') }}
+                </p>
+              </div>
+            </div>
+          </template>
+
+          <div class="space-y-2">
+            <p v-if="recentProjectUsagesQuery.isPending.value" class="text-sm text-slate-600">
+              {{ t('inventory.stock_workspace.loading') }}
+            </p>
+            <p v-else-if="recentProjectUsagesQuery.error.value" class="text-sm text-red-600">
+              {{ t('inventory.page.actions.recently_linked_harvest_projects.error') }}
+            </p>
+            <p v-else-if="recentProjectUsages.length === 0" class="text-sm text-slate-600">
+              {{ t('inventory.stock_workspace.empty') }}
+            </p>
+            <template v-else>
+              <button
+                v-for="usage in recentProjectUsages"
+                :key="usage.id"
+                type="button"
+                class="grid w-full grid-cols-[minmax(0,1fr)_auto] items-center gap-3 rounded-md px-2 py-2 text-left hover:bg-slate-50"
+                @click="openUsages"
+              >
+                <p class="min-w-0 truncate text-sm font-medium text-slate-800">
+                  {{ getUsageItemName(usage) }}
+                </p>
+                <div class="flex min-w-0 items-center gap-2">
+                  <p class="max-w-28 truncate text-right text-xs text-slate-500">
+                    {{ usage.project.label || usage.project.name }}
+                  </p>
+                  <UIcon name="i-heroicons-arrow-top-right-on-square" class="h-4 w-4 shrink-0 text-slate-400" />
+                </div>
+              </button>
+            </template>
+            <p class="border-t border-slate-100 pt-2 text-xs text-slate-500">
+              temporal dev info: the connection to a harvest project happens via material usage - record a material
+              usage and you will see the items here
+            </p>
+          </div>
+        </UCard>
+
+        <UCard v-if="tile.key === 'awaiting_check_in'" :ui="{ root: 'core-card divide-y divide-slate-200/70' }">
+          <template #header>
+            <div class="flex items-start gap-2">
+              <span class="inventory-icon-chip">
+                <UIcon name="i-heroicons-truck" class="size-5" />
+              </span>
+              <div>
+                <p class="text-sm font-semibold text-slate-800">
+                  {{ t('inventory.page.actions.awaiting_check_in.title') }}
+                </p>
+                <p class="text-sm text-slate-600">{{ t('inventory.page.actions.awaiting_check_in.description') }}</p>
+              </div>
+            </div>
+          </template>
+
+          <div class="space-y-2">
+            <p v-if="awaitingCheckInOrdersQuery.isPending.value" class="text-sm text-slate-600">
+              {{ t('inventory.stock_workspace.loading') }}
+            </p>
+            <p v-else-if="awaitingCheckInOrdersQuery.error.value" class="text-sm text-red-600">
+              {{ t('inventory.page.actions.awaiting_check_in.error') }}
+            </p>
+            <p v-else-if="awaitingCheckInOrders.length === 0" class="text-sm text-slate-600">
+              {{ t('inventory.stock_workspace.empty') }}
+            </p>
+            <div
+              v-for="order in awaitingCheckInOrders"
+              :key="order.id"
+              class="flex items-center gap-2 rounded-md px-2 py-2"
+            >
+              <p class="min-w-0 flex-1 truncate text-sm font-medium text-slate-800">
+                {{ order.material.product_name }}
+              </p>
+              <UButton
+                variant="ghost"
+                color="neutral"
+                icon="i-heroicons-arrow-top-right-on-square"
+                :aria-label="t('inventory.page.actions.awaiting_check_in.open_order')"
+                :title="t('inventory.page.actions.awaiting_check_in.open_order')"
+                @click="openOrder(order.id)"
+              />
+            </div>
+          </div>
+        </UCard>
+      </template>
     </div>
   </section>
 </template>
