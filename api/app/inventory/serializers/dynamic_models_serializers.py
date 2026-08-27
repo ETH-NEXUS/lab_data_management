@@ -628,7 +628,6 @@ class InventoryDashboardTilePreferenceUpdateSerializer(serializers.Serializer):
 
     tile_keys = serializers.ListField(
         child=serializers.CharField(max_length=100),
-        min_length=4,
     )
 
     def validate_tile_keys(self, tile_keys):

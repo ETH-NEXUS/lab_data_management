@@ -453,14 +453,15 @@ class InventoryStockMultiSectorTests(APITestCase):
         self.assertEqual(second_user_response.status_code, status.HTTP_200_OK)
         self.assertEqual(sum(preference["is_visible"] for preference in second_user_response.data), 6)
 
-    def test_dashboard_tile_preferences_require_at_least_four_tiles(self):
+    def test_dashboard_tile_preferences_allow_an_empty_selection(self):
         response = self.client.put(
             reverse("inventory-dashboard-tile-preference-current"),
-            {"tile_keys": ["low_stock_items", "favorite_items", "expired_items"]},
+            {"tile_keys": []},
             format="json",
         )
 
-        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(sum(preference["is_visible"] for preference in response.data), 0)
 
     def test_dashboard_tile_preferences_allow_all_available_tiles(self):
         current_preferences_response = self.client.get(reverse("inventory-dashboard-tile-preference-current"))
