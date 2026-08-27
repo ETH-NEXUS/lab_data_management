@@ -20,6 +20,13 @@ const { t } = useI18n()
 const isOpen = ref(false)
 const selectedTileKeys = ref<string[]>([])
 
+const setSelectedTileKeys = (tiles: InventoryDashboardTilePreference[]): void => {
+  selectedTileKeys.value = tiles
+    .filter((tile) => tile.is_visible)
+    .sort((leftTile, rightTile) => leftTile.position - rightTile.position)
+    .map((tile) => tile.key)
+}
+
 const selectedTiles = computed<InventoryDashboardTilePreference[]>(() => {
   return selectedTileKeys.value
     .map((tileKey) => props.tiles.find((tile) => tile.key === tileKey))
@@ -35,13 +42,18 @@ const availableTiles = computed<InventoryDashboardTilePreference[]>(() => {
 watch(
   () => props.tiles,
   (tiles) => {
-    selectedTileKeys.value = tiles
-      .filter((tile) => tile.is_visible)
-      .sort((leftTile, rightTile) => leftTile.position - rightTile.position)
-      .map((tile) => tile.key)
+    if (!isOpen.value) {
+      setSelectedTileKeys(tiles)
+    }
   },
   { immediate: true },
 )
+
+watch(isOpen, (isModalOpen) => {
+  if (isModalOpen) {
+    setSelectedTileKeys(props.tiles)
+  }
+})
 
 watch(
   () => props.saveVersion,
