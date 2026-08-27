@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import InventoryCheckInOutHistoryWorkspace from '~/components/inventory/InventoryCheckInOutHistoryWorkspace.vue'
+import InventoryHistoryWorkspace from '~/components/inventory/InventoryHistoryWorkspace.vue'
 
 const { t } = useI18n()
 
@@ -19,7 +19,7 @@ const goBackToInventory = (): void => {
         @click="goBackToInventory"
       />
 
-      <InventoryCheckInOutHistoryWorkspace />
+      <InventoryHistoryWorkspace variant="check_in_out" />
     </div>
   </section>
 </template>
