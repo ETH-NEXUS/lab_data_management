@@ -1,4 +1,6 @@
+from django.contrib.auth import get_user_model
 from django.db.models import Q
+from django.db.models import Prefetch
 from rest_framework import viewsets
 
 from ..history_models import InventoryChangeRecord
@@ -7,6 +9,8 @@ from ..serializers.dynamic_models_serializers import (
     InventoryChangeRecordDetailSerializer,
     InventoryChangeRecordListSerializer,
 )
+
+User = get_user_model()
 
 
 class InventoryChangeRecordViewSet(viewsets.ReadOnlyModelViewSet):
@@ -137,6 +141,13 @@ class InventoryChangeRecordViewSet(viewsets.ReadOnlyModelViewSet):
                 | Q(order__material__product_name__icontains=search)
                 | Q(material_usage__inventory_stock__material__product_name__icontains=search)
                 | Q(project__name__icontains=search)
+            )
+
+        if self.request.user.is_authenticated:
+            current_user_queryset = User.objects.filter(id=self.request.user.id)
+            queryset = queryset.prefetch_related(
+                Prefetch("inventory_stock__favorite_users", queryset=current_user_queryset),
+                Prefetch("material_usage__inventory_stock__favorite_users", queryset=current_user_queryset),
             )
 
         return queryset

@@ -110,6 +110,34 @@ class InventoryStockMultiSectorTests(APITestCase):
         self.assertEqual(other_favorites_response.data["count"], 0)
         self.assertFalse(other_detail_response.data["is_favorite"])
 
+    def test_stock_list_sorts_favorites_for_current_user(self):
+        non_favorite_stock = InventoryStock.objects.create(
+            material=self.material,
+            sector=self.primary_sector,
+            stock_unit=self.stock_unit,
+            quantity="2",
+            minimum_quantity="1",
+        )
+        favorite_stock = InventoryStock.objects.create(
+            material=self.material,
+            sector=self.primary_sector,
+            stock_unit=self.stock_unit,
+            quantity="2",
+            minimum_quantity="1",
+        )
+        favorite_stock.favorite_users.add(self.first_user)
+
+        response = self.client.get(
+            reverse("inventory-stock-list"),
+            {"ordering": "-favorite"},
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(
+            [stock_data["id"] for stock_data in response.data["results"]],
+            [favorite_stock.id, non_favorite_stock.id],
+        )
+
     def test_create_stock_rejects_sectors_from_multiple_rooms(self):
         payload = {
             "material_id": self.material.id,
@@ -361,6 +389,25 @@ class InventoryStockMultiSectorTests(APITestCase):
             {record["id"] for record in response.data["results"]},
             {check_in_record.id, stock_increase_record.id, check_out_record.id},
         )
+
+    def test_history_returns_the_current_users_favorite_state(self):
+        stock = InventoryStock.objects.create(
+            material=self.material,
+            sector=self.primary_sector,
+            stock_unit=self.stock_unit,
+            quantity="2",
+            minimum_quantity="1",
+        )
+        stock.favorite_users.add(self.first_user)
+        InventoryChangeRecord.objects.create(
+            performed_action=InventoryChangeRecord.ACTION_STOCK_CREATED,
+            inventory_stock=stock,
+        )
+
+        response = self.client.get(reverse("inventory-history-list"))
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertTrue(response.data["results"][0]["inventory_stock"]["is_favorite"])
 
 
 class InventoryMaterialReagentTests(APITestCase):

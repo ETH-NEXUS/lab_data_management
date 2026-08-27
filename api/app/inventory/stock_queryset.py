@@ -129,10 +129,29 @@ def apply_inventory_stock_list_filters(queryset, query_params, favorite_user=Non
         filtered_queryset = filtered_queryset.filter(lot_number__icontains=lot_number)
 
     if ordering:
+        favorite_ordering_requested = any(
+            raw_value.strip().lstrip("-") == "favorite"
+            for raw_value in ordering.split(",")
+        )
+
+        if favorite_ordering_requested:
+            if favorite_user is not None and favorite_user.is_authenticated:
+                favorite_membership_queryset = InventoryStock.favorite_users.through.objects.filter(
+                    inventorystock_id=models.OuterRef("pk"),
+                    user_id=favorite_user.id,
+                )
+                filtered_queryset = filtered_queryset.annotate(
+                    is_favorite_sort=models.Exists(favorite_membership_queryset),
+                )
+            else:
+                filtered_queryset = filtered_queryset.annotate(
+                    is_favorite_sort=models.Value(False, output_field=models.BooleanField()),
+                )
+
         ordering_fields = []
         ordering_map = {
             "productName": ["material__product_name"],
-            "favorite": ["is_favorite"],
+            "favorite": ["is_favorite_sort"],
             "inventoryStatus": ["inventory_status_rank"],
             "quantityWithStockUnit": ["quantity"],
             "minimumQuantity": ["minimum_quantity"],
