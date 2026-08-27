@@ -504,6 +504,16 @@
       },
       "placeholder_suffix": "to be implemented"
     },
+    "dashboard_tiles": {
+      "title": "Customize dashboard",
+      "description": "Choose the 4 to 6 inventory cards that are most useful for your work.",
+      "configure": "Customize dashboard",
+      "selected_count": "{count} of {maximum} cards selected",
+      "cancel": "Cancel",
+      "save": "Save dashboard",
+      "loading": "Loading your dashboard settings...",
+      "error": "Failed to load dashboard settings."
+    },
     "stock_workspace": {
       "title": "Inventory stock",
       "description": "Operational overview optimized for quick scanning, low-stock checks, and physical lookup.",

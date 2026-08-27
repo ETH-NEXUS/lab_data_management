@@ -5,6 +5,7 @@ export const INVENTORY_ORDERS_ENDPOINT = 'inventory/orders/'
 export const INVENTORY_USAGES_ENDPOINT = 'inventory/material-usages/'
 export const INVENTORY_HISTORY_ENDPOINT = 'inventory/history/'
 export const INVENTORY_STOCK_TABLE_PREFERENCES_ENDPOINT = 'inventory/stock-table-preferences/'
+export const INVENTORY_DASHBOARD_TILE_PREFERENCES_ENDPOINT = 'inventory/dashboard-tile-preferences/'
 
 export const INVENTORY_ROOMS_ENDPOINT = 'inventory/rooms/'
 export const INVENTORY_SECTORS_ENDPOINT = 'inventory/sectors/'
@@ -25,6 +26,7 @@ export const INVENTORY_USAGES_QUERY_KEY = ['inventory-usages']
 export const INVENTORY_HISTORY_QUERY_KEY = ['inventory-history']
 export const INVENTORY_LOOKUPS_QUERY_KEY = ['inventory-lookups']
 export const INVENTORY_STOCK_TABLE_PREFERENCES_QUERY_KEY = ['inventory-stock-table-preferences']
+export const INVENTORY_DASHBOARD_TILE_PREFERENCES_QUERY_KEY = ['inventory-dashboard-tile-preferences']
 
 export const INVENTORY_STOCKS_ERROR_MESSAGE = 'Failed to load inventory stock items.'
 export const INVENTORY_STOCK_ERROR_MESSAGE = 'Failed to load inventory stock item.'
@@ -51,6 +53,8 @@ export const INVENTORY_RESTORE_STOCK_ERROR_MESSAGE = 'Failed to restore stock it
 export const INVENTORY_STOCK_TABLE_PREFERENCE_ERROR_MESSAGE = 'Failed to load inventory stock table preference.'
 export const INVENTORY_UPDATE_STOCK_TABLE_PREFERENCE_ERROR_MESSAGE =
   'Failed to update inventory stock table preference.'
+export const INVENTORY_DASHBOARD_TILE_PREFERENCE_ERROR_MESSAGE = 'Failed to load dashboard tile preferences.'
+export const INVENTORY_UPDATE_DASHBOARD_TILE_PREFERENCE_ERROR_MESSAGE = 'Failed to update dashboard tile preferences.'
 
 export const getInventoryStockQueryKey = (stockId: number) => [...INVENTORY_STOCKS_QUERY_KEY, stockId]
 export const getInventoryMaterialQueryKey = (materialId: number) => [...INVENTORY_MATERIALS_QUERY_KEY, materialId]
@@ -282,6 +286,17 @@ export type InventoryStockTablePreference = {
   column_visibility: Record<string, boolean>
   created_at: string
   updated_at: string
+}
+
+export type InventoryDashboardTilePreference = {
+  key: string
+  name: string
+  is_visible: boolean
+  position: number
+}
+
+export type UpdateInventoryDashboardTilePreferencePayload = {
+  tile_keys: string[]
 }
 
 export type CreateInventoryMaterialPayload = {

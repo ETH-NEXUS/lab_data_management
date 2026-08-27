@@ -13,6 +13,7 @@ import {
 import { useInventoryLookupsQuery } from '~/composables/inventory/useInventoryLookupQuery'
 import { useInventoryAwaitingCheckInOrdersQuery } from '~/composables/inventory/useInventoryOrderQuery'
 import { useInventoryStocksQuery } from '~/composables/inventory/useInventoryStockQuery'
+import { useInventoryDashboardTilePreferences } from '~/composables/inventory/useInventoryDashboardTilePreferenceQuery'
 import {
   useInventoryRecentExperimentUsagesQuery,
   useInventoryRecentProjectUsagesQuery,
@@ -36,6 +37,11 @@ const lookupsQuery = useInventoryLookupsQuery()
 const awaitingCheckInOrdersQuery = useInventoryAwaitingCheckInOrdersQuery()
 const recentProjectUsagesQuery = useInventoryRecentProjectUsagesQuery()
 const recentExperimentUsagesQuery = useInventoryRecentExperimentUsagesQuery()
+const {
+  preferenceQuery: dashboardTilePreferencesQuery,
+  isSaving: isSavingDashboardTiles,
+  saveTileKeys,
+} = useInventoryDashboardTilePreferences()
 const stockTablePreferenceStore = useInventoryStockTablePreferenceStore()
 const stocks = computed<InventoryStockListItem[]>(() => stocksQuery.data.value ?? [])
 const selectedDeviceTypeId = ref<string>('')
@@ -72,6 +78,10 @@ const archivedStocksQuery = useInventoryStockPageQuery(archivedStockQueryParams)
 const archivedStocks = computed<InventoryStockListItem[]>(() => archivedStocksQuery.data.value?.results ?? [])
 const recentProjectUsages = computed<InventoryUsageListItem[]>(() => recentProjectUsagesQuery.data.value ?? [])
 const recentExperimentUsages = computed<InventoryUsageListItem[]>(() => recentExperimentUsagesQuery.data.value ?? [])
+const dashboardTilePreferences = computed(() => dashboardTilePreferencesQuery.data.value ?? [])
+const visibleDashboardTileKeys = computed<Set<string>>(() => {
+  return new Set(dashboardTilePreferences.value.filter((tile) => tile.is_visible).map((tile) => tile.key))
+})
 
 const openOrder = (orderId: number): void => {
   navigateTo(`/inventory/orders?order=${orderId}`)
@@ -79,6 +89,16 @@ const openOrder = (orderId: number): void => {
 
 const openUsages = (): void => {
   navigateTo('/inventory/usages')
+}
+
+const isDashboardTileVisible = (tileKey: string): boolean => visibleDashboardTileKeys.value.has(tileKey)
+
+const saveDashboardTileKeys = async (tileKeys: string[]): Promise<void> => {
+  try {
+    await saveTileKeys(tileKeys)
+  } catch {
+    // useAPI already shows a readable request error toast.
+  }
 }
 
 const getUsageItemName = (usage: InventoryUsageListItem): string => {
@@ -132,6 +152,10 @@ const previewCards = computed<InventoryPreviewCard[]>(() => [
   },
 ])
 
+const visiblePreviewCards = computed<InventoryPreviewCard[]>(() => {
+  return previewCards.value.filter((card) => visibleDashboardTileKeys.value.has(card.id))
+})
+
 const openPreset = (preset: InventoryStockPreset): void => {
   navigateTo(`/inventory/all?preset=${preset}`)
 }
@@ -171,8 +195,25 @@ const isPreviewLoading = (preset: InventoryStockPreset): boolean => {
 
 <template>
   <section class="space-y-3">
-    <div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-      <UCard v-for="card in previewCards" :key="card.id" :ui="{ root: 'core-card divide-y divide-slate-200/70' }">
+    <InventoryDashboardTilePicker
+      :tiles="dashboardTilePreferences"
+      :is-loading="dashboardTilePreferencesQuery.isPending.value"
+      :is-saving="isSavingDashboardTiles"
+      @save="saveDashboardTileKeys"
+    />
+
+    <p v-if="dashboardTilePreferencesQuery.isPending.value" class="text-sm text-slate-600">
+      {{ t('inventory.dashboard_tiles.loading') }}
+    </p>
+    <p v-else-if="dashboardTilePreferencesQuery.error.value" class="text-sm text-red-600">
+      {{ t('inventory.dashboard_tiles.error') }}
+    </p>
+    <div v-else class="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+      <UCard
+        v-for="card in visiblePreviewCards"
+        :key="card.id"
+        :ui="{ root: 'core-card divide-y divide-slate-200/70' }"
+      >
         <template #header>
           <div class="flex items-start justify-between gap-3">
             <div class="space-y-1">
@@ -228,11 +269,11 @@ const isPreviewLoading = (preset: InventoryStockPreset): boolean => {
         </div>
       </UCard>
 
-      <InventoryRecentActivitiesCard />
+      <InventoryRecentActivitiesCard v-if="isDashboardTileVisible('recent_activities')" />
 
-      <InventoryCheckInOutCard />
+      <InventoryCheckInOutCard v-if="isDashboardTileVisible('check_in_out')" />
 
-      <UCard :ui="{ root: 'core-card divide-y divide-slate-200/70' }">
+      <UCard v-if="isDashboardTileVisible('device_items')" :ui="{ root: 'core-card divide-y divide-slate-200/70' }">
         <template #header>
           <div class="space-y-3">
             <div class="flex items-center gap-2">
@@ -289,7 +330,10 @@ const isPreviewLoading = (preset: InventoryStockPreset): boolean => {
         </div>
       </UCard>
 
-      <UCard :ui="{ root: 'core-card divide-y divide-slate-200/70' }">
+      <UCard
+        v-if="isDashboardTileVisible('ldm_experiment_usages')"
+        :ui="{ root: 'core-card divide-y divide-slate-200/70' }"
+      >
         <template #header>
           <div class="flex items-start gap-2">
             <span class="inventory-icon-chip">
@@ -338,7 +382,10 @@ const isPreviewLoading = (preset: InventoryStockPreset): boolean => {
         </div>
       </UCard>
 
-      <UCard :ui="{ root: 'core-card divide-y divide-slate-200/70' }">
+      <UCard
+        v-if="isDashboardTileVisible('harvest_project_usages')"
+        :ui="{ root: 'core-card divide-y divide-slate-200/70' }"
+      >
         <template #header>
           <div class="flex items-start gap-2">
             <span class="inventory-icon-chip">
@@ -391,7 +438,10 @@ const isPreviewLoading = (preset: InventoryStockPreset): boolean => {
         </div>
       </UCard>
 
-      <UCard :ui="{ root: 'core-card divide-y divide-slate-200/70' }">
+      <UCard
+        v-if="isDashboardTileVisible('awaiting_check_in')"
+        :ui="{ root: 'core-card divide-y divide-slate-200/70' }"
+      >
         <template #header>
           <div class="flex items-start gap-2">
             <span class="inventory-icon-chip">
