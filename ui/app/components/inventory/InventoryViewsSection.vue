@@ -4,7 +4,6 @@ import {
   useInventoryStockPageQuery,
   type InventoryStockPageQueryParams,
 } from '~/composables/inventory/useInventoryStockPageQuery'
-import { useInventoryAwaitingCheckInOrdersQuery } from '~/composables/inventory/useInventoryOrderQuery'
 import { useInventoryDashboardTilePreferences } from '~/composables/inventory/useInventoryDashboardTilePreferenceQuery'
 import {
   useInventoryRecentExperimentUsagesQuery,
@@ -45,12 +44,10 @@ const isExpiredTileVisible = computed<boolean>(() => visibleDashboardTileKeys.va
 const isFavoriteTileVisible = computed<boolean>(() => visibleDashboardTileKeys.value.has('favorite_items'))
 const isLowStockTileVisible = computed<boolean>(() => visibleDashboardTileKeys.value.has('low_stock_items'))
 const isArchivedTileVisible = computed<boolean>(() => visibleDashboardTileKeys.value.has('archived_items'))
-const isAwaitingCheckInTileVisible = computed<boolean>(() => visibleDashboardTileKeys.value.has('awaiting_check_in'))
 const isProjectUsageTileVisible = computed<boolean>(() => visibleDashboardTileKeys.value.has('harvest_project_usages'))
 const isExperimentUsageTileVisible = computed<boolean>(() =>
   visibleDashboardTileKeys.value.has('ldm_experiment_usages'),
 )
-const awaitingCheckInOrdersQuery = useInventoryAwaitingCheckInOrdersQuery(isAwaitingCheckInTileVisible)
 const recentProjectUsagesQuery = useInventoryRecentProjectUsagesQuery(isProjectUsageTileVisible)
 const recentExperimentUsagesQuery = useInventoryRecentExperimentUsagesQuery(isExperimentUsageTileVisible)
 const expiredStockQueryParams = computed<InventoryStockPageQueryParams>(() => ({
@@ -80,7 +77,6 @@ const lowStockQueryParams = computed<InventoryStockPageQueryParams>(() => ({
 }))
 const lowStocksQuery = useInventoryStockPageQuery(lowStockQueryParams, isLowStockTileVisible)
 const lowStocks = computed<InventoryStockListItem[]>(() => lowStocksQuery.data.value?.results ?? [])
-const awaitingCheckInOrders = computed(() => awaitingCheckInOrdersQuery.data.value ?? [])
 const archivedStockQueryParams = computed<InventoryStockPageQueryParams>(() => ({
   preset: 'archived',
   page: 1,
@@ -92,10 +88,6 @@ const archivedStocksQuery = useInventoryStockPageQuery(archivedStockQueryParams,
 const archivedStocks = computed<InventoryStockListItem[]>(() => archivedStocksQuery.data.value?.results ?? [])
 const recentProjectUsages = computed<InventoryUsageListItem[]>(() => recentProjectUsagesQuery.data.value ?? [])
 const recentExperimentUsages = computed<InventoryUsageListItem[]>(() => recentExperimentUsagesQuery.data.value ?? [])
-
-const openOrder = (orderId: number): void => {
-  navigateTo(`/inventory/orders?order=${orderId}`)
-}
 
 const openUsages = (): void => {
   navigateTo('/inventory/usages')
@@ -315,50 +307,7 @@ const visibleDashboardTiles = computed<VisibleDashboardTile[]>(() => {
           </div>
         </UCard>
 
-        <UCard v-if="tile.key === 'awaiting_check_in'" :ui="{ root: 'core-card divide-y divide-slate-200/70' }">
-          <template #header>
-            <div class="flex items-start gap-2">
-              <span class="inventory-icon-chip">
-                <UIcon name="i-heroicons-truck" class="size-5" />
-              </span>
-              <div>
-                <p class="text-sm font-semibold text-slate-800">
-                  {{ t('inventory.page.actions.awaiting_check_in.title') }}
-                </p>
-                <p class="text-sm text-slate-600">{{ t('inventory.page.actions.awaiting_check_in.description') }}</p>
-              </div>
-            </div>
-          </template>
-
-          <div class="space-y-2">
-            <p v-if="awaitingCheckInOrdersQuery.isPending.value" class="text-sm text-slate-600">
-              {{ t('inventory.stock_workspace.loading') }}
-            </p>
-            <p v-else-if="awaitingCheckInOrdersQuery.error.value" class="text-sm text-red-600">
-              {{ t('inventory.page.actions.awaiting_check_in.error') }}
-            </p>
-            <p v-else-if="awaitingCheckInOrders.length === 0" class="text-sm text-slate-600">
-              {{ t('inventory.stock_workspace.empty') }}
-            </p>
-            <div
-              v-for="order in awaitingCheckInOrders"
-              :key="order.id"
-              class="flex items-center gap-2 rounded-md px-2 py-2"
-            >
-              <p class="min-w-0 flex-1 truncate text-sm font-medium text-slate-800">
-                {{ order.material.product_name }}
-              </p>
-              <UButton
-                variant="ghost"
-                color="neutral"
-                icon="i-heroicons-arrow-top-right-on-square"
-                :aria-label="t('inventory.page.actions.awaiting_check_in.open_order')"
-                :title="t('inventory.page.actions.awaiting_check_in.open_order')"
-                @click="openOrder(order.id)"
-              />
-            </div>
-          </div>
-        </UCard>
+        <InventoryAwaitingCheckInCard v-if="tile.key === 'awaiting_check_in'" />
       </template>
     </div>
   </section>
