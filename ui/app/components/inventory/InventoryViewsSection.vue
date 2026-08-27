@@ -89,10 +89,6 @@ const archivedStocks = computed<InventoryStockListItem[]>(() => archivedStocksQu
 const recentProjectUsages = computed<InventoryUsageListItem[]>(() => recentProjectUsagesQuery.data.value ?? [])
 const recentExperimentUsages = computed<InventoryUsageListItem[]>(() => recentExperimentUsagesQuery.data.value ?? [])
 
-const openUsages = (): void => {
-  navigateTo('/inventory/usages')
-}
-
 const saveDashboardTileKeys = async (tileKeys: string[]): Promise<void> => {
   try {
     await saveTileKeys(tileKeys)
@@ -100,10 +96,6 @@ const saveDashboardTileKeys = async (tileKeys: string[]): Promise<void> => {
   } catch {
     // useAPI already shows a readable request error toast.
   }
-}
-
-const getUsageItemName = (usage: InventoryUsageListItem): string => {
-  return usage.material?.product_name ?? usage.inventory_stock.material.product_name
 }
 
 const previewCards = computed<InventoryPreviewCard[]>(() => [
@@ -205,107 +197,30 @@ const visibleDashboardTiles = computed<VisibleDashboardTile[]>(() => {
 
         <InventoryDevicePreviewCard v-if="tile.key === 'device_items'" />
 
-        <UCard v-if="tile.key === 'ldm_experiment_usages'" :ui="{ root: 'core-card divide-y divide-slate-200/70' }">
-          <template #header>
-            <div class="flex items-start gap-2">
-              <span class="inventory-icon-chip">
-                <UIcon name="i-heroicons-beaker" class="size-5" />
-              </span>
-              <div>
-                <p class="text-sm font-semibold text-slate-800">
-                  {{ t('inventory.page.actions.recently_linked_ldm_experiments.title') }}
-                </p>
-                <p class="text-sm text-slate-600">
-                  {{ t('inventory.page.actions.recently_linked_ldm_experiments.description') }}
-                </p>
-              </div>
-            </div>
-          </template>
+        <InventoryUsagePreviewCard
+          v-if="tile.key === 'ldm_experiment_usages'"
+          :title="t('inventory.page.actions.recently_linked_ldm_experiments.title')"
+          :description="t('inventory.page.actions.recently_linked_ldm_experiments.description')"
+          icon="i-heroicons-beaker"
+          link-type="experiment"
+          :items="recentExperimentUsages"
+          :is-loading="recentExperimentUsagesQuery.isPending.value"
+          :has-error="Boolean(recentExperimentUsagesQuery.error.value)"
+          :error-message="t('inventory.page.actions.recently_linked_ldm_experiments.error')"
+        />
 
-          <div class="space-y-2">
-            <p v-if="recentExperimentUsagesQuery.isPending.value" class="text-sm text-slate-600">
-              {{ t('inventory.stock_workspace.loading') }}
-            </p>
-            <p v-else-if="recentExperimentUsagesQuery.error.value" class="text-sm text-red-600">
-              {{ t('inventory.page.actions.recently_linked_ldm_experiments.error') }}
-            </p>
-            <p v-else-if="recentExperimentUsages.length === 0" class="text-sm text-slate-600">
-              {{ t('inventory.stock_workspace.empty') }}
-            </p>
-            <template v-else>
-              <button
-                v-for="usage in recentExperimentUsages"
-                :key="usage.id"
-                type="button"
-                class="grid w-full grid-cols-[minmax(0,1fr)_auto] items-center gap-3 rounded-md px-2 py-2 text-left hover:bg-slate-50"
-                @click="openUsages"
-              >
-                <p class="min-w-0 truncate text-sm font-medium text-slate-800">
-                  {{ getUsageItemName(usage) }}
-                </p>
-                <div class="flex min-w-0 items-center gap-2">
-                  <p class="max-w-28 truncate text-right text-xs text-slate-500">
-                    {{ usage.experiment?.name ?? t('inventory.stock_table.values.none') }}
-                  </p>
-                  <UIcon name="i-heroicons-arrow-top-right-on-square" class="h-4 w-4 shrink-0 text-slate-400" />
-                </div>
-              </button>
-            </template>
-          </div>
-        </UCard>
-
-        <UCard v-if="tile.key === 'harvest_project_usages'" :ui="{ root: 'core-card divide-y divide-slate-200/70' }">
-          <template #header>
-            <div class="flex items-start gap-2">
-              <span class="inventory-icon-chip">
-                <UIcon name="i-heroicons-link" class="size-5" />
-              </span>
-              <div>
-                <p class="text-sm font-semibold text-slate-800">
-                  {{ t('inventory.page.actions.recently_linked_harvest_projects.title') }}
-                </p>
-                <p class="text-sm text-slate-600">
-                  {{ t('inventory.page.actions.recently_linked_harvest_projects.description') }}
-                </p>
-              </div>
-            </div>
-          </template>
-
-          <div class="space-y-2">
-            <p v-if="recentProjectUsagesQuery.isPending.value" class="text-sm text-slate-600">
-              {{ t('inventory.stock_workspace.loading') }}
-            </p>
-            <p v-else-if="recentProjectUsagesQuery.error.value" class="text-sm text-red-600">
-              {{ t('inventory.page.actions.recently_linked_harvest_projects.error') }}
-            </p>
-            <p v-else-if="recentProjectUsages.length === 0" class="text-sm text-slate-600">
-              {{ t('inventory.stock_workspace.empty') }}
-            </p>
-            <template v-else>
-              <button
-                v-for="usage in recentProjectUsages"
-                :key="usage.id"
-                type="button"
-                class="grid w-full grid-cols-[minmax(0,1fr)_auto] items-center gap-3 rounded-md px-2 py-2 text-left hover:bg-slate-50"
-                @click="openUsages"
-              >
-                <p class="min-w-0 truncate text-sm font-medium text-slate-800">
-                  {{ getUsageItemName(usage) }}
-                </p>
-                <div class="flex min-w-0 items-center gap-2">
-                  <p class="max-w-28 truncate text-right text-xs text-slate-500">
-                    {{ usage.project.label || usage.project.name }}
-                  </p>
-                  <UIcon name="i-heroicons-arrow-top-right-on-square" class="h-4 w-4 shrink-0 text-slate-400" />
-                </div>
-              </button>
-            </template>
-            <p class="border-t border-slate-100 pt-2 text-xs text-slate-500">
-              temporal dev info: the connection to a harvest project happens via material usage - record a material
-              usage and you will see the items here
-            </p>
-          </div>
-        </UCard>
+        <InventoryUsagePreviewCard
+          v-if="tile.key === 'harvest_project_usages'"
+          :title="t('inventory.page.actions.recently_linked_harvest_projects.title')"
+          :description="t('inventory.page.actions.recently_linked_harvest_projects.description')"
+          icon="i-heroicons-link"
+          link-type="project"
+          :items="recentProjectUsages"
+          :is-loading="recentProjectUsagesQuery.isPending.value"
+          :has-error="Boolean(recentProjectUsagesQuery.error.value)"
+          :error-message="t('inventory.page.actions.recently_linked_harvest_projects.error')"
+          footer-text="temporal dev info: the connection to a harvest project happens via material usage - record a material usage and you will see the items here"
+        />
 
         <InventoryAwaitingCheckInCard v-if="tile.key === 'awaiting_check_in'" />
       </template>
