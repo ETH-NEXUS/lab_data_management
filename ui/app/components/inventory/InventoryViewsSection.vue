@@ -1,18 +1,12 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
-import {
-  formatNumericString,
-  getStocksForPreset,
-  getStatusLabel,
-  sortStocksLikeInventoryTable,
-} from '~/components/inventory/inventory-stock-table.values'
+import { formatNumericString, getStatusLabel } from '~/components/inventory/inventory-stock-table.values'
 import {
   useInventoryStockPageQuery,
   type InventoryStockPageQueryParams,
 } from '~/composables/inventory/useInventoryStockPageQuery'
 import { useInventoryLookupsQuery } from '~/composables/inventory/useInventoryLookupQuery'
 import { useInventoryAwaitingCheckInOrdersQuery } from '~/composables/inventory/useInventoryOrderQuery'
-import { useInventoryStocksQuery } from '~/composables/inventory/useInventoryStockQuery'
 import { useInventoryDashboardTilePreferences } from '~/composables/inventory/useInventoryDashboardTilePreferenceQuery'
 import {
   useInventoryRecentExperimentUsagesQuery,
@@ -48,11 +42,9 @@ const dashboardTilePreferences = computed(() => dashboardTilePreferencesQuery.da
 const visibleDashboardTileKeys = computed<Set<string>>(() => {
   return new Set(dashboardTilePreferences.value.filter((tile) => tile.is_visible).map((tile) => tile.key))
 })
-const arePreviewTilesVisible = computed<boolean>(() => {
-  return ['expired_items', 'favorite_items', 'low_stock_items'].some((tileKey) =>
-    visibleDashboardTileKeys.value.has(tileKey),
-  )
-})
+const isExpiredTileVisible = computed<boolean>(() => visibleDashboardTileKeys.value.has('expired_items'))
+const isFavoriteTileVisible = computed<boolean>(() => visibleDashboardTileKeys.value.has('favorite_items'))
+const isLowStockTileVisible = computed<boolean>(() => visibleDashboardTileKeys.value.has('low_stock_items'))
 const isArchivedTileVisible = computed<boolean>(() => visibleDashboardTileKeys.value.has('archived_items'))
 const isDeviceTileVisible = computed<boolean>(() => visibleDashboardTileKeys.value.has('device_items'))
 const isAwaitingCheckInTileVisible = computed<boolean>(() => visibleDashboardTileKeys.value.has('awaiting_check_in'))
@@ -60,12 +52,37 @@ const isProjectUsageTileVisible = computed<boolean>(() => visibleDashboardTileKe
 const isExperimentUsageTileVisible = computed<boolean>(() =>
   visibleDashboardTileKeys.value.has('ldm_experiment_usages'),
 )
-const stocksQuery = useInventoryStocksQuery(arePreviewTilesVisible)
 const lookupsQuery = useInventoryLookupsQuery(isDeviceTileVisible)
 const awaitingCheckInOrdersQuery = useInventoryAwaitingCheckInOrdersQuery(isAwaitingCheckInTileVisible)
 const recentProjectUsagesQuery = useInventoryRecentProjectUsagesQuery(isProjectUsageTileVisible)
 const recentExperimentUsagesQuery = useInventoryRecentExperimentUsagesQuery(isExperimentUsageTileVisible)
-const stocks = computed<InventoryStockListItem[]>(() => stocksQuery.data.value ?? [])
+const expiredStockQueryParams = computed<InventoryStockPageQueryParams>(() => ({
+  preset: 'expired',
+  page: 1,
+  pageSize: 5,
+  search: '',
+  sorting: [{ id: 'expiryDate', desc: true }],
+}))
+const expiredStocksQuery = useInventoryStockPageQuery(expiredStockQueryParams, isExpiredTileVisible)
+const expiredStocks = computed<InventoryStockListItem[]>(() => expiredStocksQuery.data.value?.results ?? [])
+const favoriteStockQueryParams = computed<InventoryStockPageQueryParams>(() => ({
+  preset: 'favorite',
+  page: 1,
+  pageSize: 5,
+  search: '',
+  sorting: stockTablePreferenceStore.sortingState,
+}))
+const favoriteStocksQuery = useInventoryStockPageQuery(favoriteStockQueryParams, isFavoriteTileVisible)
+const favoriteStocks = computed<InventoryStockListItem[]>(() => favoriteStocksQuery.data.value?.results ?? [])
+const lowStockQueryParams = computed<InventoryStockPageQueryParams>(() => ({
+  preset: 'low_stock',
+  page: 1,
+  pageSize: 5,
+  search: '',
+  sorting: stockTablePreferenceStore.sortingState,
+}))
+const lowStocksQuery = useInventoryStockPageQuery(lowStockQueryParams, isLowStockTileVisible)
+const lowStocks = computed<InventoryStockListItem[]>(() => lowStocksQuery.data.value?.results ?? [])
 const selectedDeviceTypeId = ref<string>('')
 const deviceTypeOptions = computed(() => {
   return (lookupsQuery.data.value?.deviceTypes ?? []).map((deviceType) => ({
@@ -123,18 +140,6 @@ const getUsageItemName = (usage: InventoryUsageListItem): string => {
   return usage.material?.product_name ?? usage.inventory_stock.material.product_name
 }
 
-const getPreviewItems = (preset: InventoryStockPreset): InventoryStockListItem[] => {
-  const presetStocks = getStocksForPreset(stocks.value, preset)
-
-  if (preset === 'expired') {
-    return [...presetStocks]
-      .sort((leftStock, rightStock) => (rightStock.expiry_date ?? '').localeCompare(leftStock.expiry_date ?? ''))
-      .slice(0, 5)
-  }
-
-  return sortStocksLikeInventoryTable(presetStocks, stockTablePreferenceStore.sortingState, t).slice(0, 5)
-}
-
 const previewCards = computed<InventoryPreviewCard[]>(() => [
   {
     id: 'expired_items',
@@ -142,7 +147,7 @@ const previewCards = computed<InventoryPreviewCard[]>(() => [
     description: t('inventory.page.actions.expired_items.description'),
     icon: 'i-heroicons-clock',
     preset: 'expired',
-    items: getPreviewItems('expired'),
+    items: expiredStocks.value,
   },
   {
     id: 'favorite_items',
@@ -150,7 +155,7 @@ const previewCards = computed<InventoryPreviewCard[]>(() => [
     description: t('inventory.page.actions.favorite_items.description'),
     icon: 'i-heroicons-star',
     preset: 'favorite',
-    items: getPreviewItems('favorite'),
+    items: favoriteStocks.value,
   },
   {
     id: 'low_stock_items',
@@ -158,7 +163,7 @@ const previewCards = computed<InventoryPreviewCard[]>(() => [
     description: t('inventory.page.actions.low_stock_items.description'),
     icon: 'i-heroicons-exclamation-triangle',
     preset: 'low_stock',
-    items: getPreviewItems('low_stock'),
+    items: lowStocks.value,
   },
   {
     id: 'archived_items',
@@ -215,7 +220,19 @@ const getInventoryStatusColor = (stock: InventoryStockListItem): 'error' | 'warn
 }
 
 const isPreviewLoading = (preset: InventoryStockPreset): boolean => {
-  return preset === 'archived' ? archivedStocksQuery.isPending.value : stocksQuery.isPending.value
+  if (preset === 'expired') {
+    return expiredStocksQuery.isPending.value
+  }
+
+  if (preset === 'favorite') {
+    return favoriteStocksQuery.isPending.value
+  }
+
+  if (preset === 'low_stock') {
+    return lowStocksQuery.isPending.value
+  }
+
+  return archivedStocksQuery.isPending.value
 }
 </script>
 
