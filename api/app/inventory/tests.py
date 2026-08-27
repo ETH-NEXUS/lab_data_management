@@ -10,7 +10,7 @@ from rest_framework.test import APITestCase
 import shutil
 import tempfile
 
-from core.models import Project
+from core.models import Experiment, Project
 from inventory.dynamic_models import InventoryStock, MaterialUsage, Order, Room, Sector
 from inventory.history_models import InventoryChangeRecord
 from inventory.static_models import ItemType, MaterialMaster, MaterialUnit, UnitOfMeasure
@@ -352,6 +352,8 @@ class InventoryStockMultiSectorTests(APITestCase):
         self.assertEqual(response.data[0]["order_date"][:10], "2026-07-06")
 
     def test_recent_project_usages_endpoint_returns_only_the_latest_five_usages(self):
+        self.project.harvest_id = 42
+        self.project.save(update_fields=["harvest_id"])
         stock = InventoryStock.objects.create(
             material=self.material,
             sector=self.primary_sector,
@@ -370,11 +372,51 @@ class InventoryStockMultiSectorTests(APITestCase):
             usage.used_at = timezone.now() - timedelta(days=day)
             usage.save(update_fields=["used_at"])
 
+        non_harvest_project = Project.objects.create(name="Non-Harvest project")
+        MaterialUsage.objects.create(
+            project=non_harvest_project,
+            inventory_stock=stock,
+            usage_unit=self.stock_unit,
+            quantity_used="1",
+        )
+
         response = self.client.get(reverse("inventory-material-usage-recent-project"))
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(len(response.data), 5)
         self.assertEqual(response.data[0]["used_at"][:10], str((timezone.now() - timedelta(days=1)).date()))
+        self.assertTrue(all(usage["project"]["id"] == self.project.id for usage in response.data))
+
+    def test_recent_experiment_usages_endpoint_returns_only_the_latest_five_usages(self):
+        stock = InventoryStock.objects.create(
+            material=self.material,
+            sector=self.primary_sector,
+            stock_unit=self.stock_unit,
+            quantity="12",
+            minimum_quantity="1",
+        )
+        experiment = Experiment.objects.create(
+            name="Inventory test experiment",
+            project=self.project,
+        )
+
+        for day in range(1, 7):
+            usage = MaterialUsage.objects.create(
+                project=self.project,
+                experiment=experiment,
+                inventory_stock=stock,
+                usage_unit=self.stock_unit,
+                quantity_used="1",
+            )
+            usage.used_at = timezone.now() - timedelta(days=day)
+            usage.save(update_fields=["used_at"])
+
+        response = self.client.get(reverse("inventory-material-usage-recent-experiment"))
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(response.data), 5)
+        self.assertEqual(response.data[0]["used_at"][:10], str((timezone.now() - timedelta(days=1)).date()))
+        self.assertTrue(all(usage["experiment"]["id"] == experiment.id for usage in response.data))
 
     def test_history_endpoint_paginates_results(self):
         for _index in range(6):
