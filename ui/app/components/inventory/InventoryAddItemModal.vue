@@ -118,11 +118,17 @@ const onSafetyDataSheetChange = (event: Event): void => {
                         : 'No item types available'
                   }}
                 </option>
-                <option v-for="itemTypeOption in itemTypeOptions" :key="itemTypeOption.id" :value="String(itemTypeOption.id)">
+                <option
+                  v-for="itemTypeOption in itemTypeOptions"
+                  :key="itemTypeOption.id"
+                  :value="String(itemTypeOption.id)"
+                >
                   {{ itemTypeOption.label }}
                 </option>
               </select>
-              <p class="text-xs text-slate-500">Step 1. Choose the item category to narrow materials and matching orders.</p>
+              <p class="text-xs text-slate-500">
+                Step 1. Choose the item category to narrow materials and matching orders.
+              </p>
             </div>
           </div>
         </section>
@@ -145,12 +151,12 @@ const onSafetyDataSheetChange = (event: Event): void => {
                       !hasSelectedItemType
                         ? 'Select item type first'
                         : ordersQuery.isPending.value
-                        ? t('inventory.add_item.prefill.select_options.loading_orders')
-                        : ordersErrorMessage
-                          ? t('inventory.add_item.prefill.select_options.failed_orders')
-                          : orderPrefillOptions.length > 0
-                            ? t('inventory.add_item.prefill.select_options.select_order')
-                            : t('inventory.add_item.prefill.select_options.no_orders')
+                          ? t('inventory.add_item.prefill.select_options.loading_orders')
+                          : ordersErrorMessage
+                            ? t('inventory.add_item.prefill.select_options.failed_orders')
+                            : orderPrefillOptions.length > 0
+                              ? t('inventory.add_item.prefill.select_options.select_order')
+                              : t('inventory.add_item.prefill.select_options.no_orders')
                     }}
                   </option>
                   <option
@@ -164,7 +170,9 @@ const onSafetyDataSheetChange = (event: Event): void => {
                 <p v-if="ordersErrorMessage" class="text-xs text-red-600">
                   {{ ordersErrorMessage }}
                 </p>
-                <p v-else class="text-xs text-slate-500">Step 2. Optionally select an order from the chosen item type to populate fields.</p>
+                <p v-else class="text-xs text-slate-500">
+                  Step 2. Optionally select an order from the chosen item type to populate fields.
+                </p>
               </div>
 
               <UButton
@@ -196,12 +204,12 @@ const onSafetyDataSheetChange = (event: Event): void => {
                     !hasSelectedItemType
                       ? 'Select item type first'
                       : materialsQuery.isPending.value
-                      ? 'Loading materials...'
-                      : materialsErrorMessage
-                        ? 'Failed to load materials'
-                        : filteredMaterials.length > 0
-                          ? 'Select material'
-                          : 'No materials available'
+                        ? 'Loading materials...'
+                        : materialsErrorMessage
+                          ? 'Failed to load materials'
+                          : filteredMaterials.length > 0
+                            ? 'Select material'
+                            : 'No materials available'
                   }}
                 </option>
                 <option v-for="material in filteredMaterials" :key="material.id" :value="String(material.id)">
@@ -254,7 +262,7 @@ const onSafetyDataSheetChange = (event: Event): void => {
                     :value="String(sectorOption.id)"
                     :disabled="lookupsQuery.isPending.value || !hasSelectedRoom"
                     class="h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500"
-                  >
+                  />
                   <span>{{ sectorOption.label }}</span>
                 </label>
               </div>
@@ -263,12 +271,12 @@ const onSafetyDataSheetChange = (event: Event): void => {
                   !hasSelectedRoom
                     ? 'Select room first'
                     : lookupsQuery.isPending.value
-                    ? 'Loading sectors...'
-                    : sectorsErrorMessage
-                      ? 'Failed to load sectors'
-                      : sectorOptions.length > 0
-                        ? 'Select one or more sectors.'
-                        : 'No sectors available'
+                      ? 'Loading sectors...'
+                      : sectorsErrorMessage
+                        ? 'Failed to load sectors'
+                        : sectorOptions.length > 0
+                          ? 'Select one or more sectors.'
+                          : 'No sectors available'
                 }}
               </p>
               <p v-if="sectorsErrorMessage" class="text-xs text-red-600">
@@ -333,7 +341,11 @@ const onSafetyDataSheetChange = (event: Event): void => {
                     :disabled="lookupsQuery.isPending.value"
                   >
                     <option value="">No supplier</option>
-                    <option v-for="vendorOption in vendorOptions" :key="vendorOption.id" :value="String(vendorOption.id)">
+                    <option
+                      v-for="vendorOption in vendorOptions"
+                      :key="vendorOption.id"
+                      :value="String(vendorOption.id)"
+                    >
                       {{ vendorOption.label }}
                     </option>
                   </select>
@@ -456,7 +468,7 @@ const onSafetyDataSheetChange = (event: Event): void => {
                     accept=".pdf,.doc,.docx"
                     class="w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700"
                     @change="onSafetyDataSheetChange"
-                  >
+                  />
                   <p class="text-xs text-slate-500">
                     {{
                       formState.reagentSafetyDataSheet

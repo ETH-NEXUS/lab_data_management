@@ -11,11 +11,7 @@ import {
   type CreateInventoryStockPayload,
   type UpdateInventoryMaterialPayload,
 } from '~/types/inventory'
-import {
-  formatDecimal,
-  parseDecimal,
-  parseInteger,
-} from '~/components/inventory/add-item/inventoryAddItemForm.utils'
+import { formatDecimal, parseDecimal, parseInteger } from '~/components/inventory/add-item/inventoryAddItemForm.utils'
 import { parsePositiveIntegerList } from '~/components/inventory/inventorySectorSelection.utils'
 import { useInventoryAddItemFormState } from '~/components/inventory/add-item/useInventoryAddItemFormState'
 import { getErrorMessage } from '~/utils/errors'
@@ -76,9 +72,7 @@ export const useInventoryAddItemForm = ({ open, onSaved }: UseInventoryAddItemFo
 
   const isSelectedMaterialReagent = computed<boolean>(() => {
     const itemTypeName =
-      selectedMaterialQuery.data.value?.item_type?.name ||
-      selectedMaterialQuery.data.value?.item_type?.label ||
-      ''
+      selectedMaterialQuery.data.value?.item_type?.name || selectedMaterialQuery.data.value?.item_type?.label || ''
 
     return itemTypeName.trim().toLowerCase() === 'reagent'
   })
@@ -239,7 +233,11 @@ export const useInventoryAddItemForm = ({ open, onSaved }: UseInventoryAddItemFo
 
     const nextManufacturerId = Number.parseInt(formState.value.additionalManufacturerId, 10)
     const currentManufacturerId = materialDetail?.manufacturer?.id ?? null
-    if (Number.isInteger(nextManufacturerId) && nextManufacturerId > 0 && nextManufacturerId !== currentManufacturerId) {
+    if (
+      Number.isInteger(nextManufacturerId) &&
+      nextManufacturerId > 0 &&
+      nextManufacturerId !== currentManufacturerId
+    ) {
       payload.manufacturer_id = nextManufacturerId
     }
 
