@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
-import { formatNumericString, getStatusLabel } from '~/components/inventory/inventory-stock-table.values'
 import {
   useInventoryStockPageQuery,
   type InventoryStockPageQueryParams,
@@ -14,7 +13,6 @@ import {
 } from '~/composables/inventory/useInventoryUsageQuery'
 import { useInventoryStockTablePreferenceStore } from '~/stores/inventory/InventoryStockTablePreferenceStore'
 import type { InventoryStockListItem, InventoryStockPreset, InventoryUsageListItem } from '~/types/inventory'
-import { formatDateTime } from '~/utils/dateTime'
 
 type InventoryPreviewCard = {
   id: string
@@ -23,6 +21,8 @@ type InventoryPreviewCard = {
   icon: string
   preset: InventoryStockPreset
   items: InventoryStockListItem[]
+  isLoading: boolean
+  hasError: boolean
 }
 
 type VisibleDashboardTile = {
@@ -148,6 +148,8 @@ const previewCards = computed<InventoryPreviewCard[]>(() => [
     icon: 'i-heroicons-clock',
     preset: 'expired',
     items: expiredStocks.value,
+    isLoading: expiredStocksQuery.isPending.value,
+    hasError: Boolean(expiredStocksQuery.error.value),
   },
   {
     id: 'favorite_items',
@@ -156,6 +158,8 @@ const previewCards = computed<InventoryPreviewCard[]>(() => [
     icon: 'i-heroicons-star',
     preset: 'favorite',
     items: favoriteStocks.value,
+    isLoading: favoriteStocksQuery.isPending.value,
+    hasError: Boolean(favoriteStocksQuery.error.value),
   },
   {
     id: 'low_stock_items',
@@ -164,6 +168,8 @@ const previewCards = computed<InventoryPreviewCard[]>(() => [
     icon: 'i-heroicons-exclamation-triangle',
     preset: 'low_stock',
     items: lowStocks.value,
+    isLoading: lowStocksQuery.isPending.value,
+    hasError: Boolean(lowStocksQuery.error.value),
   },
   {
     id: 'archived_items',
@@ -172,6 +178,8 @@ const previewCards = computed<InventoryPreviewCard[]>(() => [
     icon: 'i-heroicons-archive-box',
     preset: 'archived',
     items: archivedStocks.value,
+    isLoading: archivedStocksQuery.isPending.value,
+    hasError: Boolean(archivedStocksQuery.error.value),
   },
 ])
 
@@ -186,54 +194,6 @@ const visibleDashboardTiles = computed<VisibleDashboardTile[]>(() => {
       previewCard: previewCardsById.get(tile.key),
     }))
 })
-
-const openPreset = (preset: InventoryStockPreset): void => {
-  navigateTo(`/inventory/all?preset=${preset}`)
-}
-
-const openStockPreviewItem = (preset: InventoryStockPreset, stockId: number): void => {
-  navigateTo(`/inventory/all?preset=${preset}&stock=${stockId}`)
-}
-
-const getPreviewMeta = (stock: InventoryStockListItem, preset: InventoryStockPreset): string => {
-  if (preset === 'expired') {
-    return stock.expiry_date ?? t('inventory.stock_table.values.none')
-  }
-
-  if (preset === 'archived') {
-    return formatDateTime(stock.archived_at, { dateStyle: 'medium' }, t('inventory.stock_table.values.none'))
-  }
-
-  if (preset === 'low_stock') {
-    return `${formatNumericString(stock.quantity)} / ${formatNumericString(stock.minimum_quantity)}`
-  }
-
-  return stock.location_label ?? t('inventory.stock_table.values.unknown_location')
-}
-
-const getInventoryStatusColor = (stock: InventoryStockListItem): 'error' | 'warning' | 'success' => {
-  if (stock.inventory_status === 'out_of_stock') {
-    return 'error'
-  }
-
-  return stock.inventory_status === 'low' ? 'warning' : 'success'
-}
-
-const isPreviewLoading = (preset: InventoryStockPreset): boolean => {
-  if (preset === 'expired') {
-    return expiredStocksQuery.isPending.value
-  }
-
-  if (preset === 'favorite') {
-    return favoriteStocksQuery.isPending.value
-  }
-
-  if (preset === 'low_stock') {
-    return lowStocksQuery.isPending.value
-  }
-
-  return archivedStocksQuery.isPending.value
-}
 </script>
 
 <template>
@@ -261,68 +221,17 @@ const isPreviewLoading = (preset: InventoryStockPreset): boolean => {
         {{ t('inventory.dashboard_tiles.empty_dashboard') }}
       </p>
       <template v-for="tile in visibleDashboardTiles" :key="tile.key">
-        <template v-if="tile.previewCard">
-          <UCard :key="tile.key" :ui="{ root: 'core-card divide-y divide-slate-200/70' }">
-            <template #header>
-              <div class="flex items-start justify-between gap-3">
-                <div class="space-y-1">
-                  <div class="flex items-center gap-2">
-                    <span class="inventory-icon-chip">
-                      <UIcon :name="tile.previewCard.icon" class="size-5" />
-                    </span>
-                    <p class="text-sm font-semibold text-slate-800">{{ tile.previewCard.title }}</p>
-                  </div>
-                  <p class="text-sm text-slate-600">{{ tile.previewCard.description }}</p>
-                </div>
-
-                <UButton
-                  variant="ghost"
-                  color="neutral"
-                  icon="i-heroicons-arrow-right"
-                  @click="openPreset(tile.previewCard.preset)"
-                />
-              </div>
-            </template>
-
-            <div class="space-y-2">
-              <p v-if="isPreviewLoading(tile.previewCard.preset)" class="text-sm text-slate-600">
-                {{ t('inventory.stock_workspace.loading') }}
-              </p>
-              <p v-else-if="tile.previewCard.items.length === 0" class="text-sm text-slate-600">
-                {{ t('inventory.stock_workspace.empty') }}
-              </p>
-              <template v-else>
-                <button
-                  v-for="stock in tile.previewCard.items"
-                  :key="`${tile.previewCard.id}-${stock.id}`"
-                  type="button"
-                  class="grid w-full grid-cols-[minmax(0,1fr)_auto] items-center gap-3 rounded-md px-2 py-2 text-left hover:bg-slate-50"
-                  @click="openStockPreviewItem(tile.previewCard.preset, stock.id)"
-                >
-                  <div class="min-w-0">
-                    <p class="truncate text-sm font-medium text-slate-800">
-                      {{ stock.material.product_name }}
-                    </p>
-                  </div>
-                  <div class="flex min-w-0 items-center gap-2">
-                    <UBadge
-                      v-if="tile.previewCard.preset === 'low_stock'"
-                      :color="getInventoryStatusColor(stock)"
-                      variant="soft"
-                      size="xs"
-                    >
-                      {{ getStatusLabel(t, stock.inventory_status) }}
-                    </UBadge>
-                    <p class="max-w-28 truncate text-right text-xs text-slate-500">
-                      {{ getPreviewMeta(stock, tile.previewCard.preset) }}
-                    </p>
-                    <UIcon name="i-heroicons-arrow-top-right-on-square" class="h-4 w-4 shrink-0 text-slate-400" />
-                  </div>
-                </button>
-              </template>
-            </div>
-          </UCard>
-        </template>
+        <InventoryStockPreviewCard
+          v-if="tile.previewCard"
+          :key="tile.key"
+          :title="tile.previewCard.title"
+          :description="tile.previewCard.description"
+          :icon="tile.previewCard.icon"
+          :preset="tile.previewCard.preset"
+          :items="tile.previewCard.items"
+          :is-loading="tile.previewCard.isLoading"
+          :has-error="tile.previewCard.hasError"
+        />
 
         <InventoryRecentActivitiesCard v-if="tile.key === 'recent_activities'" />
 
@@ -354,11 +263,17 @@ const isPreviewLoading = (preset: InventoryStockPreset): boolean => {
             <p v-if="lookupsQuery.isPending.value" class="text-sm text-slate-600">
               {{ t('inventory.stock_workspace.loading') }}
             </p>
+            <p v-else-if="lookupsQuery.error.value" class="text-sm text-red-600">
+              {{ t('inventory.stock_workspace.error') }}
+            </p>
             <p v-else-if="!isDeviceSelected" class="text-sm text-slate-600">
               {{ t('inventory.page.actions.specific_for_device.description') }}
             </p>
             <p v-else-if="deviceStocksQuery.isPending.value" class="text-sm text-slate-600">
               {{ t('inventory.stock_workspace.loading') }}
+            </p>
+            <p v-else-if="deviceStocksQuery.error.value" class="text-sm text-red-600">
+              {{ t('inventory.stock_workspace.error') }}
             </p>
             <p v-else-if="deviceStocks.length === 0" class="text-sm text-slate-600">
               {{ t('inventory.stock_workspace.empty') }}
