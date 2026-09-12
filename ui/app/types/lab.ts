@@ -142,9 +142,11 @@ export interface Well {
   withdrawals?: Withdrawal[]
   donors?: Withdrawal[]
   mixture?: boolean
+  // Both values are null when the instrument never reported them, which is
+  // not the same as a reported zero.
   current_info?: {
-    current_amount: number
-    current_dmso: number
+    current_amount: number | null
+    current_dmso: number | null
   }
 }
 

@@ -821,6 +821,9 @@
   },
   "well": {
     "current_amount": "Current amount",
-    "current_dmso": "Current DMSO"
+    "current_dmso": "Current DMSO",
+    "not_reported": "not reported",
+    "no_current_info": "The instrument has not reported a volume for this well.",
+    "stored_amount": "Stored amount"
   }
 }

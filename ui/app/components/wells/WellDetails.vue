@@ -229,13 +229,30 @@ const onSelectMeasurementFeature = (featureId: string) => {
           <table>
             <tr>
               <th v-if="well.current_info">
-                <p>{{ t('well.current_amount') }}: {{ well.current_info.current_amount }} {{ t('unit.mikro') }}</p>
-                <p>{{ t('well.current_dmso') }}: {{ well.current_info.current_dmso }}%</p>
+                <p>
+                  {{ t('well.current_amount') }}:
+                  <template v-if="well.current_info.current_amount !== null">
+                    {{ well.current_info.current_amount }} {{ t('unit.mikro') }}
+                  </template>
+                  <template v-else>{{ t('well.not_reported') }}</template>
+                </p>
+                <p>
+                  {{ t('well.current_dmso') }}:
+                  <template v-if="well.current_info.current_dmso !== null">
+                    {{ well.current_info.current_dmso }}%
+                  </template>
+                  <template v-else>{{ t('well.not_reported') }}</template>
+                </p>
               </th>
-              <th v-if="findAmountFromDonors()">{{ findAmountFromDonors() }}{{ t('unit.nL') }}</th>
-              <th v-if="!well.current_info && !findAmountFromDonors()">
-                {{ props.wellInfo.well.amount }}
+              <!-- Without a report from the instrument the only known number is
+                   the amount stored in the database, which is in nanoliter. -->
+              <th v-else>
+                <p>{{ t('well.no_current_info') }}</p>
+                <p v-if="!findAmountFromDonors()">
+                  {{ t('well.stored_amount') }}: {{ props.wellInfo.well.amount }} {{ t('unit.nL') }}
+                </p>
               </th>
+              <th v-if="findAmountFromDonors()">{{ findAmountFromDonors() }} {{ t('unit.nL') }}</th>
             </tr>
           </table>
         </div>
