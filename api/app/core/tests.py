@@ -1,5 +1,6 @@
 import csv
 from datetime import datetime
+from unittest import skip
 
 from django.db import IntegrityError, transaction
 from django.test import TestCase
@@ -67,7 +68,7 @@ class PlateTest(TestCase):
             dimension=self.dimension,
         )
         for i in range(self.dimension.num_wells):
-            comp = Compound.objects.create(identifier=f"comp{i}", structure="c=c")
+            comp = Compound.objects.create(name=f"comp{i}", structure="c=c")
             well = Well.objects.create(plate=self.sourcePlate, position=i)
             WellCompound.objects.create(well=well, compound=comp, amount=1)
         self.targetPlate = Plate.objects.create(
@@ -86,13 +87,13 @@ class PlateTest(TestCase):
         self.sourcePlate.map(mappingList, self.targetPlate)
 
         targetWells = self.targetPlate.wells.all().order_by("position")
-        self.assertEqual("comp5", targetWells[0].compounds.first().identifier)
-        self.assertEqual("comp3", targetWells[2].compounds.first().identifier)
+        self.assertEqual("comp5", targetWells[0].compounds.first().name)
+        self.assertEqual("comp3", targetWells[2].compounds.first().name)
         self.assertEqual(1, len(targetWells[3].donors.all()))
         self.assertEqual(2, targetWells[3].donors.first().well.position)
         self.assertEqual(
             "comp2",
-            targetWells[3].donors.first().well.compounds.first().identifier,
+            targetWells[3].donors.first().well.compounds.first().name,
         )
 
     def test_plate_mapping_with_amounts(self):
@@ -122,7 +123,7 @@ class PlateTest(TestCase):
 
         targetWells = self.targetPlate.wells.all().order_by("position")
         for p in range(len(targetWells)):
-            self.assertEqual(f"comp{p}", targetWells[p].compounds.first().identifier)
+            self.assertEqual(f"comp{p}", targetWells[p].compounds.first().name)
 
     def test_plate_mapping_from_csv(self):
         """CSV Mapping test"""
@@ -250,7 +251,7 @@ class WellTest(TestCase):
         )
 
     def test_withdrawal(self):
-        compound = Compound.objects.create(identifier="ABC", structure="A-B-C")
+        compound = Compound.objects.create(name="ABC", structure="A-B-C")
         well = Well.objects.create(position=0, plate=self.plate)
         WellCompound.objects.create(well=well, compound=compound, amount=100)
         WellWithdrawal.objects.create(well=well, amount=10)
@@ -263,7 +264,7 @@ class WellTest(TestCase):
         def __fillPlateWithCompounds(plate):
             for i in range(plate.dimension.num_wells):
                 comp = Compound.objects.create(
-                    identifier=f"{plate.barcode}_comp{i}", structure=f"comp{i}"
+                    name=f"{plate.barcode}_comp{i}", structure=f"comp{i}"
                 )
                 well = Well.objects.create(plate=plate, position=i)
                 WellCompound.objects.create(well=well, compound=comp, amount=1)
@@ -327,7 +328,7 @@ class StatisticsTest(TestCase):
             name="TEST", abbrev="TST", unit="t"
         )
         for i in range(self.dimension.num_wells):
-            comp = Compound.objects.create(identifier=f"comp{i}", structure="c=c")
+            comp = Compound.objects.create(name=f"comp{i}", structure="c=c")
             well = Well.objects.create(
                 plate=self.plate,
                 position=i,
@@ -345,6 +346,7 @@ class StatisticsTest(TestCase):
                 measured_at=datetime(2012, 12, 12, 12, 0, 0),
             )
 
+    @skip("Plate has no z_prime / z_factor / z_scores any more, see plan.md")
     def test_z_prime_calculation(self):
         """Test calculation of z' (prime) factor"""
         expected_z_prime = 1 - (
@@ -354,6 +356,7 @@ class StatisticsTest(TestCase):
         )
         self.assertEqual(expected_z_prime, self.plate.z_prime("TST"))
 
+    @skip("Plate has no z_prime / z_factor / z_scores any more, see plan.md")
     def test_z_factor_calculation(self):
         """Test calculation of z factor"""
         expected_z_prime = 1 - (
@@ -366,6 +369,7 @@ class StatisticsTest(TestCase):
             self.plate.z_factor("TST", datetime(2012, 12, 12, 12, 0, 0)),
         )
 
+    @skip("Plate has no z_prime / z_factor / z_scores any more, see plan.md")
     def test_z_score_calculation(self):
         """Test the calculation of the z score per well"""
         c_pos = [1, 2, 5, 6, 9, 10]

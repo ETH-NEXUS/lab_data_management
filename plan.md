@@ -103,5 +103,15 @@ in `useInventoryAddItemForm.ts`.
       its unit (µL for the reported fill level, nL for the stored amount).
 - [x] Audit follow-up 1: `/api/compoundlib/redflag/` and `/api/compoundlib/recalculate_status/`
       now require a logged in user (they were reachable without any authentication).
+- [x] Audit follow-up 2a: the test suite runs again — it now uses Postgres instead of
+      the broken sqlite test settings, the pytest config moved into `api/pyproject.toml`
+      (the only one the api image sees) and the stale `Compound.identifier` usages in
+      `core/tests.py` are gone. 47 passed, 10 pre-existing failures in unrelated areas.
+- [ ] Audit follow-up 2a-1: unskip and fix the 10 tests that were failing before the
+      suite could run again — `StatisticsTest` (calls `plate.z_prime` / `z_factor` /
+      `z_scores`, which the model no longer has), `MapperTests` (missing test data
+      files) and `InventoryMaterialReagentTests` (never authenticates, gets 403).
+- [ ] Audit follow-up 2b: unit tests for `core/thresholds.py` (pure function, no database).
+- [ ] Audit follow-up 2c: tests for `find_problems` and for the flagging in `Plate.map`.
 - [ ] Open: run the `%_COPY%` check on production and add a data migration if it
       returns rows.

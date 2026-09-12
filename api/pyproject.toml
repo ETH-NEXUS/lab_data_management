@@ -59,3 +59,7 @@ dev = [
 r = [
   "rpy2[all]==3.5.12",
 ]
+
+[tool.pytest.ini_options]
+DJANGO_SETTINGS_MODULE = "ldm.test_settings"
+python_files = ["tests.py", "test_*.py", "*_tests.py"]
