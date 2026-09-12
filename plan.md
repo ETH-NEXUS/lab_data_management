@@ -111,7 +111,7 @@ in `useInventoryAddItemForm.ts`.
       suite could run again — `StatisticsTest` (calls `plate.z_prime` / `z_factor` /
       `z_scores`, which the model no longer has), `MapperTests` (missing test data
       files) and `InventoryMaterialReagentTests` (never authenticates, gets 403).
-- [ ] Audit follow-up 2b: unit tests for `core/thresholds.py` (pure function, no database).
+- [x] Audit follow-up 2b: unit tests for `core/thresholds.py` (pure function, no database).
 - [ ] Audit follow-up 2c: tests for `find_problems` and for the flagging in `Plate.map`.
 - [ ] Open: run the `%_COPY%` check on production and add a data migration if it
       returns rows.
