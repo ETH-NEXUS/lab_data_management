@@ -2,6 +2,7 @@ from collections.abc import Iterable
 from django.conf import settings
 from django.db import transaction
 from .models import Plate, PlateDetail, Well, WellCompound, WellDetail, WellWithdrawal
+from .units import nanoliter_to_microliter
 
 
 def build_copied_plate_barcode(source_barcode: str) -> str:
@@ -29,25 +30,32 @@ def build_copied_plate_barcode(source_barcode: str) -> str:
 def build_copy_withdrawal_metadata(source_well: Well, withdrawal_volume: float) -> dict:
     """
     Build withdrawal metadata for library plate copies.
+    The fill level of the source well is only known from what it reported in an
+    earlier withdrawal, so the copy carries that level over, minus the copied
+    volume. `withdrawal_volume` is given in nanoliter, `current_amount` is
+    returned in microliter, the unit of the threshold on the messages page.
+    Both values are None when the source well has never reported them, which
+    means "unknown" and not "empty".
     Example input:
-    {"source_amount": 100, "withdrawal_volume": 20}
+    {"source_well": {"current_info": {"current_amount": 9.5, "current_dmso": 95}},
+     "withdrawal_volume": 500}
     Example output:
-    {"current_amount": 80, "current_dmso": 100}
+    {"current_amount": 9.0, "current_dmso": 95}
     """
-    source_current_info = source_well.current_info
-    remaining_amount = round(
-        source_well.amount - withdrawal_volume,
-        settings.FLOAT_PRECISION,
-    )
+    source_current_info = source_well.current_info or {}
+    source_current_amount = source_current_info.get("current_amount")
 
-    if source_current_info and source_current_info["current_dmso"] is not None:
-        current_dmso = source_current_info["current_dmso"]
+    if source_current_amount is None:
+        current_amount = None
     else:
-        current_dmso = 100
+        remaining_amount = source_current_amount - nanoliter_to_microliter(
+            withdrawal_volume
+        )
+        current_amount = round(max(remaining_amount, 0), settings.FLOAT_PRECISION)
 
     return {
-        "current_amount": max(remaining_amount, 0),
-        "current_dmso": current_dmso,
+        "current_amount": current_amount,
+        "current_dmso": source_current_info.get("current_dmso"),
     }
 
 
@@ -165,6 +173,10 @@ def copy_library_plates(
                         amount=copied_amount,
                     )
 
+                # Library plates are imported without any volume, so their wells
+                # have no nanoliter bookkeeping to withdraw from. Withdrawing
+                # anyway would push Well.amount below zero, which then shows up
+                # as a negative volume on the plate page.
                 withdrawal_volume = target_volume if has_source_volume else 0
                 withdrawal_metadata = build_copy_withdrawal_metadata(
                     source_well,

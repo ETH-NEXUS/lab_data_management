@@ -1,7 +1,9 @@
 from django.core.management import BaseCommand
-from django.db.models import F, Count
+from django.db import transaction
+from django.db.models import Count, Prefetch
 
-from core.models import Threshold, Well, Plate
+from core.models import Plate, Threshold, Well, WellWithdrawal
+from core.thresholds import is_below_threshold
 
 
 class Command(BaseCommand):
@@ -13,60 +15,63 @@ class Command(BaseCommand):
         if not threshold:
             return
 
+        # The newest withdrawal carries the current state of the well.
+        # We order the prefetch so that the first entry is the newest one,
+        # the same way Well.current_info picks its withdrawal.
+        newest_withdrawals_first = WellWithdrawal.objects.order_by("-created_at")
         library_wells = (
             Well.objects.filter(plate__library__isnull=False)
             .annotate(withdrawals_count=Count("withdrawals"))
             .filter(withdrawals_count__gt=0)
-            .select_related("plate")
-            .prefetch_related("withdrawals")
+            .select_related("plate__dimension")
+            .prefetch_related(
+                Prefetch("withdrawals", queryset=newest_withdrawals_first)
+            )
         )
         print(f"Number of library wells: {library_wells.count()}")
 
         wells_to_update = []
-        plates_to_update = set()
+        problematic_plate_ids = set()
 
         for well in library_wells:
-            last_withdrawal = well.withdrawals.last()
-            if (
-                not last_withdrawal
-                or not last_withdrawal.current_amount
-                or not last_withdrawal.current_dmso
-            ):
-                continue
+            withdrawals = list(well.withdrawals.all())
+            last_withdrawal = withdrawals[0] if withdrawals else None
 
-            plate = well.plate
-            well_changed = False
-            plate_changed = False
-
-            if (
-                last_withdrawal.current_amount < threshold.amount
-                or last_withdrawal.current_dmso < threshold.dmso
+            if last_withdrawal is not None and is_below_threshold(
+                last_withdrawal.current_amount,
+                last_withdrawal.current_dmso,
+                threshold.amount,
+                threshold.dmso,
             ):
+                problematic_plate_ids.add(well.plate_id)
                 print(f"Marking well {well.hr_position} as empty")
                 print(f"Amount: {last_withdrawal.current_amount}")
                 print(f"DMSO: {last_withdrawal.current_dmso}")
                 if well.status != "empty":
                     well.status = "empty"
-                    well_changed = True
-                if plate.status != "empty_wells":
-                    plate.status = "empty_wells"
-                    plate_changed = True
+                    wells_to_update.append(well)
             else:
                 if well.status == "empty":
                     well.status = None
-                    well_changed = True
-                if plate.status == "empty_wells":
-                    plate.status = None
-                    plate_changed = True
+                    wells_to_update.append(well)
 
-            if well_changed:
-                wells_to_update.append(well)
-            if plate_changed:
-                plates_to_update.add(plate)
+        # The status of a plate depends on all of its wells, so it can only be
+        # decided after every well has been looked at.
+        plates_to_flag = Plate.objects.filter(id__in=problematic_plate_ids).exclude(
+            status="empty_wells"
+        )
+        plates_to_unflag = Plate.objects.filter(
+            library__isnull=False, status="empty_wells"
+        ).exclude(id__in=problematic_plate_ids)
+
         print(f"Number of wells to update: {len(wells_to_update)}")
-        print(f"Number of plates to update: {len(plates_to_update)}")
-        Well.objects.bulk_update(wells_to_update, ["status"])
-        Plate.objects.bulk_update(plates_to_update, ["status"])
+        print(f"Number of plates to flag: {plates_to_flag.count()}")
+        print(f"Number of plates to unflag: {plates_to_unflag.count()}")
+
+        with transaction.atomic():
+            Well.objects.bulk_update(wells_to_update, ["status"], batch_size=1000)
+            plates_to_flag.update(status="empty_wells")
+            plates_to_unflag.update(status=None)
 
     def handle(self, *args, **options):
         if options["what"] == "mark_empty_wells":

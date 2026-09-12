@@ -50,3 +50,58 @@ in `useInventoryAddItemForm.ts`.
 
 - [x] UI data: add a server-paginated check-in/check-out query.
 - [x] UI: add the check-in/check-out table, page navigation, and dashboard link.
+
+# Part G: inventory dashboard cleanup
+
+- [x] Backend: fix favorite sorting, avoid history favorite N+1 queries, and add regression tests.
+- [x] UI: open Material Usage from history usage records and show dashboard history request errors.
+- [x] UI: merge the duplicate history workspaces into one variant-based workspace.
+- [x] Backend: limit awaiting-check-in orders and recent project usages to five records server-side.
+- [x] UI: use the new limited dashboard requests.
+- [x] UI: format the remaining Add Item files so the inventory lint check passes.
+
+# Part H: recently linked LDM experiments
+
+- [x] Backend: return the five latest Harvest-project and LDM-experiment usages.
+- [x] UI: add the LDM experiment dashboard card.
+
+# Part I: personalized inventory dashboard tiles
+
+- [x] Backend: store available tiles and each user's selected tiles in the database.
+- [x] UI: let the user choose any dashboard tiles and render only the saved selection.
+
+# Part J: dashboard tile reliability and ordering
+
+- [x] Backend: make first-load preferences conflict-safe and validate duplicate or unknown keys.
+- [x] UI: allow any number of tiles, handle an empty dashboard, and let the user choose card positions.
+- [x] UI: render cards in the saved order for both visual and keyboard navigation.
+- [x] UI: do not load data for hidden dashboard tiles.
+- [x] UI: reset unsaved tile selection when the settings dialog is reopened.
+- [x] UI: load each stock preview as one server-paginated request of five items.
+- [x] UI: show preview loading failures explicitly and move stock preview rendering into its own component.
+- [x] UI: move the device preview and its queries into a dedicated dashboard component.
+- [x] UI: move the awaiting-check-in preview and its query into a dedicated dashboard component.
+- [x] UI: render project and experiment usage previews with one shared component.
+
+# Part K: organize inventory UI components
+
+- [x] UI: group dashboard, history, stock-table, and add-item components into thematic directories and update imports.
+
+# Problematic wells (messages page) — volume threshold not reported
+
+- [x] Step 1 (backend): fix `find_problems mark_empty_wells` — decide the plate status
+      after all wells are checked, treat 0 as "empty" instead of "no data", and read the
+      newest withdrawal by `created_at`.
+- [x] Step 2 (backend): store `current_amount` in µL everywhere (variant A) — the
+      library-copy path now carries the last reported fill level over in µL, or None
+      when it was never reported. No copy rows to migrate in the dev database.
+- [x] Step 3 (backend): the threshold check in `Plate.map` now runs for every mapped
+      well, not only when an existing `WellWithdrawal` is updated, and both it and
+      `find_problems` share one check in `core/thresholds.py`.
+- [x] Step 4 (UI): the well panel now says explicitly when the instrument reported
+      nothing, distinguishes that from a reported zero, and labels every volume with
+      its unit (µL for the reported fill level, nL for the stored amount).
+- [x] Audit follow-up 1: `/api/compoundlib/redflag/` and `/api/compoundlib/recalculate_status/`
+      now require a logged in user (they were reachable without any authentication).
+- [ ] Open: run the `%_COPY%` check on production and add a data migration if it
+      returns rows.

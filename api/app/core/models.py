@@ -15,6 +15,7 @@ from platetemplate.models import PlateTemplate
 from .basemodels import TimeTrackedModel
 from .mapping import MappingList
 from .mapping import PositionMapper
+from .thresholds import is_below_threshold
 
 
 class MappingError(APIException):
@@ -247,8 +248,6 @@ class Plate(TimeTrackedModel):
         Maps this plate to another plate using a mapping list.
         """
         thresholds = Threshold.objects.first()
-        threshold_amount = thresholds.amount
-        threshold_dmso = thresholds.dmso
         with transaction.atomic():
             for mapping in mappingList:
                 from_well = self.well_at(mapping.from_pos)
@@ -302,6 +301,11 @@ class Plate(TimeTrackedModel):
                             WellCompound.objects.create(
                                 well=well, compound=compound, amount=amount
                             )
+                        # TODO: This runs once per compound of the source well,
+                        # so a well holding more than one compound would add the
+                        # transferred volume to the withdrawal more than once.
+                        # Our wells currently hold a single compound each, so it
+                        # does not happen yet.
                         try:
                             well_withdrawal = WellWithdrawal.objects.get(
                                 well=from_well, target_well=well
@@ -311,20 +315,6 @@ class Plate(TimeTrackedModel):
                             well_withdrawal.current_amount = mapping.current_amount
                             well_withdrawal.current_dmso = mapping.current_dmso
                             well_withdrawal.save()
-                            # assigning problematic status to from well and its pale if the amount or dmso is less than the threshold
-                            if (
-                                (mapping.current_amount and mapping.current_dmso)
-                                and (
-                                    mapping.current_amount < threshold_amount
-                                    or mapping.current_dmso < threshold_dmso
-                                )
-                                and from_well_plate.library
-                            ):
-                                from_well.status = "empty"
-                                from_well.save()
-                                from_well_plate.status = "empty_wells"
-                                from_well_plate.save()
-
                         except ObjectDoesNotExist:
                             WellWithdrawal.objects.create(
                                 well=from_well,
@@ -333,6 +323,24 @@ class Plate(TimeTrackedModel):
                                 current_amount=mapping.current_amount,
                                 current_dmso=mapping.current_dmso,
                             )
+
+                    # A source well that is running low has to be marked no
+                    # matter whether this was the first transfer out of it or a
+                    # repeated one.
+                    if (
+                        thresholds
+                        and from_well_plate.library
+                        and is_below_threshold(
+                            mapping.current_amount,
+                            mapping.current_dmso,
+                            thresholds.amount,
+                            thresholds.dmso,
+                        )
+                    ):
+                        from_well.status = "empty"
+                        from_well.save()
+                        from_well_plate.status = "empty_wells"
+                        from_well_plate.save()
             return True
 
 
