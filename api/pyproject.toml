@@ -61,7 +61,9 @@ r = [
 ]
 
 [tool.pytest.ini_options]
-DJANGO_SETTINGS_MODULE = "ldm.test_settings"
+# Passed as an option on purpose: a DJANGO_SETTINGS_MODULE entry here would lose
+# against the environment variable of the same name that .env sets to ldm.settings.
+addopts = "--ds=ldm.test_settings"
 # Relative to this file: /pyproject.toml in the container, api/ in the repository.
 testpaths = ["app/tests"]
 python_files = ["test_*.py"]

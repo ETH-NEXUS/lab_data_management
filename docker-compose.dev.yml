@@ -33,6 +33,9 @@ services:
         DEPENDENCIES: dev
     environment:
       - DJANGO_DEBUG=True
+      # Allows the tests to run. Never set this on production: the tests create
+      # a test database on the connected database server (see api/app/ldm/test_guard.py).
+      - LDM_ALLOW_TESTS=1
     ports:
       - "5090:5000"
       - "8890:8888"
