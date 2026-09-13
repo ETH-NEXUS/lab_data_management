@@ -107,7 +107,9 @@ class RedFlagView(APIView):
         return Response(res)
 
 
-@api_view(["GET"])
+# POST, because this writes to the database: unlike GET, DRF checks the CSRF
+# token for it, so a link or another site cannot start a recalculation.
+@api_view(["POST"])
 @permission_classes([IsAuthenticated])
 def recalculate_status(request):
     """

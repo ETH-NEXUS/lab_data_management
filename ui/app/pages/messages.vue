@@ -105,7 +105,7 @@ const recalculateStatus = async () => {
       duration: 3000,
     })
 
-    const { error } = await useAPI<unknown>(RECALCULATE_STATUS_ENDPOINT, { method: 'GET' })
+    const { error } = await useAPI<unknown>(RECALCULATE_STATUS_ENDPOINT, { method: 'POST' })
     if (error.value) {
       console.error(error.value)
       return

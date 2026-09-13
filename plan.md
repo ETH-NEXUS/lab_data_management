@@ -106,7 +106,7 @@ in `useInventoryAddItemForm.ts`.
 - [x] Audit follow-up 2a: the test suite runs again — it now uses Postgres instead of
       the broken sqlite test settings, the pytest config moved into `api/pyproject.toml`
       (the only one the api image sees) and the stale `Compound.identifier` usages in
-      `core/tests.py` are gone. 47 passed, 10 pre-existing failures in unrelated areas.
+      `core/tests.py` are gone. The 10 tests that failed before are skipped (see 2a-1).
 - [ ] Audit follow-up 2a-1: unskip and fix the 10 tests that were failing before the
       suite could run again — `StatisticsTest` (calls `plate.z_prime` / `z_factor` /
       `z_scores`, which the model no longer has), `MapperTests` (missing test data
@@ -120,5 +120,7 @@ in `useInventoryAddItemForm.ts`.
       its last reported values and the thresholds it is below.
 - [x] Audit follow-up 3b (UI): the problematic plates card shows those values, the value
       below the threshold in red and the reason in words.
+- [x] Audit follow-up 4: the recalculation runs on POST instead of GET, so DRF checks the
+      CSRF token and a link or another site cannot start it.
 - [ ] Open: run the `%_COPY%` check on production and add a data migration if it
       returns rows.
