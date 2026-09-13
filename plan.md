@@ -128,9 +128,30 @@ in `useInventoryAddItemForm.ts`.
 - [x] Refactor: `core/views.py` (1042 lines) is now the `core/views/` package, one file per
       topic, re-exported from `__init__.py`. Pure move: every definition is unchanged and the
       467 URL routes resolve to the same views.
-- [ ] Audit follow-up 5b (API only): through the API the threshold can be read and changed by
+- [x] Audit follow-up 5b (API only): through the API the threshold can be read and changed by
       every logged in user, but no longer created or deleted. The admin stays as it is.
-- [ ] Audit follow-up 5c (UI): the threshold form refuses a DMSO above 100 % and shows the
+- [x] Audit follow-up 5c (UI): the threshold form refuses a DMSO above 100 % and shows the
       error when the API refuses a value.
+- [x] `/api/refresh/` (refreshing the materialized views) requires a logged in user and a POST
+      with a CSRF token; it was reachable without any authentication and ran on GET.
+
+## Deferred to a separate audit (found, not changed — the code has worked for years)
+
+- Echo import crashes with `KeyError: 'DMSO'` on files from the newer Echo software, which
+  write `Fluid Composition` / `Fluid Units` / `Fluid Type` instead of `% DMSO`
+  (example: `data_temp/test/_data_examples_echo_Testrun1_*_Transfer_*.csv`). The column
+  schema in `core/config.py` is strict, so a fix touches the schema, `ldm.yaml` and the mapper.
+- `StatisticsTest` (skipped) tests `plate.z_prime` / `z_factor` / `z_scores`, which no longer
+  exist; only `ldm/ldm.py::calculate_z_prime` remains (median/MAD, no callers). Rewrite or delete.
+- `MapperTests` (4 skipped) fail with `FileNotFoundError: ./temp/M1000/20210902-131750_BAF210901_1.asc`.
+- `InventoryMaterialReagentTests` (skipped) never authenticates, so the API answers 403.
+- Dev database: 1 library plate has no dimension. If it ever gets flagged, `RedFlagView`
+  would crash on `well.hr_position`.
+- Duplicate withdrawals with a target well: 0 in dev. `Plate.map` does not catch
+  `MultipleObjectsReturned`, and there is no unique constraint on (well, target_well).
+- Other audit items not started: re-importing a file doubles withdrawals, archived plates are
+  listed on the messages page, `find_problems` ignores an unknown argument silently,
+  recalculation runs synchronously in the request, the `Problem` model is unused.
+
 - [ ] Open: run the `%_COPY%` check on production and add a data migration if it
       returns rows.

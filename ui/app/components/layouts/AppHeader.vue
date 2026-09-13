@@ -90,7 +90,7 @@ const refresh = async () => {
 
   isRefreshing.value = true
   try {
-    await useAPI('refresh/', { method: 'GET' })
+    await useAPI('refresh/', { method: 'POST' })
     await queryClient.invalidateQueries({ queryKey: PROJECTS_QUERY_KEY })
   } finally {
     isRefreshing.value = false
