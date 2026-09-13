@@ -312,8 +312,12 @@ class Plate(TimeTrackedModel):
                             )
                             # We add a withdrawal to the source well
                             well_withdrawal.amount = F("amount") + mapping.amount
-                            well_withdrawal.current_amount = mapping.current_amount
-                            well_withdrawal.current_dmso = mapping.current_dmso
+                            # A mapping without an instrument reading (a csv file or a
+                            # plate copy) must not erase the last reading of the Echo.
+                            if mapping.current_amount is not None:
+                                well_withdrawal.current_amount = mapping.current_amount
+                            if mapping.current_dmso is not None:
+                                well_withdrawal.current_dmso = mapping.current_dmso
                             well_withdrawal.save()
                         except ObjectDoesNotExist:
                             WellWithdrawal.objects.create(

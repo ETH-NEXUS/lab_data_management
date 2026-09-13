@@ -21,7 +21,6 @@ class Command(BaseCommand):
             Well.objects.filter(plate__library__isnull=False)
             .annotate(withdrawals_count=Count("withdrawals"))
             .filter(withdrawals_count__gt=0)
-            .select_related("plate__dimension")
             .prefetch_related(
                 Prefetch("withdrawals", queryset=newest_withdrawals_first)
             )
@@ -42,9 +41,6 @@ class Command(BaseCommand):
                 threshold.dmso,
             ):
                 problematic_plate_ids.add(well.plate_id)
-                print(f"Marking well {well.hr_position} as empty")
-                print(f"Amount: {last_withdrawal.current_amount}")
-                print(f"DMSO: {last_withdrawal.current_dmso}")
                 if well.status != "empty":
                     well.status = "empty"
                     wells_to_update.append(well)

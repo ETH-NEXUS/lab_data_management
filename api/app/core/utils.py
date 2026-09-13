@@ -124,12 +124,17 @@ def copy_library_plates(
     copied_plates = []
     with transaction.atomic():
         for source_plate in plates:
+            # A copy is a fresh plate, so the automatic "running low" mark of the
+            # source does not apply to it. A status set by hand is copied as before.
+            copied_plate_status = source_plate.status
+            if copied_plate_status == "empty_wells":
+                copied_plate_status = None
             copied_plate = Plate.objects.create(
                 barcode=build_copied_plate_barcode(source_plate.barcode),
                 dimension=source_plate.dimension,
                 library=source_plate.library,
                 archived=source_plate.archived,
-                status=source_plate.status,
+                status=copied_plate_status,
                 use_as_template_to_select=source_plate.use_as_template_to_select,
             )
 
@@ -139,12 +144,16 @@ def copy_library_plates(
                 .order_by("position")
             )
             for source_well in source_wells:
+                # The same for the wells: a copied well is not empty.
+                copied_well_status = source_well.status
+                if copied_well_status == "empty":
+                    copied_well_status = None
                 copied_well = Well.objects.create(
                     plate=copied_plate,
                     position=source_well.position,
                     sample=source_well.sample,
                     type=source_well.type,
-                    status=source_well.status,
+                    status=copied_well_status,
                     is_invalid=source_well.is_invalid,
                 )
 

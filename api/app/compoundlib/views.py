@@ -1,6 +1,5 @@
 import logging
 
-from django.http import HttpResponse, JsonResponse
 from rest_framework import viewsets
 from rest_framework.decorators import action, api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated
@@ -66,8 +65,12 @@ class RedFlagView(APIView):
             current_amount, current_dmso, threshold.amount, threshold.dmso
         )
 
+        # A plate without a dimension cannot name its wells like "A1". Showing the
+        # position number keeps the whole page from failing because of one plate.
+        position = well.hr_position if well.plate.dimension else str(well.position)
+
         return {
-            "position": well.hr_position,
+            "position": position,
             "current_amount": current_amount,
             "current_dmso": current_dmso,
             "reasons": reasons,
