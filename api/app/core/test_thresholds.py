@@ -8,7 +8,7 @@ for years those wells were the only ones that never showed up as problematic.
 
 from django.test import SimpleTestCase
 
-from core.thresholds import is_below_threshold
+from core.thresholds import is_below_threshold, threshold_reasons
 
 THRESHOLD_AMOUNT = 2.5  # microliter
 THRESHOLD_DMSO = 80  # percent
@@ -58,3 +58,25 @@ class IsBelowThresholdTest(SimpleTestCase):
 
     def test_a_low_dmso_counts_even_without_a_volume_value(self):
         self.assertTrue(self.check(None, 70))
+
+
+class ThresholdReasonsTest(SimpleTestCase):
+    def reasons(self, current_amount, current_dmso):
+        return threshold_reasons(
+            current_amount, current_dmso, THRESHOLD_AMOUNT, THRESHOLD_DMSO
+        )
+
+    def test_a_full_well_has_no_reason(self):
+        self.assertEqual([], self.reasons(9.5, 95))
+
+    def test_a_low_volume_names_the_volume(self):
+        self.assertEqual(["volume"], self.reasons(2.0, 95))
+
+    def test_a_low_dmso_names_the_dmso(self):
+        self.assertEqual(["dmso"], self.reasons(9.5, 70))
+
+    def test_a_failed_transfer_names_both(self):
+        self.assertEqual(["volume", "dmso"], self.reasons(0, 0))
+
+    def test_unreported_values_are_no_reason(self):
+        self.assertEqual([], self.reasons(None, None))

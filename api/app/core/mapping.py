@@ -16,8 +16,10 @@ class Mapping:
         amount: float = 0,
         status: str = None,
         map_type: bool = False,
-        current_amount: float = 0,
-        current_dmso: float = 0,
+        # A mapping that carries no instrument reading leaves these at None,
+        # which means "not reported". Zero would mean "the well is empty".
+        current_amount: float = None,
+        current_dmso: float = None,
     ):
         self.__from = int(from_pos)
         self.__to = int(to_pos)

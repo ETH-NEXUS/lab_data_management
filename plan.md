@@ -112,6 +112,9 @@ in `useInventoryAddItemForm.ts`.
       `z_scores`, which the model no longer has), `MapperTests` (missing test data
       files) and `InventoryMaterialReagentTests` (never authenticates, gets 403).
 - [x] Audit follow-up 2b: unit tests for `core/thresholds.py` (pure function, no database).
-- [ ] Audit follow-up 2c: tests for `find_problems` and for the flagging in `Plate.map`.
+- [x] Audit follow-up 2c: tests for `find_problems` and for the flagging in `Plate.map`.
+      Writing them surfaced a regression from step 3: `Mapping` defaulted its reported
+      values to 0 ("empty") instead of None ("not reported"), so a plate copy or a csv
+      mapping of a library plate would have marked every source well as empty.
 - [ ] Open: run the `%_COPY%` check on production and add a data migration if it
       returns rows.

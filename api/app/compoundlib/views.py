@@ -12,6 +12,7 @@ from .models import CompoundLibrary, Compound
 from core.models import Plate
 from core.models import Well
 from core.models import Threshold, WellWithdrawal
+from core.thresholds import threshold_reasons
 from django.core import management
 
 logger = logging.getLogger(__name__)
@@ -37,27 +38,71 @@ class CompoundViewSet(viewsets.ModelViewSet):
 
 class RedFlagView(APIView):
     """
-    Lists the wells that are running low, grouped by library and plate.
+    Lists the wells that are running low, grouped by library and plate, with
+    the values the instrument reported and the thresholds they are below.
+    A value is null when the instrument never reported it.
     Returned data example:
-    {"Library A": {"PLATE-001": ["A01", "B02"]}}
+    {"Library A": {"PLATE-001": [
+        {"position": "A01", "current_amount": 0, "current_dmso": 0,
+         "reasons": ["volume", "dmso"]}
+    ]}}
     """
 
     permission_classes = [IsAuthenticated]
 
+    def well_entry(self, well, threshold):
+        """
+        Describes one marked well for the response.
+        Returned data example:
+        {"position": "I12", "current_amount": 1.31, "current_dmso": 94.5,
+         "reasons": ["volume"]}
+        """
+        withdrawals = list(well.withdrawals.all())
+        last_withdrawal = withdrawals[0] if withdrawals else None
+        current_amount = last_withdrawal.current_amount if last_withdrawal else None
+        current_dmso = last_withdrawal.current_dmso if last_withdrawal else None
+
+        reasons = []
+        if threshold:
+            reasons = threshold_reasons(
+                current_amount, current_dmso, threshold.amount, threshold.dmso
+            )
+
+        return {
+            "position": well.hr_position,
+            "current_amount": current_amount,
+            "current_dmso": current_dmso,
+            "reasons": reasons,
+        }
+
     def get(self, request, *args, **kwargs):
+        threshold = Threshold.objects.first()
         plates_with_empty_wells_status = Plate.objects.filter(
             status="empty_wells", library__isnull=False
-        ).prefetch_related("library")
+        ).select_related("library")
+
         res = {}
         for plate in plates_with_empty_wells_status:
-            plate_library_name = plate.library.name
-            if plate_library_name not in res:
-                res[plate_library_name] = {}
-            if plate.barcode not in res[plate_library_name]:
-                res[plate_library_name][plate.barcode] = []
-            empty_wells = Well.objects.filter(plate=plate, status="empty")
-            for well in empty_wells:
-                res[plate_library_name][plate.barcode].append(well.hr_position)
+            res.setdefault(plate.library.name, {})[plate.barcode] = []
+
+        # The newest withdrawal carries the values the well last reported, the
+        # same one the recalculation judges the well by.
+        newest_withdrawals_first = WellWithdrawal.objects.order_by("-created_at")
+        marked_wells = (
+            Well.objects.filter(
+                plate__in=plates_with_empty_wells_status, status="empty"
+            )
+            .select_related("plate__dimension", "plate__library")
+            .prefetch_related(
+                Prefetch("withdrawals", queryset=newest_withdrawals_first)
+            )
+            .order_by("position")
+        )
+        for well in marked_wells:
+            library_name = well.plate.library.name
+            res[library_name][well.plate.barcode].append(
+                self.well_entry(well, threshold)
+            )
 
         return Response(res)
 
