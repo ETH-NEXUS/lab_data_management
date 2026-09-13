@@ -7,7 +7,7 @@ from .experiments import ExperimentViewSet
 from .mappings import MappingPreviewView, PlateMappingViewSet
 from .plate_info import prefill_plate_info, save_plate_info
 from .plates import PlateViewSet
-from .projects import ProjectViewSet, add_control_layout
+from .projects import add_control_layout
 from .reports import (
     download_csv_data,
     download_pdf_report,
@@ -27,7 +27,6 @@ __all__ = [
     "MappingPreviewView",
     "PlateMappingViewSet",
     "PlateViewSet",
-    "ProjectViewSet",
     "ThresholdViewSet",
     "VersionView",
     "WellViewSet",

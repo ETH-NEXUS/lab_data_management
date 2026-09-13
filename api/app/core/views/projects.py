@@ -3,30 +3,16 @@ Projects and adding control layouts to them.
 """
 
 import traceback
-from django.db.models import Prefetch
-from rest_framework import viewsets, status
+from rest_framework import status
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from helpers.logger import logger
 from ..models import (
     Plate,
-    Experiment,
     Project,
     PlateDetail,
     WellDetail,
 )
-from ..serializers import ProjectSerializer
-
-
-class ProjectViewSet(viewsets.ModelViewSet):
-    serializer_class = ProjectSerializer
-
-    def get_queryset(self):
-        experiments = Prefetch("experiments", queryset=Experiment.objects.all())
-        plates = Prefetch("plates", queryset=Plate.objects.all().order_by("barcode"))
-        return (
-            Project.objects.all().prefetch_related(experiments).prefetch_related(plates)
-        )
 
 
 @api_view(["POST"])
