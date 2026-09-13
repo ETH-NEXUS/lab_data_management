@@ -11,9 +11,7 @@ class Command(BaseCommand):
         parser.add_argument("what", help="Which problem to solve")  # mark_empty_wells
 
     def mark_empty_wells(self):
-        threshold = Threshold.objects.first()
-        if not threshold:
-            return
+        threshold = Threshold.current()
 
         # The newest withdrawal carries the current state of the well.
         # We order the prefetch so that the first entry is the newest one,

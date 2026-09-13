@@ -62,11 +62,9 @@ class RedFlagView(APIView):
         current_amount = last_withdrawal.current_amount if last_withdrawal else None
         current_dmso = last_withdrawal.current_dmso if last_withdrawal else None
 
-        reasons = []
-        if threshold:
-            reasons = threshold_reasons(
-                current_amount, current_dmso, threshold.amount, threshold.dmso
-            )
+        reasons = threshold_reasons(
+            current_amount, current_dmso, threshold.amount, threshold.dmso
+        )
 
         return {
             "position": well.hr_position,
@@ -76,7 +74,7 @@ class RedFlagView(APIView):
         }
 
     def get(self, request, *args, **kwargs):
-        threshold = Threshold.objects.first()
+        threshold = Threshold.current()
         plates_with_empty_wells_status = Plate.objects.filter(
             status="empty_wells", library__isnull=False
         ).select_related("library")

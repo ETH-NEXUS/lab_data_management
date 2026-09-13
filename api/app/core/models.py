@@ -2,7 +2,7 @@ import math
 from django.conf import settings
 from django.contrib.postgres.fields import ArrayField
 from django.core.exceptions import ObjectDoesNotExist
-from django.core.validators import MinValueValidator, RegexValidator
+from django.core.validators import MaxValueValidator, MinValueValidator, RegexValidator
 from django.db import models, transaction
 from django.db.models import F, CheckConstraint, Q, Sum
 from django.forms import ValidationError
@@ -247,7 +247,7 @@ class Plate(TimeTrackedModel):
         """
         Maps this plate to another plate using a mapping list.
         """
-        thresholds = Threshold.objects.first()
+        thresholds = Threshold.current()
         with transaction.atomic():
             for mapping in mappingList:
                 from_well = self.well_at(mapping.from_pos)
@@ -327,15 +327,11 @@ class Plate(TimeTrackedModel):
                     # A source well that is running low has to be marked no
                     # matter whether this was the first transfer out of it or a
                     # repeated one.
-                    if (
-                        thresholds
-                        and from_well_plate.library
-                        and is_below_threshold(
-                            mapping.current_amount,
-                            mapping.current_dmso,
-                            thresholds.amount,
-                            thresholds.dmso,
-                        )
+                    if from_well_plate.library and is_below_threshold(
+                        mapping.current_amount,
+                        mapping.current_dmso,
+                        thresholds.amount,
+                        thresholds.dmso,
                     ):
                         from_well.status = "empty"
                         from_well.save()
@@ -438,8 +434,38 @@ class Well(TimeTrackedModel):
 
 
 class Threshold(models.Model):
-    dmso = models.FloatField(default=80)
-    amount = models.FloatField(default=2.5)
+    """
+    The limits below which a library well counts as running low.
+    There is exactly one of these for the whole application; always read it
+    through `Threshold.current()`.
+    """
+
+    dmso = models.FloatField(
+        default=80,
+        validators=[MinValueValidator(0), MaxValueValidator(100)],
+        help_text="In percent. A well with less DMSO than this is marked.",
+    )
+    amount = models.FloatField(
+        default=2.5,
+        validators=[MinValueValidator(0)],
+        help_text="In microliter (µL), the volume left in the source well. "
+        "A well with less than this is marked.",
+    )
+
+    @classmethod
+    def current(cls) -> "Threshold":
+        """
+        Return the one threshold, creating it with the defaults if it is missing.
+        Returned data example:
+        {"id": 1, "amount": 2.5, "dmso": 80}
+        """
+        threshold = cls.objects.order_by("id").first()
+        if threshold is None:
+            # A fixed primary key makes two requests that both find the table
+            # empty collide instead of creating two rows; get_or_create then
+            # simply reads the row the other request created.
+            threshold, _ = cls.objects.get_or_create(pk=1)
+        return threshold
 
 
 class WellCompound(models.Model):

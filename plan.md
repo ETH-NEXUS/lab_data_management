@@ -122,5 +122,12 @@ in `useInventoryAddItemForm.ts`.
       below the threshold in red and the reason in words.
 - [x] Audit follow-up 4: the recalculation runs on POST instead of GET, so DRF checks the
       CSRF token and a link or another site cannot start it.
+- [x] Audit follow-up 5a (model): `Threshold` has units in its help text, rejects negative
+      values and a DMSO above 100 %, and is read everywhere through `Threshold.current()`,
+      which creates the defaults when the row is missing instead of silently marking nothing.
+- [ ] Audit follow-up 5b (API + admin): the threshold can be read and changed by every logged
+      in user, but no longer created or deleted.
+- [ ] Audit follow-up 5c (UI): the threshold form refuses a DMSO above 100 % and shows the
+      error when the API refuses a value.
 - [ ] Open: run the `%_COPY%` check on production and add a data migration if it
       returns rows.
