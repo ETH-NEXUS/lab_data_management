@@ -1,6 +1,4 @@
 import csv
-from datetime import datetime
-from unittest import skip
 
 from django.db import IntegrityError, transaction
 from django.test import TestCase
@@ -14,15 +12,10 @@ from .models import (
     WellCompound,
     Experiment,
     Project,
-    MeasurementFeature,
-    Measurement,
-    WellType,
 )
 from platetemplate.models import PlateTemplate, PlateTemplateCategory
 from .helper import charToAlphaPos
 from .mapping import Mapping, MappingList
-
-import numpy as np
 
 
 class MappingTest(TestCase):
@@ -305,79 +298,3 @@ class WellTest(TestCase):
             self.assertEqual(0.2, well.amount)
             self.assertEqual(plate2, well.donors.first().well.plate)
             self.assertEqual(plate1, well.donors.first().well.donors.first().well.plate)
-
-
-class StatisticsTest(TestCase):
-    fixtures = ("well_types",)
-
-    def setUp(self):
-        """
-        Creates a plate 4x3 with the following types:values.
-
-        P:0 C:1 C:2 N:3
-        P:4 C:5 C:6 N:7
-        P:8 C:9 C:10 N:11
-
-        """
-        self.dimension = PlateDimension.objects.create(name="dim_4x3", cols=4, rows=3)
-        self.plate = Plate.objects.create(
-            barcode="000001",
-            dimension=self.dimension,
-        )
-        self.measurement_feature = MeasurementFeature.objects.create(
-            name="TEST", abbrev="TST", unit="t"
-        )
-        for i in range(self.dimension.num_wells):
-            comp = Compound.objects.create(name=f"comp{i}", structure="c=c")
-            well = Well.objects.create(
-                plate=self.plate,
-                position=i,
-                type=WellType.by_name("P")
-                if i in [0, 4, 8]
-                else WellType.by_name("N")
-                if i in [3, 7, 11]
-                else WellType.by_name("C"),
-            )
-            WellCompound.objects.create(well=well, compound=comp, amount=1)
-            Measurement.objects.create(
-                well=well,
-                feature=self.measurement_feature,
-                value=i,
-                measured_at=datetime(2012, 12, 12, 12, 0, 0),
-            )
-
-    @skip("Plate has no z_prime / z_factor / z_scores any more, see plan.md")
-    def test_z_prime_calculation(self):
-        """Test calculation of z' (prime) factor"""
-        expected_z_prime = 1 - (
-            3
-            * (np.std([0, 4, 8]) + np.std([3, 7, 11]))
-            / abs(np.mean([0, 4, 8]) - np.mean([3, 7, 11]))
-        )
-        self.assertEqual(expected_z_prime, self.plate.z_prime("TST"))
-
-    @skip("Plate has no z_prime / z_factor / z_scores any more, see plan.md")
-    def test_z_factor_calculation(self):
-        """Test calculation of z factor"""
-        expected_z_prime = 1 - (
-            3
-            * (np.std([0, 4, 8]) + np.std([1, 2, 5, 6, 9, 10]))
-            / abs(np.mean([0, 4, 8]) - np.mean([1, 2, 5, 6, 9, 10]))
-        )
-        self.assertEqual(
-            expected_z_prime,
-            self.plate.z_factor("TST", datetime(2012, 12, 12, 12, 0, 0)),
-        )
-
-    @skip("Plate has no z_prime / z_factor / z_scores any more, see plan.md")
-    def test_z_score_calculation(self):
-        """Test the calculation of the z score per well"""
-        c_pos = [1, 2, 5, 6, 9, 10]
-        mean = np.mean(c_pos)
-        std = np.std(c_pos)
-        expected_scores = [(v - mean) / std for v in range(self.plate.num_wells)]
-        calculated_scores = list(
-            filter(lambda v: v is not None, self.plate.z_scores("TST"))
-        )
-        self.assertEqual(len(expected_scores), len(calculated_scores))
-        self.assertListEqual(expected_scores, calculated_scores)
