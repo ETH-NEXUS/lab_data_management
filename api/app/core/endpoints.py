@@ -14,7 +14,6 @@ from .models import (
     Experiment,
     BarcodeSpecification,
     Threshold,
-    PlateInfo,
 )
 from .serializers import (
     PlateSerializer,

@@ -335,8 +335,11 @@ class Plate(TimeTrackedModel):
                     ):
                         from_well.status = "empty"
                         from_well.save()
-                        from_well_plate.status = "empty_wells"
-                        from_well_plate.save()
+                        # A status someone set by hand, like "disposed", stays: a
+                        # plate is only marked when it has no status yet.
+                        if not from_well_plate.status:
+                            from_well_plate.status = "empty_wells"
+                            from_well_plate.save()
             return True
 
 

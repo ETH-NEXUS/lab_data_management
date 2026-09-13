@@ -1,6 +1,6 @@
 from django.core.management import BaseCommand
 from django.db import transaction
-from django.db.models import Count, Prefetch
+from django.db.models import Count, Prefetch, Q
 
 from core.models import Plate, Threshold, Well, WellWithdrawal
 from core.thresholds import is_below_threshold
@@ -55,8 +55,10 @@ class Command(BaseCommand):
 
         # The status of a plate depends on all of its wells, so it can only be
         # decided after every well has been looked at.
-        plates_to_flag = Plate.objects.filter(id__in=problematic_plate_ids).exclude(
-            status="empty_wells"
+        # Only plates without a status get marked. A status someone set by hand,
+        # like "disposed", stays, and such a plate is not listed as problematic.
+        plates_to_flag = Plate.objects.filter(id__in=problematic_plate_ids).filter(
+            Q(status__isnull=True) | Q(status="")
         )
         plates_to_unflag = Plate.objects.filter(
             library__isnull=False, status="empty_wells"
