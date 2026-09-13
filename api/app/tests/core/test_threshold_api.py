@@ -60,3 +60,15 @@ class ThresholdApiAccessTest(APITestCase):
         client.login(username="tester", password="test-password")
         response = client.patch(self.detail_url, {"amount": 2.0})
         self.assertEqual(status.HTTP_403_FORBIDDEN, response.status_code)
+
+    def test_the_page_gets_the_threshold_the_backend_uses(self):
+        # A second threshold with a higher id, created first and so stored first.
+        Threshold.objects.create(pk=self.threshold.id + 100, amount=1.0, dmso=50)
+        Threshold.objects.filter(id=self.threshold.id).delete()
+        used_by_backend = Threshold.objects.create(
+            pk=self.threshold.id + 1, amount=2.5, dmso=80
+        )
+
+        response = self.client.get(self.list_url)
+        self.assertEqual(used_by_backend.id, Threshold.current().id)
+        self.assertEqual(used_by_backend.id, response.data["results"][0]["id"])

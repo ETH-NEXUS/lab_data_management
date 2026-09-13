@@ -5,6 +5,8 @@ The threshold that decides which library wells count as running low.
 from rest_framework import viewsets
 from rest_framework.permissions import IsAuthenticated
 
+from ..models import Threshold
+
 
 class ThresholdViewSet(viewsets.ModelViewSet):
     """
@@ -12,9 +14,12 @@ class ThresholdViewSet(viewsets.ModelViewSet):
     from the form on the messages page. Creating a second threshold or deleting
     the only one is not possible through the API: without it no well would be
     judged against the values the users set. The admin can still do both.
-    The endpoint adds the queryset and the serializer.
+    The endpoint adds the serializer.
     """
 
+    # Sorted by id, so the page edits the same threshold that Threshold.current()
+    # returns, even if the admin ever holds a second one.
+    queryset = Threshold.objects.order_by("id")
     permission_classes = [IsAuthenticated]
     # PUT is left out as well: the page only ever changes single values (PATCH).
     http_method_names = ["get", "patch", "head", "options"]

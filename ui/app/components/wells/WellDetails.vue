@@ -244,10 +244,11 @@ const onSelectMeasurementFeature = (featureId: string) => {
                   <template v-else>{{ t('well.not_reported') }}</template>
                 </p>
               </th>
-              <!-- Without a report from the instrument the only known number is
-                   the amount stored in the database, which is in nanoliter. -->
+              <!-- Only library plates track a fill level reported by the instrument, so only
+                   there a missing report means something. Every plate still shows the
+                   amount stored in the database, which is in nanoliter. -->
               <th v-else>
-                <p>{{ t('well.no_current_info') }}</p>
+                <p v-if="props.plate.library">{{ t('well.no_current_info') }}</p>
                 <p v-if="!findAmountFromDonors()">
                   {{ t('well.stored_amount') }}: {{ props.wellInfo.well.amount }} {{ t('unit.nL') }}
                 </p>

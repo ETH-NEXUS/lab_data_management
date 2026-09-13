@@ -62,5 +62,6 @@ r = [
 
 [tool.pytest.ini_options]
 DJANGO_SETTINGS_MODULE = "ldm.test_settings"
-testpaths = ["tests"]
+# Relative to this file: /pyproject.toml in the container, api/ in the repository.
+testpaths = ["app/tests"]
 python_files = ["test_*.py"]
