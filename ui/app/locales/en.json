@@ -380,7 +380,8 @@
         "reasons": {
           "volume": "volume below threshold",
           "dmso": "DMSO below threshold"
-        }
+        },
+        "open_plate": "Open plate"
       },
       "thresholds": {
         "title": "Current Thresholds",

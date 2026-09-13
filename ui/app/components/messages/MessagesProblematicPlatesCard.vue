@@ -30,6 +30,14 @@ const getPlateEntries = (platesByBarcode: Record<string, ProblematicWell[]>) => 
 }
 
 /**
+ * Link to the plate page, the same address the navigation tree opens.
+ *
+ * Returned output example:
+ * - `plateLink('L3900-1_10')` -> `'/plates/L3900-1_10'`
+ */
+const plateLink = (plateBarcode: string) => `/plates/${encodeURIComponent(plateBarcode)}`
+
+/**
  * Formats the reported volume, or says that nothing was reported.
  *
  * Returned output examples:
@@ -107,15 +115,22 @@ const isBelow = (well: ProblematicWell, reason: ProblematicWellReason) => {
         </summary>
 
         <div class="mt-2 space-y-2">
-          <details
+          <!-- Plates are always open: once a library is expanded, its wells are visible at once. -->
+          <div
             v-for="[plateBarcode, wells] in getPlateEntries(platesByBarcode)"
             :key="`${libraryName}-${plateBarcode}`"
-            class="group rounded-md border border-slate-200 bg-white p-2"
+            class="rounded-md border border-slate-200 bg-white p-2"
           >
-            <summary class="flex cursor-pointer list-none items-center justify-between gap-3">
-              <span class="text-secondary truncate text-sm">{{ plateBarcode }}</span>
+            <div class="flex items-center justify-between gap-3">
+              <NuxtLink
+                :to="plateLink(plateBarcode)"
+                :title="t('messages_page.sections.problematic_plates.open_plate')"
+                class="text-secondary truncate text-sm hover:underline"
+              >
+                {{ plateBarcode }}
+              </NuxtLink>
               <span class="text-xs text-slate-500">{{ wells.length }}</span>
-            </summary>
+            </div>
 
             <ul class="mt-2 space-y-1">
               <li
@@ -139,7 +154,7 @@ const isBelow = (well: ProblematicWell, reason: ProblematicWellReason) => {
                 </span>
               </li>
             </ul>
-          </details>
+          </div>
         </div>
       </details>
     </div>

@@ -75,6 +75,7 @@ class PlateAdmin(admin.ModelAdmin):
         "library",
         "experiment",
         "use_as_template_to_select",
+        "archived",
     )
     search_fields = ("barcode",)
 
@@ -86,6 +87,7 @@ class PlateAdmin(admin.ModelAdmin):
         "project",
         "template",
         "use_as_template_to_select",
+        "archived",
     )
     actions = (copy_selected_plates,)
 
