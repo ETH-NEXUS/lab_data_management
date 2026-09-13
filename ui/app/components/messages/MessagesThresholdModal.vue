@@ -9,6 +9,8 @@ const props = defineProps<{
   open: boolean
   threshold: Threshold
   isSaving?: boolean
+  // Why the server refused the last save, shown below the fields.
+  errorMessage?: string
 }>()
 
 const emit = defineEmits<{
@@ -41,11 +43,39 @@ watch(
 const parsedDmso = computed(() => Number(dmsoValue.value))
 const parsedAmount = computed(() => Number(amountValue.value))
 
+/**
+ * Explains what is wrong with the DMSO value, or returns null when it is fine.
+ * An empty field counts as wrong: `Number('')` would otherwise save it as 0.
+ *
+ * Returned output examples:
+ * - `'80'` -> `null`
+ * - `'150'` -> `'DMSO must be a number between 0 and 100 %.'`
+ */
+const dmsoError = computed(() => {
+  const isMissing = dmsoValue.value.trim() === '' || Number.isNaN(parsedDmso.value)
+  if (isMissing || parsedDmso.value < 0 || parsedDmso.value > 100) {
+    return t('messages_page.modal.errors.dmso_range')
+  }
+  return null
+})
+
+/**
+ * Explains what is wrong with the volume value, or returns null when it is fine.
+ *
+ * Returned output examples:
+ * - `'2.5'` -> `null`
+ * - `'-1'` -> `'Amount must be a number of 0 µL or more.'`
+ */
+const amountError = computed(() => {
+  const isMissing = amountValue.value.trim() === '' || Number.isNaN(parsedAmount.value)
+  if (isMissing || parsedAmount.value < 0) {
+    return t('messages_page.modal.errors.amount_min')
+  }
+  return null
+})
+
 const canSubmit = computed(() => {
-  if (Number.isNaN(parsedDmso.value)) return false
-  if (Number.isNaN(parsedAmount.value)) return false
-  if (parsedDmso.value < 0) return false
-  if (parsedAmount.value < 0) return false
+  if (dmsoError.value || amountError.value) return false
   if (props.isSaving) return false
   return true
 })
@@ -80,9 +110,22 @@ const submit = () => {
   >
     <template #body>
       <div class="space-y-6">
-        <BaseField v-model="dmsoValue" :label="t('messages_page.modal.fields.dmso')" type="number" :autofocus="true" />
+        <div class="space-y-1">
+          <BaseField
+            v-model="dmsoValue"
+            :label="t('messages_page.modal.fields.dmso')"
+            type="number"
+            :autofocus="true"
+          />
+          <p v-if="dmsoError" class="pl-1 text-xs text-red-600">{{ dmsoError }}</p>
+        </div>
 
-        <BaseField v-model="amountValue" :label="t('messages_page.modal.fields.amount')" type="number" />
+        <div class="space-y-1">
+          <BaseField v-model="amountValue" :label="t('messages_page.modal.fields.amount')" type="number" />
+          <p v-if="amountError" class="pl-1 text-xs text-red-600">{{ amountError }}</p>
+        </div>
+
+        <p v-if="props.errorMessage" class="text-sm text-red-600">{{ props.errorMessage }}</p>
       </div>
     </template>
 

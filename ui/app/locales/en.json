@@ -396,6 +396,11 @@
       "fields": {
         "dmso": "DMSO (%)",
         "amount": "Amount (µL)"
+      },
+      "errors": {
+        "dmso_range": "DMSO must be a number between 0 and 100 %.",
+        "amount_min": "Amount must be a number of 0 µL or more.",
+        "save_failed": "The threshold was not saved: {details}"
       }
     },
     "recalculate": {

@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { onMounted, ref } from 'vue'
 import { useAPI } from '~/composables/useAPI'
+import { getErrorMessage } from '~/utils/errors'
 import MessagesIntroCard from '~/components/messages/MessagesIntroCard.vue'
 import MessagesProblematicPlatesCard from '~/components/messages/MessagesProblematicPlatesCard.vue'
 import MessagesThresholdCard from '~/components/messages/MessagesThresholdCard.vue'
@@ -21,6 +22,8 @@ const isLoading = ref(false)
 const isThresholdModalOpen = ref(false)
 const isUpdatingThreshold = ref(false)
 const isRecalculatingStatus = ref(false)
+// Why the server refused the last threshold save; shown inside the modal.
+const thresholdErrorMessage = ref('')
 
 const threshold = ref<Threshold>(DEFAULT_THRESHOLD)
 const redFlagInfo = ref<RedFlagInfo>({})
@@ -75,6 +78,7 @@ const initializePage = async () => {
  */
 const updateThreshold = async (payload: ThresholdUpdatePayload) => {
   isUpdatingThreshold.value = true
+  thresholdErrorMessage.value = ''
   try {
     const { error } = await useAPI<unknown>(`${THRESHOLDS_ENDPOINT}${threshold.value.id}/`, {
       method: 'PATCH',
@@ -82,7 +86,10 @@ const updateThreshold = async (payload: ThresholdUpdatePayload) => {
     })
 
     if (error.value) {
-      console.error(error.value)
+      // The modal stays open, so the user can read the reason and fix the value.
+      thresholdErrorMessage.value = t('messages_page.modal.errors.save_failed', {
+        details: getErrorMessage(error.value),
+      })
       return
     }
 
@@ -91,6 +98,11 @@ const updateThreshold = async (payload: ThresholdUpdatePayload) => {
   } finally {
     isUpdatingThreshold.value = false
   }
+}
+
+const openThresholdModal = () => {
+  thresholdErrorMessage.value = ''
+  isThresholdModalOpen.value = true
 }
 
 const recalculateStatus = async () => {
@@ -135,7 +147,7 @@ onMounted(async () => {
     <MessagesThresholdCard
       :threshold="threshold"
       :is-recalculating="isRecalculatingStatus"
-      @edit-threshold="isThresholdModalOpen = true"
+      @edit-threshold="openThresholdModal"
       @recalculate-status="recalculateStatus"
     />
 
@@ -143,6 +155,7 @@ onMounted(async () => {
       v-model:open="isThresholdModalOpen"
       :threshold="threshold"
       :is-saving="isUpdatingThreshold"
+      :error-message="thresholdErrorMessage"
       @submit="updateThreshold"
     />
   </section>
