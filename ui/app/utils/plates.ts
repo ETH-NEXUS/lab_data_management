@@ -1,4 +1,4 @@
-import type { PlateDimension } from '~/types/lab'
+import type { Plate, PlateDimension } from '~/types/lab'
 
 /**
  * Returns a safe plate identifier string from a dynamic route param.
@@ -45,6 +45,19 @@ export const formatPlateBarcodeLabel = (barcode: string | null | undefined): str
     return `Templates/${barcode.replace('__TEMPL__', '').replaceAll('_', '/')}`
   }
   return barcode
+}
+
+/**
+ * Tells whether a plate is an archived library plate: one the lab removed from storage.
+ * Such a plate can still be read, but no longer edited.
+ *
+ * Accepted input examples:
+ * - `{ library: 3, archived: true }` -> `true`
+ * - `{ library: null, archived: true }` -> `false` (not a library plate)
+ * - `{ library: 3, archived: null }` -> `false`
+ */
+export const isArchivedLibraryPlate = (plate: Pick<Plate, 'library' | 'archived'> | null | undefined): boolean => {
+  return Boolean(plate?.library) && Boolean(plate?.archived)
 }
 
 /**

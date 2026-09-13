@@ -12,7 +12,7 @@ import {
 } from '~/types/plates'
 import { usePlateStore } from '~/stores/plates'
 import { usePlateViewStore } from '~/stores/plateView'
-import { formatPlateBarcodeLabel, getPlateRouteIdLabel } from '~/utils/plates'
+import { formatPlateBarcodeLabel, getPlateRouteIdLabel, isArchivedLibraryPlate } from '~/utils/plates'
 import { useAPI } from '~/composables/useAPI'
 import type { Well, WellDetails as WellDetailsType, WellInfo } from '~/types/lab'
 
@@ -127,8 +127,16 @@ const hasSelectedWell = computed(() => {
                 :description="t('plates.page.left_description')"
                 title-class="mb-3 font-mono text-3xl font-medium text-slate-800"
               />
-              <PlateArchiveButton v-if="plateStore.currentPlate" />
+              <!-- Only library plates can be archived: the lab archives plates it removed from storage. -->
+              <PlateArchiveButton v-if="plateStore.currentPlate?.library" />
             </div>
+
+            <p
+              v-if="isArchivedLibraryPlate(plateStore.currentPlate)"
+              class="mb-3 rounded-lg border border-slate-300 bg-slate-100 p-3 text-sm text-slate-700"
+            >
+              {{ t('plates.page.archive.banner') }}
+            </p>
 
             <div v-if="plateStore.isInitializingPlatePage" class="flex min-h-[320px] items-center justify-center">
               <div

@@ -117,11 +117,32 @@ export const useCompoundLibraryStore = defineStore('compoundLibraryStore', () =>
     }
   }
 
+  /**
+   * Updates the archived flag of one plate in the loaded libraries, so the navigation
+   * tree shows the change at once without loading all libraries again.
+   *
+   * Accepted input examples:
+   * - `plateId = 44, archived = true`
+   * - `plateId = 44, archived = false`
+   */
+  const setPlateArchived = (plateId: number, archived: boolean): void => {
+    for (const library of libraries.value) {
+      const plates = library.plates ?? []
+      for (const plate of plates) {
+        if (plate.id === plateId) {
+          plate.archived = archived
+          return
+        }
+      }
+    }
+  }
+
   return {
     libraries,
     isLoadingLibraries,
     isAddingLibraryPlate,
     fetchLibraries,
     addPlateToLibrary,
+    setPlateArchived,
   }
 })

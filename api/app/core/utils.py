@@ -133,7 +133,9 @@ def copy_library_plates(
                 barcode=build_copied_plate_barcode(source_plate.barcode),
                 dimension=source_plate.dimension,
                 library=source_plate.library,
-                archived=source_plate.archived,
+                # A copy is a plate that exists in storage, so it is never archived,
+                # even when the plate it was copied from is.
+                archived=False,
                 status=copied_plate_status,
                 use_as_template_to_select=source_plate.use_as_template_to_select,
             )

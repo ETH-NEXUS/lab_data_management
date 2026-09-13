@@ -2,12 +2,14 @@
 import { computed, ref } from 'vue'
 import BaseButton from '~/components/common/BaseButton.vue'
 import WavesModalWrapper from '~/components/common/WavesModalWrapper.vue'
+import { useCompoundLibraryStore } from '~/stores/compoundLibraries'
 import { usePlateStore } from '~/stores/plates'
 import { getErrorMessage } from '~/utils/errors'
 
 const { t } = useI18n()
 const toast = useToast()
 const plateStore = usePlateStore()
+const compoundLibraryStore = useCompoundLibraryStore()
 
 const isConfirmOpen = ref(false)
 
@@ -40,7 +42,9 @@ const confirmChange = async () => {
   const shouldArchive = !isArchived.value
 
   try {
-    await plateStore.setCurrentPlateArchived(shouldArchive)
+    const result = await plateStore.setCurrentPlateArchived(shouldArchive)
+    // The navigation tree keeps its own copy of the library plates.
+    compoundLibraryStore.setPlateArchived(result.id, result.archived)
     isConfirmOpen.value = false
     toast.add({
       title: shouldArchive ? t('plates.page.archive.archived_toast') : t('plates.page.archive.unarchived_toast'),

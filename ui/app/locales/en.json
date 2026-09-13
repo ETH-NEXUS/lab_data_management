@@ -74,7 +74,8 @@
         "barcode_required": "Please enter a plate barcode.",
         "created": "Library plate created.",
         "create_failed": "Failed to create library plate."
-      }
+      },
+      "archived": "archived"
     },
     "management": {
       "title": "Management",
@@ -338,15 +339,16 @@
         "archive_button": "Archive plate",
         "unarchive_button": "Unarchive plate",
         "archive_title": "Archive this plate?",
-        "archive_description": "Plate {barcode} will be hidden in the navigation tree. You can unarchive it here at any time.",
+        "archive_description": "Plate {barcode} will be marked as removed from storage: it stays visible in the navigation tree with an archive icon, is no longer listed on the messages page and can no longer be edited. You can unarchive it here at any time.",
         "unarchive_title": "Unarchive this plate?",
-        "unarchive_description": "Plate {barcode} will be shown in the navigation tree again.",
+        "unarchive_description": "Plate {barcode} can be edited again and is listed on the messages page again if it has problematic wells.",
         "archive_confirm": "Archive",
         "unarchive_confirm": "Unarchive",
         "archived_badge": "Archived",
         "archived_toast": "Plate archived",
         "unarchived_toast": "Plate unarchived",
-        "failed_toast": "The plate was not changed"
+        "failed_toast": "The plate was not changed",
+        "banner": "This plate is archived: it no longer exists in storage and cannot be used or edited."
       }
     },
     "dynamic": {

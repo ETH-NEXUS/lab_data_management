@@ -15,14 +15,28 @@ from ..serializers import (
     WellSerializer,
     ExperimentDetail,
 )
+from ..archived_plates import ensure_plate_can_be_changed
 
 
 class WellViewSet(viewsets.ModelViewSet):
     serializer_class = WellSerializer
     queryset = Well.objects.all()
 
+    # Wells of archived plates cannot be created, changed or deleted through the API
+    # (see core/archived_plates.py).
+    def perform_create(self, serializer):
+        ensure_plate_can_be_changed(serializer.validated_data.get("plate"))
+        super().perform_create(serializer)
+
+    def perform_update(self, serializer):
+        # Both the plate the well is on and a plate it would be moved to.
+        ensure_plate_can_be_changed(serializer.instance.plate)
+        ensure_plate_can_be_changed(serializer.validated_data.get("plate"))
+        super().perform_update(serializer)
+
     def destroy(self, request, *args, **kwargs):
         well = self.get_object()
+        ensure_plate_can_be_changed(well.plate)
         well.delete()
 
         PlateDetail.refresh(concurrently=True)
@@ -34,6 +48,7 @@ class WellViewSet(viewsets.ModelViewSet):
     @action(detail=True, methods=["get"])
     def mark_as_invalid(self, request, pk=None):
         well = self.get_object()
+        ensure_plate_can_be_changed(well.plate)
         if well.is_invalid:
             well.is_invalid = False
         else:

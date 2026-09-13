@@ -3,7 +3,7 @@ import { computed, onMounted, ref, watch } from 'vue'
 import type { PaginatedResponse } from '~/types/api'
 import type { Measurement, MeasurementFeature, Plate, Well, WellInfo } from '~/types/lab'
 import { useAPI } from '~/composables/useAPI'
-import { hrPositionFromPosition } from '~/utils/plates'
+import { hrPositionFromPosition, isArchivedLibraryPlate } from '~/utils/plates'
 import DynamicImage from '~/components/wells/DynamicImage.vue'
 import WellChain from '~/components/wells/WellChain.vue'
 import TimeSeriesChart from '~/components/wells/TimeSeriesChartsContainer.vue'
@@ -34,6 +34,9 @@ const emit = defineEmits<{
 }>()
 
 const well = ref<Well>()
+
+// An archived library plate can be read and measured, but its wells cannot be edited.
+const isReadOnly = computed(() => isArchivedLibraryPlate(props.plate))
 const loading = ref<boolean>(true)
 
 const isTimeSeries = ref<boolean>(false)
@@ -221,7 +224,7 @@ const onSelectMeasurementFeature = (featureId: string) => {
 
           <div v-if="!wellInvalid" class="text-h6">Valid</div>
           <div v-else class="text-h6">Invalid</div>
-          <button type="button" class="action-btn my-sm" @click="markWellAsInvalidOrValid">
+          <button v-if="!isReadOnly" type="button" class="action-btn my-sm" @click="markWellAsInvalidOrValid">
             {{ !wellInvalid ? t('action.mark_as_invalid') : t('action.mark_as_valid') }}
           </button>
         </div>
@@ -399,7 +402,7 @@ const onSelectMeasurementFeature = (featureId: string) => {
         {{ hrPositionFromPosition(props.wellInfo.position, props.plate.dimension) }}:
         {{ t('message.no_well_information') }}
       </span>
-      <div class="mt-2">
+      <div v-if="!isReadOnly" class="mt-2">
         <button type="button" class="action-btn action-btn-light" @click="createWell">
           {{ t('action.create_well') }}
         </button>

@@ -29,6 +29,7 @@ from ..serializers import (
     ExperimentDetail,
 )
 from .plate_archive import PlateArchiveMixin
+from ..archived_plates import ensure_plate_can_be_changed
 
 
 GLOBAL_NOW = datetime.now().replace(microsecond=0)
@@ -80,6 +81,16 @@ class PlateViewSet(PlateArchiveMixin, viewsets.ModelViewSet):
         return Plate.objects.select_related(
             "dimension", "experiment", "library", "template"
         ).prefetch_related(wells)
+
+    # Archived plates cannot be changed or deleted through the API
+    # (see core/archived_plates.py). Archiving itself is a separate action.
+    def perform_update(self, serializer):
+        ensure_plate_can_be_changed(serializer.instance)
+        super().perform_update(serializer)
+
+    def perform_destroy(self, instance):
+        ensure_plate_can_be_changed(instance)
+        super().perform_destroy(instance)
 
     @action(detail=False, methods=["get"])
     def barcodes(self, request):
@@ -147,9 +158,13 @@ class PlateViewSet(PlateArchiveMixin, viewsets.ModelViewSet):
 
         template_plate = Plate.objects.get(pk=template_plate_id)
         plate = self.get_object()
+        ensure_plate_can_be_changed(plate)
 
         if apply_to_all_experiment_plates:
-            plates = Plate.objects.filter(experiment=plate.experiment)
+            plates = list(Plate.objects.filter(experiment=plate.experiment))
+            # Every plate is checked first, so none is changed when one is archived.
+            for _plate in plates:
+                ensure_plate_can_be_changed(_plate)
             for _plate in plates:
                 _plate.apply_template(template_plate)
         else:

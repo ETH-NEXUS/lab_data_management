@@ -69,37 +69,31 @@ const formatPlateDimensionLabel = (dimension: unknown): string => {
 }
 
 /**
- * Creates sorted visible plate nodes for one library.
+ * Creates sorted plate nodes for one library.
  *
- * Rules copied from old UI:
- * - archived plates are hidden
+ * Rules:
  * - plates are sorted by barcode
- * - `empty_wells` status shows warning symbol
+ * - archived plates stay visible with an archive icon and an "archived" label, so users
+ *   of the library see that the plate no longer exists
+ * - `empty_wells` status shows a warning symbol, but not on archived plates, which are
+ *   not listed as problematic
  */
 const mapLibraryPlateNodes = (library: CompoundLibrary): NavigationTreeNode[] => {
-  const visiblePlates: Plate[] = []
-  const libraryPlates = library.plates ?? []
-
-  for (const plate of libraryPlates) {
-    if (plate.archived) {
-      continue
-    }
-    visiblePlates.push(plate)
-  }
-
-  visiblePlates.sort((leftPlate, rightPlate) => leftPlate.barcode.localeCompare(rightPlate.barcode))
+  const plates: Plate[] = [...(library.plates ?? [])]
+  plates.sort((leftPlate, rightPlate) => leftPlate.barcode.localeCompare(rightPlate.barcode))
 
   const nodes: NavigationTreeNode[] = []
-  for (const plate of visiblePlates) {
+  for (const plate of plates) {
     const plateLabel = plate.barcode || t('navigation.libraries.plate_fallback', { id: plate.id })
     const dimensionLabel = formatPlateDimensionLabel(plate.dimension)
-    const hasWarning = plate.status === 'empty_wells'
+    const archivedLabel = plate.archived ? ` · ${t('navigation.libraries.archived')}` : ''
+    const hasWarning = !plate.archived && plate.status === 'empty_wells'
     const warningLabel = hasWarning ? ' ⚠️' : ''
     const routePlateId = plate.barcode || String(plate.id)
 
     nodes.push({
-      label: `${plateLabel} (${dimensionLabel})${warningLabel}`,
-      icon: 'i-heroicons-squares-2x2',
+      label: `${plateLabel} (${dimensionLabel})${archivedLabel}${warningLabel}`,
+      icon: plate.archived ? 'i-heroicons-archive-box' : 'i-heroicons-squares-2x2',
       onSelect: () => navigateTo(`/plates/${encodeURIComponent(routePlateId)}`),
     })
   }
