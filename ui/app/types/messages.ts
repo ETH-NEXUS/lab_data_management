@@ -21,17 +21,37 @@ export type ThresholdListResponse = {
 }
 
 /**
+ * Why a well was marked: which of the two thresholds its values are below.
+ */
+export type ProblematicWellReason = 'volume' | 'dmso'
+
+/**
+ * One marked well with the values the instrument last reported.
+ * A value is null when the instrument never reported it, which is not the
+ * same as a reported zero.
+ *
+ * Data example:
+ * - `{ position: 'I12', current_amount: 0, current_dmso: 0, reasons: ['volume', 'dmso'] }`
+ */
+export type ProblematicWell = {
+  position: string
+  current_amount: number | null
+  current_dmso: number | null
+  reasons: ProblematicWellReason[]
+}
+
+/**
  * Red-flag warnings grouped by library and plate barcode.
  *
  * Data example:
  * - `{
  *     "Library A": {
- *       "PLATE-001": ["A01", "B03"],
- *       "PLATE-002": ["H12"]
+ *       "PLATE-001": [{ position: "I12", current_amount: 1.31, current_dmso: 94.5, reasons: ["volume"] }],
+ *       "PLATE-002": []
  *     }
  *   }`
  */
-export type RedFlagInfo = Record<string, Record<string, string[]>>
+export type RedFlagInfo = Record<string, Record<string, ProblematicWell[]>>
 
 /**
  * Payload for updating threshold values.

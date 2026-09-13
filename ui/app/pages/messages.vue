@@ -29,7 +29,7 @@ const redFlagInfo = ref<RedFlagInfo>({})
  * Loads grouped red-flag warnings.
  *
  * Returned data example:
- * - `{ "Library A": { "PLATE-001": ["A01", "B02"] } }`
+ * - `{ "Library A": { "PLATE-001": [{ position: "A01", current_amount: 0, current_dmso: 0, reasons: ["volume", "dmso"] }] } }`
  */
 const getInfo = async () => {
   const { data, error } = await useAPI<RedFlagInfo>(RED_FLAG_ENDPOINT, { method: 'GET' })

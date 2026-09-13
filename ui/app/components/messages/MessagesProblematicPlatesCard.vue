@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed } from 'vue'
-import type { RedFlagInfo } from '~/types/messages'
+import type { ProblematicWell, ProblematicWellReason, RedFlagInfo } from '~/types/messages'
 
 const props = defineProps<{
   redFlagInfo: RedFlagInfo
@@ -13,7 +13,7 @@ const { t } = useI18n()
  * Sorted entries for top-level library groups.
  *
  * Returned data example:
- * - `[["Library A", { "PLATE-001": ["A01"] }], ["Library B", { "PLATE-002": ["B03"] }]]`
+ * - `[["Library A", { "PLATE-001": [{ position: "A01", ... }] }], ["Library B", { "PLATE-002": [] }]]`
  */
 const libraryEntries = computed(() => {
   return Object.entries(props.redFlagInfo).sort(([libraryA], [libraryB]) => libraryA.localeCompare(libraryB))
@@ -23,10 +23,53 @@ const libraryEntries = computed(() => {
  * Returns sorted plate entries for one library section.
  *
  * Returned data example:
- * - `[["PLATE-001", ["A01", "B04"]], ["PLATE-002", ["H12"]]]`
+ * - `[["PLATE-001", [{ position: "A01", ... }]], ["PLATE-002", []]]`
  */
-const getPlateEntries = (platesByBarcode: Record<string, string[]>) => {
+const getPlateEntries = (platesByBarcode: Record<string, ProblematicWell[]>) => {
   return Object.entries(platesByBarcode).sort(([plateA], [plateB]) => plateA.localeCompare(plateB))
+}
+
+/**
+ * Formats the reported volume, or says that nothing was reported.
+ *
+ * Returned output examples:
+ * - `formatVolume(1.31)` -> `'1.31 µL'`
+ * - `formatVolume(null)` -> `'not reported'`
+ */
+const formatVolume = (value: number | null) => {
+  if (value === null) return t('messages_page.sections.problematic_plates.not_reported')
+  return `${value} ${t('unit.mikro')}`
+}
+
+/**
+ * Formats the reported DMSO share, or says that nothing was reported.
+ *
+ * Returned output examples:
+ * - `formatDmso(94.5)` -> `'94.5%'`
+ * - `formatDmso(null)` -> `'not reported'`
+ */
+const formatDmso = (value: number | null) => {
+  if (value === null) return t('messages_page.sections.problematic_plates.not_reported')
+  return `${value}%`
+}
+
+/**
+ * Names the thresholds a well is below, in words.
+ *
+ * Returned output example:
+ * - `describeReasons({ reasons: ['volume', 'dmso'], ... })` -> `'volume below threshold, DMSO below threshold'`
+ */
+const describeReasons = (well: ProblematicWell) => {
+  const descriptions = well.reasons.map((reason) => t(`messages_page.sections.problematic_plates.reasons.${reason}`))
+  return descriptions.join(', ')
+}
+
+/**
+ * Tells whether a well was marked because of the given threshold.
+ * Used to highlight the value that is below it.
+ */
+const isBelow = (well: ProblematicWell, reason: ProblematicWellReason) => {
+  return well.reasons.includes(reason)
 }
 </script>
 
@@ -77,10 +120,23 @@ const getPlateEntries = (platesByBarcode: Record<string, string[]>) => {
             <ul class="mt-2 space-y-1">
               <li
                 v-for="well in wells"
-                :key="`${libraryName}-${plateBarcode}-${well}`"
-                class="rounded-md bg-slate-50 px-2 py-1 text-sm text-slate-700"
+                :key="`${libraryName}-${plateBarcode}-${well.position}`"
+                class="flex flex-wrap items-baseline gap-x-3 rounded-md bg-slate-50 px-2 py-1 text-sm text-slate-700"
               >
-                {{ well }}
+                <span class="font-mono font-semibold">{{ well.position }}</span>
+                <!-- The value below the threshold is shown in red and also named in words,
+                     so the reason does not depend on seeing the color. -->
+                <span :class="isBelow(well, 'volume') ? 'font-semibold text-red-700' : ''">
+                  {{ t('messages_page.sections.problematic_plates.volume') }}:
+                  {{ formatVolume(well.current_amount) }}
+                </span>
+                <span :class="isBelow(well, 'dmso') ? 'font-semibold text-red-700' : ''">
+                  {{ t('messages_page.sections.problematic_plates.dmso') }}:
+                  {{ formatDmso(well.current_dmso) }}
+                </span>
+                <span v-if="well.reasons.length > 0" class="text-xs text-slate-500">
+                  {{ describeReasons(well) }}
+                </span>
               </li>
             </ul>
           </details>

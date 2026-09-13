@@ -116,5 +116,9 @@ in `useInventoryAddItemForm.ts`.
       Writing them surfaced a regression from step 3: `Mapping` defaulted its reported
       values to 0 ("empty") instead of None ("not reported"), so a plate copy or a csv
       mapping of a library plate would have marked every source well as empty.
+- [x] Audit follow-up 3a (API): `/api/compoundlib/redflag/` returns each marked well with
+      its last reported values and the thresholds it is below.
+- [x] Audit follow-up 3b (UI): the problematic plates card shows those values, the value
+      below the threshold in red and the reason in words.
 - [ ] Open: run the `%_COPY%` check on production and add a data migration if it
       returns rows.

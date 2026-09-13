@@ -369,11 +369,18 @@
       "empty_wells": {
         "title": "Empty Wells",
         "paragraph_1": "Here you can see plates with problematic wells (wells with amount or DMSO concentration below the threshold). This information is also shown in the navigation tree as warning indicators. You can change the threshold here and recalculate well and plate status.",
-        "paragraph_2": "This information is derived from echo-transfer files and primarily covers plates recently imported via the echo-import process. For older projects, you can resubmit echo-import in the management tab so status calculations are applied."
+        "paragraph_2": "This information comes from Echo transfer files: wells are marked when a transfer file is imported. After changing the thresholds, or to update older plates, use \"Recalculate based on current threshold\" - it checks all library plates again. Please do not import a transfer file a second time, because the withdrawn volumes would then be counted twice."
       },
       "problematic_plates": {
         "title": "Problematic plates",
-        "empty": "No problematic plates found for the current threshold."
+        "empty": "No problematic plates found for the current threshold.",
+        "volume": "Volume",
+        "dmso": "DMSO",
+        "not_reported": "not reported",
+        "reasons": {
+          "volume": "volume below threshold",
+          "dmso": "DMSO below threshold"
+        }
       },
       "thresholds": {
         "title": "Current Thresholds",
