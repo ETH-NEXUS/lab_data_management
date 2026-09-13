@@ -133,3 +133,15 @@ class RedFlagViewTest(APITestCase):
         self.assertEqual(
             len(one_plate.captured_queries), len(three_plates.captured_queries)
         )
+
+    def test_an_archived_plate_is_left_out(self):
+        self.add_marked_well(0, [(0, 0)])
+        Plate.objects.filter(id=self.plate.id).update(archived=True)
+        response = self.client.get(self.url)
+        self.assertEqual({}, response.data)
+
+    def test_a_plate_without_an_archived_value_is_listed(self):
+        """An unset value (null in the database) counts as not archived."""
+        self.add_marked_well(0, [(0, 0)])
+        Plate.objects.filter(id=self.plate.id).update(archived=None)
+        self.assertEqual(1, len(self.wells_of_the_plate()))

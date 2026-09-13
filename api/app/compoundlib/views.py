@@ -39,7 +39,8 @@ class RedFlagView(APIView):
     """
     Lists the wells that are running low, grouped by library and plate, with
     the values the instrument reported and the thresholds they are below.
-    A value is null when the instrument never reported it.
+    A value is null when the instrument never reported it. Archived plates are
+    left out: the lab archives plates it no longer uses.
     Returned data example:
     {"Library A": {"PLATE-001": [
         {"position": "A01", "current_amount": 0, "current_dmso": 0,
@@ -78,9 +79,13 @@ class RedFlagView(APIView):
 
     def get(self, request, *args, **kwargs):
         threshold = Threshold.current()
-        plates_with_empty_wells_status = Plate.objects.filter(
-            status="empty_wells", library__isnull=False
-        ).select_related("library")
+        # An unset value (null in the database) counts as not archived, as in the
+        # navigation tree and on the plate page.
+        plates_with_empty_wells_status = (
+            Plate.objects.filter(status="empty_wells", library__isnull=False)
+            .exclude(archived=True)
+            .select_related("library")
+        )
 
         res = {}
         for plate in plates_with_empty_wells_status:

@@ -333,7 +333,21 @@
         "status": "Status",
         "amount": "Amount"
       },
-      "right_placeholder": "Well details and editing panel will be migrated here next."
+      "right_placeholder": "Well details and editing panel will be migrated here next.",
+      "archive": {
+        "archive_button": "Archive plate",
+        "unarchive_button": "Unarchive plate",
+        "archive_title": "Archive this plate?",
+        "archive_description": "Plate {barcode} will be hidden in the navigation tree. You can unarchive it here at any time.",
+        "unarchive_title": "Unarchive this plate?",
+        "unarchive_description": "Plate {barcode} will be shown in the navigation tree again.",
+        "archive_confirm": "Archive",
+        "unarchive_confirm": "Unarchive",
+        "archived_badge": "Archived",
+        "archived_toast": "Plate archived",
+        "unarchived_toast": "Plate unarchived",
+        "failed_toast": "The plate was not changed"
+      }
     },
     "dynamic": {
       "settings": {

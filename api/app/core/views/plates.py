@@ -28,6 +28,7 @@ from ..serializers import (
     SimplePlateTemplateSerializer,
     ExperimentDetail,
 )
+from .plate_archive import PlateArchiveMixin
 
 
 GLOBAL_NOW = datetime.now().replace(microsecond=0)
@@ -46,7 +47,7 @@ def mean_time_point(dt_strings):
         return GLOBAL_NOW
 
 
-class PlateViewSet(viewsets.ModelViewSet):
+class PlateViewSet(PlateArchiveMixin, viewsets.ModelViewSet):
     def get_serializer_class(self):
         # if self.action == 'list':
         #     return PlateListSerializer

@@ -10,6 +10,8 @@ import {
   PLATES_ENDPOINT,
   PLATE_TARGET_BARCODES_FETCH_ERROR_MESSAGE,
   PLATE_TEMPLATE_BARCODES_FETCH_ERROR_MESSAGE,
+  PLATE_ARCHIVE_ERROR_MESSAGE,
+  type PlateArchiveResponse,
   type PlateBarcode,
   type PlatePageData,
 } from '~/types/plates'
@@ -43,6 +45,7 @@ export const usePlateStore = defineStore('plateStore', () => {
   const isLoadingPlate = ref(false)
   const isLoadingTargetPlateBarcodes = ref(false)
   const isLoadingTemplatePlateBarcodes = ref(false)
+  const isArchivingPlate = ref(false)
   const error = ref<string | null>(null)
 
   /**
@@ -225,6 +228,42 @@ export const usePlateStore = defineStore('plateStore', () => {
     }
   }
 
+  /**
+   * Archives or unarchives the plate that is open on the plate page.
+   * A failure is thrown to the caller and not stored in `error`, because `error`
+   * would replace the whole plate view with an error message.
+   *
+   * Accepted argument examples:
+   * - `true` (archive)
+   * - `false` (unarchive)
+   *
+   * Returned data example:
+   * - `{ id: 42, barcode: 'demo_1', archived: true }`
+   */
+  const setCurrentPlateArchived = async (archived: boolean): Promise<PlateArchiveResponse> => {
+    const plate = currentPlate.value
+    if (!plate) {
+      throw new Error(PLATE_ARCHIVE_ERROR_MESSAGE)
+    }
+
+    isArchivingPlate.value = true
+    try {
+      const data = await requestApiData<PlateArchiveResponse>(
+        `${PLATES_ENDPOINT}${plate.id}/archive/`,
+        { method: 'POST', body: { archived } },
+        PLATE_ARCHIVE_ERROR_MESSAGE,
+      )
+
+      // Only update the page if the user has not opened another plate in the meantime.
+      if (currentPlate.value?.id === plate.id) {
+        currentPlate.value = { ...currentPlate.value, archived: data.archived }
+      }
+      return data
+    } finally {
+      isArchivingPlate.value = false
+    }
+  }
+
   return {
     currentPlateBarcode,
     currentPlate,
@@ -234,11 +273,13 @@ export const usePlateStore = defineStore('plateStore', () => {
     isLoadingPlate,
     isLoadingTargetPlateBarcodes,
     isLoadingTemplatePlateBarcodes,
+    isArchivingPlate,
     error,
     clearPlatePageState,
     fetchPlateByBarcode,
     fetchTargetPlateBarcodeOptions,
     fetchTemplatePlateBarcodeOptions,
     initializePlatePage,
+    setCurrentPlateArchived,
   }
 })

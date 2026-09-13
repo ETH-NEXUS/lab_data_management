@@ -124,6 +124,19 @@ export const PLATE_BARCODES_ENDPOINT = 'plates/barcodes/'
 export const PLATE_FETCH_ERROR_MESSAGE = 'Failed to load plate.'
 export const PLATE_TARGET_BARCODES_FETCH_ERROR_MESSAGE = 'Failed to load target plate barcode options.'
 export const PLATE_TEMPLATE_BARCODES_FETCH_ERROR_MESSAGE = 'Failed to load template plate barcode options.'
+export const PLATE_ARCHIVE_ERROR_MESSAGE = 'Failed to change whether the plate is archived.'
+
+/**
+ * Response of `POST /api/plates/<id>/archive/`.
+ *
+ * Data example:
+ * - `{ id: 42, barcode: 'demo_1', archived: true }`
+ */
+export type PlateArchiveResponse = {
+  id: number
+  barcode: string
+  archived: boolean
+}
 
 /**
  * Builds a not-found message for one barcode.

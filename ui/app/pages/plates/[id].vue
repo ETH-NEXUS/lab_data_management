@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, watch } from 'vue'
 import DynamicPlate from '~/components/plates/DynamicPlate.vue'
+import PlateArchiveButton from '~/components/plates/PlateArchiveButton.vue'
 import PlatePaneHeader from '~/components/plates/PlatePaneHeader.vue'
 import ResizableSplitPane from '~/components/common/ResizableSplitPane.vue'
 import WellDetails from '~/components/wells/WellDetails.vue'
@@ -120,11 +121,14 @@ const hasSelectedWell = computed(() => {
       <template #left>
         <div class="h-full p-4">
           <div class="h-full">
-            <PlatePaneHeader
-              :title="pageTitle"
-              :description="t('plates.page.left_description')"
-              title-class="mb-3 font-mono text-3xl font-medium text-slate-800"
-            />
+            <div class="flex items-start justify-between gap-4">
+              <PlatePaneHeader
+                :title="pageTitle"
+                :description="t('plates.page.left_description')"
+                title-class="mb-3 font-mono text-3xl font-medium text-slate-800"
+              />
+              <PlateArchiveButton v-if="plateStore.currentPlate" />
+            </div>
 
             <div v-if="plateStore.isInitializingPlatePage" class="flex min-h-[320px] items-center justify-center">
               <div
