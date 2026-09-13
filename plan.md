@@ -125,8 +125,11 @@ in `useInventoryAddItemForm.ts`.
 - [x] Audit follow-up 5a (model): `Threshold` has units in its help text, rejects negative
       values and a DMSO above 100 %, and is read everywhere through `Threshold.current()`,
       which creates the defaults when the row is missing instead of silently marking nothing.
-- [ ] Audit follow-up 5b (API + admin): the threshold can be read and changed by every logged
-      in user, but no longer created or deleted.
+- [x] Refactor: `core/views.py` (1042 lines) is now the `core/views/` package, one file per
+      topic, re-exported from `__init__.py`. Pure move: every definition is unchanged and the
+      467 URL routes resolve to the same views.
+- [ ] Audit follow-up 5b (API only): through the API the threshold can be read and changed by
+      every logged in user, but no longer created or deleted. The admin stays as it is.
 - [ ] Audit follow-up 5c (UI): the threshold form refuses a DMSO above 100 % and shows the
       error when the API refuses a value.
 - [ ] Open: run the `%_COPY%` check on production and add a data migration if it

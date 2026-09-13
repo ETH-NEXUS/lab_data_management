@@ -29,6 +29,7 @@ from .views import (
     WellViewSet,
     PlateMappingViewSet,
     ExperimentViewSet,
+    ThresholdViewSet,
 )
 
 
@@ -123,3 +124,4 @@ class PlateMappingEndpoint(DefaultEndpoint):
 class ThresholdEndpoint(DefaultEndpoint):
     model = Threshold
     base_serializer = ThresholdSerializer
+    base_viewset = ThresholdViewSet
