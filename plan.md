@@ -107,10 +107,11 @@ in `useInventoryAddItemForm.ts`.
       the broken sqlite test settings, the pytest config moved into `api/pyproject.toml`
       (the only one the api image sees) and the stale `Compound.identifier` usages in
       `core/tests.py` are gone. The 10 tests that failed before are skipped (see 2a-1).
-- [ ] Audit follow-up 2a-1: unskip and fix the 10 tests that were failing before the
-      suite could run again — `StatisticsTest` (calls `plate.z_prime` / `z_factor` /
-      `z_scores`, which the model no longer has), `MapperTests` (missing test data
-      files) and `InventoryMaterialReagentTests` (never authenticates, gets 403).
+- [x] `StatisticsTest` deleted: it tested `plate.z_prime` / `z_factor` / `z_scores`, which no
+      longer exist.
+- [ ] Audit follow-up 2a-1: rewrite the 7 skipped tests that cover existing code —
+      `MapperTests` (missing test data files) and `InventoryMaterialReagentTests`
+      (never authenticates, gets 403).
 - [x] Audit follow-up 2b: unit tests for `core/thresholds.py` (pure function, no database).
 - [x] Audit follow-up 2c: tests for `find_problems` and for the flagging in `Plate.map`.
       Writing them surfaced a regression from step 3: `Mapping` defaulted its reported
@@ -135,14 +136,20 @@ in `useInventoryAddItemForm.ts`.
 - [x] `/api/refresh/` (refreshing the materialized views) requires a logged in user and a POST
       with a CSRF token; it was reachable without any authentication and ran on GET.
 
+- [x] Before release, step 1: recalculation and Echo import only mark plates without a status
+      (None or ""). A status set by hand, like "disposed" (6 plates on production), is kept.
+- [x] Tests centralized in `api/app/tests/<app>/`; the large `tests.py` files of core, importer
+      and inventory are split by class, the 7 empty `tests.py` stubs are gone, and pytest only
+      looks in `tests/` (`testpaths`). Same 130 tests, code unchanged.
+- [ ] Before release, step 2: data migration that turns the 0 uL / 100 % fill levels written by
+      the old library copy (2484 wells on Drug01_C … Drug08_C in production) into "unknown".
+
 ## Deferred to a separate audit (found, not changed — the code has worked for years)
 
 - Echo import crashes with `KeyError: 'DMSO'` on files from the newer Echo software, which
   write `Fluid Composition` / `Fluid Units` / `Fluid Type` instead of `% DMSO`
   (example: `data_temp/test/_data_examples_echo_Testrun1_*_Transfer_*.csv`). The column
   schema in `core/config.py` is strict, so a fix touches the schema, `ldm.yaml` and the mapper.
-- `StatisticsTest` (skipped) tests `plate.z_prime` / `z_factor` / `z_scores`, which no longer
-  exist; only `ldm/ldm.py::calculate_z_prime` remains (median/MAD, no callers). Rewrite or delete.
 - `MapperTests` (4 skipped) fail with `FileNotFoundError: ./temp/M1000/20210902-131750_BAF210901_1.asc`.
 - `InventoryMaterialReagentTests` (skipped) never authenticates, so the API answers 403.
 - Dev database: 1 library plate has no dimension. If it ever gets flagged, `RedFlagView`
@@ -153,5 +160,5 @@ in `useInventoryAddItemForm.ts`.
   listed on the messages page, `find_problems` ignores an unknown argument silently,
   recalculation runs synchronously in the request, the `Problem` model is unused.
 
-- [ ] Open: run the `%_COPY%` check on production and add a data migration if it
-      returns rows.
+- [x] `%_COPY%` check on production (2026-09-13): plate copies never wrote a withdrawal there,
+      so no data migration is needed and Recalculate cannot raise false alarms from them.

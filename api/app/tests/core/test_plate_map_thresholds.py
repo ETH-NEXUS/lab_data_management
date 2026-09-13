@@ -112,3 +112,11 @@ class PlateMapThresholdTest(TestCase):
         plate.refresh_from_db()
         self.assertIsNone(well.status)
         self.assertIsNone(plate.status)
+
+    def test_a_status_set_by_hand_is_kept(self):
+        # Set on the plate object: the Echo import also loads the plate with its status.
+        self.source_plate.status = "disposed"
+        self.source_plate.save()
+        well = self.map_well(0, current_amount=0, current_dmso=0)
+        self.assertEqual("empty", well.status)
+        self.assertEqual("disposed", self.source_plate.status)

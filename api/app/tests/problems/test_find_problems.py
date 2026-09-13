@@ -123,3 +123,16 @@ class MarkEmptyWellsTest(TestCase):
         )
         self.recalculate()
         self.assertIsNone(self.well_status(well))
+
+    def test_a_status_set_by_hand_is_kept(self):
+        Plate.objects.filter(id=self.plate.id).update(status="disposed")
+        low_well = self.add_well(0, [(0, 0)])
+        self.recalculate()
+        self.assertEqual("disposed", self.plate.status)
+        self.assertEqual("empty", self.well_status(low_well))
+
+    def test_a_plate_with_an_empty_status_is_flagged(self):
+        Plate.objects.filter(id=self.plate.id).update(status="")
+        self.add_well(0, [(2.0, 95)])
+        self.recalculate()
+        self.assertEqual("empty_wells", self.plate.status)
