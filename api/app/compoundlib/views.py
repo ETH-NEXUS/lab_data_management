@@ -11,7 +11,7 @@ from .models import CompoundLibrary, Compound
 from core.models import Plate
 from core.models import Well
 from core.models import Threshold, WellWithdrawal
-from core.thresholds import threshold_reasons
+from core.utils.wells.threshold_checks import threshold_reasons
 from django.core import management
 
 logger = logging.getLogger(__name__)

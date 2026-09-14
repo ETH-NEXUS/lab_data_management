@@ -1,6 +1,6 @@
 from django.test import TestCase
 from core.models import PlateDimension
-from core.helper import charToAlphaPos
+from core.utils.plates.positions import charToAlphaPos
 
 
 class MappingTest(TestCase):

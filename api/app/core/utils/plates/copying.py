@@ -1,8 +1,8 @@
 from collections.abc import Iterable
 from django.conf import settings
 from django.db import transaction
-from .models import Plate, PlateDetail, Well, WellCompound, WellDetail, WellWithdrawal
-from .units import nanoliter_to_microliter
+from core.models import Plate, PlateDetail, Well, WellCompound, WellDetail, WellWithdrawal
+from core.utils.wells.volume_units import nanoliter_to_microliter
 
 
 def build_copied_plate_barcode(source_barcode: str) -> str:

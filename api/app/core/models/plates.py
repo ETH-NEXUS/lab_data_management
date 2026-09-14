@@ -14,9 +14,9 @@ from rest_framework.exceptions import APIException
 from compoundlib.models import CompoundLibrary
 from platetemplate.models import PlateTemplate
 from ..basemodels import TimeTrackedModel
-from ..mapping import MappingList
-from ..mapping import PositionMapper
-from ..thresholds import is_below_threshold
+from ..utils.plates.mapping import MappingList
+from ..utils.plates.positions import PositionMapper
+from ..utils.wells.threshold_checks import is_below_threshold
 from .materialized_views import PlateDetail, WellDetail
 from .projects import Experiment, Project
 from .thresholds import Threshold

@@ -11,7 +11,7 @@ class Config:
 
     USAGE:
 
-    from core.config import Config
+    from core.utils.config import Config
 
     Config.current. ...
     """

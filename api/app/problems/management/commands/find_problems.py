@@ -3,7 +3,7 @@ from django.db import transaction
 from django.db.models import Count, Prefetch, Q
 
 from core.models import Plate, Threshold, Well, WellWithdrawal
-from core.thresholds import is_below_threshold
+from core.utils.wells.threshold_checks import is_below_threshold
 
 
 class Command(BaseCommand):

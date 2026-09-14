@@ -21,7 +21,7 @@ from .models import (
     Threshold,
     PlateInfo,
 )
-from .utils import copy_library_plates
+from .utils.plates.copying import copy_library_plates
 
 
 class CopySelectedPlatesForm(forms.Form):

@@ -14,7 +14,7 @@ from contextlib import redirect_stderr
 from importer.helper import message
 
 from chardet.universaldetector import UniversalDetector
-from core.mapping import Mapping, MappingList
+from core.utils.plates.mapping import Mapping, MappingList
 from core.models import (
     BarcodeSpecification,
     Measurement,
@@ -31,7 +31,7 @@ from core.models import (
     ExperimentDetail,
     WellType,
 )
-from core.config import Config
+from core.utils.config import Config
 from django.core.files import File
 from django.utils import timezone as tz
 from .helper import row_col_from_name

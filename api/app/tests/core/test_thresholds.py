@@ -8,7 +8,7 @@ for years those wells were the only ones that never showed up as problematic.
 
 from django.test import SimpleTestCase
 
-from core.thresholds import is_below_threshold, threshold_reasons
+from core.utils.wells.threshold_checks import is_below_threshold, threshold_reasons
 
 THRESHOLD_AMOUNT = 2.5  # microliter
 THRESHOLD_DMSO = 80  # percent

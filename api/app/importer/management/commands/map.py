@@ -6,7 +6,7 @@ from django.core.management.base import BaseCommand
 from importer.mappers import EchoMapper, M1000Mapper, MicroscopeMapper
 from core.models import Experiment
 from importer.helper import message
-from core.config import Config
+from core.utils.config import Config
 from helpers.logger import logger
 
 

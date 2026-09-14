@@ -4,7 +4,7 @@ import pandas as pd
 import numpy as np
 from typing import Callable
 from core.models import Project, Experiment, Plate, Well, PlateInfo
-from core.helper import posToAlphaChar
+from core.utils.plates.positions import posToAlphaChar
 
 # from scipy.stats import median_abs_deviation as mad
 

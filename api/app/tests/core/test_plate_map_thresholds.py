@@ -9,7 +9,7 @@ including the very first transfer out of a well.
 from django.test import TestCase
 
 from compoundlib.models import Compound, CompoundLibrary
-from core.mapping import Mapping, MappingList
+from core.utils.plates.mapping import Mapping, MappingList
 from core.models import Plate, PlateDimension, Threshold, Well, WellCompound
 
 

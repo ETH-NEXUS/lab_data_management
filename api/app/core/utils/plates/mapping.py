@@ -1,9 +1,11 @@
+"""
+Lists of well-to-well transfers, used to map one plate onto another (Plate.map).
+A list is built one to one for a plate copy, from a csv file, or by the importer.
+"""
+
 import csv
-import re
 from os.path import isfile
 from typing import Union
-
-from .helper import charToAlphaPos, posToAlphaChar
 
 
 class Mapping:
@@ -128,44 +130,3 @@ class MappingList:
             return mappings
         else:
             raise FileNotFoundError(f"Cannot find csv file {csv_file}.")
-
-
-class PositionMappingError:
-    def __init__(self, position, message="Cannot convert position to row, col: {}"):
-        self.message = message.format(position)
-        super().__init__(self.message)
-
-
-class PositionMapper:
-    """
-    Maps a string notation position to row, col and the other way round.
-    i.e. A2 -> row: 0, col: 1
-    """
-
-    @staticmethod
-    def map(position: str) -> tuple[int, int]:
-        match = re.match(r"(?P<alpha>[A-Z]+)(?P<num>[0-9]+)", position, re.IGNORECASE)
-        if match:
-            row = charToAlphaPos(match.group("alpha"))
-            col = int(match.group("num"))
-
-        else:
-            raise PositionMappingError(position)
-        return row, col
-
-    @staticmethod
-    def unmap(row: int, col: int) -> str:
-        return f"{posToAlphaChar(row)}{col}"
-
-
-# @staticmethod
-#     def convert_position_to_index(position: str,
-#                                   number_of_columns: int) -> int:
-#         match = re.match(r'([a-zA-Z]+)(\d+)', position)
-#         letters = match.group(1)
-#         col = int(match.group(2))
-#         row = 0
-#         for index, char in enumerate(letters[::-1]):
-#             row += (ord(char.upper()) - ord('A') + 1) * (26 ** index)
-#         index = (row - 1) * number_of_columns + (col - 1)
-#         return index

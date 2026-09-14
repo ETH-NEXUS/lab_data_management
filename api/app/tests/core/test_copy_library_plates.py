@@ -8,7 +8,7 @@ from django.test import TestCase
 
 from compoundlib.models import CompoundLibrary
 from core.models import Plate, PlateDetail, PlateDimension, Well, WellDetail
-from core.utils import copy_library_plates
+from core.utils.plates.copying import copy_library_plates
 
 
 @patch.object(WellDetail, "refresh")

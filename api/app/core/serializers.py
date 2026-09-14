@@ -6,7 +6,7 @@ from rest_framework import serializers
 import random
 import string
 
-from .mapping import MappingList
+from .utils.plates.mapping import MappingList
 from .models import (
     Well,
     Plate,

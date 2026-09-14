@@ -1,6 +1,6 @@
 from copy import deepcopy
 from django.test import TestCase
-from core.helper import posToAlphaChar
+from core.utils.plates.positions import posToAlphaChar
 from core.models import PlateDimension
 from importer.helper import sameSchema, row_col_from_wells, closest, row_col_from_name
 

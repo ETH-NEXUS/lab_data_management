@@ -15,7 +15,7 @@ from ..serializers import (
     WellSerializer,
     ExperimentDetail,
 )
-from ..archived_plates import ensure_plate_can_be_changed
+from ..utils.plates.archive_guard import ensure_plate_can_be_changed
 
 
 class WellViewSet(viewsets.ModelViewSet):
@@ -23,7 +23,7 @@ class WellViewSet(viewsets.ModelViewSet):
     queryset = Well.objects.all()
 
     # Wells of archived plates cannot be created, changed or deleted through the API
-    # (see core/archived_plates.py).
+    # (see core/utils/plates/archive_guard.py).
     def perform_create(self, serializer):
         ensure_plate_can_be_changed(serializer.validated_data.get("plate"))
         super().perform_create(serializer)

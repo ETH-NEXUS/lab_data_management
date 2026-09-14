@@ -29,7 +29,10 @@ from ..serializers import (
     ExperimentDetail,
 )
 from .plate_archive import PlateArchiveMixin
-from ..archived_plates import ensure_plate_can_be_changed, is_archived_library_plate
+from ..utils.plates.archive_guard import (
+    ensure_plate_can_be_changed,
+    is_archived_library_plate,
+)
 
 
 GLOBAL_NOW = datetime.now().replace(microsecond=0)
@@ -83,7 +86,7 @@ class PlateViewSet(PlateArchiveMixin, viewsets.ModelViewSet):
         ).prefetch_related(wells)
 
     # Archived plates cannot be changed or deleted through the API
-    # (see core/archived_plates.py). Archiving itself is a separate action.
+    # (see core/utils/plates/archive_guard.py). Archiving itself is a separate action.
     def perform_update(self, serializer):
         ensure_plate_can_be_changed(serializer.instance)
         super().perform_update(serializer)

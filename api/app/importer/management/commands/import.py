@@ -6,7 +6,7 @@ from core.models import Plate, Well, PlateDimension, WellCompound, WellType, Pro
 from platetemplate.models import PlateTemplate, PlateTemplateCategory
 from importer.mapping import SdfMapping
 from importer.helper import row_col_from_wells, normalize_col, normalize_row
-from core.mapping import PositionMapper
+from core.utils.plates.positions import PositionMapper
 from core.models import WellDetail, PlateDetail
 import numpy as np
 from os.path import splitext

@@ -11,7 +11,7 @@ from core.models import (
     Project,
 )
 from platetemplate.models import PlateTemplate, PlateTemplateCategory
-from core.mapping import Mapping, MappingList
+from core.utils.plates.mapping import Mapping, MappingList
 
 
 class PlateTest(TestCase):
