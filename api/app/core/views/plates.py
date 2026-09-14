@@ -29,7 +29,7 @@ from ..serializers import (
     ExperimentDetail,
 )
 from .plate_archive import PlateArchiveMixin
-from ..archived_plates import ensure_plate_can_be_changed
+from ..archived_plates import ensure_plate_can_be_changed, is_archived_library_plate
 
 
 GLOBAL_NOW = datetime.now().replace(microsecond=0)
@@ -161,11 +161,12 @@ class PlateViewSet(PlateArchiveMixin, viewsets.ModelViewSet):
         ensure_plate_can_be_changed(plate)
 
         if apply_to_all_experiment_plates:
-            plates = list(Plate.objects.filter(experiment=plate.experiment))
-            # Every plate is checked first, so none is changed when one is archived.
+            plates = Plate.objects.filter(experiment=plate.experiment)
             for _plate in plates:
-                ensure_plate_can_be_changed(_plate)
-            for _plate in plates:
+                # Archived library plates are left as they are, instead of making the
+                # whole request fail because of a plate nobody asked to change.
+                if is_archived_library_plate(_plate):
+                    continue
                 _plate.apply_template(template_plate)
         else:
             plate.apply_template(template_plate)

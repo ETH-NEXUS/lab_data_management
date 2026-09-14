@@ -3,12 +3,23 @@ Tests that archived library plates and their wells cannot be changed through the
 while active plates and experiment plates keep working as before.
 """
 
+from unittest.mock import patch
+
 from django.contrib.auth import get_user_model
 from rest_framework import status
 from rest_framework.test import APITestCase
 
 from compoundlib.models import CompoundLibrary
-from core.models import Experiment, Plate, PlateDimension, Project, Well
+from core.models import (
+    Experiment,
+    Plate,
+    PlateDetail,
+    PlateDimension,
+    Project,
+    Well,
+    WellDetail,
+    WellType,
+)
 
 REFUSAL = "Plate ARCHIVED is archived and can no longer be changed."
 
@@ -132,3 +143,29 @@ class ArchivedPlateGuardTest(APITestCase):
         well = Well.objects.create(plate=plate, position=0)
         response = self.client.get(f"/api/wells/{well.id}/mark_as_invalid/")
         self.assertEqual(status.HTTP_200_OK, response.status_code)
+
+    # The response reads materialized views, which the test database does not refresh.
+    @patch("core.views.plates.PlateSerializer")
+    @patch.object(WellDetail, "refresh")
+    @patch.object(PlateDetail, "refresh")
+    def test_a_template_for_all_plates_skips_archived_plates(
+        self, plate_refresh, well_refresh, plate_serializer
+    ):
+        plate_serializer.return_value.data = {}
+        template = Plate.objects.create(
+            barcode="TEMPLATE", dimension=self.archived_plate.dimension
+        )
+        Well.objects.create(plate=template, position=0, type=WellType.by_name("P"))
+
+        response = self.client.post(
+            f"/api/plates/{self.active_plate.id}/apply_template/",
+            {"template": template.id, "apply_to_all_experiment_plates": True},
+            format="json",
+        )
+
+        self.assertEqual(status.HTTP_200_OK, response.status_code)
+        self.active_well.refresh_from_db()
+        self.assertEqual("P", self.active_well.type.name)
+        self.archived_well.refresh_from_db()
+        self.assertNotEqual("P", self.archived_well.type.name)
+        self.assertEqual(1, Well.objects.filter(plate=self.archived_plate).count())

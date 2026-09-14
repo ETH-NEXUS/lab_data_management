@@ -86,7 +86,7 @@ const mapLibraryPlateNodes = (library: CompoundLibrary): NavigationTreeNode[] =>
   for (const plate of plates) {
     const plateLabel = plate.barcode || t('navigation.libraries.plate_fallback', { id: plate.id })
     const dimensionLabel = formatPlateDimensionLabel(plate.dimension)
-    const archivedLabel = plate.archived ? ` · ${t('navigation.libraries.archived')}` : ''
+    const archivedLabel = plate.archived ? ` ☠️ ${t('navigation.libraries.archived')}` : ''
     const hasWarning = !plate.archived && plate.status === 'empty_wells'
     const warningLabel = hasWarning ? ' ⚠️' : ''
     const routePlateId = plate.barcode || String(plate.id)

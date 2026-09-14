@@ -74,11 +74,16 @@ const modalUi = {
           </header>
 
           <div class="relative mx-auto mt-8 max-w-2xl rounded-xl border border-slate-200 bg-white p-1 shadow-lg">
-            <div :class="['mx-auto', props.bodyContainerClass]">
+            <!-- A modal without a body (a plain confirmation) gets no empty body area and no
+                 divider above its buttons. -->
+            <div v-if="$slots.body" :class="['mx-auto', props.bodyContainerClass]">
               <slot name="body" />
             </div>
 
-            <div v-if="$slots.footer" :class="['mt-4 border-t border-slate-200 bg-white px-6 py-5', props.footerClass]">
+            <div
+              v-if="$slots.footer"
+              :class="[$slots.body ? 'mt-4 border-t border-slate-200' : '', 'bg-white px-6 py-5', props.footerClass]"
+            >
               <slot name="footer" />
             </div>
           </div>

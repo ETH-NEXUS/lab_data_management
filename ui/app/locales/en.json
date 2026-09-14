@@ -348,7 +348,7 @@
         "archived_toast": "Plate archived",
         "unarchived_toast": "Plate unarchived",
         "failed_toast": "The plate was not changed",
-        "banner": "This plate is archived: it no longer exists in storage and cannot be used or edited."
+        "banner": "This plate is archived: it no longer exists in storage and its wells cannot be edited."
       }
     },
     "dynamic": {

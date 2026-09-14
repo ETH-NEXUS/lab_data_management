@@ -11,6 +11,18 @@ directly and is not affected, so a mistake can still be corrected there.
 from rest_framework.exceptions import ValidationError
 
 
+def is_archived_library_plate(plate):
+    """
+    Tell whether a plate is an archived library plate, which can no longer be changed.
+    An unset value (null in the database) counts as not archived.
+    Example input:
+    {"library_id": 3, "archived": True}
+    Example output:
+    True
+    """
+    return plate is not None and bool(plate.archived) and plate.library_id is not None
+
+
 def ensure_plate_can_be_changed(plate):
     """
     Refuse the request with a 400 response when the plate is an archived library plate.
@@ -18,7 +30,7 @@ def ensure_plate_can_be_changed(plate):
     Response data example:
     {"detail": "Plate Drug03_I is archived and can no longer be changed."}
     """
-    if plate is not None and plate.archived and plate.library_id is not None:
+    if is_archived_library_plate(plate):
         raise ValidationError(
             {
                 "detail": f"Plate {plate.barcode} is archived and can no longer be changed."
