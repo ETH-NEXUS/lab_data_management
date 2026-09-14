@@ -1,10 +1,12 @@
 from collections import defaultdict
 
 from compoundlib.models import CompoundLibrary, Compound
+from platetemplate.models import PlateTemplate
 from rest_framework import serializers
 import random
 import string
 
+from .mapping import MappingList
 from .models import (
     Well,
     Plate,
@@ -16,11 +18,9 @@ from .models import (
     WellCompound,
     WellWithdrawal,
     PlateMapping,
-    PlateTemplate,
     MappingError,
     WellType,
     BarcodeSpecification,
-    MappingList,
     PlateDetail,
     WellDetail,
     ExperimentDetail,

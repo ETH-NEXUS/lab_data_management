@@ -1,11 +1,10 @@
 from django.core.management.base import BaseCommand
+from compoundlib.models import CompoundLibrary, Compound
 from core.models import (
     Project,
     Experiment,
     Plate,
     Well,
-    CompoundLibrary,
-    Compound,
 )
 
 
