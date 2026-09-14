@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 import BaseButton from '~/components/common/BaseButton.vue'
-import WavesModalWrapper from '~/components/common/WavesModalWrapper.vue'
 import { useCompoundLibraryStore } from '~/stores/compoundLibraries'
 import { usePlateStore } from '~/stores/plates'
 import { getErrorMessage } from '~/utils/errors'
@@ -77,7 +76,8 @@ const confirmChange = async () => {
       :disabled="plateStore.isArchivingPlate"
     />
 
-    <WavesModalWrapper
+    <!-- A plain confirmation card, the same style as archiving a stock item in the inventory. -->
+    <UModal
       :open="isConfirmOpen"
       :title="isArchived ? t('plates.page.archive.unarchive_title') : t('plates.page.archive.archive_title')"
       :description="
@@ -86,26 +86,28 @@ const confirmChange = async () => {
           : t('plates.page.archive.archive_description', { barcode })
       "
       :dismissible="!plateStore.isArchivingPlate"
+      class="w-full sm:max-w-lg"
+      :ui="{ content: 'rounded-2xl bg-white shadow-md' }"
       @update:open="onConfirmOpenChange"
     >
       <template #footer>
-        <BaseButton
-          :label="t('common.actions.cancel')"
-          :on-click="closeConfirmation"
-          variant="secondary"
-          size="sm"
-          width="auto"
-          :disabled="plateStore.isArchivingPlate"
-        />
-        <BaseButton
-          :label="isArchived ? t('plates.page.archive.unarchive_confirm') : t('plates.page.archive.archive_confirm')"
-          :on-click="confirmChange"
-          variant="primary"
-          size="sm"
-          width="auto"
-          :loading="plateStore.isArchivingPlate"
-        />
+        <div class="flex w-full justify-end gap-2">
+          <UButton
+            variant="ghost"
+            color="neutral"
+            :label="t('common.actions.cancel')"
+            :disabled="plateStore.isArchivingPlate"
+            @click="closeConfirmation"
+          />
+          <UButton
+            color="warning"
+            :label="isArchived ? t('plates.page.archive.unarchive_confirm') : t('plates.page.archive.archive_confirm')"
+            :loading="plateStore.isArchivingPlate"
+            :disabled="plateStore.isArchivingPlate"
+            @click="confirmChange"
+          />
+        </div>
       </template>
-    </WavesModalWrapper>
+    </UModal>
   </div>
 </template>
