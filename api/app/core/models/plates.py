@@ -178,7 +178,6 @@ class Plate(TimeTrackedModel):
         """
         Applies a template plate to this plate
         """
-        print(f"Applying template {template_plate} to {self}")
         if self.num_wells != template_plate.num_wells:
             raise MappingError(
                 f"{_('Template plate must have the same amount of wells')}: {self.num_wells} != {template_plate.num_wells}"

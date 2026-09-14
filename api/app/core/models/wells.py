@@ -3,10 +3,10 @@ Wells of a plate: their type and sample, the compounds in them and the withdrawa
 """
 
 from django.conf import settings
+from django.core.exceptions import ValidationError
 from django.core.validators import MinValueValidator
 from django.db import models
 from django.db.models import Sum
-from django.forms import ValidationError
 from django.utils.translation import gettext_lazy as _
 
 from compoundlib.models import Compound
@@ -88,8 +88,8 @@ class Well(TimeTrackedModel):
     @property
     def initial_amount(self) -> float:
         """
-        Summarizes the compound amounts, subtracts the withdrawals and
-        returns the total amount of compound in this well.
+        Summarizes the compound amounts that were put into this well,
+        without subtracting the withdrawals.
         """
         amount = self.well_compounds.all().aggregate(Sum("amount"))["amount__sum"] or 0
         return amount

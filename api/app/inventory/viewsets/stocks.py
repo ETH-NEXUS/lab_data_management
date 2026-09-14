@@ -13,7 +13,6 @@ from rest_framework.response import Response
 from ..dynamic_models import (
     InventoryDashboardTile,
     InventoryDashboardTilePreference,
-    InventoryStock,
     InventoryStockTablePreference,
 )
 from ..history_models import InventoryChangeRecord

@@ -49,9 +49,6 @@ class Measurement(TimeTrackedModel):
     )
 
     def __str__(self):
-        # if self.feature.abbrev and self.feature.unit:
-        #     return f"{self.feature.abbrev}: {self.value}{self.feature.unit}"
-        # else:
         return f"{self.label}: {self.value}"
 
     class Meta:

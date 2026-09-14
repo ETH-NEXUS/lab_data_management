@@ -10,11 +10,9 @@ from ..models import (
     Well,
     PlateDetail,
     WellDetail,
-)
-from ..serializers import (
-    WellSerializer,
     ExperimentDetail,
 )
+from ..serializers import WellSerializer
 from ..utils.plates.archive_guard import ensure_plate_can_be_changed
 
 

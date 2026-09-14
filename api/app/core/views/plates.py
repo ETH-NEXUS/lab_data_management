@@ -4,10 +4,10 @@ Plates, including their measurements and time points.
 
 from datetime import datetime
 import traceback
-from django.core.exceptions import ValidationError
 from django.db.models import Prefetch, Q
 from rest_framework import viewsets, status
 from rest_framework.decorators import action
+from rest_framework.exceptions import ValidationError
 from rest_framework.response import Response
 from compoundlib.serializers import SimpleCompoundLibrarySerializer
 from helpers.logger import logger
@@ -21,12 +21,12 @@ from ..models import (
     MeasurementFeature,
     PlateDetail,
     WellDetail,
+    ExperimentDetail,
 )
 from ..serializers import (
     PlateSerializer,
     SimpleExperimentSerializer,
     SimplePlateTemplateSerializer,
-    ExperimentDetail,
 )
 from .plate_archive import PlateArchiveMixin
 from ..utils.plates.archive_guard import (
@@ -53,9 +53,6 @@ def mean_time_point(dt_strings):
 
 class PlateViewSet(PlateArchiveMixin, viewsets.ModelViewSet):
     def get_serializer_class(self):
-        # if self.action == 'list':
-        #     return PlateListSerializer
-        # else:
         return PlateSerializer
 
     def get_queryset(self):
@@ -142,8 +139,6 @@ class PlateViewSet(PlateArchiveMixin, viewsets.ModelViewSet):
             ]
         )
 
-    from rest_framework.exceptions import ValidationError
-
     @action(detail=True, methods=["post"])
     def apply_template(self, request, pk=None):
         """Applies a template plate"""
@@ -151,9 +146,6 @@ class PlateViewSet(PlateArchiveMixin, viewsets.ModelViewSet):
             "apply_to_all_experiment_plates"
         )
         template_plate_id = request.data.get("template")
-        print("_______________________________________________")
-        print(f"apply_to_all_experiment_plates: {apply_to_all_experiment_plates}")
-        print(f"template_plate_id: {template_plate_id}")
         if template_plate_id is None:
             raise ValidationError(
                 {"template": ["This field is required."]}, code="invalid"

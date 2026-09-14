@@ -17,11 +17,9 @@ from ..models import (
     PlateDimension,
     PlateDetail,
     WellDetail,
-)
-from ..serializers import (
-    ExperimentSerializer,
     ExperimentDetail,
 )
+from ..serializers import ExperimentSerializer
 
 
 class ExperimentViewSet(viewsets.ModelViewSet):

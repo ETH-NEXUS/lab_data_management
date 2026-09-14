@@ -194,9 +194,6 @@ def get_experiment_measurements(
                 well.compounds.first().data if well.compounds.first() else None
             )
 
-            if compound_data:
-                supplier = compound_data.get("Supplier")
-                catalog_number = compound_data.get("CatalogNumber")
             well_rows = []
             for measurement in measurements:
                 unique_identifier = f"{well.hr_position}_{pl.barcode}"

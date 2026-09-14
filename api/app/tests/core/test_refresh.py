@@ -13,8 +13,7 @@ from django.urls import reverse
 from rest_framework import status
 from rest_framework.test import APIClient, APITestCase
 
-from core.models import PlateDetail, WellDetail
-from core.serializers import ExperimentDetail
+from core.models import ExperimentDetail, PlateDetail, WellDetail
 
 
 @patch.object(ExperimentDetail, "refresh")

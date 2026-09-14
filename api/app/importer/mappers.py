@@ -9,7 +9,7 @@ from io import TextIOWrapper
 from glob import glob
 from itertools import dropwhile
 from tqdm import tqdm
-from datetime import datetime as dt, datetime
+from datetime import datetime as dt
 from contextlib import redirect_stderr
 from importer.helper import message
 
@@ -18,7 +18,6 @@ from core.utils.plates.mapping import Mapping, MappingList
 from core.models import (
     BarcodeSpecification,
     Measurement,
-    MeasurementFeature,
     Plate,
     PlateDimension,
     PlateMapping,
@@ -31,7 +30,7 @@ from core.models import (
     ExperimentDetail,
     WellType,
 )
-from core.utils.config import Config
+from importer.config import Config
 from django.core.files import File
 from django.utils import timezone as tz
 from .helper import row_col_from_name
@@ -846,76 +845,4 @@ class MicroscopeMapper(BaseMapper):
         return results
 
 
-# class DatMapper(BaseMapper):
-#     def parse(self, file: TextIOWrapper | str | TextIO, **kwargs):
-#
-#         message(
-#             "Parsing DAT file... ------------------------------------------", "debug"
-#         )
-#
-#         content = file.read()
-#         pattern = r"Date:\s*(\d{2}/\d{2}/\d{4})\s*Time:\s*(\d{2}:\d{2}:\d{2})"
-#         match = re.search(pattern, content)
-#
-#         if match:
-#             date_str = match.group(1)
-#             time_str = match.group(2)
-#             datetime_str = f"{date_str} {time_str}"
-#             datetime_obj = datetime.strptime(datetime_str, "%d/%m/%Y %H:%M:%S")
-#         else:
-#             datetime_obj = datetime(
-#                 2024, 4, 4, 11, 00
-#             )  # random time as a quick and dirty solution for now
-#         last_counts = content.split("Chromatic / Channel:")[-1].split("\n")[3:]
-#         result = {"measured_at": datetime_obj, "counts": []}
-#         for line in last_counts:
-#             line_list = line.split("\t")
-#             if len(line_list) > 0:
-#                 for i in line_list:
-#                     if i:
-#                         result["counts"].append(int(i))
-#         return result
-#
-#     def map(self, data: dict, **kwargs) -> None:
-#         filename = kwargs.get("filename")
-#         barcode = filename.split("/")[-1].split(".")[0]
-#         try:
-#             plate = Plate.objects.get(barcode=barcode)
-#         except Plate.DoesNotExist:
-#             message(
-#                 f"Plate with barcode {barcode} does not exist. Creating it.",
-#                 "warning",
-#                 kwargs.get("room_name", None),
-#             )
-#             barcode_specification, _ = BarcodeSpecification.objects.get_or_create(
-#                 prefix=barcode.split("_")[0],
-#                 sides=["North"],
-#                 number_of_plates=4,
-#                 experiment=Experiment.objects.get(name=kwargs.get("experiment_name")),
-#             )
-#             plate = Plate.objects.create(
-#                 barcode=barcode,
-#                 dimension=PlateDimension.by_num_wells(len(data["counts"])),
-#                 experiment=barcode_specification.experiment,
-#             )
-#
-#
-#         with tqdm(
-#             desc="Processing dat file output",
-#             unit="measurement",
-#             total=len(data),
-#         ) as mbar:
-#             for idx, value in enumerate(data["counts"]):
-#                 well = plate.well_at(idx)
-#                 if not well:
-#                     well = Well.objects.create(plate=plate, position=idx)
-#                 Measurement.objects.update_or_create(
-#                     well=well,
-#                     label="value",
-#                     measured_at=data["measured_at"],
-#                     defaults={
-#                         "value": value,
-#                     },
-#                 )
-#                 mbar.update(1)
-#         self.create_measurement_assignment(plate, kwargs.get("filename"))
+

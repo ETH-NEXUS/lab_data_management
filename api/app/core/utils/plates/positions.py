@@ -51,7 +51,7 @@ def posToAlphaChar(pos: int):
         return "?"
 
 
-class PositionMappingError:
+class PositionMappingError(Exception):
     def __init__(self, position, message="Cannot convert position to row, col: {}"):
         self.message = message.format(position)
         super().__init__(self.message)
@@ -77,16 +77,3 @@ class PositionMapper:
     @staticmethod
     def unmap(row: int, col: int) -> str:
         return f"{posToAlphaChar(row)}{col}"
-
-
-# @staticmethod
-#     def convert_position_to_index(position: str,
-#                                   number_of_columns: int) -> int:
-#         match = re.match(r'([a-zA-Z]+)(\d+)', position)
-#         letters = match.group(1)
-#         col = int(match.group(2))
-#         row = 0
-#         for index, char in enumerate(letters[::-1]):
-#             row += (ord(char.upper()) - ord('A') + 1) * (26 ** index)
-#         index = (row - 1) * number_of_columns + (col - 1)
-#         return index
