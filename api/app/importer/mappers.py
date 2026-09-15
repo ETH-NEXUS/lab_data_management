@@ -250,11 +250,16 @@ class EchoMapper(BaseMapper):
         headers = kwargs.get("headers", EchoMapper.DEFAULT_COLUMNS)
         file = self.__fast_forward_to_header_row(file, headers)
         results = []
+        # Transfers skipped because some of their required fields are empty.
+        # Example: ["Drug08_J A3 -> 2026Wagner12 A3 (Actual Volume empty)"]
+        skipped_transfers = []
         reader = csv.DictReader(file, delimiter=",")
 
         for row in reader:
-            # If there are None values in any of the following keys
-            # or if there is a second header column we continue
+            # If there are None or empty values in any of the following keys
+            # or if there is a second header column we continue.
+            # Empty values come from section lines like "[DETAILS],,,,": all
+            # columns are present, but only the first one has text.
             must_keys = (
                 "source_plate_barcode",
                 "source_plate_type",
@@ -266,11 +271,29 @@ class EchoMapper(BaseMapper):
             )
             if any(
                 [
-                    row[headers.get(key)] is None
+                    row[headers.get(key)] in (None, "")
                     or row[headers.get(key)] == headers.get(key)
                     for key in must_keys
                 ]
             ):
+                empty_columns = [
+                    headers.get(key) for key in must_keys if row[headers.get(key)] == ""
+                ]
+                # A section line like "[DETAILS],,,," has all required fields
+                # empty and is skipped silently. Only a transfer with some empty
+                # fields is reported, because it may be a real transfer we lose.
+                if 0 < len(empty_columns) < len(must_keys):
+                    source = (
+                        f"{row[headers.get('source_plate_barcode')]} "
+                        f"{row[headers.get('source_well')]}"
+                    )
+                    destination = (
+                        f"{row[headers.get('destination_plate_barcode')]} "
+                        f"{row[headers.get('destination_well')]}"
+                    )
+                    skipped_transfers.append(
+                        f"{source} -> {destination} ({', '.join(empty_columns)} empty)"
+                    )
                 continue
 
             res_dict = {}
@@ -278,6 +301,16 @@ class EchoMapper(BaseMapper):
                 if old_key in row:
                     res_dict[new_key] = row[old_key]
             results.append(res_dict)
+
+        # One message for the whole file: the management page only shows the
+        # latest message, so one message per row could be overwritten.
+        if skipped_transfers:
+            message(
+                f"Skipped {len(skipped_transfers)} Echo transfers with empty "
+                f"required fields: {'; '.join(skipped_transfers)}",
+                "warning",
+                kwargs.get("room_name", None),
+            )
         return results
 
     def map(self, data: list[dict], **kwargs) -> None:
