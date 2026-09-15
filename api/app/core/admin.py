@@ -11,6 +11,7 @@ from .models import (
     MeasurementFeature,
     Sample,
     Well,
+    WellCompound,
     Location,
     Project,
     Experiment,
@@ -139,6 +140,16 @@ class WellAdmin(admin.ModelAdmin):
         return ", ".join([str(c) for c in well.compounds.all()])
 
     get_compounds.short_description = "compounds"
+
+
+@admin.register(WellCompound)
+class WellCompoundAdmin(admin.ModelAdmin):
+    list_display = ("__str__", "well", "compound", "amount")
+    list_select_related = ("well__plate__dimension", "compound")
+    search_fields = ("well__plate__barcode", "compound__name")
+    # Id fields instead of dropdowns: a dropdown would load every well and
+    # every compound of the database into the page.
+    raw_id_fields = ("well", "compound")
 
 
 @admin.register(Measurement)
