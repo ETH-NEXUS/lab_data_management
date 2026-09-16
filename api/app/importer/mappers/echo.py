@@ -121,7 +121,9 @@ class EchoMapper(BaseMapper):
                 continue
 
             empty_columns = [
-                headers.get(key) for key in REQUIRED_COLUMNS if row[headers.get(key)] == ""
+                headers.get(key)
+                for key in REQUIRED_COLUMNS
+                if row[headers.get(key)] == ""
             ]
             # A section line like "[DETAILS],,,," has all required columns
             # empty and is skipped silently. Only a row with some empty columns
