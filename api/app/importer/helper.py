@@ -53,17 +53,18 @@ def normalize_col(col: int):
     return closest(col, (12, 24, 48))
 
 
-def message(text, type="info", room_name=None):
+def message(text, level="info", room_name=None):
     """
     Logs a message. For a command started from the management page (room_name),
-    the message is also shown there, with its type as level ("info", "warning", "error").
+    the message is also shown there, with its level ("info", "warning", "error",
+    "success" or "debug").
     """
-    add_message(room_name, type, str(text))
-    if type == "info":
-        logger.info(text)
-    elif type == "error":
+    add_message(room_name, level, str(text))
+    if level == "error":
         logger.error(text)
-    elif type == "warning":
+    elif level == "warning":
         logger.warning(text)
-    elif type == "debug":
+    elif level == "debug":
         logger.debug(text)
+    else:
+        logger.info(text)

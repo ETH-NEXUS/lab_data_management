@@ -86,6 +86,7 @@ const getTabLabel = (labelKey: string): string => {
 
       <ManagementCommandRunner
         v-if="activeConfig"
+        :key="activeTab"
         :options="activeConfig.options"
         :command="activeConfig.command"
         :what="activeConfig.what"

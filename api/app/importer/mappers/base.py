@@ -134,14 +134,12 @@ class BaseMapper:
 
         Changes kwargs in place: sets "xml_file" for files that are opened here.
         """
-        encoding = detect_encoding(filename)
-
         if filename.endswith(FILES_PARSED_BY_NAME):
             logger.info(f"Parsing {filename} by its file name")
             return self.parse(filename, **kwargs)
 
         kwargs.update({"xml_file": filename.endswith(".xml")})
-        with open(filename, "r", encoding=encoding) as file:
+        with open(filename, "r", encoding=detect_encoding(filename)) as file:
             return self.parse(file, **kwargs)
 
     def parse(self, file: Any, **kwargs) -> Any:
@@ -157,13 +155,15 @@ class BaseMapper:
     ) -> MeasurementAssignment:
         """Links the measurement file to the plate, with status "success"."""
         with open(filename, "rb") as file:
-            assignment, _ = MeasurementAssignment.objects.update_or_create(
+            assignment, created = MeasurementAssignment.objects.update_or_create(
                 status="success",
                 plate=plate,
                 filename=filename,
                 measurement_file=File(file, os.path.basename(file.name)),
             )
-        self.stored_files.append(assignment.measurement_file.name)
+        if created:
+            # An assignment that was there already keeps the copy it already has
+            self.stored_files.append(assignment.measurement_file.name)
         return assignment
 
     def delete_stored_files(self) -> None:

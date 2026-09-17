@@ -59,7 +59,9 @@ class Command(BaseCommand):
         output_file = options.get("output_file")
         data = export_data(app_name, model_name, options.get("filter"))
 
-        makedirs(os.path.split(output_file)[0], exist_ok=True)
+        directory = os.path.dirname(output_file)
+        if directory:
+            makedirs(directory, exist_ok=True)
         with open(output_file, "a" if options.get("append") else "w") as file:
             file.write(data)
 

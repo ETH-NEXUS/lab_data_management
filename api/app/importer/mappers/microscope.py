@@ -92,9 +92,11 @@ class MicroscopeMapper(BaseMapper):
             results = self.parse_txt_results(lines, measurement_name)
             # A .txt file has no layout block
             layout = {}
-            # The date and time in the file content win over the file name
-            date = metadata.get(TXT_DATE_KEY, date)
-            time = metadata.get(TXT_TIME_KEY, time)
+            # The date and time of the content win over the file name, but only
+            # together: one from the content and one from the name do not fit
+            if TXT_DATE_KEY in metadata and TXT_TIME_KEY in metadata:
+                date = metadata[TXT_DATE_KEY]
+                time = metadata[TXT_TIME_KEY]
             logger.info(f"Date: {date}, Time: {time}")
         else:
             raise ValueError(f"Unsupported file extension: {extension}")
@@ -128,9 +130,22 @@ class MicroscopeMapper(BaseMapper):
         Stores every number of the results as a measurement of its well, sets
         the control well types from the layout, and links the file to the plate.
 
-        A file with an unknown date format is refused before anything of it
-        is stored.
+        A file with an unknown date format or without wells is refused before
+        anything of it is stored.
         """
+        # Only the rows with a well name count: a sum or a comment row at the end
+        # would otherwise make the plate bigger than it is
+        well_rows = [
+            entry
+            for entry in data["results"]
+            if entry.get(WELL_COLUMN) and entry.get(WELL_COLUMN) != WELL_COLUMN
+        ]
+        if not well_rows:
+            raise CommandError(
+                f"No results with a '{WELL_COLUMN}' column in this file: "
+                "nothing was stored."
+            )
+
         measured_at = parse_c10_datetime(data["date"], data["time"])
         if measured_at is None:
             raise CommandError(
@@ -140,22 +155,19 @@ class MicroscopeMapper(BaseMapper):
 
         plate = self.find_or_create_measured_plate(
             data["barcode"],
-            len(data["results"]),
+            len(well_rows),
             kwargs.get("room_name"),
             kwargs.get("experiment_name"),
         )
+        assignment = self.create_measurement_assignment(plate, kwargs["filename"])
 
         with tqdm(
             desc="Processing microscope output",
             unit="measurement",
-            total=len(data["results"]),
+            total=len(well_rows),
         ) as progress:
-            for entry in data["results"]:
-                well_name = entry.get(WELL_COLUMN)
-                # Empty rows and repeated header rows are not wells
-                if not well_name or well_name == WELL_COLUMN:
-                    continue
-
+            for entry in well_rows:
+                well_name = entry[WELL_COLUMN]
                 position = plate.dimension.position(well_name)
                 well = plate.well_at(position, create_if_not_exist=True)
                 self.set_well_type_from_layout(well, well_name, data["layout"])
@@ -174,11 +186,12 @@ class MicroscopeMapper(BaseMapper):
                         well=well,
                         label=label,
                         measured_at=measured_at,
-                        defaults={"value": value},
+                        defaults={
+                            "value": value,
+                            "measurement_assignment": assignment,
+                        },
                     )
                 progress.update(1)
-
-        self.create_measurement_assignment(plate, kwargs["filename"])
 
     @staticmethod
     def set_well_type_from_layout(

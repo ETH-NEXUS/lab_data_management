@@ -50,8 +50,9 @@ def yes_or_no(text: str) -> bool:
     raise argparse.ArgumentTypeError(f"'{text}' is not yes or no")
 
 
-def full_strip(s: str):
-    return s.strip().lstrip()
+def full_strip(text: str) -> str:
+    """The text without the spaces around it."""
+    return text.strip()
 
 
 class Command(BaseCommand):
@@ -59,7 +60,8 @@ class Command(BaseCommand):
         parser.add_argument(
             "what",
             type=str,
-            help="What to import: sdf | template | library_plate",
+            choices=("sdf", "template", "library_plate"),
+            help="What to import",
         )
         parser.add_argument(
             "--input_file",
@@ -357,10 +359,6 @@ class Command(BaseCommand):
                     current_matrix.append(row)
             return matrix1, matrix2
 
-    """
-    This function imports both library plates and project control  plates.
-    """
-
     def library_plate(
         self,
         input_file: str,
@@ -370,6 +368,7 @@ class Command(BaseCommand):
         room_name: str = None,
         is_control_plate: bool = False,
     ):
+        """Imports both library plates and the control plates of a project."""
         if not isfile(input_file):
             raise CommandError(f"File does not exist: {input_file}")
 
@@ -432,18 +431,17 @@ class Command(BaseCommand):
                     well = plate.well_at(pos, create_if_not_exist=True)
                     well_type = well_type_by_name(_type, dimension.hr_position(pos))
                     well.type = well_type
-                    filtered_compounds = Compound.objects.filter(name=_compound)
-                    if len(filtered_compounds) > 0:
-                        compound = filtered_compounds[0]
-                    else:
-                        compound = Compound.objects.create(
-                            name=_compound,
-                        )
+                    # The oldest one, if the same name was imported more than once
+                    compound = (
+                        Compound.objects.filter(name=_compound).order_by("id").first()
+                    )
+                    if compound is None:
+                        compound = Compound.objects.create(name=_compound)
                         message(f"Created compound {_compound}.", "success", room_name)
 
                     WellCompound.objects.create(well=well, compound=compound)
                     well.save()
-                    pbar.update(1)
+                pbar.update(1)
 
         message(f"Finished processing plate {plate_barcode}.", "success", room_name)
 

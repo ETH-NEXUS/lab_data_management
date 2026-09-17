@@ -32,62 +32,38 @@ def run_management_command(form_data: dict) -> None:
     register_running_command(room_name)
     try:
         if form_data.get("command") == "map":
-            machine = form_data.get("machine")
-            if machine in [
-                "echo",
-                "m1000",
-                "C10-imager",
-                "C10-reader",
-            ]:  # ["echo", "m1000", "microscope", "C10-imager", "C10-reader"]
-                kwargs = {
-                    "path": form_data.get("path"),
-                    "mapping_file": form_data.get("mapping_file"),
-                    "debug": False,
-                    "experiment_name": form_data.get("experiment_name"),
-                    "room_name": form_data.get("room_name"),
-                    "measurement_name": form_data.get("measurement_name"),
-                }
-                management.call_command("map", machine, **kwargs)
+            kwargs = {
+                "path": form_data.get("path"),
+                "mapping_file": form_data.get("mapping_file"),
+                "debug": False,
+                "experiment_name": form_data.get("experiment_name"),
+                "room_name": room_name,
+                "measurement_name": form_data.get("measurement_name"),
+            }
+            # An unknown machine is refused by the command itself
+            management.call_command("map", form_data.get("machine"), **kwargs)
         elif form_data.get("command") == "import":
-            what = form_data.get("what")
             kwargs = {
                 "mapping_file": form_data.get("mapping_file"),
                 "input_file": form_data.get("input_file"),
                 "debug": False,
-                "library_name": (
-                    form_data.get("library_name")
-                    if form_data.get("library_name")
-                    else None
-                ),
-                "template_name": (
-                    form_data.get("template_name")
-                    if form_data.get("template_name")
-                    else None
-                ),
-                "plate_barcode": (
-                    form_data.get("plate_barcode")
-                    if form_data.get("plate_barcode")
-                    else None
-                ),
-                "project_name": (
-                    form_data.get("project_name")
-                    if form_data.get("project_name")
-                    else None
-                ),
-                "is_control_plate": (
-                    form_data.get("is_control_plate")
-                    if form_data.get("is_control_plate")
-                    else None
-                ),
-                "room_name": form_data.get("room_name"),
+                "library_name": form_data.get("library_name") or None,
+                "template_name": form_data.get("template_name") or None,
+                "plate_barcode": form_data.get("plate_barcode") or None,
+                "project_name": form_data.get("project_name") or None,
+                "is_control_plate": bool(form_data.get("is_control_plate")),
+                "room_name": room_name,
             }
-            management.call_command("import", what, **kwargs)
+            management.call_command("import", form_data.get("what"), **kwargs)
+        else:
+            raise CommandError(f"Unknown command: {form_data.get('command')}")
     except Exception as error:
         # An error the command did not handle itself, e.g. an unknown experiment
         message(error_text(error), "error", room_name)
         if not isinstance(error, CommandError):
             logger.exception(f"Command {form_data.get('command')} failed")
-    finish_command(room_name)
+    finally:
+        finish_command(room_name)
 
 
 @worker_ready.connect

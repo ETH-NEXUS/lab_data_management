@@ -3,9 +3,12 @@ This script updates the "data" field of compounds in the database using
 information from a CSV file provided by the supplier. The CSV file is used
 because the data from SDF files is incomplete.
 """
+
 import csv
 from typing import Dict, Any
 from django.core.management import BaseCommand
+from django.core.management.base import CommandError
+from django.db import transaction
 from compoundlib.models import Compound
 from helpers.logger import logger
 
@@ -37,9 +40,8 @@ class Command(BaseCommand):
             with open(input_file, "r", encoding="utf-8-sig") as file:
                 reader = csv.DictReader(file, delimiter="\t")
                 return [row for row in reader]
-        except Exception as e:
-            logger.error(f"Failed to read the CSV file {input_file}: {str(e)}")
-            return []
+        except OSError as error:
+            raise CommandError(f"Cannot read the file {input_file}: {error}")
 
     def update_compound_data(
         self, compound: Compound, new_data: Dict[str, str]
@@ -96,5 +98,7 @@ class Command(BaseCommand):
             return
 
         logger.info(f"Starting compound data import from {input_file}")
-        self.import_compound_data(input_file)
+        # All compounds are updated together: after an error nothing is stored
+        with transaction.atomic():
+            self.import_compound_data(input_file)
         logger.info("Compound data import completed.")

@@ -200,6 +200,9 @@ STATIC_ROOT = "/vol/web/static"
 MEDIA_URL = "/media/"
 MEDIA_ROOT = "/vol/web/media"
 
+# The management page shows this folder and only works with files inside it
+MANAGEMENT_DATA_ROOT = "/data"
+
 # Default primary key field type
 # https://docs.djangoproject.com/en/4.1/ref/settings/#default-auto-field
 

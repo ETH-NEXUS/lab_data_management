@@ -27,7 +27,7 @@ class Command(BaseCommand):
         parser.add_argument(
             "machine",
             type=str,
-            choices=("echo", "m1000", "microscope", "dat", "C10-reader", "C10-imager"),
+            choices=("echo", "m1000", "microscope", "C10-reader", "C10-imager"),
             help="Machine to map from",
         )
         parser.add_argument(

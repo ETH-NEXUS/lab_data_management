@@ -35,6 +35,9 @@ const createEmptyDirectoryItem = (): FileSystemItem => ({
 // The command output is asked for this many times in a row before giving up
 const MAX_FAILED_OUTPUT_REQUESTS = 5
 const FAILED_OUTPUT_REQUEST_DELAY_MS = 1000
+// A command that has not written a single line in this time did not start,
+// for example because the worker that runs the commands is down
+const COMMAND_START_TIMEOUT_MS = 60000
 
 export const useManagementStore = defineStore('managementStore', () => {
   const dataDirectory = ref<FileSystemItem>(createEmptyDirectoryItem())
@@ -193,7 +196,12 @@ export const useManagementStore = defineStore('managementStore', () => {
    * Accepted data example:
    * - `roomName = '12_1726563600000', since = 4` (the first 4 messages are already shown)
    */
-  const pollCommandOutput = async (roomName: string, since: number, failedRequests = 0): Promise<void> => {
+  const pollCommandOutput = async (
+    roomName: string,
+    since: number,
+    failedRequests = 0,
+    startedAt = Date.now(),
+  ): Promise<void> => {
     if (roomName !== activeRoomName.value) {
       return
     }
@@ -210,7 +218,7 @@ export const useManagementStore = defineStore('managementStore', () => {
       // A short network problem must not stop showing the output, so ask again
       if (failedRequests + 1 < MAX_FAILED_OUTPUT_REQUESTS) {
         setTimeout(() => {
-          void pollCommandOutput(roomName, since, failedRequests + 1)
+          void pollCommandOutput(roomName, since, failedRequests + 1, startedAt)
         }, FAILED_OUTPUT_REQUEST_DELAY_MS)
         return
       }
@@ -218,6 +226,7 @@ export const useManagementStore = defineStore('managementStore', () => {
         level: 'error',
         text: `${MANAGEMENT_LONG_POLLING_ERROR_MESSAGE} The command may still be running.`,
       })
+      commandStatus.value = 'failed'
       isRunningCommand.value = false
       return
     }
@@ -241,8 +250,19 @@ export const useManagementStore = defineStore('managementStore', () => {
       return
     }
 
+    // Without a single line after a minute the command never started
+    if (response.next === 0 && Date.now() - startedAt > COMMAND_START_TIMEOUT_MS) {
+      commandMessages.value.push({
+        level: 'error',
+        text: 'The command did not start. The worker that runs the commands may be down.',
+      })
+      commandStatus.value = 'failed'
+      isRunningCommand.value = false
+      return
+    }
+
     setTimeout(() => {
-      void pollCommandOutput(roomName, response.next)
+      void pollCommandOutput(roomName, response.next, 0, startedAt)
     }, 300)
   }
 

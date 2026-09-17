@@ -95,6 +95,13 @@ def percent_or_none(text: str) -> float | None:
 class EchoMapper(BaseMapper):
     DEFAULT_COLUMNS = Config.current.importer.echo.default.columns
 
+    def __init__(self) -> None:
+        super().__init__()
+        # The plate pairs already mapped from the file that is being read. A pair
+        # can come up twice, because transfers whose source plate was missing are
+        # tried again at the end, and the plate may exist by then.
+        self.mapped_pairs: set[tuple[str, str]] = set()
+
     def parse(self, file: TextIOWrapper, **kwargs) -> list[EchoTransfer]:
         """
         Reads an Echo report into a list of transfers.
@@ -260,6 +267,8 @@ class EchoMapper(BaseMapper):
         are still in the queue after that are reported in one warning.
         """
         room_name = kwargs.get("room_name")
+        if not kwargs.get("try_queue"):
+            self.mapped_pairs = set()
         # Source plates by barcode, so every plate is loaded only once
         plates: dict[str, Plate] = {}
         # (source plate, MappingList) by (source barcode, destination barcode),
@@ -284,9 +293,7 @@ class EchoMapper(BaseMapper):
                 destination_plate_type = transfer.get("destination_plate_type", "")
                 destination_plate_barcode = transfer["destination_plate_barcode"]
 
-                source_plate = self.find_source_plate(
-                    source_plate_barcode, plates, room_name
-                )
+                source_plate = self.find_source_plate(source_plate_barcode, plates)
                 if source_plate is None:
                     queue.append(transfer)
                     continue
@@ -340,14 +347,12 @@ class EchoMapper(BaseMapper):
             room_name,
         )
 
-    def find_source_plate(
-        self, barcode: str, plates: dict, room_name: str | None
-    ) -> Plate | None:
+    def find_source_plate(self, barcode: str, plates: dict) -> Plate | None:
         """
         The source plate from the cache or the database, or None if it does not exist.
         """
         if barcode in plates:
-            return plates.get(barcode)
+            return plates[barcode]
         try:
             plate = Plate.objects.get(barcode=barcode)
         except Plate.DoesNotExist:
@@ -375,7 +380,11 @@ class EchoMapper(BaseMapper):
         try:
             return Plate.objects.get(barcode=barcode)
         except Plate.DoesNotExist:
-            message(f"Creating destination plate {plate_name}, {plate_type}")
+            message(
+                f"Creating destination plate {plate_name}, {plate_type}",
+                "info",
+                room_name,
+            )
             return self.create_plate_by_name_and_barcode(
                 plate_name,
                 plate_type,
@@ -420,9 +429,11 @@ class EchoMapper(BaseMapper):
             pair_text = f"{source_plate.barcode} -> {target_plate.barcode}"
             message(f"Mapping {pair_text}", "info", room_name)
 
-            earlier_mapping = self.earlier_mapping_of_report(
-                source_plate, target_plate, kwargs["filename"]
-            )
+            earlier_mapping = None
+            if (source_plate.barcode, target_plate.barcode) not in self.mapped_pairs:
+                earlier_mapping = self.earlier_mapping_of_report(
+                    source_plate, target_plate, kwargs["filename"]
+                )
             if earlier_mapping:
                 # Mapping it again would count every transfer a second time
                 message(
@@ -447,6 +458,7 @@ class EchoMapper(BaseMapper):
                     mapping_file=File(file, os.path.basename(file.name)),
                 )
             self.stored_files.append(plate_mapping.mapping_file.name)
+            self.mapped_pairs.add((source_plate.barcode, target_plate.barcode))
             message(f"Mapped {pair_text}", "info", room_name)
             if missing_positions:
                 well_names = [
