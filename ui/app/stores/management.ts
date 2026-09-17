@@ -105,6 +105,8 @@ export const useManagementStore = defineStore('managementStore', () => {
     commandMessages.value = []
     commandStatus.value = null
     activeRoomName.value = ''
+    // The output of an earlier command is not read anymore, so nothing is waited for
+    isRunningCommand.value = false
   }
 
   /**
@@ -141,7 +143,8 @@ export const useManagementStore = defineStore('managementStore', () => {
 
   /**
    * Starts one management command and reads its output while it runs.
-   * The request returns when the command has ended.
+   * The request only starts the command (it runs in the celery container), so
+   * `isRunningCommand` stays true until the output says the command has ended.
    *
    * Accepted data example:
    * - `{ room_name: '12_1726563600000', command: 'map', machine: 'echo', path: '/data/run_1' }`
@@ -156,7 +159,6 @@ export const useManagementStore = defineStore('managementStore', () => {
     commandRequestError.value = null
     activeRoomName.value = roomName
 
-    // Output is read while the request below is still waiting for the command
     if (roomName !== '') {
       void pollCommandOutput(roomName, 0)
     }
@@ -172,10 +174,14 @@ export const useManagementStore = defineStore('managementStore', () => {
       )
     } catch (err: unknown) {
       error.value = getErrorMessage(err)
-      // The command will not report an end status anymore, polling stops after its next read
+      // The command did not start, polling stops after its next read
       commandRequestError.value = error.value
+      isRunningCommand.value = false
       throw err
-    } finally {
+    }
+
+    // Without a room name there is no output to wait for
+    if (roomName === '') {
       isRunningCommand.value = false
     }
   }
@@ -212,6 +218,7 @@ export const useManagementStore = defineStore('managementStore', () => {
         level: 'error',
         text: `${MANAGEMENT_LONG_POLLING_ERROR_MESSAGE} The command may still be running.`,
       })
+      isRunningCommand.value = false
       return
     }
 
@@ -228,6 +235,7 @@ export const useManagementStore = defineStore('managementStore', () => {
 
     if (response.status === 'completed' || response.status === 'failed') {
       commandStatus.value = response.status
+      isRunningCommand.value = false
       // The command may have created or changed files
       await fetchDataDirectory()
       return

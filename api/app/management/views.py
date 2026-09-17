@@ -4,20 +4,10 @@ from django.views.decorators.csrf import csrf_exempt
 import json
 import os
 from django.http import Http404
-from django.core import management
-from django.core.management.base import CommandError
-
-from helpers.logger import logger
-from importer.command_output import (
-    error_text,
-    finish_command,
-    read_output,
-    start_command,
-)
+from importer.command_output import read_output, start_command
+from importer.tasks import run_management_command
 from chardet.universaldetector import UniversalDetector
 from contextlib import redirect_stderr
-
-from importer.helper import message
 
 
 def list_files(start_path):
@@ -56,64 +46,9 @@ def run_command(request):
 
         room_name = form_data.get("room_name")
         start_command(room_name)
-        try:
-            if form_data.get("command") == "map":
-                machine = form_data.get("machine")
-                if machine in [
-                    "echo",
-                    "m1000",
-                    "C10-imager",
-                    "C10-reader",
-                ]:  # ["echo", "m1000", "microscope", "C10-imager", "C10-reader"]
-                    kwargs = {
-                        "path": form_data.get("path"),
-                        "mapping_file": form_data.get("mapping_file"),
-                        "debug": False,
-                        "experiment_name": form_data.get("experiment_name"),
-                        "room_name": form_data.get("room_name"),
-                        "measurement_name": form_data.get("measurement_name"),
-                    }
-                    management.call_command("map", machine, **kwargs)
-            elif form_data.get("command") == "import":
-                what = form_data.get("what")
-                kwargs = {
-                    "mapping_file": form_data.get("mapping_file"),
-                    "input_file": form_data.get("input_file"),
-                    "debug": False,
-                    "library_name": (
-                        form_data.get("library_name")
-                        if form_data.get("library_name")
-                        else None
-                    ),
-                    "template_name": (
-                        form_data.get("template_name")
-                        if form_data.get("template_name")
-                        else None
-                    ),
-                    "plate_barcode": (
-                        form_data.get("plate_barcode")
-                        if form_data.get("plate_barcode")
-                        else None
-                    ),
-                    "project_name": (
-                        form_data.get("project_name")
-                        if form_data.get("project_name")
-                        else None
-                    ),
-                    "is_control_plate": (
-                        form_data.get("is_control_plate")
-                        if form_data.get("is_control_plate")
-                        else None
-                    ),
-                    "room_name": form_data.get("room_name"),
-                }
-                management.call_command("import", what, **kwargs)
-        except Exception as error:
-            # An error the command did not handle itself, e.g. an unknown experiment
-            message(error_text(error), "error", room_name)
-            if not isinstance(error, CommandError):
-                logger.exception(f"Command {form_data.get('command')} failed")
-        finish_command(room_name)
+        # The command runs in the celery container; the page reads its output
+        # through long_polling while it runs
+        run_management_command.delay(form_data)
 
     return JsonResponse({"status": "ok"})
 

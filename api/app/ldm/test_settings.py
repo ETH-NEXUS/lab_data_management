@@ -13,3 +13,6 @@ EMAIL_BACKEND = "django.core.mail.backends.locmem.EmailBackend"
 
 # The tests do not need the Redis container: they keep the cache in memory.
 CACHES = {"default": {"BACKEND": "django.core.cache.backends.locmem.LocMemCache"}}
+
+# Celery tasks run right away in the test process instead of in the celery container
+CELERY_TASK_ALWAYS_EAGER = True

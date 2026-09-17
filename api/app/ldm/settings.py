@@ -391,6 +391,8 @@ CELERY_BROKER_URL = environ.get("CELERY_BROKER_URL", "redis://redis:6379/0")
 CELERY_ACCEPT_CONTENT = ["json"]
 CELERY_TASK_SERIALIZER = "json"
 CELERY_RESULT_SERIALIZER = "json"
+# The commands print every message; in the worker log these lines are info, not warnings
+CELERY_WORKER_REDIRECT_STDOUTS_LEVEL = "INFO"
 
 # Database 1 is the cache. It is shared by all server processes, so a message
 # written by one process (e.g. of a running command) can be read by another one.

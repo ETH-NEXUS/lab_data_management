@@ -6,6 +6,7 @@ import shutil
 import tempfile
 from datetime import datetime
 from os.path import join
+from unittest import mock
 
 from django.core.cache import cache
 from django.test import TestCase, override_settings
@@ -89,6 +90,18 @@ class RunCommandTest(TestCase):
                 {"level": "error", "text": "Command failed."},
             ],
             output["messages"],
+        )
+
+    def test_the_command_is_sent_to_celery_and_the_request_returns_at_once(self):
+        with mock.patch("management.views.run_management_command.delay") as delay:
+            response = self.run_map()
+
+        self.assertEqual(200, response.status_code)
+        delay.assert_called_once()
+        self.assertEqual("room_1", delay.call_args.args[0]["room_name"])
+        # The command has not run yet: no messages, but the page already sees "running"
+        self.assertEqual(
+            {"messages": [], "next": 0, "status": "running"}, self.read_output()
         )
 
     def test_the_output_can_be_read_from_a_position(self):
