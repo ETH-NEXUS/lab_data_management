@@ -66,7 +66,7 @@ class EchoMapper(BaseMapper):
             return self.parse_xml(file)
 
         headers = kwargs.get("headers", EchoMapper.DEFAULT_COLUMNS)
-        return self.parse_csv(file, headers, kwargs.get("room_name", None))
+        return self.parse_csv(file, headers, kwargs.get("room_name"))
 
     def parse_xml(self, file: TextIOWrapper) -> list[dict]:
         """
@@ -199,7 +199,7 @@ class EchoMapper(BaseMapper):
         Transfers whose source plate does not exist are put into a queue and
         tried again at the end, at most MAX_QUEUE_RETRIES times.
         """
-        room_name = kwargs.get("room_name", None)
+        room_name = kwargs.get("room_name")
         # Source plates by barcode, so every plate is loaded only once
         plates = {}
         # (source plate, MappingList) by (source barcode, destination barcode),
@@ -237,7 +237,8 @@ class EchoMapper(BaseMapper):
                     destination_plate_type,
                     source_plate_name,
                     plates,
-                    kwargs,
+                    room_name,
+                    kwargs.get("experiment_name"),
                 )
 
                 pair = (source_plate_barcode, destination_plate_barcode)
@@ -246,7 +247,7 @@ class EchoMapper(BaseMapper):
                         source_plate,
                         MappingList(target=destination_plate),
                     )
-                mapping_list = plate_pairs[pair][1]
+                _, mapping_list = plate_pairs[pair]
                 mapping_list.add(
                     self.build_mapping(
                         transfer,
@@ -275,6 +276,8 @@ class EchoMapper(BaseMapper):
         try:
             plate = Plate.objects.get(barcode=barcode)
         except Plate.DoesNotExist:
+            # The line break and the spaces belong to the message text: this
+            # is how users have always seen it on the management page.
             message(
                 f"""Source plate with barcode {barcode} does not exist.
                             I try again later...""",
@@ -292,7 +295,8 @@ class EchoMapper(BaseMapper):
         plate_type: str,
         source_plate_name: str,
         plates: dict,
-        kwargs: dict,
+        room_name,
+        experiment_name: str,
     ) -> Plate:
         """
         The destination plate from the cache or the database. A missing plate
@@ -305,7 +309,12 @@ class EchoMapper(BaseMapper):
         except Plate.DoesNotExist:
             message(f"Creating destination plate {plate_name}, {plate_type}")
             return self.create_plate_by_name_and_barcode(
-                plate_name, plate_type, barcode, source_plate_name, **kwargs
+                plate_name,
+                plate_type,
+                barcode,
+                source_plate_name,
+                room_name=room_name,
+                experiment_name=experiment_name,
             )
 
     @staticmethod
@@ -333,7 +342,7 @@ class EchoMapper(BaseMapper):
         Maps every plate pair. A successful mapping is stored as PlateMapping
         together with the report file, and the views are refreshed.
         """
-        room_name = kwargs.get("room_name", None)
+        room_name = kwargs.get("room_name")
         for source_plate, mapping_list in plate_pairs.values():
             target_plate = mapping_list.target
             pair_text = f"{source_plate.barcode} -> {target_plate.barcode}"

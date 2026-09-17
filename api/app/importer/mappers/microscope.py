@@ -1,5 +1,10 @@
 """
 Maps C10 reader and imager files (.xlsx or .txt) to measurements.
+
+The file name has the date, the time and the plate barcode, e.g.
+"241014_125455_241008MP-1_1.txt". A file starts with metadata, followed by a
+"Results" table with one row per well. An .xlsx file can also have a "Layout"
+block that marks positive (POS) and negative (NEG) control wells.
 """
 
 import os
@@ -8,69 +13,69 @@ import re
 from openpyxl import load_workbook
 from tqdm import tqdm
 
-from core.models import (
-    BarcodeSpecification,
-    Experiment,
-    Measurement,
-    Plate,
-    PlateDimension,
-    Well,
-    WellType,
-)
+from core.models import Measurement, WellType
 from helpers.logger import logger
 from importer.helper import message
 from importer.mappers.base import BaseMapper
 from importer.mappers.values import convert_sci_to_float, convert_string_to_datetime
 
+# The name of the value column of a .txt file when no measurement name is given
+DEFAULT_MEASUREMENT_NAME = "Lum"
+
+# Only this many rows at the top of an .xlsx sheet are read as metadata
+XLSX_METADATA_ROWS = 38
+
+# Result columns that name the well; they are not measurements
+WELL_COLUMNS = ("Well ID", "Well")
+
+# Values in the "Layout" block -> the well type names they stand for
+LAYOUT_WELL_TYPES = {"POS": "P", "NEG": "N"}
+
+# A measurement value is a plain number, e.g. "16727" or "1.5" ...
+RE_NUMBER = r"^[0-9]+(\.[0-9]+)?$"
+# ... or a number in scientific notation, e.g. "1.5E+03"
+RE_SCIENCE = r"^[0-9\.]+[eE][+-]?[0-9]+$"
+
 
 class MicroscopeMapper(BaseMapper):
+    # e.g. "241014_125455_241008MP-1_1.txt": date, time, barcode and extension
     RE_FILENAME = (
         r"(?P<date>\d+)[-_](?P<time>\d+)[-_](?P<barcode>[^\.]+)\.(?P<ext>xlsx|txt)$"
     )
 
     def parse(self, file, **kwargs):
-        filename = file
-        basename = os.path.basename(filename)
-        match = re.match(self.RE_FILENAME, basename)
-        if match:
-            date = match.group("date")
-            time = match.group("time")
-            barcode = match.group("barcode")
-            ext = match.group("ext")
-        else:
-            message(
-                f"Filename {basename} does not match expected pattern.",
-                "error",
-                kwargs.get("room_name", None),
-            )
-            raise ValueError(f"Filename {basename} does not match expected pattern.")
+        """
+        Reads a C10 file; `file` is the file name.
 
-        kwargs.update(
-            {"filename": filename, "barcode": barcode, "date": date, "time": time}
+        Returned data example:
+        {"barcode": "241008MP-1_1", "date": "10/14/2024", "time": "12:45:28",
+         "metadata": {"Plate Number": "Plate 1", ...},
+         "results": [{"Well": "A1", "Lum": "16727"}, ...],
+         "layout": {"A1": "P", "B1": "N"}}
+        """
+        date, time, barcode, extension = self.file_name_parts(
+            file, kwargs.get("room_name")
         )
-        measurement_name = kwargs.get("measurement_name", "Lum")
+        measurement_name = kwargs.get("measurement_name", DEFAULT_MEASUREMENT_NAME)
 
-        if ext == "xlsx":
-            wb = load_workbook(file)
-            sheet = wb.active
-            metadata = self.__parse_metadata(sheet)
-            results = self.__parse_results(sheet)
-            layout = self.__parse_layout(sheet, len(results))
-        elif ext == "txt":
-            content = open(file, "r")
-            lines = [line.strip() for line in content.readlines() if line.strip()]
-            metadata = self.__parse_metadata_txt(lines)
-            results = self.__parse_results_txt(lines, measurement_name)
-            layout = (
-                {}
-            )  # Implement __parse_layout_txt if layout info is present in .txt files
-            # Prefer date and time from metadata if available
+        if extension == "xlsx":
+            sheet = load_workbook(file).active
+            metadata = self.parse_xlsx_metadata(sheet)
+            results = self.parse_xlsx_results(sheet)
+            layout = self.parse_xlsx_layout(sheet)
+        elif extension == "txt":
+            with open(file, "r") as content:
+                lines = [line.strip() for line in content.readlines() if line.strip()]
+            metadata = self.parse_txt_metadata(lines)
+            results = self.parse_txt_results(lines, measurement_name)
+            # A .txt file has no layout block
+            layout = {}
+            # The date and time in the file content win over the file name
             date = metadata.get("Date", date)
             time = metadata.get("Time", time)
             logger.info(f"Date: {date}, Time: {time}")
-            content.close()
         else:
-            raise ValueError(f"Unsupported file extension: {ext}")
+            raise ValueError(f"Unsupported file extension: {extension}")
 
         return {
             "metadata": metadata,
@@ -81,198 +86,217 @@ class MicroscopeMapper(BaseMapper):
             "layout": layout,
         }
 
+    def file_name_parts(self, path: str, room_name) -> tuple[str, str, str, str]:
+        """
+        "/data/241014_125455_241008MP-1_1.txt" -> ("241014", "125455", "241008MP-1_1", "txt").
+        """
+        file_name = os.path.basename(path)
+        match = re.match(self.RE_FILENAME, file_name)
+        if not match:
+            text = f"Filename {file_name} does not match expected pattern."
+            message(text, "error", room_name)
+            raise ValueError(text)
+        return (
+            match.group("date"),
+            match.group("time"),
+            match.group("barcode"),
+            match.group("ext"),
+        )
+
     def map(self, data: dict, **kwargs) -> None:
-
-        RE_NUMBER = r"^[0-9]+(\.[0-9]+)?$"
-        RE_SCIENCE = r"^[0-9\.]+[eE][+-]?[0-9]+$"
-
-        barcode = data["barcode"]
-        try:
-            plate = Plate.objects.get(barcode=barcode)
-        except Plate.DoesNotExist:
-            message(
-                f"Plate with barcode {barcode} does not exist. Creating it.",
-                "warning",
-                kwargs.get("room_name", None),
-            )
-            barcode_specification, _ = BarcodeSpecification.objects.get_or_create(
-                prefix=barcode.split("_")[0],
-                sides=["North"],
-                number_of_plates=4,
-                experiment=Experiment.objects.get(name=kwargs.get("experiment_name")),
-            )
-            plate = Plate.objects.create(
-                barcode=barcode,
-                dimension=PlateDimension.by_num_wells(len(data["results"])),
-                experiment=barcode_specification.experiment,
-            )
+        """
+        Stores every number of the results as a measurement of its well, sets
+        the control well types from the layout, and links the file to the plate.
+        """
+        plate = self.find_or_create_measured_plate(
+            data["barcode"],
+            len(data["results"]),
+            kwargs.get("room_name"),
+            kwargs.get("experiment_name"),
+        )
         measured_at = convert_string_to_datetime(data["date"], data["time"])
+
         with tqdm(
             desc="Processing microscope output",
             unit="measurement",
             total=len(data["results"]),
-        ) as mbar:
+        ) as progress:
             for entry in data["results"]:
-                if not entry.get("Well") or entry.get("Well") == "Well":
+                well_name = entry.get("Well")
+                # Empty rows and repeated header rows are not wells
+                if not well_name or well_name == "Well":
                     continue
 
-                position = plate.dimension.position(entry.get("Well"))
+                position = plate.dimension.position(well_name)
+                well = plate.well_at(position, create_if_not_exist=True)
+                self.set_well_type_from_layout(well, well_name, data["layout"])
 
-                well = plate.well_at(position)
-                if not well:
-
-                    well = Well.objects.create(plate=plate, position=position)
-                if data["layout"] and entry.get("Well") in data["layout"]:
-                    well_type = data["layout"][entry.get("Well")]
-                    well.type = WellType.objects.get(name=well_type)
-                    well.save()
-                for key, value in entry.items():
-                    if key in ["Well ID", "Well"]:
+                for label, value in entry.items():
+                    if label in WELL_COLUMNS:
                         continue
                     if re.match(RE_NUMBER, str(value)):
                         value = float(value)
                     elif re.match(RE_SCIENCE, str(value)):
                         value = convert_sci_to_float(value)
                     else:
+                        # Not a number, e.g. a text column
                         continue
                     Measurement.objects.update_or_create(
                         well=well,
-                        label=key,
+                        label=label,
                         measured_at=measured_at,
-                        defaults={
-                            "value": value,
-                        },
+                        defaults={"value": value},
                     )
+                progress.update(1)
 
-                mbar.update(1)
         self.create_measurement_assignment(plate, kwargs.get("filename"))
 
-    def __parse_metadata(self, sheet):
+    @staticmethod
+    def set_well_type_from_layout(well, well_name: str, layout: dict) -> None:
+        """Sets the well type if the layout has the well, e.g. {"A1": "P"}."""
+        if layout and well_name in layout:
+            well.type = WellType.objects.get(name=layout[well_name])
+            well.save()
+
+    @staticmethod
+    def parse_xlsx_metadata(sheet) -> dict:
+        """
+        The metadata at the top of the sheet. A text in the first column starts
+        a label, and the other cells of the row are added to that label. A cell
+        like "Gain: 214" is stored under its own key instead.
+
+        Example: {"Plate Number": ["Plate 1"], "Read": ["Luminescence"], "Gain": "214"}
+        """
         metadata = {}
         current_label = None
-        for row in sheet.iter_rows(min_row=1, max_row=38):
+        for row in sheet.iter_rows(min_row=1, max_row=XLSX_METADATA_ROWS):
             for index, cell in enumerate(row):
                 if index == 0 and cell.value:
-                    current_label = str(cell.value).strip().lstrip().replace(":", "")
+                    current_label = str(cell.value).strip().replace(":", "")
                     metadata[current_label] = []
-
                 elif index != 0 and cell.value:
-                    str_value = str(cell.value)
-                    if ": " in str_value:
-                        k = str_value.split(":")[0].strip().lstrip()
-                        v = str_value.split(":")[1].strip().lstrip()
-                        metadata[k] = v
+                    text = str(cell.value)
+                    if ": " in text:
+                        # The value is the part between the first and a second ":"
+                        key = text.split(":")[0].strip()
+                        value = text.split(":")[1].strip()
+                        metadata[key] = value
                     else:
-                        metadata[current_label].append(str_value)
-                if str(cell.value).strip().lstrip().lower() == "results":
+                        metadata[current_label].append(text)
+                # "Results" ends this row; the next rows are still read
+                if str(cell.value).strip().lower() == "results":
                     break
-
         return metadata
 
-    def __parse_results(self, sheet):
-        results_data = []
-        headers = []
+    @staticmethod
+    def parse_xlsx_results(sheet) -> list[dict]:
+        """
+        The rows below the header row of the results table, which has "Well ID"
+        or "Well" in its second column.
+
+        Example: [{"Well ID": "SPL1", "Well": "A1", "Lum": 16727}]
+        """
+        header_rows = []
         results_start_row = None
         for index, row in enumerate(sheet.iter_rows(values_only=True)):
-            if (
-                row[1]
-                and str(row[1]).lower() == "well id"
-                or str(row[1]).lower() == "well"
-            ):
-                for cell in sheet.iter_rows(
-                    min_row=index + 1,
-                    max_row=index + 1,
-                    values_only=True,  # we use index +1 because indices start with 1 in Excel
-                ):
-                    if cell:
-                        headers.append(cell)
+            if str(row[1]).lower() in ("well id", "well"):
+                header_rows.append(row)
+                # Excel rows count from 1, and the results start below the header
                 results_start_row = index + 2
                 break
-        headers = [header for header in headers[0] if header is not None]
+
+        # A sheet without header row stops here with an IndexError
+        headers = [header for header in header_rows[0] if header is not None]
+        results = []
         if headers and results_start_row:
             for row in sheet.iter_rows(min_row=results_start_row, values_only=True):
                 if not any(row):
                     continue
-                row_data = dict(zip(headers, row[1:]))
-                results_data.append(row_data)
+                # The first column of a result row is empty
+                results.append(dict(zip(headers, row[1:])))
+        return results
 
-        return results_data
+    @staticmethod
+    def parse_xlsx_layout(sheet) -> dict:
+        """
+        The control wells of the "Layout" block, which starts one row below
+        "Layout" and ends two rows above "Results". A layout row starts with
+        the row letter, followed by one cell per column.
 
-    def __parse_layout(self, sheet, plate):
+        Example: {"A1": "P", "B1": "N"}
+        """
         layout_start_row = None
         layout_end_row = None
-        layout_data = []
-        position_type = {}
         for index, row in enumerate(sheet.iter_rows(values_only=True)):
             if row[0] and str(row[0]).lower() == "layout":
                 layout_start_row = index + 2
             if row[0] and str(row[0]).lower() == "results":
                 layout_end_row = index - 1
+
+        layout_rows = []
         if layout_start_row and layout_end_row:
             for row in sheet.iter_rows(
                 min_row=layout_start_row, max_row=layout_end_row, values_only=True
             ):
                 if not any(row):
                     continue
-                layout_data.append(row[1:])
+                layout_rows.append(row[1:])
 
-        for item in layout_data:
-            if item[0]:
-                for index, value in enumerate(item):
-                    if value in ["POS", "NEG"]:
-                        well_position = f"{item[0]}{index}"
-                        well_type = "P" if value == "POS" else "N"
-                        position_type[well_position] = well_type
+        well_types = {}
+        for layout_row in layout_rows:
+            row_letter = layout_row[0]
+            if not row_letter:
+                continue
+            for column, value in enumerate(layout_row):
+                if value in LAYOUT_WELL_TYPES:
+                    well_types[f"{row_letter}{column}"] = LAYOUT_WELL_TYPES[value]
+        return well_types
 
-        return position_type
+    @staticmethod
+    def parse_txt_metadata(lines: list[str]) -> dict:
+        """
+        The "Key<TAB>Value" and "Key: Value" lines before "Results".
 
-    def __parse_metadata_txt(self, lines):
+        Example: {"Date": "10/14/2024", "Integration Time": "0:01.00 (MM:SS.ss)"}
+        """
         metadata = {}
-        i = 0
-        while i < len(lines):
-            line = lines[i].strip()
+        for line in lines:
+            line = line.strip()
             if line == "Results":
-                break  # Stop parsing metadata when 'Results' is reached
+                break
             if not line:
-                i += 1
                 continue
             if "\t" in line:
-                parts = line.split("\t", 1)
-                if len(parts) == 2:
-                    key, value = parts
-                    metadata[key.strip()] = value.strip()
+                key, value = line.split("\t", 1)
+                metadata[key.strip()] = value.strip()
             elif ":" in line:
-                parts = line.split(":", 1)
-                if len(parts) == 2:
-                    key, value = parts
-                    metadata[key.strip()] = value.strip()
-
-            i += 1
-
+                key, value = line.split(":", 1)
+                metadata[key.strip()] = value.strip()
         return metadata
 
-    def __parse_results_txt(self, lines, measurement_name="Lum"):
-        results = []
-        # Find the index where 'Results' section starts
-        i = 0
-        while i < len(lines):
-            if lines[i] == "Results":
-                i += 1  # Skip the 'Results' header
-                break
-            i += 1
+    @staticmethod
+    def parse_txt_results(lines: list[str], measurement_name: str) -> list[dict]:
+        """
+        The "Well<TAB>Value" lines after "Results".
 
-        # Now parse the results
-        while i < len(lines):
-            line = lines[i]
+        Example: [{"Well": "A1", "Lum": "16727"}]
+        """
+        results = []
+        in_results = False
+        for line in lines:
+            if not in_results:
+                if line == "Results":
+                    in_results = True
+                continue
+
             if line.strip() == "":
                 break
             parts = line.split("\t")
-            if len(parts) == 2:
-                well, lum = parts
-                if well.strip() == "Well":
-                    i += 1
-                    continue
-                results.append({"Well": well.strip(), measurement_name: lum.strip()})
-            i += 1
-
+            if len(parts) != 2:
+                continue
+            well_name, value = parts
+            # The header line of the table
+            if well_name.strip() == "Well":
+                continue
+            results.append({"Well": well_name.strip(), measurement_name: value.strip()})
         return results

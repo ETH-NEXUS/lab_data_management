@@ -5,10 +5,12 @@ Tests for reading M1000 reader files (.asc) into measurement entries.
 import shutil
 import tempfile
 from datetime import datetime
+from io import StringIO
 from os.path import join
 
 from django.test import SimpleTestCase
 
+from core.models import MappingError
 from importer.mappers import M1000Mapper
 
 # A shortened demo file. The line endings are as in the real file: the value
@@ -87,3 +89,37 @@ class M1000ParseTest(SimpleTestCase):
             },
             extra,
         )
+
+
+class M1000DetermineIndexesTest(SimpleTestCase):
+    def determine(self, text):
+        """(position column, identifier column) and where the file is afterwards."""
+        file = StringIO(text)
+        file.name = "test.asc"
+        indexes = M1000Mapper().determine_indexes(file)
+        return indexes, file.tell()
+
+    def test_the_position_column_comes_first(self):
+        self.assertEqual(((0, 1), 0), self.determine("A1\tSM1_1\t15\nA2\tSM1_2\t16\n"))
+
+    def test_the_identifier_column_comes_first(self):
+        # "NC1" looks like a position too, so the first line is ambiguous and
+        # the second line decides.
+        text = "NC1\tA1\t11115\nSM1_1\tA3\t12154\n"
+
+        self.assertEqual(((1, 0), 0), self.determine(text))
+
+    def test_spaces_around_the_values_are_ignored(self):
+        self.assertEqual(((0, 1), 0), self.determine("  A1   SM1_1  15  \n"))
+
+    def test_a_file_without_an_unambiguous_line_is_refused(self):
+        file = StringIO("A1\t15\n\nB1\tSM1_2\tSM1_3\t4\n")
+        file.name = "test.asc"
+
+        with self.assertRaises(MappingError) as raised:
+            M1000Mapper().determine_indexes(file)
+
+        self.assertEqual(
+            "File has not the desired format: test.asc", str(raised.exception)
+        )
+        self.assertEqual(0, file.tell())

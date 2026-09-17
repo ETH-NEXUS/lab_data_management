@@ -136,18 +136,16 @@ class BaseMapper:
         plate_type: str,
         barcode: str,
         source_plate_name: str,
-        **kwargs,
+        room_name=None,
+        experiment_name: str = None,
     ):
         """
         Creates a plate that is not in the database yet.
 
         The experiment of the plate comes from the barcode specification of the
-        barcode prefix. A missing specification is created for
-        kwargs["experiment_name"]; without an experiment name a ValueError is raised.
+        barcode prefix. A missing specification is created for the experiment
+        `experiment_name`; without an experiment name a ValueError is raised.
         """
-        room_name = kwargs.get("room_name")
-        experiment_name = kwargs.get("experiment_name")
-
         try:
             barcode_specification = BarcodeSpecification.objects.get(
                 prefix=barcode_prefix(barcode)
@@ -188,11 +186,37 @@ class BaseMapper:
         """
         barcode_specification, _ = BarcodeSpecification.objects.get_or_create(
             prefix=barcode_prefix(barcode),
+            # A new list every time, so the shared default can not be changed
             sides=list(NEW_BARCODE_SPECIFICATION_SIDES),
             number_of_plates=NEW_BARCODE_SPECIFICATION_NUMBER_OF_PLATES,
             experiment=Experiment.objects.get(name=experiment_name),
         )
         return barcode_specification
+
+    def find_or_create_measured_plate(
+        self, barcode: str, number_of_wells: int, room_name, experiment_name: str
+    ) -> Plate:
+        """
+        The plate of a measurement file. A missing plate is created for the
+        experiment `experiment_name`, with the dimension that fits the number
+        of wells in the file (e.g. 384 values -> the 384 well dimension).
+        """
+        try:
+            return Plate.objects.get(barcode=barcode)
+        except Plate.DoesNotExist:
+            message(
+                f"Plate with barcode {barcode} does not exist. Creating it.",
+                "warning",
+                room_name,
+            )
+            barcode_specification = self.get_or_create_barcode_specification(
+                barcode, experiment_name
+            )
+            return Plate.objects.create(
+                barcode=barcode,
+                dimension=PlateDimension.by_num_wells(number_of_wells),
+                experiment=barcode_specification.experiment,
+            )
 
     def get_plate_dimension(
         self, plate_name: str, plate_type: str, source_plate_name, room_name

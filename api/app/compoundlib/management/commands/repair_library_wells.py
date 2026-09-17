@@ -18,7 +18,7 @@ Example arguments (run with --dry-run first, then without it):
         --mapping-file /data/sdf/20211119_NEXUS_FDA_approved_mapping.yml \
         --identifier T3608 \
         --name "Carbasalate calcium" \
-        --   \
+        --smiles "CC(=O)Oc1ccccc1C(=O)[O-].CC(=O)Oc1ccccc1C(=O)[O-].NC(N)=O.[Ca+2]" \
         --dry-run
 
 --identifier is the value of the mapping's compound identifier column
