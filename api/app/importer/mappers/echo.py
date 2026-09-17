@@ -232,7 +232,8 @@ class EchoMapper(BaseMapper):
         group with Plate.map and stores the report file with the plate mapping.
 
         Transfers whose source plate does not exist are put into a queue and
-        tried again at the end, at most MAX_QUEUE_RETRIES times.
+        tried again at the end, at most MAX_QUEUE_RETRIES times. Transfers that
+        are still in the queue after that are reported in one warning.
         """
         room_name = kwargs.get("room_name")
         # Source plates by barcode, so every plate is loaded only once
@@ -296,31 +297,37 @@ class EchoMapper(BaseMapper):
 
         self.map_plate_pairs(plate_pairs, kwargs)
 
+        if not queue:
+            return
         retries = kwargs.get("try_queue", 0)
-        if retries < MAX_QUEUE_RETRIES and len(queue) > 0:
+        if retries < MAX_QUEUE_RETRIES:
             kwargs.update({"try_queue": retries + 1})
             self.map(queue, **kwargs)
+            return
+
+        # The last try: tell the user which transfers could not be mapped
+        missing_barcodes = sorted(
+            {str(transfer["source_plate_barcode"]) for transfer in queue}
+        )
+        message(
+            f"{len(queue)} transfers were not mapped, because these source plates "
+            f"do not exist: {', '.join(missing_barcodes)}",
+            "warning",
+            room_name,
+        )
 
     def find_source_plate(
         self, barcode: str, plates: dict, room_name: str | None
     ) -> Plate | None:
         """
-        The source plate from the cache or the database, or None (with a
-        warning) if it does not exist.
+        The source plate from the cache or the database, or None if it does not exist.
         """
         if barcode in plates:
             return plates.get(barcode)
         try:
             plate = Plate.objects.get(barcode=barcode)
         except Plate.DoesNotExist:
-            # The line break and the spaces belong to the message text: this
-            # is how users have always seen it on the management page.
-            message(
-                f"""Source plate with barcode {barcode} does not exist.
-                            I try again later...""",
-                "warning",
-                room_name,
-            )
+            # Reported once for all queued transfers at the end of `map`
             return None
         plates[barcode] = plate
         return plate

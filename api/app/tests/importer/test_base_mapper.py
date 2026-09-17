@@ -131,14 +131,19 @@ class BaseMapperRunTest(TestCase):
             mapper.map_calls,
         )
 
-    def test_without_files_only_the_views_are_refreshed(self, message, *refreshes):
+    def test_without_files_a_warning_is_shown(self, message, *refreshes):
         mapper = RecordingMapper(parse_result=[])
+        pattern = join(self.folder, "*.csv")
 
-        mapper.run(join(self.folder, "*.csv"), room_name="room_1")
+        mapper.run(pattern, room_name="room_1")
 
         self.assertEqual([], mapper.map_calls)
-        message.assert_called_once_with(
-            "Refreshing materialized views...", "info", "room_1"
+        self.assertEqual(
+            [
+                mock.call(f"No files found that match {pattern}.", "warning", "room_1"),
+                mock.call("Refreshing materialized views...", "info", "room_1"),
+            ],
+            message.call_args_list,
         )
         for refresh in refreshes:
             refresh.assert_called_once_with(concurrently=True)

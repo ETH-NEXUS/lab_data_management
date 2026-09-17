@@ -5,7 +5,9 @@ import json
 import os
 from django.http import Http404
 from django.core import management
-from django.core.cache import cache
+import traceback
+
+from importer.command_output import finish_command, read_output, start_command
 from chardet.universaldetector import UniversalDetector
 from contextlib import redirect_stderr
 
@@ -46,67 +48,68 @@ def run_command(request):
         body_data = json.loads(body_unicode)
         form_data = body_data.get("form_data")
 
-        if form_data.get("command") == "map":
-            machine = form_data.get("machine")
-            if machine in [
-                "echo",
-                "m1000",
-                "C10-imager",
-                "C10-reader",
-            ]:  # ["echo", "m1000", "microscope", "C10-imager", "C10-reader"]
+        room_name = form_data.get("room_name")
+        start_command(room_name)
+        try:
+            if form_data.get("command") == "map":
+                machine = form_data.get("machine")
+                if machine in [
+                    "echo",
+                    "m1000",
+                    "C10-imager",
+                    "C10-reader",
+                ]:  # ["echo", "m1000", "microscope", "C10-imager", "C10-reader"]
+                    kwargs = {
+                        "path": form_data.get("path"),
+                        "mapping_file": form_data.get("mapping_file"),
+                        "debug": False,
+                        "experiment_name": form_data.get("experiment_name"),
+                        "room_name": form_data.get("room_name"),
+                        "measurement_name": form_data.get("measurement_name"),
+                    }
+                    management.call_command("map", machine, **kwargs)
+            elif form_data.get("command") == "import":
+                what = form_data.get("what")
                 kwargs = {
-                    "path": form_data.get("path"),
                     "mapping_file": form_data.get("mapping_file"),
+                    "input_file": form_data.get("input_file"),
                     "debug": False,
-                    "experiment_name": form_data.get("experiment_name"),
+                    "library_name": form_data.get("library_name")
+                    if form_data.get("library_name")
+                    else None,
+                    "template_name": form_data.get("template_name")
+                    if form_data.get("template_name")
+                    else None,
+                    "plate_barcode": form_data.get("plate_barcode")
+                    if form_data.get("plate_barcode")
+                    else None,
+                    "project_name": form_data.get("project_name")
+                    if form_data.get("project_name")
+                    else None,
+                    "is_control_plate": form_data.get("is_control_plate")
+                    if form_data.get("is_control_plate")
+                    else None,
                     "room_name": form_data.get("room_name"),
-                    "measurement_name": form_data.get("measurement_name"),
                 }
-                management.call_command("map", machine, **kwargs)
-        elif form_data.get("command") == "import":
-            what = form_data.get("what")
-            kwargs = {
-                "mapping_file": form_data.get("mapping_file"),
-                "input_file": form_data.get("input_file"),
-                "debug": False,
-                "library_name": form_data.get("library_name")
-                if form_data.get("library_name")
-                else None,
-                "template_name": form_data.get("template_name")
-                if form_data.get("template_name")
-                else None,
-                "plate_barcode": form_data.get("plate_barcode")
-                if form_data.get("plate_barcode")
-                else None,
-                "project_name": form_data.get("project_name")
-                if form_data.get("project_name")
-                else None,
-                "is_control_plate": form_data.get("is_control_plate")
-                if form_data.get("is_control_plate")
-                else None,
-                "room_name": form_data.get("room_name"),
-            }
-            management.call_command("import", what, **kwargs)
-        message("Command completed.", "info", form_data.get("room_name"))
-        cache.set(f"command_status_{form_data.get('room_name')}", "completed")
+                management.call_command("import", what, **kwargs)
+        except Exception as error:
+            # An error the command did not handle itself, e.g. an unknown experiment
+            message(str(error), "error", room_name)
+            traceback.print_exc()
+        finish_command(room_name)
 
     return JsonResponse({"status": "ok"})
 
 
 def long_polling(request, room_name):
-    output_key = f"command_output_{room_name}"
-    status_key = f"command_status_{room_name}"
-    output = cache.get(output_key)
-    status = cache.get(status_key)
-    if status == "completed":
-        cache.delete(output_key)
-        cache.delete(status_key)
-
-    if output:
-        cache.delete(output_key)
-        return JsonResponse({"message": output, "status": status})
-    else:
-        return JsonResponse({"message": None, "status": status})
+    """
+    The new messages of a running command, from position `since` on.
+    Example: GET /api/long_polling/12_1726/?since=3
+    -> {"messages": [{"level": "error", "text": "..."}], "next": 4, "status": "failed"}
+    """
+    since = request.GET.get("since", "0")
+    since = int(since) if since.isdigit() else 0
+    return JsonResponse(read_output(room_name, since))
 
 
 @csrf_exempt

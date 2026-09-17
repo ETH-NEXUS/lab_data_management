@@ -76,7 +76,14 @@ class BaseMapper:
         "filename", the extra information of an M1000 file) is still there
         when the next file is read.
         """
-        for filename in self.get_files(glob_pattern):
+        filenames = self.get_files(glob_pattern)
+        if not filenames:
+            message(
+                f"No files found that match {glob_pattern}.",
+                "warning",
+                kwargs.get("room_name"),
+            )
+        for filename in filenames:
             message(f"Processing file {filename}...", "info", kwargs.get("room_name"))
             data = self.read_file(filename, kwargs)
             kwargs.update({"filename": filename})

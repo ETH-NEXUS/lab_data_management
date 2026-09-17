@@ -40,6 +40,11 @@ services:
       - "5090:5000"
       - "8890:8888"
 
+  celery:
+    build:
+      args:
+        DEPENDENCIES: dev
+
   db:
     ports:
       - "54390:5432"

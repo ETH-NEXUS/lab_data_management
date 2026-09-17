@@ -10,3 +10,6 @@ from .settings import *
 # separate database that Django creates and drops per run. Sqlite cannot be
 # used here: the migrations and the materialized views are Postgres specific.
 EMAIL_BACKEND = "django.core.mail.backends.locmem.EmailBackend"
+
+# The tests do not need the Redis container: they keep the cache in memory.
+CACHES = {"default": {"BACKEND": "django.core.cache.backends.locmem.LocMemCache"}}

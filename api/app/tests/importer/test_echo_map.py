@@ -23,12 +23,6 @@ from core.models import (
 )
 from importer.mappers import EchoMapper
 
-MISSING_SOURCE_WARNING = (
-    "Source plate with barcode MISSING does not exist.\n"
-    "                            I try again later..."
-)
-
-
 def transfer(
     source_well, destination_well, source="SRC_A", destination="DST_1", **changes
 ):
@@ -237,19 +231,27 @@ class EchoMapTest(TestCase):
             "Creating destination plate Greiner_384PS_781904, Greiner"
         )
 
-    def test_a_missing_source_plate_is_tried_three_more_times(
+    def test_a_missing_source_plate_is_tried_again_and_then_reported_once(
         self, message, *refreshes
     ):
-        self.run_map([transfer("A3", "A3", source="MISSING"), transfer("A4", "A4")])
+        self.run_map(
+            [
+                transfer("A3", "A3", source="MISSING"),
+                transfer("A5", "A5", source="MISSING"),
+                transfer("A4", "A4"),
+            ]
+        )
 
         self.assertEqual(
             [
-                mock.call(MISSING_SOURCE_WARNING, "warning", "room_1"),
                 mock.call("Mapping SRC_A -> DST_1", "info", "room_1"),
                 mock.call("Mapped SRC_A -> DST_1", "info", "room_1"),
-                mock.call(MISSING_SOURCE_WARNING, "warning", "room_1"),
-                mock.call(MISSING_SOURCE_WARNING, "warning", "room_1"),
-                mock.call(MISSING_SOURCE_WARNING, "warning", "room_1"),
+                mock.call(
+                    "2 transfers were not mapped, because these source plates "
+                    "do not exist: MISSING",
+                    "warning",
+                    "room_1",
+                ),
             ],
             message.call_args_list,
         )

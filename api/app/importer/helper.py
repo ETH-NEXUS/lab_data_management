@@ -1,5 +1,5 @@
 import re
-from django.core.cache import cache
+from importer.command_output import add_message
 from helpers.logger import logger
 
 
@@ -54,10 +54,12 @@ def normalize_col(col: int):
     return closest(col, (12, 24, 48))
 
 
-def message(text, type="info", room_name=None, status="pending"):
-    if room_name:
-        cache.set(f"command_output_{room_name}", text)
-        cache.set(f"command_status_{room_name}", status)
+def message(text, type="info", room_name=None):
+    """
+    Logs a message. For a command started from the management page (room_name),
+    the message is also shown there, with its type as level ("info", "warning", "error").
+    """
+    add_message(room_name, type, str(text))
     if type == "info":
         logger.info(text)
     elif type == "error":

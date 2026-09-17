@@ -379,3 +379,24 @@ DBBACKUP_STORAGE = "django.core.files.storage.FileSystemStorage"
 DBBACKUP_STORAGE_OPTIONS = {
     "location": environ.get("DBBACKUP_STORAGE_LOCATION", "/vol/backups/")
 }
+
+
+###
+# Redis and Celery
+###
+
+# Redis runs in the `redis` container. Database 0 carries the Celery tasks from
+# the api to the `celery` worker container.
+CELERY_BROKER_URL = environ.get("CELERY_BROKER_URL", "redis://redis:6379/0")
+CELERY_ACCEPT_CONTENT = ["json"]
+CELERY_TASK_SERIALIZER = "json"
+CELERY_RESULT_SERIALIZER = "json"
+
+# Database 1 is the cache. It is shared by all server processes, so a message
+# written by one process (e.g. of a running command) can be read by another one.
+CACHES = {
+    "default": {
+        "BACKEND": "django.core.cache.backends.redis.RedisCache",
+        "LOCATION": environ.get("REDIS_CACHE_URL", "redis://redis:6379/1"),
+    }
+}

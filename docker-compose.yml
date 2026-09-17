@@ -59,6 +59,33 @@ services:
       - GIT_LASTCOMMITDATE=${GIT_LASTCOMMITDATE}
     depends_on:
       - db
+      - redis
+
+  # Message broker for Celery and cache of the api (see api/app/ldm/settings.py)
+  redis:
+    image: redis:7-alpine
+    hostname: redis
+    restart: unless-stopped
+
+  # Runs Celery tasks in the background, with the same code and image as the api
+  celery:
+    build:
+      context: api
+      args:
+        ENABLE_JUPYTER: ${ENABLE_JUPYTER}
+        ENABLE_R: ${ENABLE_R}
+    hostname: celery
+    restart: unless-stopped
+    command: celery -A ldm worker -l info
+    volumes:
+      - ./api/app:/app
+      - ./api/media:/vol/web/media:z
+      - ./data:/data
+    env_file: .env
+    depends_on:
+      - db
+      - redis
+
   db:
     build:
       context: db
