@@ -199,6 +199,23 @@ class BaseMapperRunTest(TestCase):
         self.assertFalse(MeasurementAssignment.objects.exists())
         self.assertEqual([], os.listdir(media))
 
+    def test_a_file_that_was_assigned_before_keeps_its_stored_copy(
+        self, message, *refreshes
+    ):
+        path = self.write("20240610-121212_demo_1.asc")
+        dimension = PlateDimension.objects.create(name="dim_96_8x12", rows=8, cols=12)
+        plate = Plate.objects.create(barcode="demo_1", dimension=dimension)
+        mapper = RecordingMapper(parse_result=["row"])
+
+        with override_settings(MEDIA_ROOT=join(self.folder, "media")):
+            mapper.create_measurement_assignment(plate, path)
+            mapper.create_measurement_assignment(plate, path)
+
+        # The second call found the assignment of the first one, so its copy is
+        # not listed for deletion
+        self.assertEqual(1, len(mapper.stored_files))
+        self.assertEqual(1, MeasurementAssignment.objects.count())
+
     def test_an_unexpected_error_in_a_file_is_logged_with_traceback(
         self, message, *refreshes
     ):

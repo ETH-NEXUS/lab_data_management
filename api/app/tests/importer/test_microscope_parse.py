@@ -134,6 +134,14 @@ class MicroscopeParseTest(SimpleTestCase):
 
         self.assertEqual({"Well": "A1", "Lum": "16727"}, data["results"][0])
 
+    def test_a_txt_file_without_a_time_uses_the_date_of_the_file_name(self):
+        # One value from the content and one from the file name would not fit
+        path = self.write_txt([line for line in TXT_LINES if "Time\t" not in line])
+
+        data = MicroscopeMapper().parse(path)
+
+        self.assertEqual(("241014", "125455"), (data["date"], data["time"]))
+
     def test_a_txt_file_in_another_encoding_is_read(self):
         # The reader PC may write Windows-1252, e.g. "µ" in the metadata
         lines = (

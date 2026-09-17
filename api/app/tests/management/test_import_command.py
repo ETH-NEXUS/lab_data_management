@@ -10,7 +10,7 @@ from unittest import mock
 
 from django.contrib.auth.models import User
 from django.core.cache import cache
-from django.test import TestCase
+from django.test import TestCase, override_settings
 from django.urls import reverse
 from rdkit import Chem
 
@@ -34,6 +34,9 @@ class ImportCommandTest(TestCase):
         cache.clear()
         self.client.force_login(User.objects.create_user("tester"))
         self.folder = tempfile.mkdtemp()
+        data_root = override_settings(MANAGEMENT_DATA_ROOT=self.folder)
+        data_root.enable()
+        self.addCleanup(data_root.disable)
 
     def tearDown(self):
         shutil.rmtree(self.folder)
@@ -120,6 +123,25 @@ class ImportCommandTest(TestCase):
             ).compound,
         )
 
+    def test_an_unknown_kind_of_import_is_an_error(self):
+        output = self.run_import("plates", input_file=join(self.folder, "plate.csv"))
+
+        self.assertEqual("failed", output["status"])
+        self.assertIn("invalid choice", output["messages"][0]["text"])
+
+    def test_a_library_plate_is_not_a_control_plate(self):
+        path = self.write("plate.csv", LIBRARY_PLATE_CSV)
+
+        self.run_import(
+            "library_plate",
+            input_file=path,
+            library_name="Library",
+            plate_barcode="LIB_1",
+            is_control_plate=False,
+        )
+
+        self.assertIs(False, Plate.objects.get(barcode="LIB_1").is_control_plate)
+
     def test_an_error_in_the_middle_of_a_plate_file_stores_nothing(self):
         # Aspirin is imported first, then the well type "XX" does not exist
         path = self.write(
@@ -165,12 +187,14 @@ class ImportCommandTest(TestCase):
     def test_a_library_plate_file_that_does_not_exist(self):
         output = self.run_import(
             "library_plate",
-            input_file="/no/such/plate.csv",
+            input_file=join(self.folder, "missing.csv"),
             library_name="Library",
             plate_barcode="LIB_1",
         )
 
-        self.assertFailedWith(output, "File does not exist: /no/such/plate.csv")
+        self.assertFailedWith(
+            output, f"File does not exist: {join(self.folder, 'missing.csv')}"
+        )
         self.assertFalse(Plate.objects.exists())
 
     def test_a_library_plate_file_with_a_wrong_format_says_why(self):
@@ -250,9 +274,11 @@ class ImportCommandTest(TestCase):
         )
 
     def test_an_sdf_file_that_does_not_exist(self):
-        output = self.run_import("sdf", input_file="/no/such/library.sdf")
+        path = join(self.folder, "missing.sdf")
 
-        self.assertFailedWith(output, "File does not exist: /no/such/library.sdf")
+        output = self.run_import("sdf", input_file=path)
+
+        self.assertFailedWith(output, f"File does not exist: {path}")
 
     def test_an_sdf_file_without_the_mapped_columns(self):
         path = self.write_sdf({"NAME": "Aspirin", "POS_IN_PLATE": "A1"})
@@ -285,7 +311,9 @@ class ImportCommandTest(TestCase):
             side_effect=KeyError("NAME"),
         ):
             with self.assertLogs("API", level="ERROR") as logs:
-                output = self.run_import("sdf", input_file="/data/library.sdf")
+                output = self.run_import(
+                    "sdf", input_file=join(self.folder, "library.sdf")
+                )
 
         self.assertFailedWith(output, "KeyError: 'NAME'")
         failure = logs.records[-1]
@@ -353,9 +381,11 @@ class ImportCommandTest(TestCase):
         )
 
     def test_a_missing_template_file_is_an_error_without_refreshing(self):
-        output = self.run_import("template", input_file="/no/such/template.tsv")
+        path = join(self.folder, "missing.tsv")
 
-        self.assertFailedWith(output, "File does not exist: /no/such/template.tsv")
+        output = self.run_import("template", input_file=path)
+
+        self.assertFailedWith(output, f"File does not exist: {path}")
         texts = [message["text"] for message in output["messages"]]
         self.assertNotIn("Refreshing materialized views...", texts)
 

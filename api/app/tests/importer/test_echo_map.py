@@ -218,7 +218,13 @@ class EchoMapTest(TestCase):
         self.assertEqual("dim_384_16x24", plate.dimension.name)
         self.assertEqual("Experiment", plate.experiment.name)
         self.assertEqual(
-            [mock.call("Creating destination plate Greiner_384PS_781904, ")],
+            [
+                mock.call(
+                    "Creating destination plate Greiner_384PS_781904, ",
+                    "info",
+                    "room_1",
+                )
+            ],
             [item for item in message.call_args_list if "Creating" in item.args[0]],
         )
         self.assertEqual(
@@ -237,7 +243,7 @@ class EchoMapTest(TestCase):
         )
 
         message.assert_any_call(
-            "Creating destination plate Greiner_384PS_781904, Greiner"
+            "Creating destination plate Greiner_384PS_781904, Greiner", "info", "room_1"
         )
 
     def test_a_missing_source_plate_is_tried_again_and_then_reported_once(
@@ -299,6 +305,29 @@ class EchoMapTest(TestCase):
             [(source, target) for source, target, _ in self.plate_map_calls],
         )
         self.assertEqual(2, PlateMapping.objects.count())
+
+    def test_transfers_from_the_queue_are_mapped_into_a_pair_of_the_same_file(
+        self, message, *refreshes
+    ):
+        # NEW_S does not exist yet, so the first transfer waits in the queue.
+        # It is created as a destination plate, and the third transfer maps
+        # NEW_S -> DST_1. The queued transfer must still be mapped afterwards.
+        self.run_map(
+            [
+                transfer("A3", "A3", source="NEW_S"),
+                transfer("A4", "A4", destination="NEW_S"),
+                transfer("A5", "A5", source="NEW_S"),
+            ]
+        )
+
+        mapped = [(source, target) for source, target, _ in self.plate_map_calls]
+        self.assertEqual(
+            [("SRC_A", "NEW_S"), ("NEW_S", "DST_1"), ("NEW_S", "DST_1")], mapped
+        )
+        errors = [
+            call for call in message.call_args_list if call.args[1:2] == ("error",)
+        ]
+        self.assertEqual([], errors)
 
     def test_another_report_for_the_same_plates_is_not_reported(
         self, message, *refreshes

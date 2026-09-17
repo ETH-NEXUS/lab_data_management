@@ -24,6 +24,9 @@ class MapCommandTest(TestCase):
         cache.clear()
         self.client.force_login(User.objects.create_user("tester"))
         self.folder = tempfile.mkdtemp()
+        data_root = override_settings(MANAGEMENT_DATA_ROOT=self.folder)
+        data_root.enable()
+        self.addCleanup(data_root.disable)
         media = override_settings(MEDIA_ROOT=join(self.folder, "media"))
         media.enable()
         self.addCleanup(media.disable)
@@ -87,11 +90,11 @@ class MapCommandTest(TestCase):
         self.assertEqual(EchoMapper.DEFAULT_COLUMNS, run.call_args.kwargs["headers"])
 
     def test_an_echo_column_file_that_does_not_exist(self):
-        output = self.run_map("echo", mapping_file="/no/such/columns.yml")
+        path = join(self.folder, "missing.yml")
 
-        self.assertFailedWith(
-            output, "The column file '/no/such/columns.yml' could not be found."
-        )
+        output = self.run_map("echo", mapping_file=path)
+
+        self.assertFailedWith(output, f"The column file '{path}' could not be found.")
 
     def test_an_echo_column_file_with_missing_keys(self):
         column_file = self.echo_column_file({"source_well": "Source Well"})
@@ -145,9 +148,11 @@ class MapCommandTest(TestCase):
         self.assertIsNotNone(failure.exc_info)
 
     def test_a_folder_that_does_not_exist(self):
-        output = self.run_map("echo", path="/no/such/folder")
+        missing = join(self.folder, "missing")
 
-        self.assertFailedWith(output, "The folder /no/such/folder does not exist.")
+        output = self.run_map("echo", path=missing)
+
+        self.assertFailedWith(output, f"The folder {missing} does not exist.")
 
     def test_a_file_instead_of_a_folder(self):
         path = self.write("report.csv", "")

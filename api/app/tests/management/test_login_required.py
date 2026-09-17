@@ -7,7 +7,7 @@ import tempfile
 from os.path import join
 
 from django.contrib.auth.models import User
-from django.test import Client, TestCase
+from django.test import Client, TestCase, override_settings
 from django.urls import reverse
 
 POST_VIEWS = [
@@ -59,12 +59,13 @@ class LoginRequiredTest(TestCase):
         with open(path, "w") as file:
             file.write("hello")
 
-        response = client.post(
-            reverse("get_file_content"),
-            {"file_path": path},
-            content_type="application/json",
-            HTTP_X_CSRFTOKEN=token,
-        )
+        with override_settings(MANAGEMENT_DATA_ROOT=folder):
+            response = client.post(
+                reverse("get_file_content"),
+                {"file_path": path},
+                content_type="application/json",
+                HTTP_X_CSRFTOKEN=token,
+            )
 
         self.assertEqual(200, response.status_code)
         self.assertEqual({"content": "hello"}, response.json())

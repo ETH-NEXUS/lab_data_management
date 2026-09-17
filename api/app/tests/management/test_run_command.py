@@ -37,6 +37,9 @@ class RunCommandTest(TestCase):
         cache.clear()
         self.client.force_login(User.objects.create_user("tester"))
         self.folder = tempfile.mkdtemp()
+        data_root = override_settings(MANAGEMENT_DATA_ROOT=self.folder)
+        data_root.enable()
+        self.addCleanup(data_root.disable)
         media = override_settings(MEDIA_ROOT=join(self.folder, "media"))
         media.enable()
         self.addCleanup(media.disable)
@@ -45,6 +48,7 @@ class RunCommandTest(TestCase):
         shutil.rmtree(self.folder)
 
     def run_map(self, **form_data):
+        """Starts a map command and returns the response of the request."""
         data = {
             "command": "map",
             "machine": "echo",
@@ -110,6 +114,23 @@ class RunCommandTest(TestCase):
         self.run_map()
 
         self.assertEqual([], cache.get("running_commands"))
+
+    def test_an_unknown_command_is_an_error(self):
+        self.run_map(command="do_something")
+
+        output = self.read_output()
+        self.assertEqual("failed", output["status"])
+        self.assertEqual(
+            {"level": "error", "text": "Unknown command: do_something"},
+            output["messages"][0],
+        )
+
+    def test_an_unknown_machine_is_an_error(self):
+        self.run_map(machine="pipetting_robot")
+
+        output = self.read_output()
+        self.assertEqual("failed", output["status"])
+        self.assertIn("invalid choice", output["messages"][0]["text"])
 
     def test_the_output_can_be_read_from_a_position(self):
         self.run_map()
