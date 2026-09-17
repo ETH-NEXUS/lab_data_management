@@ -109,6 +109,11 @@ class M1000DetermineIndexesTest(SimpleTestCase):
 
         self.assertEqual(((1, 0), 0), self.determine(text))
 
+    def test_a_header_line_above_the_values_is_skipped(self):
+        text = "Well positions\tLayout\tAcceptor\tDonor\t\nA1\tSM1_1\t24672\t7395\t\n"
+
+        self.assertEqual(((0, 1), 0), self.determine(text))
+
     def test_spaces_around_the_values_are_ignored(self):
         self.assertEqual(((0, 1), 0), self.determine("  A1   SM1_1  15  \n"))
 
