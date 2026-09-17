@@ -9,6 +9,7 @@ import tempfile
 from datetime import datetime
 from os import makedirs
 from os.path import dirname, join
+from unittest import mock
 
 from django.test import TestCase, override_settings
 
@@ -120,6 +121,40 @@ class MapperRunTest(TestCase):
             list(
                 WellWithdrawal.objects.filter(well=a10).values_list(
                     "amount", "current_amount", "current_dmso"
+                )
+            ),
+        )
+
+    def test_a_transfer_from_a_missing_source_well_is_skipped_and_reported(self):
+        experiment = Experiment.objects.create(name="Echo", project=self.project)
+        BarcodeSpecification.objects.create(prefix="P1", experiment=experiment)
+        source_plate = Plate.objects.get(barcode="LLD_4541_C")
+        compound = Compound.objects.create(name="Compound A")
+        # A12 is not in the database
+        for well_name in ("A10", "A11"):
+            well = source_plate.well_at(
+                self.dimension.position(well_name), create_if_not_exist=True
+            )
+            WellCompound.objects.create(well=well, compound=compound)
+        source_plate.wells.filter(position=self.dimension.position("A12")).delete()
+        path = join(self.folder, "ID-123-transfer-Echo_01_123.csv")
+        self.write(path, ECHO_REPORT.format(barcode="P1"))
+
+        with mock.patch("importer.mappers.echo.message") as message:
+            EchoMapper().run(path, room_name="room_1")
+
+        message.assert_any_call(
+            "LLD_4541_C -> P1: 1 transfers were not mapped, because these source "
+            "wells do not exist in LLD_4541_C: A12",
+            "warning",
+            "room_1",
+        )
+        plate = Plate.objects.get(barcode="P1")
+        self.assertEqual(
+            [self.dimension.position("A10"), self.dimension.position("A11")],
+            sorted(
+                WellCompound.objects.filter(well__plate=plate).values_list(
+                    "well__position", flat=True
                 )
             ),
         )

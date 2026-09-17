@@ -19,6 +19,7 @@ from core.models import (
     PlateDimension,
     PlateMapping,
     Project,
+    Well,
     WellDetail,
 )
 from importer.mappers import EchoMapper
@@ -64,7 +65,7 @@ def describe(mapping):
 @mock.patch.object(PlateDetail, "refresh")
 @mock.patch("importer.mappers.echo.message")
 class EchoMapTest(TestCase):
-    fixtures = ["plate_dimensions"]
+    fixtures = ["plate_dimensions", "well_types"]
 
     def setUp(self):
         self.folder = tempfile.mkdtemp()
@@ -79,11 +80,17 @@ class EchoMapTest(TestCase):
         self.dimension = PlateDimension.objects.get(name="dim_384_16x24")
         for barcode in ("SRC_A", "SRC_B", "DST_1", "DST_2"):
             Plate.objects.create(barcode=barcode, dimension=self.dimension)
+        # The source plates have all their wells, except where a test removes one
+        for barcode in ("SRC_A", "SRC_B"):
+            plate = Plate.objects.get(barcode=barcode)
+            Well.objects.bulk_create(
+                Well(plate=plate, position=position)
+                for position in range(self.dimension.num_wells)
+            )
 
         # Plate.map is replaced; every call is recorded as
         # (source barcode, target barcode, [described mappings])
         self.plate_map_calls = []
-        self.plate_map_result = True
         patcher = mock.patch.object(
             Plate, "map", autospec=True, side_effect=self.record
         )
@@ -102,7 +109,7 @@ class EchoMapTest(TestCase):
                 [describe(item) for item in mapping_list],
             )
         )
-        return self.plate_map_result
+        return True
 
     def run_map(self, data):
         EchoMapper().map(
@@ -261,20 +268,36 @@ class EchoMapTest(TestCase):
         )
         self.assertEqual(1, PlateMapping.objects.count())
 
-    def test_a_failed_plate_mapping_is_reported(
-        self, message, plate_refresh, well_refresh
+    def test_transfers_from_missing_source_wells_are_reported_once_per_plate_pair(
+        self, message, *refreshes
     ):
-        self.plate_map_result = False
+        Well.objects.filter(
+            plate__barcode="SRC_A",
+            position__in=[self.position("L11"), self.position("A3")],
+        ).delete()
 
-        self.run_map([transfer("A3", "A3")])
+        self.run_map(
+            [
+                transfer("L11", "A1"),
+                transfer("A3", "A2"),
+                transfer("L11", "A3"),
+                transfer("A4", "A4"),
+            ]
+        )
 
         self.assertEqual(
             [
                 mock.call("Mapping SRC_A -> DST_1", "info", "room_1"),
-                mock.call("Error mapping SRC_A -> DST_1", "error", "room_1"),
+                mock.call("Mapped SRC_A -> DST_1", "info", "room_1"),
+                mock.call(
+                    "SRC_A -> DST_1: 3 transfers were not mapped, because these "
+                    "source wells do not exist in SRC_A: A3, L11",
+                    "warning",
+                    "room_1",
+                ),
             ],
             message.call_args_list,
         )
-        self.assertFalse(PlateMapping.objects.exists())
-        plate_refresh.assert_not_called()
-        well_refresh.assert_not_called()
+        # All transfers are still handed to Plate.map, which skips the missing wells
+        self.assertEqual(4, len(self.plate_map_calls[0][2]))
+        self.assertEqual(1, PlateMapping.objects.count())

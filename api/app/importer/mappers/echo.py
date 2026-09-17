@@ -383,18 +383,22 @@ class EchoMapper(BaseMapper):
 
     def map_plate_pairs(self, plate_pairs: dict, kwargs: dict) -> None:
         """
-        Maps every plate pair. A successful mapping is stored as PlateMapping
-        together with the report file, and the views are refreshed.
+        Maps every plate pair. The mapping is stored as PlateMapping together
+        with the report file, and the views are refreshed.
+
+        Plate.map skips a transfer from a source well that is not in the
+        database, so these transfers are reported as a warning.
         """
         room_name = kwargs.get("room_name")
         for source_plate, mapping_list in plate_pairs.values():
             target_plate = mapping_list.target
             pair_text = f"{source_plate.barcode} -> {target_plate.barcode}"
             message(f"Mapping {pair_text}", "info", room_name)
+            missing_positions = self.missing_source_positions(
+                source_plate, mapping_list
+            )
 
-            if not source_plate.map(mapping_list, target_plate):
-                message(f"Error mapping {pair_text}", "error", room_name)
-                continue
+            source_plate.map(mapping_list, target_plate)
 
             with open(kwargs["filename"], "rb") as file:
                 PlateMapping.objects.create(
@@ -403,5 +407,32 @@ class EchoMapper(BaseMapper):
                     mapping_file=File(file, os.path.basename(file.name)),
                 )
             message(f"Mapped {pair_text}", "info", room_name)
+            if missing_positions:
+                well_names = [
+                    source_plate.dimension.hr_position(position)
+                    for position in sorted(set(missing_positions))
+                ]
+                message(
+                    f"{pair_text}: {len(missing_positions)} transfers were not mapped, "
+                    f"because these source wells do not exist in {source_plate.barcode}: "
+                    f"{', '.join(well_names)}",
+                    "warning",
+                    room_name,
+                )
             PlateDetail.refresh(concurrently=True)
             WellDetail.refresh(concurrently=True)
+
+    @staticmethod
+    def missing_source_positions(
+        source_plate: Plate, mapping_list: MappingList
+    ) -> list[int]:
+        """
+        The source position of every transfer whose source well is not in the
+        database, once per transfer, e.g. [250, 250, 275].
+        """
+        existing_positions = set(source_plate.wells.values_list("position", flat=True))
+        return [
+            mapping.from_pos
+            for mapping in mapping_list
+            if mapping.from_pos not in existing_positions
+        ]
