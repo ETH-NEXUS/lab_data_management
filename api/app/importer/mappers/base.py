@@ -14,6 +14,7 @@ from typing import Any
 from chardet.universaldetector import UniversalDetector
 from django.core.management.base import CommandError
 from django.core.files import File
+from django.db import transaction
 
 from core.models import (
     BarcodeSpecification,
@@ -26,6 +27,7 @@ from core.models import (
     WellDetail,
 )
 from helpers.logger import logger
+from importer.command_output import error_text
 from importer.helper import message, row_col_from_name
 
 # A barcode specification that the importer creates on its own gets these values.
@@ -73,24 +75,47 @@ class BaseMapper:
         Parses and maps every file that matches the pattern, then refreshes
         the materialized views once.
 
+        Every file is mapped in its own transaction: a file with an error
+        stores nothing, the error is shown, and the next file is mapped.
+
         All files share the same kwargs: what one file adds ("xml_file",
         "filename", the extra information of an M1000 file) is still there
         when the next file is read.
         """
+        room_name = kwargs.get("room_name")
         filenames = self.get_files(glob_pattern)
         if not filenames:
-            message(
-                f"No files found that match {glob_pattern}.",
-                "warning",
-                kwargs.get("room_name"),
-            )
-        for filename in filenames:
-            message(f"Processing file {filename}...", "info", kwargs.get("room_name"))
-            data = self.read_file(filename, kwargs)
-            kwargs.update({"filename": filename})
-            self.map(data, **kwargs)
+            message(f"No files found that match {glob_pattern}.", "warning", room_name)
 
-        message("Refreshing materialized views...", "info", kwargs.get("room_name"))
+        failed_files = []
+        for filename in filenames:
+            message(f"Processing file {filename}...", "info", room_name)
+            try:
+                with transaction.atomic():
+                    data = self.read_file(filename, kwargs)
+                    kwargs.update({"filename": filename})
+                    self.map(data, **kwargs)
+            except Exception as error:
+                failed_files.append(filename)
+                message(
+                    f"{filename} was not mapped, nothing of it was stored: "
+                    f"{error_text(error)}",
+                    "error",
+                    room_name,
+                )
+                if not isinstance(error, CommandError):
+                    logger.exception(f"Mapping {filename} failed")
+
+        # With a single file, its own error already says everything
+        if len(filenames) > 1 and failed_files:
+            message(
+                f"{len(failed_files)} of {len(filenames)} files were not mapped: "
+                f"{', '.join(failed_files)}",
+                "error",
+                room_name,
+            )
+
+        message("Refreshing materialized views...", "info", room_name)
         PlateDetail.refresh(concurrently=True)
         WellDetail.refresh(concurrently=True)
         ExperimentDetail.refresh(concurrently=True)

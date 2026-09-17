@@ -156,7 +156,7 @@ class M1000Mapper(BaseMapper):
         """
         ["A1", "SM1_1", "15", ""] -> {"position": "A1", "identifier": "SM1_1", "values": [15.0]}.
         Every other column that looks like a number becomes a value. A column
-        that only starts like a number (e.g. "12abc") stops the file, because
+        that only starts like a number (e.g. "12abc") refuses the file, because
         a measurement needs a value.
         """
         values = []
@@ -168,8 +168,7 @@ class M1000Mapper(BaseMapper):
                 if value is None:
                     raise CommandError(
                         f"The value '{part}' of well {parts[position_column]} is not "
-                        "a number. Nothing of this file was stored, and the next "
-                        "files were not mapped."
+                        "a number."
                     )
                 values.append(value)
 
@@ -185,7 +184,7 @@ class M1000Mapper(BaseMapper):
         links the file to the plate with a measurement assignment.
         """
         plate = self.find_or_create_measured_plate(
-            kwargs.get("barcode"),
+            kwargs["barcode"],
             len(data),
             kwargs.get("room_name"),
             kwargs.get("experiment_name"),
@@ -196,9 +195,7 @@ class M1000Mapper(BaseMapper):
             unit="measurement",
             total=len(data),
         ) as progress:
-            assignment = self.create_measurement_assignment(
-                plate, kwargs.get("filename")
-            )
+            assignment = self.create_measurement_assignment(plate, kwargs["filename"])
 
             for entry in data:
                 debug_message(f"Entry: {entry}", kwargs)
@@ -228,4 +225,4 @@ class M1000Mapper(BaseMapper):
         measurement_name = kwargs.get("measurement_name")
         if measurement_name:
             return measurement_name.split(",")[index]
-        return kwargs.get("meta_data")[index].get(META_DATA_LABEL)
+        return kwargs["meta_data"][index].get(META_DATA_LABEL)

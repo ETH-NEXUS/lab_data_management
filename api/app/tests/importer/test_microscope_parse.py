@@ -65,9 +65,9 @@ class MicroscopeParseTest(SimpleTestCase):
     def tearDown(self):
         shutil.rmtree(self.folder)
 
-    def write_txt(self, lines=TXT_LINES):
+    def write_txt(self, lines=TXT_LINES, encoding="utf-8"):
         path = join(self.folder, "241014_125455_241008MP-1_1.txt")
-        with open(path, "w", newline="") as file:
+        with open(path, "w", newline="", encoding=encoding) as file:
             file.write("\r\n".join(lines))
         return path
 
@@ -132,6 +132,20 @@ class MicroscopeParseTest(SimpleTestCase):
 
         data = MicroscopeMapper().parse(path)
 
+        self.assertEqual({"Well": "A1", "Lum": "16727"}, data["results"][0])
+
+    def test_a_txt_file_in_another_encoding_is_read(self):
+        # The reader PC may write Windows-1252, e.g. "µ" in the metadata
+        lines = (
+            TXT_LINES[:2]
+            + ["Plate Type\tCorning 384 µClear 781091"] * 3
+            + TXT_LINES[2:]
+        )
+        path = self.write_txt(lines, encoding="cp1252")
+
+        data = MicroscopeMapper().parse(path)
+
+        self.assertEqual("Corning 384 µClear 781091", data["metadata"]["Plate Type"])
         self.assertEqual({"Well": "A1", "Lum": "16727"}, data["results"][0])
 
     def test_an_xlsx_file_is_read(self):

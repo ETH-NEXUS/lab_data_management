@@ -149,6 +149,67 @@ class BaseMapperRunTest(TestCase):
         for refresh in refreshes:
             refresh.assert_called_once_with(concurrently=True)
 
+    def test_a_file_with_an_error_stores_nothing_and_the_next_file_is_mapped(
+        self, message, *refreshes
+    ):
+        project = Project.objects.create(name="Project")
+        broken = self.write("a.csv")
+        good = self.write("b.csv")
+
+        class FailingMapper(RecordingMapper):
+            def map(self, data, **kwargs):
+                # Something is stored before the error
+                Experiment.objects.create(name=kwargs["filename"], project=project)
+                if kwargs["filename"] == broken:
+                    raise CommandError("Unknown well Z99.")
+                super().map(data, **kwargs)
+
+        mapper = FailingMapper(parse_result=["row"])
+        with mock.patch.object(BaseMapper, "get_files", return_value=[broken, good]):
+            mapper.run("*.csv", room_name="room_1")
+
+        self.assertEqual(
+            [good], list(Experiment.objects.values_list("name", flat=True))
+        )
+        self.assertEqual([good], [kwargs["filename"] for _, kwargs in mapper.map_calls])
+        self.assertEqual(
+            [
+                mock.call(f"Processing file {broken}...", "info", "room_1"),
+                mock.call(
+                    f"{broken} was not mapped, nothing of it was stored: "
+                    "Unknown well Z99.",
+                    "error",
+                    "room_1",
+                ),
+                mock.call(f"Processing file {good}...", "info", "room_1"),
+                mock.call(f"1 of 2 files were not mapped: {broken}", "error", "room_1"),
+                mock.call("Refreshing materialized views...", "info", "room_1"),
+            ],
+            message.call_args_list,
+        )
+        for refresh in refreshes:
+            refresh.assert_called_once_with(concurrently=True)
+
+    def test_an_unexpected_error_in_a_file_is_logged_with_traceback(
+        self, message, *refreshes
+    ):
+        path = self.write("a.csv")
+
+        class BrokenMapper(RecordingMapper):
+            def map(self, data, **kwargs):
+                raise KeyError("DMSO")
+
+        with self.assertLogs("API", level="ERROR") as logs:
+            BrokenMapper(parse_result=["row"]).run(path, room_name="room_1")
+
+        message.assert_any_call(
+            f"{path} was not mapped, nothing of it was stored: KeyError: 'DMSO'",
+            "error",
+            "room_1",
+        )
+        self.assertEqual(f"Mapping {path} failed", logs.records[-1].getMessage())
+        self.assertIsNotNone(logs.records[-1].exc_info)
+
     def test_files_in_sub_folders_are_found(self, message, *refreshes):
         top = self.write("a.csv")
         nested = self.write(join("sub", "b.csv"))

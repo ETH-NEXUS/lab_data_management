@@ -6,7 +6,7 @@ their level. The page asks `long_polling` for the new messages and the status.
 
 Stored messages example:
 [{"level": "info", "text": "Processing file /data/a.csv..."},
- {"level": "error", "text": "Cannot read the measurement date of /data/b.txt ..."}]
+ {"level": "error", "text": "/data/b.txt was not mapped, nothing of it was stored: ..."}]
 """
 
 from django.core.cache import cache

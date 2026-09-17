@@ -18,7 +18,7 @@ from tqdm import tqdm
 
 from core.models import Measurement, Well, WellType
 from helpers.logger import logger
-from importer.mappers.base import BaseMapper
+from importer.mappers.base import BaseMapper, detect_encoding
 from importer.mappers.values import convert_sci_to_float, parse_c10_datetime
 
 # The label of the values of a .txt file that has no header line above its values
@@ -86,7 +86,7 @@ class MicroscopeMapper(BaseMapper):
             results = self.parse_xlsx_results(sheet)
             layout = self.parse_xlsx_layout(sheet)
         elif extension == "txt":
-            with open(file, "r") as content:
+            with open(file, "r", encoding=detect_encoding(file)) as content:
                 lines = [line.strip() for line in content.readlines() if line.strip()]
             metadata = self.parse_txt_metadata(lines)
             results = self.parse_txt_results(lines, measurement_name)
@@ -128,16 +128,14 @@ class MicroscopeMapper(BaseMapper):
         Stores every number of the results as a measurement of its well, sets
         the control well types from the layout, and links the file to the plate.
 
-        A file with an unknown date format stops the mapping before anything
-        of it is stored.
+        A file with an unknown date format is refused before anything of it
+        is stored.
         """
         measured_at = parse_c10_datetime(data["date"], data["time"])
         if measured_at is None:
-            # The map command shows this error on the management page
             raise CommandError(
-                f"Cannot read the measurement date of {kwargs.get('filename')}: "
-                f"date '{data['date']}', time '{data['time']}'. "
-                "Nothing of this file was stored, and the next files were not mapped."
+                f"Cannot read the measurement date: date '{data['date']}', "
+                f"time '{data['time']}'."
             )
 
         plate = self.find_or_create_measured_plate(
@@ -180,7 +178,7 @@ class MicroscopeMapper(BaseMapper):
                     )
                 progress.update(1)
 
-        self.create_measurement_assignment(plate, kwargs.get("filename"))
+        self.create_measurement_assignment(plate, kwargs["filename"])
 
     @staticmethod
     def set_well_type_from_layout(

@@ -176,8 +176,9 @@ class EchoMapTest(TestCase):
             ],
             message.call_args_list,
         )
-        plate_refresh.assert_called_once_with(concurrently=True)
-        well_refresh.assert_called_once_with(concurrently=True)
+        # The views are refreshed once at the end of BaseMapper.run
+        plate_refresh.assert_not_called()
+        well_refresh.assert_not_called()
 
     def test_every_plate_pair_is_mapped_in_the_order_it_appears(
         self, message, *refreshes

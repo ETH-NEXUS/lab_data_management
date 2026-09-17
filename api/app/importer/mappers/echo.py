@@ -15,9 +15,10 @@ from itertools import dropwhile
 from typing import TypedDict, cast
 
 from django.core.files import File
+from django.core.management.base import CommandError
 from tqdm import tqdm
 
-from core.models import Plate, PlateDetail, PlateMapping, WellDetail
+from core.models import Plate, PlateMapping
 from core.utils.plates.mapping import Mapping, MappingList
 from importer.config import Config
 from importer.helper import message
@@ -71,6 +72,16 @@ class EchoTransfer(TypedDict, total=False):
     transfer_status: str  # empty for a transfer that worked
 
 
+def required_xml_attribute(element: ET.Element, name: str) -> str:
+    """The attribute of an XML element, e.g. the source well "n" of a <w> transfer."""
+    value = element.get(name)
+    if value is None:
+        raise CommandError(
+            f"A <{element.tag}> element of the XML report has no '{name}' attribute."
+        )
+    return value
+
+
 def number_or_none(text: str) -> float | None:
     """ "10.184" -> 10.184, and "" or None -> None."""
     return float(text) if text else None
@@ -107,31 +118,44 @@ class EchoMapper(BaseMapper):
         transfer is a <w> element in <printmap>.
         """
         root = ET.parse(file).getroot()
+        plates = root.find(XML_PLATES_ELEMENT)
+        printmap = root.find(XML_TRANSFERS_ELEMENT)
+        if plates is None or printmap is None:
+            raise CommandError(
+                f"The XML file has no <{XML_PLATES_ELEMENT}> or "
+                f"<{XML_TRANSFERS_ELEMENT}>, so it is not an Echo transfer report."
+            )
 
-        source_plate_name = None
+        # Plate names and fill levels may be missing; "" is read like an empty CSV value
+        source_plate_name = ""
         source_plate_barcode = None
-        destination_plate_name = None
+        destination_plate_name = ""
         destination_plate_barcode = None
-        for plate in root.find(XML_PLATES_ELEMENT):
+        for plate in plates:
             if plate.get("type") == XML_SOURCE_PLATE:
-                source_plate_name = plate.get("name")
+                source_plate_name = plate.get("name", "")
                 source_plate_barcode = plate.get("barcode")
             elif plate.get("type") == XML_DESTINATION_PLATE:
-                destination_plate_name = plate.get("name")
+                destination_plate_name = plate.get("name", "")
                 destination_plate_barcode = plate.get("barcode")
+        if source_plate_barcode is None or destination_plate_barcode is None:
+            raise CommandError(
+                f"The <{XML_PLATES_ELEMENT}> of the XML report has no source or "
+                "destination plate barcode."
+            )
 
         transfers = []
-        for well in root.find(XML_TRANSFERS_ELEMENT):
+        for well in printmap:
             transfer: EchoTransfer = {
                 "source_plate_name": source_plate_name,
                 "source_plate_barcode": source_plate_barcode,
                 "destination_plate_name": destination_plate_name,
                 "destination_plate_barcode": destination_plate_barcode,
-                "source_well": well.get(XML_SOURCE_WELL),
-                "destination_well": well.get(XML_DESTINATION_WELL),
-                "actual_volume": well.get(XML_ACTUAL_VOLUME),
-                "current_fluid_volume": well.get(XML_CURRENT_FLUID_VOLUME),
-                "DMSO": well.get(XML_DMSO),
+                "source_well": required_xml_attribute(well, XML_SOURCE_WELL),
+                "destination_well": required_xml_attribute(well, XML_DESTINATION_WELL),
+                "actual_volume": required_xml_attribute(well, XML_ACTUAL_VOLUME),
+                "current_fluid_volume": well.get(XML_CURRENT_FLUID_VOLUME, ""),
+                "DMSO": well.get(XML_DMSO, ""),
                 "transfer_status": "",
             }
             transfers.append(transfer)
@@ -347,7 +371,7 @@ class EchoMapper(BaseMapper):
         is created. Destination plates are not added to the cache.
         """
         if barcode in plates:
-            return plates.get(barcode)
+            return plates[barcode]
         try:
             return Plate.objects.get(barcode=barcode)
         except Plate.DoesNotExist:
@@ -384,7 +408,7 @@ class EchoMapper(BaseMapper):
     def map_plate_pairs(self, plate_pairs: dict, kwargs: dict) -> None:
         """
         Maps every plate pair. The mapping is stored as PlateMapping together
-        with the report file, and the views are refreshed.
+        with the report file. The views are refreshed once at the end of `run`.
 
         Plate.map skips a transfer from a source well that is not in the
         database, so these transfers are reported as a warning.
@@ -419,8 +443,6 @@ class EchoMapper(BaseMapper):
                     "warning",
                     room_name,
                 )
-            PlateDetail.refresh(concurrently=True)
-            WellDetail.refresh(concurrently=True)
 
     @staticmethod
     def missing_source_positions(

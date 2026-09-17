@@ -32,6 +32,10 @@ const createEmptyDirectoryItem = (): FileSystemItem => ({
   children: [],
 })
 
+// The command output is asked for this many times in a row before giving up
+const MAX_FAILED_OUTPUT_REQUESTS = 5
+const FAILED_OUTPUT_REQUEST_DELAY_MS = 1000
+
 export const useManagementStore = defineStore('managementStore', () => {
   const dataDirectory = ref<FileSystemItem>(createEmptyDirectoryItem())
   const selectedPath = ref('')
@@ -178,12 +182,12 @@ export const useManagementStore = defineStore('managementStore', () => {
 
   /**
    * Adds the new output of a command every 300 ms, until the command has
-   * completed or failed.
+   * completed or failed. A failed request is repeated, up to 5 requests in a row.
    *
    * Accepted data example:
    * - `roomName = '12_1726563600000', since = 4` (the first 4 messages are already shown)
    */
-  const pollCommandOutput = async (roomName: string, since: number): Promise<void> => {
+  const pollCommandOutput = async (roomName: string, since: number, failedRequests = 0): Promise<void> => {
     if (roomName !== activeRoomName.value) {
       return
     }
@@ -197,7 +201,17 @@ export const useManagementStore = defineStore('managementStore', () => {
       )
     } catch (err: unknown) {
       console.error(MANAGEMENT_LONG_POLLING_ERROR_MESSAGE, err)
-      commandMessages.value.push({ level: 'error', text: MANAGEMENT_LONG_POLLING_ERROR_MESSAGE })
+      // A short network problem must not stop showing the output, so ask again
+      if (failedRequests + 1 < MAX_FAILED_OUTPUT_REQUESTS) {
+        setTimeout(() => {
+          void pollCommandOutput(roomName, since, failedRequests + 1)
+        }, FAILED_OUTPUT_REQUEST_DELAY_MS)
+        return
+      }
+      commandMessages.value.push({
+        level: 'error',
+        text: `${MANAGEMENT_LONG_POLLING_ERROR_MESSAGE} The command may still be running.`,
+      })
       return
     }
 

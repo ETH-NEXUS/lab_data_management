@@ -5,6 +5,7 @@ Tests for reading Echo transfer reports (CSV) into mapping entries.
 from io import StringIO
 from unittest import mock
 
+from django.core.management.base import CommandError
 from django.test import SimpleTestCase
 
 from importer.mappers import EchoMapper
@@ -110,3 +111,22 @@ class EchoParseTest(SimpleTestCase):
             ],
             entries,
         )
+
+    def test_an_xml_file_that_is_not_a_transfer_report_is_refused(self):
+        report = '<?xml version="1.0"?><report><reportheader/><reportbody/></report>'
+
+        with self.assertRaisesMessage(
+            CommandError,
+            "The XML file has no <plateInfo> or <printmap>, so it is not an Echo "
+            "transfer report.",
+        ):
+            EchoMapper().parse(StringIO(report), xml_file=True)
+
+    def test_an_xml_transfer_without_source_well_is_refused(self):
+        report = XML_REPORT.replace('<w n="A1" ', "<w ")
+
+        with self.assertRaisesMessage(
+            CommandError,
+            "A <w> element of the XML report has no 'n' attribute.",
+        ):
+            EchoMapper().parse(StringIO(report), xml_file=True)

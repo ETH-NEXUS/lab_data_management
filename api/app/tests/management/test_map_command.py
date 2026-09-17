@@ -124,8 +124,8 @@ class MapCommandTest(TestCase):
 
         self.assertFailedWith(
             output,
-            "The value '9x9' of well A2 is not a number. Nothing of this file was "
-            "stored, and the next files were not mapped.",
+            f"{path} was not mapped, nothing of it was stored: The value '9x9' of "
+            "well A2 is not a number.",
         )
         self.assertFalse(Measurement.objects.exists())
 

@@ -169,8 +169,7 @@ class MicroscopeMapTest(TestCase):
     def test_an_unknown_date_stops_before_anything_is_stored(self):
         with self.assertRaisesMessage(
             CommandError,
-            f"Cannot read the measurement date of {self.filename}: "
-            "date '14.10.2024', time '12:45:28'.",
+            "Cannot read the measurement date: date '14.10.2024', time '12:45:28'.",
         ):
             self.run_map(
                 [{"Well": "A1", "Lum": "1"}], date="14.10.2024", time="12:45:28"
