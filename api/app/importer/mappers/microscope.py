@@ -19,9 +19,9 @@ from core.models import Measurement, Well, WellType
 from helpers.logger import logger
 from importer.helper import message
 from importer.mappers.base import BaseMapper
-from importer.mappers.values import convert_sci_to_float, convert_string_to_datetime
+from importer.mappers.values import convert_sci_to_float, parse_c10_datetime
 
-# The name of the value column of a .txt file when no measurement name is given
+# The label of the values of a .txt file that has no header line above its values
 DEFAULT_MEASUREMENT_NAME = "Lum"
 
 # Only this many rows at the top of an .xlsx sheet are read as metadata
@@ -79,7 +79,8 @@ class MicroscopeMapper(BaseMapper):
         date, time, barcode, extension = self.file_name_parts(
             file, kwargs.get("room_name")
         )
-        measurement_name = kwargs.get("measurement_name", DEFAULT_MEASUREMENT_NAME)
+        # None or "" when no name is given on the management page
+        measurement_name = kwargs.get("measurement_name")
 
         if extension == "xlsx":
             sheet = load_workbook(file).active
@@ -132,14 +133,25 @@ class MicroscopeMapper(BaseMapper):
         """
         Stores every number of the results as a measurement of its well, sets
         the control well types from the layout, and links the file to the plate.
+
+        A file with an unknown date format stops the mapping before anything
+        of it is stored.
         """
+        measured_at = parse_c10_datetime(data["date"], data["time"])
+        if measured_at is None:
+            # The map command shows this error on the management page
+            raise ValueError(
+                f"Cannot read the measurement date of {kwargs.get('filename')}: "
+                f"date '{data['date']}', time '{data['time']}'. "
+                "Nothing of this file was stored, and the next files were not mapped."
+            )
+
         plate = self.find_or_create_measured_plate(
             data["barcode"],
             len(data["results"]),
             kwargs.get("room_name"),
             kwargs.get("experiment_name"),
         )
-        measured_at = convert_string_to_datetime(data["date"], data["time"])
 
         with tqdm(
             desc="Processing microscope output",
@@ -303,12 +315,15 @@ class MicroscopeMapper(BaseMapper):
         return metadata
 
     @staticmethod
-    def parse_txt_results(lines: list[str], measurement_name: str) -> list[dict]:
+    def parse_txt_results(lines: list[str], measurement_name: str | None) -> list[dict]:
         """
-        The "Well<TAB>Value" lines after "Results".
+        The "Well<TAB>Value" lines after "Results". The values are labeled with
+        the given measurement name, or else with the name in the header line
+        ("Well<TAB>Lum").
 
         Example: [{"Well": "A1", "Lum": "16727"}]
         """
+        label = measurement_name or DEFAULT_MEASUREMENT_NAME
         results = []
         in_results = False
         for line in lines:
@@ -325,8 +340,8 @@ class MicroscopeMapper(BaseMapper):
             well_name, value = parts
             # The header line of the table
             if well_name.strip() == WELL_COLUMN:
+                if not measurement_name and value.strip():
+                    label = value.strip()
                 continue
-            results.append(
-                {WELL_COLUMN: well_name.strip(), measurement_name: value.strip()}
-            )
+            results.append({WELL_COLUMN: well_name.strip(), label: value.strip()})
         return results

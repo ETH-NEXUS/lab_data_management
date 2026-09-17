@@ -14,7 +14,7 @@ export type ManagementCommandConfig = {
  * Form fields for the "map" command.
  *
  * Accepted data example:
- * - `{ machine: 'echo', path: '/data/mappings', mapping_file: 'headers.yml', experiment_name: 'Run 2026-03', measurement_name: 'Label1' }`
+ * - `{ machine: 'echo', path: '/data/mappings', mapping_file: 'headers.yml', experiment_name: 'Run 2026-03', measurement_name: 'Lum' }`
  */
 export const mapCommandOptions: Options = {
   machine: {
@@ -40,7 +40,7 @@ export const mapCommandOptions: Options = {
   },
   measurement_name: {
     type: 'str',
-    label: 'Measurement name. If empty, default "Label1" is used.',
+    label: 'Measurement name. If empty, the name from the file is used (e.g. "Lum").',
     required: false,
   },
 }

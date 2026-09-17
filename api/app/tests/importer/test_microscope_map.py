@@ -8,7 +8,6 @@ from datetime import datetime
 from os.path import join
 from unittest import mock
 
-from django.db import IntegrityError, transaction
 from django.test import TestCase, override_settings
 
 from core.models import (
@@ -50,24 +49,17 @@ class MicroscopeMapTest(TestCase):
             patcher.start()
             self.addCleanup(patcher.stop)
 
-        # The date conversion has its own tests; here it only has to be called
-        # with the date and time of the file.
-        patcher = mock.patch(
-            "importer.mappers.microscope.convert_string_to_datetime",
-            return_value="2024-10-14T12:54:55",
-        )
-        self.convert_date = patcher.start()
-        self.addCleanup(patcher.stop)
-
     def tearDown(self):
         shutil.rmtree(self.folder)
 
-    def run_map(self, results, layout=None, barcode="241008MP-1_1"):
+    def run_map(
+        self, results, layout=None, barcode="241008MP-1_1", date="241014", time="125455"
+    ):
         data = {
             "metadata": {},
             "results": results,
-            "date": "241014",
-            "time": "125455",
+            "date": date,
+            "time": time,
             "barcode": barcode,
             "layout": layout if layout is not None else {},
         }
@@ -104,7 +96,6 @@ class MicroscopeMapTest(TestCase):
         self.assertEqual(
             [0, 1, 2, 24], sorted(plate.wells.values_list("position", flat=True))
         )
-        self.convert_date.assert_called_once_with("241014", "125455")
         for measurement in Measurement.objects.all():
             self.assertEqual(
                 datetime(2024, 10, 14, 12, 54, 55), measurement.measured_at
@@ -180,14 +171,19 @@ class MicroscopeMapTest(TestCase):
         )
         self.assertEqual(3, Measurement.objects.count())
 
-    def test_a_value_without_label_cannot_be_stored(self):
-        # Current behavior (see plan.md, stage 3): a txt file mapped with
-        # measurement_name=None has the key None, and the label must not be null.
-        Plate.objects.create(barcode="241008MP-1_1", dimension=self.dimension)
+    def test_an_unknown_date_stops_before_anything_is_stored(self):
+        with self.assertRaisesMessage(
+            ValueError,
+            f"Cannot read the measurement date of {self.filename}: "
+            "date '14.10.2024', time '12:45:28'.",
+        ):
+            self.run_map(
+                [{"Well": "A1", "Lum": "1"}], date="14.10.2024", time="12:45:28"
+            )
 
-        with self.assertRaises(IntegrityError):
-            with transaction.atomic():
-                self.run_map([{"Well": "A1", None: "16727"}])
+        self.assertFalse(Plate.objects.exists())
+        self.assertFalse(Measurement.objects.exists())
+        self.assertFalse(MeasurementAssignment.objects.exists())
 
     def test_mapping_the_same_results_again_keeps_one_measurement_per_label(self):
         Plate.objects.create(barcode="241008MP-1_1", dimension=self.dimension)

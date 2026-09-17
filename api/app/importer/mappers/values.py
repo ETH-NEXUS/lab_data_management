@@ -2,30 +2,36 @@
 Small value conversions used by the mappers.
 """
 
-from datetime import datetime as dt
-from datetime import timezone
+import re
+from datetime import datetime
 
 from helpers.logger import logger
 
-GLOBAL_NOW = dt.now(timezone.utc)
+# The date and time formats of C10 files, found by their shape.
+# Example: "10/14/2024 12:45:28" in a .txt file, "241014 125455" in a file name.
+C10_DATETIME_FORMATS = {
+    r"\d{1,2}/\d{1,2}/\d{4} \d{1,2}:\d{2}:\d{2}": "%m/%d/%Y %H:%M:%S",
+    r"\d{6} \d{6}": "%y%m%d %H%M%S",
+    r"\d{8} \d{6}": "%Y%m%d %H%M%S",
+}
 
 
-def convert_string_to_datetime(date_str, time_str):
-    try:
-        formatted_date_str = f"{date_str[:4]}-{date_str[4:6]}-{date_str[6:]}"
-        formatted_time_str = f"{time_str[:2]}:{time_str[2:4]}:{time_str[4:]}"
-        combined_str = f"{formatted_date_str} {formatted_time_str}"
-        datetime_obj = dt.strptime(combined_str, "%Y-%m-%d %H:%M:%S")
+def parse_c10_datetime(date: str, time: str) -> datetime | None:
+    """
+    ("10/14/2024", "12:45:28") -> datetime(2024, 10, 14, 12, 45, 28).
 
-        datetime_obj = datetime_obj.replace(tzinfo=timezone.utc)
-
-        return datetime_obj.isoformat()
-    except ValueError as e:
-
-        logger.warning(
-            f"Cannot convert {date_str} {time_str} to datetime: {e}. The current time will be used instead."
-        )
-        return GLOBAL_NOW.isoformat()
+    The result has no time zone: it is the local time of the instrument, like
+    the other measurement dates. None if the date or time has an unknown format.
+    """
+    text = f"{date} {time}"
+    for shape, date_format in C10_DATETIME_FORMATS.items():
+        if re.fullmatch(shape, text):
+            try:
+                return datetime.strptime(text, date_format)
+            except ValueError:
+                # The right shape, but not a real date, e.g. "13/45/2024"
+                return None
+    return None
 
 
 def convert_sci_to_float(sci_str):

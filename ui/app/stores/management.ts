@@ -191,8 +191,8 @@ export const useManagementStore = defineStore('managementStore', () => {
     let response: LongPollingResponse
     try {
       response = await requestApiData<LongPollingResponse>(
-        `${MANAGEMENT_LONG_POLLING_ENDPOINT}${roomName}/?since=${since}`,
-        { method: 'GET' },
+        `${MANAGEMENT_LONG_POLLING_ENDPOINT}${roomName}/`,
+        { method: 'GET', params: { since: String(since) } },
         MANAGEMENT_LONG_POLLING_ERROR_MESSAGE,
       )
     } catch (err: unknown) {

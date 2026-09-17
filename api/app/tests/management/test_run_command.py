@@ -4,18 +4,39 @@ Tests for running a command from the management page and reading its output.
 
 import shutil
 import tempfile
+from datetime import datetime
+from os.path import join
 
 from django.core.cache import cache
-from django.test import TestCase
+from django.test import TestCase, override_settings
 from django.urls import reverse
+
+from core.models import Experiment, Measurement, Project
+
+# A shortened C10 reader file; the header line names the values "Lum"
+C10_TXT = "\r\n".join(
+    [
+        "Plate Number\tPlate 1",
+        "Date\t{date}",
+        "Time\t12:45:28",
+        "Results",
+        "Well\tLum",
+        "A1\t16727",
+        "A2\t1.5E+03",
+        "",
+    ]
+)
 
 
 class RunCommandTest(TestCase):
-    fixtures = ["plate_dimensions"]
+    fixtures = ["plate_dimensions", "well_types"]
 
     def setUp(self):
         cache.clear()
         self.folder = tempfile.mkdtemp()
+        media = override_settings(MEDIA_ROOT=join(self.folder, "media"))
+        media.enable()
+        self.addCleanup(media.disable)
 
     def tearDown(self):
         shutil.rmtree(self.folder)
@@ -83,3 +104,49 @@ class RunCommandTest(TestCase):
         self.assertEqual(
             {"messages": [], "next": 0, "status": None}, self.read_output()
         )
+
+    def write_c10_file(self, date):
+        path = join(self.folder, "241014_125455_241008MP-1_1.txt")
+        with open(path, "w", newline="") as file:
+            file.write(C10_TXT.format(date=date))
+        return path
+
+    def test_c10_values_without_measurement_name_are_labeled_from_the_file(self):
+        project = Project.objects.create(name="Project")
+        Experiment.objects.create(name="Experiment", project=project)
+        self.write_c10_file(date="10/14/2024")
+
+        self.run_map(machine="C10-reader", experiment_name="Experiment")
+
+        self.assertEqual("completed", self.read_output()["status"])
+        self.assertEqual(
+            [
+                ("Lum", 16727.0, datetime(2024, 10, 14, 12, 45, 28)),
+                ("Lum", 1500.0, datetime(2024, 10, 14, 12, 45, 28)),
+            ],
+            list(
+                Measurement.objects.order_by("well__position").values_list(
+                    "label", "value", "measured_at"
+                )
+            ),
+        )
+
+    def test_a_c10_file_with_an_unknown_date_shows_the_error(self):
+        project = Project.objects.create(name="Project")
+        Experiment.objects.create(name="Experiment", project=project)
+        path = self.write_c10_file(date="14.10.2024")
+
+        self.run_map(machine="C10-reader", experiment_name="Experiment")
+
+        output = self.read_output()
+        self.assertEqual("failed", output["status"])
+        self.assertIn(
+            {
+                "level": "error",
+                "text": f"Error: Cannot read the measurement date of {path}: "
+                "date '14.10.2024', time '12:45:28'. Nothing of this file was "
+                "stored, and the next files were not mapped.",
+            },
+            output["messages"],
+        )
+        self.assertFalse(Measurement.objects.exists())

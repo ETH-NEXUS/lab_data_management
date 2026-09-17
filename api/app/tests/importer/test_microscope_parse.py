@@ -64,10 +64,10 @@ class MicroscopeParseTest(SimpleTestCase):
     def tearDown(self):
         shutil.rmtree(self.folder)
 
-    def write_txt(self):
+    def write_txt(self, lines=TXT_LINES):
         path = join(self.folder, "241014_125455_241008MP-1_1.txt")
         with open(path, "w", newline="") as file:
-            file.write("\r\n".join(TXT_LINES))
+            file.write("\r\n".join(lines))
         return path
 
     def write_xlsx(self):
@@ -115,12 +115,23 @@ class MicroscopeParseTest(SimpleTestCase):
 
         self.assertEqual({"Well": "A1", "Label1": "16727"}, data["results"][0])
 
-    def test_a_txt_file_with_measurement_name_none_labels_the_values_none(self):
-        # Current behavior: `map` passes measurement_name=None when no name is
-        # given, and then the values are stored under the key None.
-        data = MicroscopeMapper().parse(self.write_txt(), measurement_name=None)
+    def test_without_measurement_name_the_values_get_the_name_of_the_header(self):
+        lines = [line.replace("Well\tLum", "Well\tLuminescence") for line in TXT_LINES]
+        path = self.write_txt(lines)
 
-        self.assertEqual({"Well": "A1", None: "16727"}, data["results"][0])
+        # The management page sends "" and the command None, when no name is given
+        for measurement_name in (None, ""):
+            data = MicroscopeMapper().parse(path, measurement_name=measurement_name)
+            self.assertEqual(
+                {"Well": "A1", "Luminescence": "16727"}, data["results"][0]
+            )
+
+    def test_without_measurement_name_and_header_the_values_are_labeled_lum(self):
+        path = self.write_txt([line for line in TXT_LINES if line != "Well\tLum"])
+
+        data = MicroscopeMapper().parse(path)
+
+        self.assertEqual({"Well": "A1", "Lum": "16727"}, data["results"][0])
 
     def test_an_xlsx_file_is_read(self):
         data = MicroscopeMapper().parse(self.write_xlsx())
