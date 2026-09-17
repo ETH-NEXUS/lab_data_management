@@ -8,6 +8,7 @@ from importlib import import_module
 from os.path import join
 from unittest import mock
 
+from django.contrib.auth.models import User
 from django.core.cache import cache
 from django.test import TestCase
 from django.urls import reverse
@@ -31,6 +32,7 @@ class ImportCommandTest(TestCase):
 
     def setUp(self):
         cache.clear()
+        self.client.force_login(User.objects.create_user("tester"))
         self.folder = tempfile.mkdtemp()
 
     def tearDown(self):

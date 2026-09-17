@@ -8,6 +8,7 @@ from datetime import datetime
 from os.path import join
 from unittest import mock
 
+from django.contrib.auth.models import User
 from django.core.cache import cache
 from django.test import TestCase, override_settings
 from django.urls import reverse
@@ -34,6 +35,7 @@ class RunCommandTest(TestCase):
 
     def setUp(self):
         cache.clear()
+        self.client.force_login(User.objects.create_user("tester"))
         self.folder = tempfile.mkdtemp()
         media = override_settings(MEDIA_ROOT=join(self.folder, "media"))
         media.enable()
