@@ -68,7 +68,7 @@ class BaseMapper:
         """All files that match the pattern; "**" also looks into sub folders."""
         return glob(glob_pattern, recursive=True)
 
-    def run(self, glob_pattern, **kwargs):
+    def run(self, glob_pattern: str, **kwargs) -> None:
         """
         Parses and maps every file that matches the pattern, then refreshes
         the materialized views once.
@@ -119,7 +119,9 @@ class BaseMapper:
     def map(self, data: list[dict], **kwargs) -> None:
         raise NotImplementedError
 
-    def create_measurement_assignment(self, plate, filename):
+    def create_measurement_assignment(
+        self, plate: Plate, filename: str
+    ) -> MeasurementAssignment:
         """Links the measurement file to the plate, with status "success"."""
         with open(filename, "rb") as file:
             assignment, _ = MeasurementAssignment.objects.update_or_create(
@@ -136,9 +138,9 @@ class BaseMapper:
         plate_type: str,
         barcode: str,
         source_plate_name: str,
-        room_name=None,
-        experiment_name: str = None,
-    ):
+        room_name: str | None = None,
+        experiment_name: str | None = None,
+    ) -> Plate:
         """
         Creates a plate that is not in the database yet.
 
@@ -178,7 +180,7 @@ class BaseMapper:
         )
 
     def get_or_create_barcode_specification(
-        self, barcode: str, experiment_name: str
+        self, barcode: str, experiment_name: str | None
     ) -> BarcodeSpecification:
         """
         The barcode specification of the barcode prefix in the experiment, with
@@ -194,7 +196,11 @@ class BaseMapper:
         return barcode_specification
 
     def find_or_create_measured_plate(
-        self, barcode: str, number_of_wells: int, room_name, experiment_name: str
+        self,
+        barcode: str,
+        number_of_wells: int,
+        room_name: str | None,
+        experiment_name: str | None,
     ) -> Plate:
         """
         The plate of a measurement file. A missing plate is created for the
@@ -219,8 +225,12 @@ class BaseMapper:
             )
 
     def get_plate_dimension(
-        self, plate_name: str, plate_type: str, source_plate_name, room_name
-    ):
+        self,
+        plate_name: str,
+        plate_type: str,
+        source_plate_name: str,
+        room_name: str | None,
+    ) -> PlateDimension:
         """
         The plate dimension for the well count found in the plate names,
         e.g. "Greiner_384PS_781904" -> the dimension with 16 rows and 24 columns.

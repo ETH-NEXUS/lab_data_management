@@ -10,6 +10,7 @@ import os
 import re
 from datetime import datetime as dt
 from io import TextIOWrapper
+from typing import TypedDict
 
 from django.utils import timezone as tz
 from tqdm import tqdm
@@ -18,6 +19,17 @@ from core.models import MappingError, Measurement
 from importer.helper import message
 from importer.mappers.base import BaseMapper
 from importer.mappers.values import convert_sci_to_float
+
+# In the footer, the key that names a measured label
+META_DATA_LABEL = "Label"
+
+
+class M1000Entry(TypedDict):
+    """One value line of an .asc file."""
+
+    position: str  # the well, e.g. "A1"
+    identifier: str  # e.g. "SM1_1"
+    values: list[float | None]  # one value per measured label, e.g. [15.0]
 
 
 def debug_message(text: str, kwargs: dict) -> None:
@@ -49,7 +61,7 @@ class M1000Mapper(BaseMapper):
     # Footer: a label setting, indented by four spaces, e.g. "    Label: Label1"
     RE_META_DATA = r"^    (?P<key>[^:]+): (?P<value>.+)$"
 
-    def determine_indexes(self, file: TextIOWrapper):
+    def determine_indexes(self, file: TextIOWrapper) -> tuple[int, int]:
         """
         Finds the column of the position and the column of the identifier; the
         other columns are values. Returns e.g. (0, 1) for "A1<TAB>SM1_1<TAB>15".
@@ -75,7 +87,7 @@ class M1000Mapper(BaseMapper):
         file.seek(0)
         raise MappingError(f"File has not the desired format: {file.name}")
 
-    def parse(self, file: TextIOWrapper, **kwargs) -> tuple[list[dict], dict]:
+    def parse(self, file: TextIOWrapper, **kwargs) -> tuple[list[M1000Entry], dict]:
         """
         Reads the value lines and the footer.
 
@@ -139,7 +151,7 @@ class M1000Mapper(BaseMapper):
 
     def read_value_line(
         self, parts: list[str], position_column: int, identifier_column: int
-    ) -> dict:
+    ) -> M1000Entry:
         """
         ["A1", "SM1_1", "15", ""] -> {"position": "A1", "identifier": "SM1_1", "values": [15.0]}.
         Every other column that looks like a number becomes a value.
@@ -157,7 +169,7 @@ class M1000Mapper(BaseMapper):
             "values": values,
         }
 
-    def map(self, data: list[dict], **kwargs) -> None:
+    def map(self, data: list[M1000Entry], **kwargs) -> None:
         """
         Stores every value of every entry as a measurement of its well, and
         links the file to the plate with a measurement assignment.
@@ -206,4 +218,4 @@ class M1000Mapper(BaseMapper):
         if kwargs.get("measurement_name"):
             measurement_names = kwargs.get("measurement_name").split(",")
             return measurement_names[index]
-        return kwargs.get("meta_data")[index].get("Label")
+        return kwargs.get("meta_data")[index].get(META_DATA_LABEL)

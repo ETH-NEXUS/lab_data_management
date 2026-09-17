@@ -12,6 +12,7 @@ import os
 import xml.etree.ElementTree as ET
 from io import TextIOWrapper
 from itertools import dropwhile
+from typing import TypedDict
 
 from django.core.files import File
 from tqdm import tqdm
@@ -37,6 +38,40 @@ REQUIRED_COLUMNS = (
 # many times, at the end of `map`.
 MAX_QUEUE_RETRIES = 3
 
+# Names in the Echo XML export. They are set by the Echo software.
+XML_PLATES_ELEMENT = "plateInfo"
+XML_TRANSFERS_ELEMENT = "printmap"
+XML_SOURCE_PLATE = "source"
+XML_DESTINATION_PLATE = "destination"
+# Our key -> the attribute of a <w> transfer element in <printmap>
+XML_TRANSFER_ATTRIBUTES = {
+    "source_well": "n",
+    "destination_well": "dn",
+    "actual_volume": "vl",
+    "current_fluid_volume": "cvl",
+    "DMSO": "fc",
+}
+
+
+class EchoTransfer(TypedDict, total=False):
+    """
+    One transfer of an Echo report. All values are text, as in the report.
+    Keys that a report does not have are missing.
+    """
+
+    source_plate_name: str  # the plate type, e.g. "384LDV_DMSO"
+    source_plate_barcode: str  # e.g. "Drug08_J"
+    source_plate_type: str  # only in CSV reports
+    source_well: str  # e.g. "L11"
+    destination_plate_name: str  # the plate type, e.g. "Greiner_384PS_781904"
+    destination_plate_barcode: str  # e.g. "2026Wagner12"
+    destination_plate_type: str  # not in every report
+    destination_well: str  # e.g. "L11"
+    actual_volume: str  # transferred volume in nL, e.g. "10"
+    current_fluid_volume: str  # volume left in the source well in µL, e.g. "10.184"
+    DMSO: str  # DMSO in the source well in %, e.g. "98.744" or "98.7%"
+    transfer_status: str  # empty for a transfer that worked
+
 
 def number_or_none(text: str) -> float | None:
     """ "10.184" -> 10.184, and "" or None -> None."""
@@ -51,7 +86,7 @@ def percent_or_none(text: str) -> float | None:
 class EchoMapper(BaseMapper):
     DEFAULT_COLUMNS = Config.current.importer.echo.default.columns
 
-    def parse(self, file: TextIOWrapper, **kwargs) -> list[dict]:
+    def parse(self, file: TextIOWrapper, **kwargs) -> list[EchoTransfer]:
         """
         Reads an Echo report into a list of transfers.
 
@@ -68,7 +103,7 @@ class EchoMapper(BaseMapper):
         headers = kwargs.get("headers", EchoMapper.DEFAULT_COLUMNS)
         return self.parse_csv(file, headers, kwargs.get("room_name"))
 
-    def parse_xml(self, file: TextIOWrapper) -> list[dict]:
+    def parse_xml(self, file: TextIOWrapper) -> list[EchoTransfer]:
         """
         An XML report names the two plates once in <plateInfo>, and every
         transfer is a <w> element in <printmap>.
@@ -79,33 +114,31 @@ class EchoMapper(BaseMapper):
         source_plate_barcode = None
         destination_plate_name = None
         destination_plate_barcode = None
-        for plate in root.find("plateInfo"):
-            if plate.get("type") == "source":
+        for plate in root.find(XML_PLATES_ELEMENT):
+            if plate.get("type") == XML_SOURCE_PLATE:
                 source_plate_name = plate.get("name")
                 source_plate_barcode = plate.get("barcode")
-            elif plate.get("type") == "destination":
+            elif plate.get("type") == XML_DESTINATION_PLATE:
                 destination_plate_name = plate.get("name")
                 destination_plate_barcode = plate.get("barcode")
 
         transfers = []
-        for well in root.find("printmap"):
-            transfers.append(
-                {
-                    "source_plate_name": source_plate_name,
-                    "source_plate_barcode": source_plate_barcode,
-                    "destination_plate_name": destination_plate_name,
-                    "destination_plate_barcode": destination_plate_barcode,
-                    "source_well": well.get("n"),
-                    "destination_well": well.get("dn"),
-                    "actual_volume": well.get("vl"),
-                    "current_fluid_volume": well.get("cvl"),
-                    "DMSO": well.get("fc"),
-                    "transfer_status": "",
-                }
-            )
+        for well in root.find(XML_TRANSFERS_ELEMENT):
+            transfer = {
+                "source_plate_name": source_plate_name,
+                "source_plate_barcode": source_plate_barcode,
+                "destination_plate_name": destination_plate_name,
+                "destination_plate_barcode": destination_plate_barcode,
+            }
+            for key, attribute in XML_TRANSFER_ATTRIBUTES.items():
+                transfer[key] = well.get(attribute)
+            transfer["transfer_status"] = ""
+            transfers.append(transfer)
         return transfers
 
-    def parse_csv(self, file: TextIOWrapper, headers: dict, room_name) -> list[dict]:
+    def parse_csv(
+        self, file: TextIOWrapper, headers: dict, room_name: str | None
+    ) -> list[EchoTransfer]:
         """
         headers maps our keys to the column names of the report,
         e.g. {"source_well": "Source Well", "DMSO": "% DMSO", ...}.
@@ -167,7 +200,7 @@ class EchoMapper(BaseMapper):
         return True
 
     @staticmethod
-    def rename_columns(row: dict, headers: dict) -> dict:
+    def rename_columns(row: dict, headers: dict) -> EchoTransfer:
         """
         {"Source Well": "A3", ...} -> {"source_well": "A3", ...}.
         Columns that the report does not have are left out.
@@ -191,7 +224,7 @@ class EchoMapper(BaseMapper):
         )
         return f"{source} -> {destination} ({', '.join(empty_columns)} empty)"
 
-    def map(self, data: list[dict], **kwargs) -> None:
+    def map(self, data: list[EchoTransfer], **kwargs) -> None:
         """
         Groups the transfers by (source plate, destination plate), maps every
         group with Plate.map and stores the report file with the plate mapping.
@@ -266,7 +299,9 @@ class EchoMapper(BaseMapper):
             kwargs.update({"try_queue": retries + 1})
             self.map(queue, **kwargs)
 
-    def find_source_plate(self, barcode: str, plates: dict, room_name) -> Plate | None:
+    def find_source_plate(
+        self, barcode: str, plates: dict, room_name: str | None
+    ) -> Plate | None:
         """
         The source plate from the cache or the database, or None (with a
         warning) if it does not exist.
@@ -295,8 +330,8 @@ class EchoMapper(BaseMapper):
         plate_type: str,
         source_plate_name: str,
         plates: dict,
-        room_name,
-        experiment_name: str,
+        room_name: str | None,
+        experiment_name: str | None,
     ) -> Plate:
         """
         The destination plate from the cache or the database. A missing plate
@@ -319,7 +354,7 @@ class EchoMapper(BaseMapper):
 
     @staticmethod
     def build_mapping(
-        transfer: dict,
+        transfer: EchoTransfer,
         source_plate: Plate,
         destination_plate: Plate,
         current_amount: float | None,
