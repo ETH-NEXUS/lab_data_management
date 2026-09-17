@@ -1,4 +1,5 @@
 from django.core.management.base import BaseCommand, CommandError
+from django.db import transaction
 from os.path import isfile
 from compoundlib.models import Compound, CompoundLibrary
 from core.models import Plate, Well, PlateDimension, WellCompound, WellType, Project
@@ -23,6 +24,20 @@ from rdkit import Chem
 # Excel saves CSV files with an invisible BOM character at the start. "utf-8-sig"
 # removes it, so the first compound name is not read as "\ufeffDMSO".
 CSV_ENCODING = "utf-8-sig"
+
+
+def well_type_by_name(name: str, well_name: str) -> WellType:
+    """The well type with this name, e.g. "R10"; an unknown name stops the import."""
+    try:
+        return WellType.by_name(name)
+    except WellType.DoesNotExist:
+        known_names = ", ".join(
+            WellType.objects.order_by("id").values_list("name", flat=True)
+        )
+        raise CommandError(
+            f"Unknown well type '{name}' in well {well_name}. "
+            f"Known well types: {known_names}."
+        )
 
 
 def full_strip(s: str):
@@ -406,7 +421,7 @@ class Command(BaseCommand):
                 _compound = full_strip(content)
                 if _type != "null" and _compound != "null":
                     well = plate.well_at(pos, create_if_not_exist=True)
-                    well_type = WellType.by_name(_type)
+                    well_type = well_type_by_name(_type, dimension.hr_position(pos))
                     well.type = well_type
                     filtered_compounds = Compound.objects.filter(name=_compound)
                     if len(filtered_compounds) > 0:
@@ -431,16 +446,21 @@ class Command(BaseCommand):
         room_name: str = None,
     ):
         if isfile(input_file):
-            well_types = []
-            num_rows = 0
-            num_cols = 0
+            # One row of the plate per line, one well type per cell, e.g. "C<TAB>R10<TAB>P1"
             with open(input_file, "r", encoding=CSV_ENCODING) as file:
                 message("Reading template file...", "info", room_name)
-                reader = csv.reader(file, delimiter="\t")
-                for row in reader:
-                    well_types += row
-                    num_rows += 1
-                num_cols = len(row)
+                rows = list(csv.reader(file, delimiter="\t"))
+            if not rows:
+                raise CommandError(f"The template file {input_file} is empty.")
+            num_rows = len(rows)
+            num_cols = len(rows[0])
+            for row_number, row in enumerate(rows, start=1):
+                if len(row) != num_cols:
+                    raise CommandError(
+                        f"Row {row_number} of the template file has {len(row)} cells, "
+                        f"but row 1 has {num_cols}."
+                    )
+            well_types = [cell for row in rows for cell in row]
 
             dimension, _ = PlateDimension.objects.get_or_create(
                 rows=num_rows,
@@ -467,10 +487,14 @@ class Command(BaseCommand):
                 unit="wells",
                 total=len(well_types),
             ) as pbar:
-                for pos, type in enumerate(well_types):
+                for pos, type_name in enumerate(well_types):
+                    well_name = dimension.hr_position(pos)
+                    if not type_name.strip():
+                        raise CommandError(
+                            f"Well {well_name} has no well type in the template file."
+                        )
                     well = plate.well_at(pos, create_if_not_exist=True)
-                    well_type = WellType.by_name(type[0])
-                    well.type = well_type
+                    well.type = well_type_by_name(type_name.strip(), well_name)
                     well.save()
                     pbar.update(1)
             message(
@@ -480,64 +504,70 @@ class Command(BaseCommand):
         else:
             message(f"File does not exist: {input_file}", "error", room_name)
 
-    def handle(self, *args, **options):
+    def import_file(self, options: dict) -> bool:
+        """Imports the file of the command; True if something was imported."""
+        imported = False
+        if options.get("what") == "sdf":
+            mapping = SdfMapping(options.get("mapping_file"))
+            self.sdf(
+                options.get("input_file"),
+                mapping,
+                library_name=options.get("library_name"),
+                number_of_rows=options.get("number_of_rows"),
+                number_of_columns=options.get("number_of_columns"),
+                number_of_wells=options.get("number_of_wells"),
+                room_name=options.get("room_name"),
+            )
+            imported = True
+        elif options.get("what") == "template":
+            self.template(
+                options.get("input_file"),
+                category_name=options.get("category_name"),
+                template_name=options.get("template_name"),
+                room_name=options.get("room_name"),
+            )
+            imported = True
+        elif options.get("what") == "library_plate":
+            if not (options.get("plate_barcode")):
+                raise CommandError(
+                    "Please specify plate_barcode when importing a library plate."
+                )
+            else:
+                # check if a plate with given barcode already exists
 
-        try:
-            imported = False
-            if options.get("what") == "sdf":
-                mapping = SdfMapping(options.get("mapping_file"))
-                self.sdf(
-                    options.get("input_file"),
-                    mapping,
-                    library_name=options.get("library_name"),
-                    number_of_rows=options.get("number_of_rows"),
-                    number_of_columns=options.get("number_of_columns"),
-                    number_of_wells=options.get("number_of_wells"),
-                    room_name=options.get("room_name"),
+                plate_with_given_barcode = Plate.objects.filter(
+                    barcode=options.get("plate_barcode")
                 )
-                imported = True
-            elif options.get("what") == "template":
-                self.template(
-                    options.get("input_file"),
-                    category_name=options.get("category_name"),
-                    template_name=options.get("template_name"),
-                    room_name=options.get("room_name"),
-                )
-                imported = True
-            elif options.get("what") == "library_plate":
-                if not (options.get("plate_barcode")):
+                if plate_with_given_barcode:
                     raise CommandError(
-                        "Please specify plate_barcode when importing a library plate."
+                        f"Plate with barcode {options.get('plate_barcode')} already exists."
                     )
-                else:
-                    # check if a plate with given barcode already exists
 
-                    plate_with_given_barcode = Plate.objects.filter(
-                        barcode=options.get("plate_barcode")
-                    )
-                    if plate_with_given_barcode:
-                        raise CommandError(
-                            f"Plate with barcode {options.get('plate_barcode')} already exists."
-                        )
-
-                    self.library_plate(
-                        options.get("input_file"),
-                        library_name=options.get("library_name"),
-                        plate_barcode=options.get("plate_barcode"),
-                        room_name=options.get("room_name"),
-                        is_control_plate=options.get("is_control_plate"),
-                        project_name=options.get("project_name"),
-                    )
-                    imported = True
-
-            if imported:
-                message(
-                    "Refreshing materialized views...", "info", options.get("room_name")
+                self.library_plate(
+                    options.get("input_file"),
+                    library_name=options.get("library_name"),
+                    plate_barcode=options.get("plate_barcode"),
+                    room_name=options.get("room_name"),
+                    is_control_plate=options.get("is_control_plate"),
+                    project_name=options.get("project_name"),
                 )
-                PlateDetail.refresh(concurrently=True)
-                WellDetail.refresh(concurrently=True)
+                imported = True
+        return imported
 
+    def handle(self, *args, **options):
+        room_name = options.get("room_name")
+        try:
+            # One import is saved as a whole: after an error nothing of it is stored
+            with transaction.atomic():
+                imported = self.import_file(options)
         except Exception as error:
-            message(error_text(error), "error", options.get("room_name"))
+            message(error_text(error), "error", room_name)
+            message("Nothing of this import was stored.", "warning", room_name)
             if not isinstance(error, CommandError):
                 logger.exception(f"Command import {options.get('what')} failed")
+            return
+
+        if imported:
+            message("Refreshing materialized views...", "info", room_name)
+            PlateDetail.refresh(concurrently=True)
+            WellDetail.refresh(concurrently=True)

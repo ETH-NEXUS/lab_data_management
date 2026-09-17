@@ -12,9 +12,9 @@ from django.test import TestCase
 from django.urls import reverse
 from rdkit import Chem
 
-from compoundlib.models import Compound
+from compoundlib.models import Compound, CompoundLibrary
 from importer.mapping import SdfMapping
-from core.models import Plate, Project, WellCompound
+from core.models import Plate, Project, Well, WellCompound
 
 # A library plate file: the compound names, one empty line, the well types
 LIBRARY_PLATE_CSV = (
@@ -38,14 +38,15 @@ class ImportCommandTest(TestCase):
             file.write(text)
         return path
 
-    def write_sdf(self, properties):
-        """One molecule with the given SDF properties, e.g. {"NAME": "Aspirin"}."""
+    def write_sdf(self, *records):
+        """One molecule per record of SDF properties, e.g. {"NAME": "Aspirin"}."""
         path = join(self.folder, "library.sdf")
-        molecule = Chem.MolFromSmiles("CC(=O)Oc1ccccc1C(=O)O")
-        for key, value in properties.items():
-            molecule.SetProp(key, value)
         writer = Chem.SDWriter(path)
-        writer.write(molecule)
+        for properties in records:
+            molecule = Chem.MolFromSmiles("CC(=O)Oc1ccccc1C(=O)O")
+            for key, value in properties.items():
+                molecule.SetProp(key, value)
+            writer.write(molecule)
         writer.close()
         return path
 
@@ -112,6 +113,48 @@ class ImportCommandTest(TestCase):
                 well__plate__barcode="LIB_1", well__position=0
             ).compound,
         )
+
+    def test_an_error_in_the_middle_of_a_plate_file_stores_nothing(self):
+        # Aspirin is imported first, then the well type "XX" does not exist
+        path = self.write(
+            "plate.csv", LIBRARY_PLATE_CSV.replace("C,null,P", "C,null,XX")
+        )
+
+        output = self.run_import(
+            "library_plate",
+            input_file=path,
+            library_name="Library",
+            plate_barcode="LIB_1",
+        )
+
+        self.assertEqual("failed", output["status"])
+        self.assertTrue(
+            output["messages"][-3]["text"].startswith(
+                "Unknown well type 'XX' in well A3. Known well types: C, P, N, R1,"
+            )
+        )
+        self.assertIn(
+            {"level": "warning", "text": "Nothing of this import was stored."},
+            output["messages"],
+        )
+        self.assertFalse(CompoundLibrary.objects.exists())
+        self.assertFalse(Plate.objects.exists())
+        self.assertFalse(Well.objects.exists())
+        self.assertFalse(Compound.objects.exists())
+
+    def test_an_error_in_the_middle_of_an_sdf_file_stores_nothing(self):
+        record = {"NAME": "Aspirin", "PLATE_NUMBER1": "SDF_1", "PLATE_AMOUNT1": "10"}
+        path = self.write_sdf(
+            {**record, "POS_IN_PLATE": "A1"},
+            {**record, "NAME": "Caffeine", "POS_IN_PLATE": "not a well"},
+        )
+
+        output = self.run_import("sdf", input_file=path, library_name="Library")
+
+        self.assertEqual("failed", output["status"])
+        self.assertFalse(CompoundLibrary.objects.exists())
+        self.assertFalse(Plate.objects.exists())
+        self.assertFalse(Compound.objects.exists())
 
     def test_a_library_plate_file_that_does_not_exist(self):
         output = self.run_import(
@@ -252,3 +295,41 @@ class ImportCommandTest(TestCase):
 
         self.assertEqual("CompoundName", SdfMapping(mapping_file).name)
         self.assertEqual("NAME", SdfMapping().name)
+
+    def import_template(self, text):
+        path = self.write("template.tsv", text)
+        return self.run_import("template", input_file=path, template_name="Screen")
+
+    def test_a_template_keeps_the_whole_well_type_names(self):
+        output = self.import_template("C\tR10\tP1\nN\tP\tn4\n")
+
+        self.assertEqual("completed", output["status"])
+        plate = Plate.objects.get(barcode="__TEMPL__Default_Screen")
+        self.assertEqual((2, 3), (plate.dimension.rows, plate.dimension.cols))
+        self.assertEqual(
+            ["C", "R10", "P1", "N", "P", "N4"],
+            list(plate.wells.order_by("position").values_list("type__name", flat=True)),
+        )
+
+    def test_a_template_with_an_unknown_well_type_stores_nothing(self):
+        output = self.import_template("C\tC\tC\nC\tR99\tC\n")
+
+        self.assertEqual("failed", output["status"])
+        self.assertTrue(
+            output["messages"][-3]["text"].startswith(
+                "Unknown well type 'R99' in well B2. Known well types:"
+            )
+        )
+        self.assertFalse(Plate.objects.filter(template__isnull=False).exists())
+
+    def test_a_template_with_an_empty_cell_is_refused(self):
+        output = self.import_template("C\tC\tC\nC\t\tC\n")
+
+        self.assertFailedWith(output, "Well B2 has no well type in the template file.")
+
+    def test_a_template_with_rows_of_different_length_is_refused(self):
+        output = self.import_template("C\tC\tC\nC\tC\n")
+
+        self.assertFailedWith(
+            output, "Row 2 of the template file has 2 cells, but row 1 has 3."
+        )
