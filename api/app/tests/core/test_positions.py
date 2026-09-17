@@ -25,4 +25,6 @@ class PositionMapperTest(SimpleTestCase):
         self.assertEqual(
             "Cannot convert position to row, col: ??", raised.exception.message
         )
-        self.assertEqual("Cannot convert position to row, col: ??", str(raised.exception))
+        self.assertEqual(
+            "Cannot convert position to row, col: ??", str(raised.exception)
+        )

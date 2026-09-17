@@ -2,28 +2,25 @@
 The management page only works with files inside the data folder.
 """
 
-import shutil
+import os
 import tempfile
 from os.path import join
 from unittest import mock
 
-from django.contrib.auth.models import User
-from django.test import TestCase, override_settings
+from django.core.files.uploadedfile import SimpleUploadedFile
 from django.urls import reverse
 
+from tests.management.base import ManagementPageTestCase
 
-class DataRootTest(TestCase):
+
+class DataRootTest(ManagementPageTestCase):
     def setUp(self):
-        self.folder = tempfile.mkdtemp()
-        self.addCleanup(shutil.rmtree, self.folder)
-        data_root = override_settings(MANAGEMENT_DATA_ROOT=self.folder)
-        data_root.enable()
-        self.addCleanup(data_root.disable)
-        self.client.force_login(User.objects.create_user("tester"))
+        super().setUp()
+        # A file the page must not touch, outside the data folder of this test
         self.outside_file = tempfile.NamedTemporaryFile(suffix=".txt", delete=False)
         self.outside_file.write(b"a secret")
         self.outside_file.close()
-        self.addCleanup(lambda: shutil.os.remove(self.outside_file.name))
+        self.addCleanup(os.remove, self.outside_file.name)
 
     def post(self, name, data):
         return self.client.post(reverse(name), data, content_type="application/json")
@@ -80,16 +77,17 @@ class DataRootTest(TestCase):
         self.assertEqual({"content": "hello"}, response.json())
 
     def test_an_uploaded_file_keeps_only_its_name(self):
-        with open(join(self.folder, "upload.txt"), "w") as file:
-            file.write("hello")
-        with open(join(self.folder, "upload.txt"), "rb") as file:
-            response = self.client.post(
-                reverse("upload_file"),
-                {"directory_path": self.folder, "file": file},
-            )
+        # A file name that tries to leave the folder it is uploaded into
+        uploaded = SimpleUploadedFile("../../escape.txt", b"hello")
+
+        response = self.client.post(
+            reverse("upload_file"),
+            {"directory_path": self.folder, "file": uploaded},
+        )
 
         self.assertEqual(200, response.status_code)
-        self.assertEqual(join(self.folder, "upload.txt"), response.json()["file_path"])
+        self.assertEqual(join(self.folder, "escape.txt"), response.json()["file_path"])
+        self.assertEqual(["escape.txt"], os.listdir(self.folder))
 
     def test_a_request_without_a_path_says_so(self):
         response = self.post("get_file_content", {})

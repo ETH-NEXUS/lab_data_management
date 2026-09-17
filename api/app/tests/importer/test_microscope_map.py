@@ -100,22 +100,27 @@ class MicroscopeMapTest(TestCase):
             (plate, "success", self.filename),
             (assignment.plate, assignment.status, assignment.filename),
         )
+        for measurement in Measurement.objects.all():
+            self.assertEqual(assignment, measurement.measurement_assignment)
         self.message.assert_not_called()
 
-    def test_empty_rows_and_header_rows_are_not_wells(self):
+    def test_a_file_without_well_rows_is_refused(self):
         plate = Plate.objects.create(barcode="241008MP-1_1", dimension=self.dimension)
 
-        self.run_map(
-            [
-                {"Well": None, "Lum": "1"},
-                {"Well": "", "Lum": "2"},
-                {"Well": "Well", "Lum": "Lum"},
-            ]
-        )
+        with self.assertRaisesMessage(
+            CommandError, "No results with a 'Well' column in this file"
+        ):
+            self.run_map(
+                [
+                    {"Well": None, "Lum": "1"},
+                    {"Well": "", "Lum": "2"},
+                    {"Well": "Well", "Lum": "Lum"},
+                ]
+            )
 
         self.assertFalse(plate.wells.exists())
         self.assertFalse(Measurement.objects.exists())
-        self.assertEqual(1, MeasurementAssignment.objects.count())
+        self.assertFalse(MeasurementAssignment.objects.exists())
 
     def test_the_layout_sets_the_well_types(self):
         plate = Plate.objects.create(barcode="241008MP-1_1", dimension=self.dimension)

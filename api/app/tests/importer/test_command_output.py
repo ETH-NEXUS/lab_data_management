@@ -8,6 +8,8 @@ from django.test import SimpleTestCase
 
 from importer.command_output import (
     INTERRUPTED_MESSAGE,
+    MAX_MESSAGES,
+    TOO_MANY_MESSAGES,
     add_message,
     error_text,
     fail_interrupted_commands,
@@ -108,6 +110,20 @@ class CommandOutputTest(SimpleTestCase):
             read_output("None", since=0),
         )
 
+    def test_a_command_with_very_many_messages_stops_collecting_them(self):
+        start_command("room_1")
+        for number in range(MAX_MESSAGES + 10):
+            add_message("room_1", "info", f"line {number}")
+
+        finish_command("room_1")
+
+        messages = read_output("room_1", since=0)["messages"]
+        self.assertEqual(MAX_MESSAGES + 2, len(messages))
+        self.assertEqual(
+            {"level": "warning", "text": TOO_MANY_MESSAGES}, messages[MAX_MESSAGES]
+        )
+        self.assertEqual({"level": "info", "text": "Command completed."}, messages[-1])
+
 
 class InterruptedCommandTest(SimpleTestCase):
     def setUp(self):
@@ -115,10 +131,10 @@ class InterruptedCommandTest(SimpleTestCase):
 
     def test_a_command_that_was_running_when_the_worker_restarted_failed(self):
         start_command("room_1")
-        register_running_command("room_1")
+        register_running_command("room_1", "celery@worker_1")
         add_message("room_1", "info", "Processing file a.csv...")
 
-        fail_interrupted_commands()
+        fail_interrupted_commands("celery@worker_1")
 
         output = read_output("room_1", since=0)
         self.assertEqual("failed", output["status"])
@@ -133,10 +149,10 @@ class InterruptedCommandTest(SimpleTestCase):
 
     def test_a_finished_command_is_not_touched(self):
         start_command("room_1")
-        register_running_command("room_1")
+        register_running_command("room_1", "celery@worker_1")
         finish_command("room_1")
 
-        fail_interrupted_commands()
+        fail_interrupted_commands("celery@worker_1")
 
         output = read_output("room_1", since=0)
         self.assertEqual("completed", output["status"])
@@ -146,12 +162,20 @@ class InterruptedCommandTest(SimpleTestCase):
         # The view has set "running", but no worker has started the command yet
         start_command("room_1")
 
-        fail_interrupted_commands()
+        fail_interrupted_commands("celery@worker_1")
 
         self.assertEqual(
             {"messages": [], "next": 0, "status": "running"},
             read_output("room_1", since=0),
         )
+
+    def test_a_command_of_another_worker_is_not_touched(self):
+        start_command("room_1")
+        register_running_command("room_1", "celery@worker_2")
+
+        fail_interrupted_commands("celery@worker_1")
+
+        self.assertEqual("running", read_output("room_1", since=0)["status"])
 
 
 class ErrorTextTest(SimpleTestCase):

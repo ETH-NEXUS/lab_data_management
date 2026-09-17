@@ -5,10 +5,21 @@ from django.utils import timezone
 from rest_framework import status
 from rest_framework.test import APITestCase
 from core.models import Experiment, Project
-from inventory.dynamic_models import InventoryDashboardTilePreference, InventoryStock, MaterialUsage, Order, Room, Sector
+from inventory.dynamic_models import (
+    InventoryDashboardTilePreference,
+    InventoryStock,
+    MaterialUsage,
+    Order,
+    Room,
+    Sector,
+)
 from inventory.history_models import InventoryChangeRecord
-from inventory.static_models import ItemType, MaterialMaster, MaterialUnit, UnitOfMeasure
-
+from inventory.static_models import (
+    ItemType,
+    MaterialMaster,
+    MaterialUnit,
+    UnitOfMeasure,
+)
 
 User = get_user_model()
 
@@ -65,7 +76,9 @@ class InventoryStockMultiSectorTests(APITestCase):
             "notes": "Split across shelves",
         }
 
-        response = self.client.post(reverse("inventory-stock-list"), payload, format="json")
+        response = self.client.post(
+            reverse("inventory-stock-list"), payload, format="json"
+        )
 
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
 
@@ -91,12 +104,16 @@ class InventoryStockMultiSectorTests(APITestCase):
         )
 
         self.client.force_authenticate(user=self.first_user)
-        mark_response = self.client.post(reverse("inventory-stock-mark-favorite", args=[stock.id]))
+        mark_response = self.client.post(
+            reverse("inventory-stock-mark-favorite", args=[stock.id])
+        )
         own_favorites_response = self.client.get(reverse("inventory-stock-favorites"))
 
         self.client.force_authenticate(user=self.second_user)
         other_favorites_response = self.client.get(reverse("inventory-stock-favorites"))
-        other_detail_response = self.client.get(reverse("inventory-stock-detail", args=[stock.id]))
+        other_detail_response = self.client.get(
+            reverse("inventory-stock-detail", args=[stock.id])
+        )
 
         self.assertEqual(mark_response.status_code, status.HTTP_200_OK)
         self.assertTrue(mark_response.data["is_favorite"])
@@ -157,7 +174,9 @@ class InventoryStockMultiSectorTests(APITestCase):
             "minimum_quantity": "1",
         }
 
-        response = self.client.post(reverse("inventory-stock-list"), payload, format="json")
+        response = self.client.post(
+            reverse("inventory-stock-list"), payload, format="json"
+        )
 
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertEqual(
@@ -245,7 +264,9 @@ class InventoryStockMultiSectorTests(APITestCase):
             "source_order_id": self.order.id,
         }
 
-        response = self.client.post(reverse("inventory-stock-list"), payload, format="json")
+        response = self.client.post(
+            reverse("inventory-stock-list"), payload, format="json"
+        )
 
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
 
@@ -302,7 +323,9 @@ class InventoryStockMultiSectorTests(APITestCase):
         earlier_stock.save(update_fields=["archived_at"])
 
         archived_response = self.client.get(reverse("inventory-stock-archived"))
-        restore_response = self.client.post(reverse("inventory-stock-restore", args=[later_stock.id]))
+        restore_response = self.client.post(
+            reverse("inventory-stock-restore", args=[later_stock.id])
+        )
 
         self.assertEqual(archived_response.status_code, status.HTTP_200_OK)
         self.assertEqual(
@@ -343,7 +366,10 @@ class InventoryStockMultiSectorTests(APITestCase):
         response = self.client.get(reverse("inventory-order-awaiting-check-in"))
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual([order_data["id"] for order_data in response.data], [awaiting_check_in_order.id])
+        self.assertEqual(
+            [order_data["id"] for order_data in response.data],
+            [awaiting_check_in_order.id],
+        )
 
     def test_awaiting_check_in_endpoint_returns_only_the_latest_five_orders(self):
         for day in range(1, 7):
@@ -394,10 +420,17 @@ class InventoryStockMultiSectorTests(APITestCase):
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(len(response.data), 5)
-        self.assertEqual(response.data[0]["used_at"][:10], str((timezone.now() - timedelta(days=1)).date()))
-        self.assertTrue(all(usage["project"]["id"] == self.project.id for usage in response.data))
+        self.assertEqual(
+            response.data[0]["used_at"][:10],
+            str((timezone.now() - timedelta(days=1)).date()),
+        )
+        self.assertTrue(
+            all(usage["project"]["id"] == self.project.id for usage in response.data)
+        )
 
-    def test_recent_experiment_usages_endpoint_returns_only_the_latest_five_usages(self):
+    def test_recent_experiment_usages_endpoint_returns_only_the_latest_five_usages(
+        self,
+    ):
         stock = InventoryStock.objects.create(
             material=self.material,
             sector=self.primary_sector,
@@ -421,21 +454,34 @@ class InventoryStockMultiSectorTests(APITestCase):
             usage.used_at = timezone.now() - timedelta(days=day)
             usage.save(update_fields=["used_at"])
 
-        response = self.client.get(reverse("inventory-material-usage-recent-experiment"))
+        response = self.client.get(
+            reverse("inventory-material-usage-recent-experiment")
+        )
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(len(response.data), 5)
-        self.assertEqual(response.data[0]["used_at"][:10], str((timezone.now() - timedelta(days=1)).date()))
-        self.assertTrue(all(usage["experiment"]["id"] == experiment.id for usage in response.data))
+        self.assertEqual(
+            response.data[0]["used_at"][:10],
+            str((timezone.now() - timedelta(days=1)).date()),
+        )
+        self.assertTrue(
+            all(usage["experiment"]["id"] == experiment.id for usage in response.data)
+        )
 
     def test_dashboard_tile_preferences_are_created_for_the_current_user(self):
-        response = self.client.get(reverse("inventory-dashboard-tile-preference-current"))
+        response = self.client.get(
+            reverse("inventory-dashboard-tile-preference-current")
+        )
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(len(response.data), 10)
-        self.assertEqual(sum(preference["is_visible"] for preference in response.data), 6)
         self.assertEqual(
-            InventoryDashboardTilePreference.objects.filter(user=self.first_user).count(),
+            sum(preference["is_visible"] for preference in response.data), 6
+        )
+        self.assertEqual(
+            InventoryDashboardTilePreference.objects.filter(
+                user=self.first_user
+            ).count(),
             10,
         )
 
@@ -454,14 +500,22 @@ class InventoryStockMultiSectorTests(APITestCase):
         )
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        visible_tile_keys = [preference["key"] for preference in response.data if preference["is_visible"]]
+        visible_tile_keys = [
+            preference["key"]
+            for preference in response.data
+            if preference["is_visible"]
+        ]
         self.assertEqual(visible_tile_keys, selected_tile_keys)
 
         self.client.force_authenticate(user=self.second_user)
-        second_user_response = self.client.get(reverse("inventory-dashboard-tile-preference-current"))
+        second_user_response = self.client.get(
+            reverse("inventory-dashboard-tile-preference-current")
+        )
 
         self.assertEqual(second_user_response.status_code, status.HTTP_200_OK)
-        self.assertEqual(sum(preference["is_visible"] for preference in second_user_response.data), 6)
+        self.assertEqual(
+            sum(preference["is_visible"] for preference in second_user_response.data), 6
+        )
 
     def test_dashboard_tile_preferences_allow_an_empty_selection(self):
         response = self.client.put(
@@ -471,11 +525,17 @@ class InventoryStockMultiSectorTests(APITestCase):
         )
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(sum(preference["is_visible"] for preference in response.data), 0)
+        self.assertEqual(
+            sum(preference["is_visible"] for preference in response.data), 0
+        )
 
     def test_dashboard_tile_preferences_allow_all_available_tiles(self):
-        current_preferences_response = self.client.get(reverse("inventory-dashboard-tile-preference-current"))
-        tile_keys = [preference["key"] for preference in current_preferences_response.data]
+        current_preferences_response = self.client.get(
+            reverse("inventory-dashboard-tile-preference-current")
+        )
+        tile_keys = [
+            preference["key"] for preference in current_preferences_response.data
+        ]
 
         response = self.client.put(
             reverse("inventory-dashboard-tile-preference-current"),
@@ -484,7 +544,10 @@ class InventoryStockMultiSectorTests(APITestCase):
         )
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(sum(preference["is_visible"] for preference in response.data), len(tile_keys))
+        self.assertEqual(
+            sum(preference["is_visible"] for preference in response.data),
+            len(tile_keys),
+        )
 
     def test_dashboard_tile_preferences_reject_duplicate_tile_keys(self):
         response = self.client.put(

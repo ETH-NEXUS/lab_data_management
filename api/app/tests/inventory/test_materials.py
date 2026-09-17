@@ -31,7 +31,9 @@ class InventoryMaterialReagentTests(APITestCase):
             "item_type_id": self.reagent_item_type.id,
         }
 
-        response = self.client.post(reverse("inventory-material-list"), payload, format="json")
+        response = self.client.post(
+            reverse("inventory-material-list"), payload, format="json"
+        )
 
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertEqual(
@@ -51,7 +53,9 @@ class InventoryMaterialReagentTests(APITestCase):
             ),
         }
 
-        response = self.client.post(reverse("inventory-material-list"), payload, format="multipart")
+        response = self.client.post(
+            reverse("inventory-material-list"), payload, format="multipart"
+        )
 
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
 

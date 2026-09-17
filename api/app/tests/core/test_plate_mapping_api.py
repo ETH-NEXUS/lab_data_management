@@ -53,7 +53,9 @@ class PlateMappingApiTest(APITestCase):
             format="json",
         )
 
-        self.assertEqual(status.HTTP_201_CREATED, response.status_code, response.content)
+        self.assertEqual(
+            status.HTTP_201_CREATED, response.status_code, response.content
+        )
         mapping = PlateMapping.objects.get()
         self.assertIsNone(mapping.from_column)
         self.assertEqual(5, mapping.amount)

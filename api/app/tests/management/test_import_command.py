@@ -2,19 +2,15 @@
 Tests for the errors of the import command, as the management page shows them.
 """
 
-import shutil
-import tempfile
 from importlib import import_module
 from os.path import join
 from unittest import mock
 
-from django.contrib.auth.models import User
-from django.core.cache import cache
-from django.test import TestCase, override_settings
-from django.urls import reverse
+from django.test import TestCase
 from rdkit import Chem
 
 from compoundlib.models import Compound, CompoundLibrary
+from tests.management.base import ManagementPageTestCase
 from importer.mapping import SdfMapping
 from core.models import Plate, Project, Well, WellCompound
 
@@ -27,26 +23,7 @@ LIBRARY_PLATE_CSV = (
 )
 
 
-class ImportCommandTest(TestCase):
-    fixtures = ["plate_dimensions", "well_types"]
-
-    def setUp(self):
-        cache.clear()
-        self.client.force_login(User.objects.create_user("tester"))
-        self.folder = tempfile.mkdtemp()
-        data_root = override_settings(MANAGEMENT_DATA_ROOT=self.folder)
-        data_root.enable()
-        self.addCleanup(data_root.disable)
-
-    def tearDown(self):
-        shutil.rmtree(self.folder)
-
-    def write(self, name, text):
-        path = join(self.folder, name)
-        with open(path, "w") as file:
-            file.write(text)
-        return path
-
+class ImportCommandTest(ManagementPageTestCase):
     def write_sdf(self, *records):
         """One molecule per record of SDF properties, e.g. {"NAME": "Aspirin"}."""
         path = join(self.folder, "library.sdf")
@@ -60,23 +37,9 @@ class ImportCommandTest(TestCase):
         return path
 
     def run_import(self, what, **form_data):
-        data = {"command": "import", "what": what, "room_name": "room_1"}
-        data.update(form_data)
-        self.client.post(
-            reverse("run_command"), {"form_data": data}, content_type="application/json"
-        )
-        url = reverse("long_polling", args=["room_1"])
-        return self.client.get(f"{url}?since=0").json()
-
-    def assertFailedWith(self, output, text):
-        """The command failed, and `text` is its only error besides "Command failed."."""
-        self.assertEqual("failed", output["status"])
-        errors = [
-            message["text"]
-            for message in output["messages"]
-            if message["level"] == "error"
-        ]
-        self.assertEqual([text, "Command failed."], errors)
+        """Starts an import command and returns its output."""
+        self.start_command(command="import", what=what, **form_data)
+        return self.read_output()
 
     def test_a_library_plate_is_imported(self):
         path = self.write("plate.csv", LIBRARY_PLATE_CSV)
@@ -127,7 +90,7 @@ class ImportCommandTest(TestCase):
         output = self.run_import("plates", input_file=join(self.folder, "plate.csv"))
 
         self.assertEqual("failed", output["status"])
-        self.assertIn("invalid choice", output["messages"][0]["text"])
+        self.assertIn("invalid choice", self.errors(output)[0])
 
     def test_a_library_plate_is_not_a_control_plate(self):
         path = self.write("plate.csv", LIBRARY_PLATE_CSV)
@@ -157,7 +120,7 @@ class ImportCommandTest(TestCase):
 
         self.assertEqual("failed", output["status"])
         self.assertTrue(
-            output["messages"][-3]["text"].startswith(
+            self.errors(output)[0].startswith(
                 "Unknown well type 'XX' in well A3. Known well types: C, P, N, R1,"
             )
         )
@@ -211,6 +174,37 @@ class ImportCommandTest(TestCase):
             output,
             "File format is incorrect: The file should contain exactly one empty line.",
         )
+
+    def test_a_plate_file_with_a_short_line_is_refused(self):
+        path = self.write(
+            "plate.csv", LIBRARY_PLATE_CSV.replace("null,null,null", "null,null")
+        )
+
+        output = self.run_import(
+            "library_plate",
+            input_file=path,
+            library_name="Library",
+            plate_barcode="LIB_1",
+        )
+
+        self.assertFailedWith(
+            output,
+            "File format is incorrect: Every line must have 3 cells, like the "
+            "first line, but line 2 has 2.",
+        )
+
+    def test_the_new_compounds_of_a_plate_are_reported_in_one_message(self):
+        path = self.write("plate.csv", LIBRARY_PLATE_CSV)
+
+        output = self.run_import(
+            "library_plate",
+            input_file=path,
+            library_name="Library",
+            plate_barcode="LIB_1",
+        )
+
+        texts = [message["text"] for message in output["messages"]]
+        self.assertIn("Created 2 new compounds: Aspirin, Caffeine", texts)
 
     def test_a_control_plate_for_a_project_that_does_not_exist(self):
         path = self.write("plate.csv", LIBRARY_PLATE_CSV)
@@ -300,7 +294,7 @@ class ImportCommandTest(TestCase):
 
         self.assertEqual("failed", output["status"])
         self.assertTrue(
-            output["messages"][0]["text"].startswith(
+            self.errors(output)[0].startswith(
                 "MappingFileSchemaError: Error in mapping file schema."
             )
         )
@@ -350,7 +344,7 @@ class ImportCommandTest(TestCase):
 
         self.assertEqual("failed", output["status"])
         self.assertTrue(
-            output["messages"][-3]["text"].startswith(
+            self.errors(output)[0].startswith(
                 "Unknown well type 'R99' in well B2. Known well types:"
             )
         )
@@ -375,7 +369,7 @@ class ImportCommandTest(TestCase):
         output = self.run_import("sdf", input_file=path, mapping_file=mapping_file)
 
         self.assertTrue(
-            output["messages"][0]["text"].startswith(
+            self.errors(output)[0].startswith(
                 "MappingFileSchemaError: Error in mapping file schema."
             )
         )

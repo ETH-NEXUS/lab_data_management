@@ -2,18 +2,14 @@
 Tests for running a command from the management page and reading its output.
 """
 
-import shutil
-import tempfile
 from datetime import datetime
 from os.path import join
 from unittest import mock
 
-from django.contrib.auth.models import User
 from django.core.cache import cache
-from django.test import TestCase, override_settings
-from django.urls import reverse
 
 from core.models import Experiment, Measurement, Project
+from tests.management.base import ManagementPageTestCase
 
 # A shortened C10 reader file; the header line names the values "Lum"
 C10_TXT = "\r\n".join(
@@ -30,23 +26,7 @@ C10_TXT = "\r\n".join(
 )
 
 
-class RunCommandTest(TestCase):
-    fixtures = ["plate_dimensions", "well_types"]
-
-    def setUp(self):
-        cache.clear()
-        self.client.force_login(User.objects.create_user("tester"))
-        self.folder = tempfile.mkdtemp()
-        data_root = override_settings(MANAGEMENT_DATA_ROOT=self.folder)
-        data_root.enable()
-        self.addCleanup(data_root.disable)
-        media = override_settings(MEDIA_ROOT=join(self.folder, "media"))
-        media.enable()
-        self.addCleanup(media.disable)
-
-    def tearDown(self):
-        shutil.rmtree(self.folder)
-
+class RunCommandTest(ManagementPageTestCase):
     def run_map(self, **form_data):
         """Starts a map command and returns the response of the request."""
         data = {
@@ -55,18 +35,9 @@ class RunCommandTest(TestCase):
             "path": self.folder,
             "experiment_name": "",
             "measurement_name": "",
-            "room_name": "room_1",
         }
         data.update(form_data)
-        return self.client.post(
-            reverse("run_command"),
-            {"form_data": data},
-            content_type="application/json",
-        )
-
-    def read_output(self, since=0):
-        url = reverse("long_polling", args=["room_1"])
-        return self.client.get(f"{url}?since={since}").json()
+        return self.start_command(**data)
 
     def test_a_command_without_files_is_completed_with_a_warning(self):
         response = self.run_map()
@@ -113,7 +84,7 @@ class RunCommandTest(TestCase):
     def test_a_finished_command_is_no_longer_listed_as_running(self):
         self.run_map()
 
-        self.assertEqual([], cache.get("running_commands"))
+        self.assertEqual({}, cache.get("running_commands"))
 
     def test_an_unknown_command_is_an_error(self):
         self.run_map(command="do_something")
@@ -130,7 +101,7 @@ class RunCommandTest(TestCase):
 
         output = self.read_output()
         self.assertEqual("failed", output["status"])
-        self.assertIn("invalid choice", output["messages"][0]["text"])
+        self.assertIn("invalid choice", self.errors(output)[0])
 
     def test_the_output_can_be_read_from_a_position(self):
         self.run_map()

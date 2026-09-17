@@ -2,70 +2,32 @@
 Tests for the errors of the map command, as the management page shows them.
 """
 
-import shutil
-import tempfile
 from os.path import join
 from unittest import mock
-
-from django.contrib.auth.models import User
-from django.core.cache import cache
-from django.test import TestCase, override_settings
-from django.urls import reverse
 
 from core.models import Experiment, Measurement, Project
 from importer.mappers import EchoMapper
 from tests.importer.test_m1000_parse import ASC_FILE_CONTENT
+from tests.management.base import ManagementPageTestCase
 
 
-class MapCommandTest(TestCase):
-    fixtures = ["plate_dimensions", "well_types"]
-
+class MapCommandTest(ManagementPageTestCase):
     def setUp(self):
-        cache.clear()
-        self.client.force_login(User.objects.create_user("tester"))
-        self.folder = tempfile.mkdtemp()
-        data_root = override_settings(MANAGEMENT_DATA_ROOT=self.folder)
-        data_root.enable()
-        self.addCleanup(data_root.disable)
-        media = override_settings(MEDIA_ROOT=join(self.folder, "media"))
-        media.enable()
-        self.addCleanup(media.disable)
+        super().setUp()
         project = Project.objects.create(name="Project")
         Experiment.objects.create(name="Experiment", project=project)
 
-    def tearDown(self):
-        shutil.rmtree(self.folder)
-
-    def write(self, name, text):
-        path = join(self.folder, name)
-        with open(path, "w") as file:
-            file.write(text)
-        return path
-
     def run_map(self, machine, **form_data):
+        """Starts a map command and returns its output."""
         data = {
             "command": "map",
             "machine": machine,
             "path": self.folder,
             "experiment_name": "Experiment",
-            "room_name": "room_1",
         }
         data.update(form_data)
-        self.client.post(
-            reverse("run_command"), {"form_data": data}, content_type="application/json"
-        )
-        url = reverse("long_polling", args=["room_1"])
-        return self.client.get(f"{url}?since=0").json()
-
-    def assertFailedWith(self, output, text):
-        """The command failed, and `text` is its only error besides "Command failed."."""
-        self.assertEqual("failed", output["status"])
-        errors = [
-            message["text"]
-            for message in output["messages"]
-            if message["level"] == "error"
-        ]
-        self.assertEqual([text, "Command failed."], errors)
+        self.start_command(**data)
+        return self.read_output()
 
     def echo_column_file(self, columns):
         lines = [f'{key}: "{name}"' for key, name in columns.items()]
@@ -103,7 +65,7 @@ class MapCommandTest(TestCase):
 
         self.assertEqual("failed", output["status"])
         self.assertTrue(
-            output["messages"][0]["text"].startswith(
+            self.errors(output)[0].startswith(
                 f"The column file '{column_file}' is missing these keys: "
                 "source_plate_barcode, "
             )

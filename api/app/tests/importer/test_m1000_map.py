@@ -8,6 +8,7 @@ from datetime import datetime
 from os.path import join
 from unittest import mock
 
+from django.core.management.base import CommandError
 from django.test import TestCase, override_settings
 
 from core.models import (
@@ -132,6 +133,30 @@ class M1000MapTest(TestCase):
             [(0, "Fluo", 2.0, "SM1_1"), (0, "Lum", 1.0, "SM1_1")],
             self.measurements(),
         )
+
+    def test_fewer_measurement_names_than_value_columns_are_refused(self):
+        Plate.objects.create(barcode="demo_1", dimension=self.dimension)
+
+        with self.assertRaisesMessage(
+            CommandError, "2 value columns, but only 1 measurement names"
+        ):
+            self.run_map(
+                [{"position": "A1", "identifier": "SM1_1", "values": [1.0, 2.0]}],
+                measurement_name="Lum",
+            )
+
+        self.assertFalse(Measurement.objects.exists())
+
+    def test_a_footer_without_a_label_is_refused(self):
+        Plate.objects.create(barcode="demo_1", dimension=self.dimension)
+
+        with self.assertRaisesMessage(
+            CommandError, "its footer does not name every label"
+        ):
+            self.run_map(
+                [{"position": "A1", "identifier": "SM1_1", "values": [1.0]}],
+                meta_data=[{"Integration time": "1000 ms"}],
+            )
 
     def test_a_missing_plate_is_created_for_the_experiment(self):
         self.run_map(
