@@ -3,7 +3,6 @@ from importer.command_output import add_message
 from helpers.logger import logger
 
 
-
 def sameSchema(dict1, dict2, same=True):
     """
     Compares the keys of two dicts and returns true

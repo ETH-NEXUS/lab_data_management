@@ -30,9 +30,30 @@ export type DirectoryContentResponse = {
   directory_content: FileSystemItem
 }
 
+/**
+ * One line of a command's output, e.g. `{ level: 'error', text: 'File not found' }`.
+ */
+export type CommandMessage = {
+  level: 'debug' | 'info' | 'warning' | 'error'
+  text: string
+}
+
+/**
+ * `failed` means the command reported at least one error.
+ */
+export type CommandStatus = 'running' | 'completed' | 'failed'
+
+/**
+ * The new messages of a command since position `since`.
+ * `status` is null while the command has not started yet.
+ *
+ * Data example:
+ * - `{ messages: [{ level: 'info', text: 'Command completed.' }], next: 5, status: 'completed' }`
+ */
 export type LongPollingResponse = {
-  message?: string
-  status?: string
+  messages: CommandMessage[]
+  next: number
+  status: CommandStatus | null
 }
 
 export type FileContentResponse = {

@@ -16,6 +16,8 @@ import {
   MANAGEMENT_RUN_COMMAND_ERROR_MESSAGE,
   MANAGEMENT_UPLOAD_FILE_ENDPOINT,
   MANAGEMENT_UPLOAD_FILE_ERROR_MESSAGE,
+  type CommandMessage,
+  type CommandStatus,
   type DirectoryContentResponse,
   type FileContentResponse,
   type LongPollingResponse,
@@ -34,7 +36,11 @@ export const useManagementStore = defineStore('managementStore', () => {
   const dataDirectory = ref<FileSystemItem>(createEmptyDirectoryItem())
   const selectedPath = ref('')
   const selectedPaths = ref<string[]>([])
-  const commandOutput = ref('')
+  const commandMessages = ref<CommandMessage[]>([])
+  const commandStatus = ref<CommandStatus | null>(null)
+  // Polling reads only the output of this room; a new command replaces it
+  const activeRoomName = ref('')
+  const commandRequestError = ref<string | null>(null)
 
   const isLoadingDirectoryContent = ref(false)
   const isRunningCommand = ref(false)
@@ -92,7 +98,9 @@ export const useManagementStore = defineStore('managementStore', () => {
    * Clears terminal-like output shown in management command cards.
    */
   const clearCommandOutput = (): void => {
-    commandOutput.value = ''
+    commandMessages.value = []
+    commandStatus.value = null
+    activeRoomName.value = ''
   }
 
   /**
@@ -128,24 +136,28 @@ export const useManagementStore = defineStore('managementStore', () => {
   }
 
   /**
-   * Starts one management command and begins long-polling output.
+   * Starts one management command and reads its output while it runs.
+   * The request returns when the command has ended.
    *
    * Accepted data example:
-   * - `{ room_name: 'import_2026_03_15', command: 'echo_import' }`
+   * - `{ room_name: '12_1726563600000', command: 'map', machine: 'echo', path: '/data/run_1' }`
    */
   const runCommand = async (formData: GeneralFormData): Promise<void> => {
     isRunningCommand.value = true
     error.value = null
 
+    const roomName = typeof formData.room_name === 'string' ? formData.room_name : ''
+    commandMessages.value = [{ level: 'info', text: `Executing command: ${String(formData.command)}` }]
+    commandStatus.value = 'running'
+    commandRequestError.value = null
+    activeRoomName.value = roomName
+
+    // Output is read while the request below is still waiting for the command
+    if (roomName !== '') {
+      void pollCommandOutput(roomName, 0)
+    }
+
     try {
-      const roomNameValue = formData.room_name
-      const roomName = typeof roomNameValue === 'string' ? roomNameValue : ''
-
-      // Keep old behavior: fire polling without waiting for full completion.
-      if (roomName !== '') {
-        void startLongPolling(roomName)
-      }
-
       await requestApiVoid(
         MANAGEMENT_RUN_COMMAND_ENDPOINT,
         {
@@ -156,6 +168,8 @@ export const useManagementStore = defineStore('managementStore', () => {
       )
     } catch (err: unknown) {
       error.value = getErrorMessage(err)
+      // The command will not report an end status anymore, polling stops after its next read
+      commandRequestError.value = error.value
       throw err
     } finally {
       isRunningCommand.value = false
@@ -163,37 +177,51 @@ export const useManagementStore = defineStore('managementStore', () => {
   }
 
   /**
-   * Polls command output endpoint until backend status is `completed`.
+   * Adds the new output of a command every 300 ms, until the command has
+   * completed or failed.
    *
    * Accepted data example:
-   * - `roomName = 'import_2026_03_15'`
+   * - `roomName = '12_1726563600000', since = 4` (the first 4 messages are already shown)
    */
-  const startLongPolling = async (roomName: string): Promise<void> => {
+  const pollCommandOutput = async (roomName: string, since: number): Promise<void> => {
+    if (roomName !== activeRoomName.value) {
+      return
+    }
+
+    let response: LongPollingResponse
     try {
-      const response = await requestApiData<LongPollingResponse>(
-        `${MANAGEMENT_LONG_POLLING_ENDPOINT}${roomName}/`,
+      response = await requestApiData<LongPollingResponse>(
+        `${MANAGEMENT_LONG_POLLING_ENDPOINT}${roomName}/?since=${since}`,
         { method: 'GET' },
         MANAGEMENT_LONG_POLLING_ERROR_MESSAGE,
       )
-
-      const message = response.message
-      if (typeof message === 'string' && message !== '') {
-        commandOutput.value += `\n${message}`
-      }
-
-      const status = response.status
-      if (status !== 'completed') {
-        setTimeout(() => {
-          void startLongPolling(roomName)
-        }, 300)
-      } else {
-        // Keep directory tree fresh after command completion.
-        await fetchDataDirectory()
-      }
     } catch (err: unknown) {
-      // Keep old behavior: only log polling errors, do not throw to UI flow.
       console.error(MANAGEMENT_LONG_POLLING_ERROR_MESSAGE, err)
+      commandMessages.value.push({ level: 'error', text: MANAGEMENT_LONG_POLLING_ERROR_MESSAGE })
+      return
     }
+
+    if (roomName !== activeRoomName.value) {
+      return
+    }
+    commandMessages.value.push(...response.messages)
+
+    if (commandRequestError.value !== null) {
+      commandMessages.value.push({ level: 'error', text: commandRequestError.value })
+      commandStatus.value = 'failed'
+      return
+    }
+
+    if (response.status === 'completed' || response.status === 'failed') {
+      commandStatus.value = response.status
+      // The command may have created or changed files
+      await fetchDataDirectory()
+      return
+    }
+
+    setTimeout(() => {
+      void pollCommandOutput(roomName, response.next)
+    }, 300)
   }
 
   /**
@@ -324,7 +352,8 @@ export const useManagementStore = defineStore('managementStore', () => {
     dataDirectory,
     selectedPath,
     selectedPaths,
-    commandOutput,
+    commandMessages,
+    commandStatus,
     isLoadingDirectoryContent,
     isRunningCommand,
     isDeletingFile,
@@ -340,7 +369,6 @@ export const useManagementStore = defineStore('managementStore', () => {
     removeSelectedPath,
     clearSelectedPaths,
     runCommand,
-    startLongPolling,
     deleteFile,
     downloadFile,
     uploadFile,

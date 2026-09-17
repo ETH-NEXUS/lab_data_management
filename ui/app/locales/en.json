@@ -119,6 +119,9 @@
     "import_library_plate": "Import library plate",
     "import_sdf_library": "Import SDF library",
     "logs": "Logs",
+    "command_completed": "Command completed.",
+    "command_completed_with_warnings": "Command completed with warnings. They are marked yellow below.",
+    "command_failed": "Command failed. The errors are marked red below.",
     "form": {
       "select_placeholder": "Select option"
     },

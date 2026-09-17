@@ -1,9 +1,10 @@
 <script setup lang="ts">
-import { onMounted } from 'vue'
+import { computed, onMounted } from 'vue'
 import ManagementDynamicForm from '~/components/management/ManagementDynamicForm.vue'
 import { useAuthStore } from '~/stores/auth'
 import { useManagementStore } from '~/stores/management'
 import type { GeneralFormData, Options } from '~/types/lab'
+import type { CommandMessage } from '~/types/management'
 
 type Props = {
   options: Options
@@ -28,13 +29,14 @@ onMounted(() => {
  * - `formData = { input_file: '/data/file.csv', project_name: 'P1' }`
  *
  * Returned data example:
- * - `{ input_file: '/data/file.csv', project_name: 'P1', room_name: '12', command: 'import', what: 'library_plate', is_control_plate: true }`
+ * - `{ input_file: '/data/file.csv', project_name: 'P1', room_name: '12_1726563600000', command: 'import', what: 'library_plate', is_control_plate: true }`
  */
 const buildCommandPayload = (formData: GeneralFormData): GeneralFormData => {
   const payload: GeneralFormData = { ...formData }
 
   const currentUserId = authStore.user?.id
-  payload.room_name = currentUserId ? String(currentUserId) : `room_${Date.now()}`
+  // A new room for every run, so the output of an earlier run is never shown
+  payload.room_name = `${currentUserId ?? 'room'}_${Date.now()}`
   payload.command = props.command
 
   if (props.what && props.command === 'import') {
@@ -53,9 +55,43 @@ const buildCommandPayload = (formData: GeneralFormData): GeneralFormData => {
 }
 
 const onSubmit = async (formData: GeneralFormData): Promise<void> => {
-  managementStore.commandOutput = `Executing command: ${props.command}\n...`
   const payload = buildCommandPayload(formData)
   await managementStore.runCommand(payload)
+}
+
+/**
+ * The summary above the output, once the command has ended.
+ *
+ * Returned data example:
+ * - `{ color: 'error', icon: 'i-lucide-circle-x', title: 'Command failed. The errors are marked red below.' }`
+ */
+const commandSummary = computed(() => {
+  const hasWarnings = managementStore.commandMessages.some((message) => message.level === 'warning')
+
+  if (managementStore.commandStatus === 'failed') {
+    return { color: 'error' as const, icon: 'i-lucide-circle-x', title: t('management.command_failed') }
+  }
+  if (managementStore.commandStatus === 'completed' && hasWarnings) {
+    return {
+      color: 'warning' as const,
+      icon: 'i-lucide-triangle-alert',
+      title: t('management.command_completed_with_warnings'),
+    }
+  }
+  if (managementStore.commandStatus === 'completed') {
+    return { color: 'success' as const, icon: 'i-lucide-circle-check', title: t('management.command_completed') }
+  }
+  return null
+})
+
+const messageClass = (message: CommandMessage): string => {
+  if (message.level === 'error') {
+    return 'bg-red-50 text-red-800'
+  }
+  if (message.level === 'warning') {
+    return 'bg-amber-50 text-amber-800'
+  }
+  return 'text-slate-700'
 }
 </script>
 
@@ -67,12 +103,25 @@ const onSubmit = async (formData: GeneralFormData): Promise<void> => {
       @submit="onSubmit"
     />
 
-    <div v-if="managementStore.commandOutput !== ''" class="space-y-2">
+    <div v-if="managementStore.commandMessages.length > 0" class="space-y-2">
       <p class="text-xs font-semibold tracking-[0.12em] text-slate-500 uppercase">
         {{ t('management.logs') }}
       </p>
-      <div class="max-h-60 overflow-auto rounded-xl bg-slate-900 p-3 text-slate-100 shadow-inner">
-        <pre class="font-mono text-xs whitespace-pre-wrap">{{ managementStore.commandOutput }}</pre>
+      <UAlert
+        v-if="commandSummary"
+        :color="commandSummary.color"
+        :icon="commandSummary.icon"
+        :title="commandSummary.title"
+        variant="subtle"
+      />
+      <div class="max-h-80 overflow-auto rounded-xl border border-slate-200 bg-white p-2">
+        <p
+          v-for="(message, index) in managementStore.commandMessages"
+          :key="index"
+          class="rounded px-2 py-0.5 font-mono text-xs whitespace-pre-wrap"
+          :class="messageClass(message)"
+          v-text="message.text"
+        />
       </div>
     </div>
   </div>

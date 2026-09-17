@@ -74,21 +74,31 @@ def run_command(request):
                     "mapping_file": form_data.get("mapping_file"),
                     "input_file": form_data.get("input_file"),
                     "debug": False,
-                    "library_name": form_data.get("library_name")
-                    if form_data.get("library_name")
-                    else None,
-                    "template_name": form_data.get("template_name")
-                    if form_data.get("template_name")
-                    else None,
-                    "plate_barcode": form_data.get("plate_barcode")
-                    if form_data.get("plate_barcode")
-                    else None,
-                    "project_name": form_data.get("project_name")
-                    if form_data.get("project_name")
-                    else None,
-                    "is_control_plate": form_data.get("is_control_plate")
-                    if form_data.get("is_control_plate")
-                    else None,
+                    "library_name": (
+                        form_data.get("library_name")
+                        if form_data.get("library_name")
+                        else None
+                    ),
+                    "template_name": (
+                        form_data.get("template_name")
+                        if form_data.get("template_name")
+                        else None
+                    ),
+                    "plate_barcode": (
+                        form_data.get("plate_barcode")
+                        if form_data.get("plate_barcode")
+                        else None
+                    ),
+                    "project_name": (
+                        form_data.get("project_name")
+                        if form_data.get("project_name")
+                        else None
+                    ),
+                    "is_control_plate": (
+                        form_data.get("is_control_plate")
+                        if form_data.get("is_control_plate")
+                        else None
+                    ),
                     "room_name": form_data.get("room_name"),
                 }
                 management.call_command("import", what, **kwargs)
