@@ -1,11 +1,11 @@
 import os
-import traceback
 from os.path import join
 import yaml
 from django.core.management.base import BaseCommand, CommandError
 from importer.mappers import EchoMapper, M1000Mapper, MicroscopeMapper
 from core.models import Experiment
 from importer.helper import message
+from importer.command_output import error_text
 from importer.config import Config
 from helpers.logger import logger
 
@@ -19,7 +19,7 @@ def has_csv_files(directory):
 
 
 def die(message):
-    raise Exception(message)
+    raise CommandError(message)
 
 
 class Command(BaseCommand):
@@ -68,6 +68,40 @@ class Command(BaseCommand):
             "provide the experiment name.",
         )
 
+    @staticmethod
+    def read_echo_columns(path: str) -> dict:
+        """
+        The Echo column names from a yml file, with the same keys as `columns`
+        of echo in ldm.yaml, e.g. {"source_well": "Source Well", "DMSO": "% DMSO", ...}.
+        """
+        try:
+            with open(path, "r") as file:
+                columns = yaml.safe_load(file)
+        except FileNotFoundError:
+            raise CommandError(f"The column file '{path}' could not be found.")
+        except yaml.YAMLError as error:
+            raise CommandError(f"Error parsing the YAML file '{path}': {error}")
+
+        if not isinstance(columns, dict):
+            raise CommandError(
+                f"The column file '{path}' has no column names, "
+                "e.g. 'source_well: Source Well'."
+            )
+        missing_keys = [key for key in EchoMapper.DEFAULT_COLUMNS if key not in columns]
+        if missing_keys:
+            raise CommandError(
+                f"The column file '{path}' is missing these keys: "
+                f"{', '.join(missing_keys)}."
+            )
+        return columns
+
+    @staticmethod
+    def show_error(error: Exception, options: dict) -> None:
+        """Shows the error on the management page; an unexpected one also goes to the log."""
+        message(error_text(error), "error", options.get("room_name"))
+        if not isinstance(error, CommandError):
+            logger.exception(f"Command map {options.get('machine')} failed")
+
     def handle(self, *args, **options):
 
         path = options.get("path")
@@ -82,26 +116,8 @@ class Command(BaseCommand):
 
         if options.get("machine") == "echo":
             headers = EchoMapper.DEFAULT_COLUMNS
-            headers_file = options.get("headers_file", None)
-
-            if headers_file:
-                try:
-                    with open(options.get("headers_file"), "r") as file:
-                        headers = yaml.safe_load(file)
-                except FileNotFoundError:
-                    message(
-                        f"The headers file '{headers_file}' could not be found.",
-                        "error",
-                        options.get("room_name", None),
-                    )
-                    return
-                except yaml.YAMLError as e:
-                    message(
-                        f"Error parsing the YAML file '{headers_file}': {e}",
-                        "error",
-                        options.get("room_name", None),
-                    )
-                    return
+            if options.get("mapping_file"):
+                headers = self.read_echo_columns(options.get("mapping_file"))
             try:
                 mapper = EchoMapper()
                 # if in the folder which was provided as 'path' arguments there are no .csv files we use xml_blob, otherwise the file_blob
@@ -116,9 +132,8 @@ class Command(BaseCommand):
                     room_name=options.get("room_name", None),
                     experiment_name=options.get("experiment_name", None),
                 )
-            except Exception as ex:
-                message(f"Error: {ex}", "error", options.get("room_name", None))
-                traceback.print_exc()
+            except Exception as error:
+                self.show_error(error, options)
 
         elif options.get("machine") == "m1000":
             try:
@@ -137,9 +152,8 @@ class Command(BaseCommand):
                     room_name=options.get("room_name", None),
                 )
 
-            except Exception as ex:
-                message(f"Error: {ex}", "error", options.get("room_name", None))
-                traceback.print_exc()
+            except Exception as error:
+                self.show_error(error, options)
         elif options.get("machine") in ["microscope", "C10-imager", "C10-reader"]:
             try:
                 if not options.get("experiment_name", None):
@@ -163,9 +177,8 @@ class Command(BaseCommand):
                     measurement_name=options.get("measurement_name", None),
                 )
 
-            except Exception as ex:
-                message(f"Error: {ex}", "error", options.get("room_name", None))
-                traceback.print_exc()
+            except Exception as error:
+                self.show_error(error, options)
         # elif options.get("machine") == "dat":
         #     try:
         #         if not options.get("experiment_name", None):

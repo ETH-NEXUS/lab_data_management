@@ -8,9 +8,9 @@ from datetime import datetime
 from io import StringIO
 from os.path import join
 
+from django.core.management.base import CommandError
 from django.test import SimpleTestCase
 
-from core.models import MappingError
 from importer.mappers import M1000Mapper
 
 # A shortened demo file. The line endings are as in the real file: the value
@@ -90,6 +90,13 @@ class M1000ParseTest(SimpleTestCase):
             extra,
         )
 
+    def test_a_value_that_only_starts_like_a_number_stops_the_file(self):
+        # "12abc" matches the number pattern at its start, but is no number
+        with self.assertRaisesMessage(
+            CommandError, "The value '12abc' of well A1 is not a number."
+        ):
+            M1000Mapper().read_value_line(["A1", "SM1_1", "12abc"], 0, 1)
+
 
 class M1000DetermineIndexesTest(SimpleTestCase):
     def determine(self, text):
@@ -121,7 +128,7 @@ class M1000DetermineIndexesTest(SimpleTestCase):
         file = StringIO("A1\t15\n\nB1\tSM1_2\tSM1_3\t4\n")
         file.name = "test.asc"
 
-        with self.assertRaises(MappingError) as raised:
+        with self.assertRaises(CommandError) as raised:
             M1000Mapper().determine_indexes(file)
 
         self.assertEqual(

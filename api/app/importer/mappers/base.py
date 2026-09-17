@@ -12,6 +12,7 @@ from glob import glob
 from typing import Any
 
 from chardet.universaldetector import UniversalDetector
+from django.core.management.base import CommandError
 from django.core.files import File
 
 from core.models import (
@@ -154,7 +155,7 @@ class BaseMapper:
 
         The experiment of the plate comes from the barcode specification of the
         barcode prefix. A missing specification is created for the experiment
-        `experiment_name`; without an experiment name a ValueError is raised.
+        `experiment_name`; without an experiment name a CommandError is raised.
         """
         try:
             barcode_specification = BarcodeSpecification.objects.get(
@@ -167,8 +168,7 @@ class BaseMapper:
                     "name is provided. Please provide the experiment name in order to "
                     "create the missing barcode specifications."
                 )
-                message(text, "error", room_name)
-                raise ValueError(text)
+                raise CommandError(text)
 
             message(
                 f"No barcode specification found for {barcode}. Creating it.",
@@ -183,7 +183,7 @@ class BaseMapper:
             barcode=barcode,
             experiment=barcode_specification.experiment,
             dimension=self.get_plate_dimension(
-                plate_name, plate_type, source_plate_name, room_name
+                plate_name, plate_type, source_plate_name
             ),
         )
 
@@ -237,7 +237,6 @@ class BaseMapper:
         plate_name: str,
         plate_type: str,
         source_plate_name: str,
-        room_name: str | None,
     ) -> PlateDimension:
         """
         The plate dimension for the well count found in the plate names,
@@ -247,13 +246,9 @@ class BaseMapper:
         try:
             rows, cols = row_col_from_name(names)
             return PlateDimension.objects.get(rows=rows, cols=cols)
-        except ValueError:
-            message(
-                f"Could not determine plate dimensions for {plate_name}",
-                "error",
-                room_name,
+        except ValueError as error:
+            raise CommandError(
+                f"Could not determine plate dimensions for {plate_name}: {error}"
             )
-            raise
         except PlateDimension.DoesNotExist:
-            message("No plate dimension found", "error", room_name)
-            raise ValueError(f"No plate dimension found for {plate_name}")
+            raise CommandError(f"No plate dimension found for {plate_name}")

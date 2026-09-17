@@ -12,10 +12,11 @@ from datetime import datetime as dt
 from io import TextIOWrapper
 from typing import TypedDict
 
+from django.core.management.base import CommandError
 from django.utils import timezone as tz
 from tqdm import tqdm
 
-from core.models import MappingError, Measurement
+from core.models import Measurement
 from importer.helper import message
 from importer.mappers.base import BaseMapper
 from importer.mappers.values import convert_sci_to_float
@@ -85,7 +86,7 @@ class M1000Mapper(BaseMapper):
                 return position_columns[0], identifier_columns[0]
 
         file.seek(0)
-        raise MappingError(f"File has not the desired format: {file.name}")
+        raise CommandError(f"File has not the desired format: {file.name}")
 
     def parse(self, file: TextIOWrapper, **kwargs) -> tuple[list[M1000Entry], dict]:
         """
@@ -146,7 +147,7 @@ class M1000Mapper(BaseMapper):
         file_name = os.path.basename(path)
         match = re.match(self.RE_FILENAME, file_name)
         if not match:
-            raise MappingError(f"File name {file_name} does not match conventions.")
+            raise CommandError(f"File name {file_name} does not match conventions.")
         return match.group("barcode")
 
     def read_value_line(
@@ -154,14 +155,23 @@ class M1000Mapper(BaseMapper):
     ) -> M1000Entry:
         """
         ["A1", "SM1_1", "15", ""] -> {"position": "A1", "identifier": "SM1_1", "values": [15.0]}.
-        Every other column that looks like a number becomes a value.
+        Every other column that looks like a number becomes a value. A column
+        that only starts like a number (e.g. "12abc") stops the file, because
+        a measurement needs a value.
         """
         values = []
         for index, part in enumerate(parts):
             if index in (position_column, identifier_column):
                 continue
             if re.match(self.RE_NUM, part) or re.match(self.RE_SCIENTIFIC, part):
-                values.append(convert_sci_to_float(part))
+                value = convert_sci_to_float(part)
+                if value is None:
+                    raise CommandError(
+                        f"The value '{part}' of well {parts[position_column]} is not "
+                        "a number. Nothing of this file was stored, and the next "
+                        "files were not mapped."
+                    )
+                values.append(value)
 
         return {
             "position": parts[position_column],

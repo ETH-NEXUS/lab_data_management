@@ -34,7 +34,7 @@ export type DirectoryContentResponse = {
  * One line of a command's output, e.g. `{ level: 'error', text: 'File not found' }`.
  */
 export type CommandMessage = {
-  level: 'debug' | 'info' | 'warning' | 'error'
+  level: 'debug' | 'info' | 'success' | 'warning' | 'error'
   text: string
 }
 

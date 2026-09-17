@@ -9,6 +9,7 @@ import tempfile
 from os.path import join
 from unittest import mock
 
+from django.core.management.base import CommandError
 from django.test import TestCase, override_settings
 
 from core.models import (
@@ -213,7 +214,7 @@ class BaseMapperPlateTest(TestCase):
     def test_without_barcode_specification_and_experiment_no_plate_is_created(
         self, message
     ):
-        with self.assertRaises(ValueError) as raised:
+        with self.assertRaises(CommandError) as raised:
             BaseMapper().create_plate_by_name_and_barcode(
                 "Corning_96", "", "ABC_1", "Source", room_name="room_1"
             )
@@ -224,33 +225,31 @@ class BaseMapperPlateTest(TestCase):
             "specifications.",
             str(raised.exception),
         )
-        message.assert_called_once_with(
-            "No barcode specification found for ABC_1 and no experiment name is provided. "
-            "Please provide the experiment name in order to create the missing barcode "
-            "specifications.",
-            "error",
-            "room_1",
-        )
+        # The map command shows the error, so it is not sent here too
+        message.assert_not_called()
         self.assertFalse(Plate.objects.exists())
 
     def test_a_name_without_plate_size_is_refused(self, message):
-        with self.assertRaises(ValueError):
-            BaseMapper().get_plate_dimension("Plate_X", "", "Source_Y", "room_1")
+        with self.assertRaises(CommandError) as raised:
+            BaseMapper().get_plate_dimension("Plate_X", "", "Source_Y")
 
-        message.assert_called_once_with(
-            "Could not determine plate dimensions for Plate_X", "error", "room_1"
+        self.assertEqual(
+            "Could not determine plate dimensions for Plate_X: "
+            "Cannot determine plate dimension from name:  Plate_X Source_Y.",
+            str(raised.exception),
         )
+        message.assert_not_called()
 
     def test_a_plate_size_without_plate_dimension_is_refused(self, message):
         PlateDimension.objects.filter(name="dim_96_8x12").delete()
 
-        with self.assertRaises(ValueError) as raised:
-            BaseMapper().get_plate_dimension("Corning_96", "", "Source", "room_1")
+        with self.assertRaises(CommandError) as raised:
+            BaseMapper().get_plate_dimension("Corning_96", "", "Source")
 
         self.assertEqual(
             "No plate dimension found for Corning_96", str(raised.exception)
         )
-        message.assert_called_once_with("No plate dimension found", "error", "room_1")
+        message.assert_not_called()
 
 
 class BaseMapperMeasurementAssignmentTest(TestCase):

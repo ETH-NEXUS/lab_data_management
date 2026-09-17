@@ -91,6 +91,9 @@ const messageClass = (message: CommandMessage): string => {
   if (message.level === 'warning') {
     return 'bg-amber-50 text-amber-800'
   }
+  if (message.level === 'success') {
+    return 'text-green-700'
+  }
   return 'text-slate-700'
 }
 </script>

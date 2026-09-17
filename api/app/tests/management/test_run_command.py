@@ -143,7 +143,7 @@ class RunCommandTest(TestCase):
         self.assertIn(
             {
                 "level": "error",
-                "text": f"Error: Cannot read the measurement date of {path}: "
+                "text": f"Cannot read the measurement date of {path}: "
                 "date '14.10.2024', time '12:45:28'. Nothing of this file was "
                 "stored, and the next files were not mapped.",
             },

@@ -6,6 +6,7 @@ import shutil
 import tempfile
 from os.path import join
 
+from django.core.management.base import CommandError
 from django.test import SimpleTestCase
 from openpyxl import Workbook
 
@@ -175,5 +176,5 @@ class MicroscopeParseTest(SimpleTestCase):
         with open(path, "w") as file:
             file.write("Results\n")
 
-        with self.assertRaises(ValueError):
+        with self.assertRaises(CommandError):
             MicroscopeMapper().parse(path)

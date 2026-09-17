@@ -11,13 +11,13 @@ import os
 import re
 from typing import TypedDict
 
+from django.core.management.base import CommandError
 from openpyxl import load_workbook
 from openpyxl.worksheet.worksheet import Worksheet
 from tqdm import tqdm
 
 from core.models import Measurement, Well, WellType
 from helpers.logger import logger
-from importer.helper import message
 from importer.mappers.base import BaseMapper
 from importer.mappers.values import convert_sci_to_float, parse_c10_datetime
 
@@ -76,9 +76,7 @@ class MicroscopeMapper(BaseMapper):
          "results": [{"Well": "A1", "Lum": "16727"}, ...],
          "layout": {"A1": "P", "B1": "N"}}
         """
-        date, time, barcode, extension = self.file_name_parts(
-            file, kwargs.get("room_name")
-        )
+        date, time, barcode, extension = self.file_name_parts(file)
         # None or "" when no name is given on the management page
         measurement_name = kwargs.get("measurement_name")
 
@@ -110,18 +108,14 @@ class MicroscopeMapper(BaseMapper):
             "layout": layout,
         }
 
-    def file_name_parts(
-        self, path: str, room_name: str | None
-    ) -> tuple[str, str, str, str]:
+    def file_name_parts(self, path: str) -> tuple[str, str, str, str]:
         """
         "/data/241014_125455_241008MP-1_1.txt" -> ("241014", "125455", "241008MP-1_1", "txt").
         """
         file_name = os.path.basename(path)
         match = re.match(self.RE_FILENAME, file_name)
         if not match:
-            text = f"Filename {file_name} does not match expected pattern."
-            message(text, "error", room_name)
-            raise ValueError(text)
+            raise CommandError(f"Filename {file_name} does not match expected pattern.")
         return (
             match.group("date"),
             match.group("time"),
@@ -140,7 +134,7 @@ class MicroscopeMapper(BaseMapper):
         measured_at = parse_c10_datetime(data["date"], data["time"])
         if measured_at is None:
             # The map command shows this error on the management page
-            raise ValueError(
+            raise CommandError(
                 f"Cannot read the measurement date of {kwargs.get('filename')}: "
                 f"date '{data['date']}', time '{data['time']}'. "
                 "Nothing of this file was stored, and the next files were not mapped."

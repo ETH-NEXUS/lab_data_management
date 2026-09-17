@@ -8,6 +8,7 @@ from datetime import datetime
 from os.path import join
 from unittest import mock
 
+from django.core.management.base import CommandError
 from django.test import TestCase, override_settings
 
 from core.models import (
@@ -38,16 +39,10 @@ class MicroscopeMapTest(TestCase):
         self.experiment = Experiment.objects.create(name="Experiment", project=project)
         self.dimension = PlateDimension.objects.get(name="dim_384_16x24")
 
-        # One mock for the messages of microscope.py and base.py, so all
-        # messages are recorded in order, wherever the code sends them from.
-        self.message = mock.Mock()
-        for target in (
-            "importer.mappers.microscope.message",
-            "importer.mappers.base.message",
-        ):
-            patcher = mock.patch(target, self.message)
-            patcher.start()
-            self.addCleanup(patcher.stop)
+        # The messages of the mapper are sent from base.py
+        patcher = mock.patch("importer.mappers.base.message")
+        self.message = patcher.start()
+        self.addCleanup(patcher.stop)
 
     def tearDown(self):
         shutil.rmtree(self.folder)
@@ -173,7 +168,7 @@ class MicroscopeMapTest(TestCase):
 
     def test_an_unknown_date_stops_before_anything_is_stored(self):
         with self.assertRaisesMessage(
-            ValueError,
+            CommandError,
             f"Cannot read the measurement date of {self.filename}: "
             "date '14.10.2024', time '12:45:28'.",
         ):
