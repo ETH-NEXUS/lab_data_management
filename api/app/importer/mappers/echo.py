@@ -411,13 +411,29 @@ class EchoMapper(BaseMapper):
         with the report file. The views are refreshed once at the end of `run`.
 
         Plate.map skips a transfer from a source well that is not in the
-        database, so these transfers are reported as a warning.
+        database, so these transfers are reported as a warning. A report that
+        was already mapped for the same plates is not mapped again (error).
         """
         room_name = kwargs.get("room_name")
         for source_plate, mapping_list in plate_pairs.values():
             target_plate = mapping_list.target
             pair_text = f"{source_plate.barcode} -> {target_plate.barcode}"
             message(f"Mapping {pair_text}", "info", room_name)
+
+            earlier_mapping = self.earlier_mapping_of_report(
+                source_plate, target_plate, kwargs["filename"]
+            )
+            if earlier_mapping:
+                # Mapping it again would count every transfer a second time
+                message(
+                    f"{pair_text}: this report was already mapped on "
+                    f"{earlier_mapping.created_at:%d.%m.%Y %H:%M}, so it was not mapped "
+                    "again. To map it anew, delete the destination plate first.",
+                    "error",
+                    room_name,
+                )
+                continue
+
             missing_positions = self.missing_source_positions(
                 source_plate, mapping_list
             )
@@ -443,6 +459,38 @@ class EchoMapper(BaseMapper):
                     "warning",
                     room_name,
                 )
+
+    @staticmethod
+    def earlier_mapping_of_report(
+        source_plate: Plate, target_plate: Plate, filename: str
+    ) -> PlateMapping | None:
+        """
+        An earlier mapping of the same plates with the same report file, or None.
+
+        The stored copy of a report can have another name (a second copy gets a
+        suffix like "_MbwnDnh.csv"), so the file content is compared. Deleting
+        the destination plate also deletes its mappings.
+        """
+        report_size = os.path.getsize(filename)
+        with open(filename, "rb") as file:
+            report = file.read()
+
+        earlier_mappings = PlateMapping.objects.filter(
+            source_plate=source_plate, target_plate=target_plate
+        ).order_by("created_at")
+        for mapping in earlier_mappings:
+            if not mapping.mapping_file:
+                continue
+            try:
+                if mapping.mapping_file.size != report_size:
+                    continue
+                with mapping.mapping_file.open("rb") as stored_file:
+                    if stored_file.read() == report:
+                        return mapping
+            except OSError:
+                # The stored copy is missing on the disk
+                continue
+        return None
 
     @staticmethod
     def missing_source_positions(

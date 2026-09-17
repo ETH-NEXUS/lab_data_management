@@ -7,10 +7,13 @@ from django.core.management.base import CommandError
 from django.test import SimpleTestCase
 
 from importer.command_output import (
+    INTERRUPTED_MESSAGE,
     add_message,
     error_text,
+    fail_interrupted_commands,
     finish_command,
     read_output,
+    register_running_command,
     start_command,
 )
 
@@ -103,6 +106,51 @@ class CommandOutputTest(SimpleTestCase):
         self.assertEqual(
             {"messages": [], "next": 0, "status": None},
             read_output("None", since=0),
+        )
+
+
+class InterruptedCommandTest(SimpleTestCase):
+    def setUp(self):
+        cache.clear()
+
+    def test_a_command_that_was_running_when_the_worker_restarted_failed(self):
+        start_command("room_1")
+        register_running_command("room_1")
+        add_message("room_1", "info", "Processing file a.csv...")
+
+        fail_interrupted_commands()
+
+        output = read_output("room_1", since=0)
+        self.assertEqual("failed", output["status"])
+        self.assertEqual(
+            [
+                {"level": "info", "text": "Processing file a.csv..."},
+                {"level": "error", "text": INTERRUPTED_MESSAGE},
+                {"level": "error", "text": "Command failed."},
+            ],
+            output["messages"],
+        )
+
+    def test_a_finished_command_is_not_touched(self):
+        start_command("room_1")
+        register_running_command("room_1")
+        finish_command("room_1")
+
+        fail_interrupted_commands()
+
+        output = read_output("room_1", since=0)
+        self.assertEqual("completed", output["status"])
+        self.assertEqual(1, len(output["messages"]))
+
+    def test_a_command_waiting_in_the_queue_is_not_touched(self):
+        # The view has set "running", but no worker has started the command yet
+        start_command("room_1")
+
+        fail_interrupted_commands()
+
+        self.assertEqual(
+            {"messages": [], "next": 0, "status": "running"},
+            read_output("room_1", since=0),
         )
 
 

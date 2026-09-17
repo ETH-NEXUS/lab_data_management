@@ -19,6 +19,13 @@ RUNNING = "running"
 COMPLETED = "completed"
 FAILED = "failed"
 
+# The rooms of the commands that a worker is running right now, e.g. ["12_1726563600000"]
+RUNNING_COMMANDS_KEY = "running_commands"
+INTERRUPTED_MESSAGE = (
+    "The command was interrupted, because the command worker was restarted. "
+    "Check what was stored before you run it again."
+)
+
 
 def messages_key(room_name: str) -> str:
     return f"command_messages_{room_name}"
@@ -34,6 +41,26 @@ def start_command(room_name: str | None) -> None:
         return
     cache.set(messages_key(room_name), [], OUTPUT_TIMEOUT_SECONDS)
     cache.set(status_key(room_name), RUNNING, OUTPUT_TIMEOUT_SECONDS)
+
+
+def register_running_command(room_name: str | None) -> None:
+    """The worker starts the command. It is listed until finish_command."""
+    if not room_name:
+        return
+    running = cache.get(RUNNING_COMMANDS_KEY, [])
+    if room_name not in running:
+        running.append(room_name)
+    cache.set(RUNNING_COMMANDS_KEY, running, OUTPUT_TIMEOUT_SECONDS)
+
+
+def fail_interrupted_commands() -> None:
+    """
+    Called when the worker starts: a command that is still listed as running
+    was stopped by the restart, so it gets an error and the status "failed".
+    """
+    for room_name in cache.get(RUNNING_COMMANDS_KEY, []):
+        add_message(room_name, "error", INTERRUPTED_MESSAGE)
+        finish_command(room_name)
 
 
 def add_message(room_name: str | None, level: str, text: str) -> None:
@@ -65,6 +92,11 @@ def finish_command(room_name: str | None) -> None:
         add_message(room_name, "info", "Command completed.")
         status = COMPLETED
     cache.set(status_key(room_name), status, OUTPUT_TIMEOUT_SECONDS)
+
+    running = cache.get(RUNNING_COMMANDS_KEY, [])
+    if room_name in running:
+        running.remove(room_name)
+        cache.set(RUNNING_COMMANDS_KEY, running, OUTPUT_TIMEOUT_SECONDS)
 
 
 def read_output(room_name: str, since: int) -> dict:

@@ -179,22 +179,3 @@ class Command(BaseCommand):
 
             except Exception as error:
                 self.show_error(error, options)
-        # elif options.get("machine") == "dat":
-        #     try:
-        #         if not options.get("experiment_name", None):
-        #             die(
-        #                 "No experiment name provided. If you would like to add missing "
-        #                 "plates, you need to provide the experiment name."
-        #             )
-        #
-        #         mapper = DatMapper()
-        #         mapper.run(
-        #             join(path, Config.current.importer.dat.default.file_blob),
-        #             debug=options.get("debug", False),
-        #             experiment_name=options.get("experiment_name", None),
-        #             room_name=options.get("room_name", None),
-        #         )
-        #
-        #     except Exception as ex:
-        #         message(f"Error: {ex}", "error", options.get("room_name", None))
-        #         traceback.print_exc()

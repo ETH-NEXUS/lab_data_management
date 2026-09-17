@@ -104,6 +104,11 @@ class RunCommandTest(TestCase):
             {"messages": [], "next": 0, "status": "running"}, self.read_output()
         )
 
+    def test_a_finished_command_is_no_longer_listed_as_running(self):
+        self.run_map()
+
+        self.assertEqual([], cache.get("running_commands"))
+
     def test_the_output_can_be_read_from_a_position(self):
         self.run_map()
         all_messages = self.read_output()["messages"]

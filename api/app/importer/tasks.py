@@ -4,11 +4,17 @@ command is not stopped by the timeout of the web server.
 """
 
 from celery import shared_task
+from celery.signals import worker_ready
 from django.core import management
 from django.core.management.base import CommandError
 
 from helpers.logger import logger
-from importer.command_output import error_text, finish_command
+from importer.command_output import (
+    error_text,
+    fail_interrupted_commands,
+    finish_command,
+    register_running_command,
+)
 from importer.helper import message
 
 
@@ -23,6 +29,7 @@ def run_management_command(form_data: dict) -> None:
      "experiment_name": "Screen 1", "room_name": "12_1726563600000"}
     """
     room_name = form_data.get("room_name")
+    register_running_command(room_name)
     try:
         if form_data.get("command") == "map":
             machine = form_data.get("machine")
@@ -81,3 +88,9 @@ def run_management_command(form_data: dict) -> None:
         if not isinstance(error, CommandError):
             logger.exception(f"Command {form_data.get('command')} failed")
     finish_command(room_name)
+
+
+@worker_ready.connect
+def fail_commands_of_the_last_worker(**kwargs) -> None:
+    """A restarted worker does not continue the commands it was running."""
+    fail_interrupted_commands()

@@ -269,6 +269,68 @@ class EchoMapTest(TestCase):
         )
         self.assertEqual(1, PlateMapping.objects.count())
 
+    def test_the_same_report_is_not_mapped_again_onto_the_same_plates(
+        self, message, *refreshes
+    ):
+        self.run_map([transfer("A3", "A3")])
+        first_mapping = PlateMapping.objects.get()
+        message.reset_mock()
+
+        self.run_map([transfer("A3", "A3"), transfer("A3", "A3", destination="DST_2")])
+
+        self.assertEqual(
+            [
+                mock.call("Mapping SRC_A -> DST_1", "info", "room_1"),
+                mock.call(
+                    "SRC_A -> DST_1: this report was already mapped on "
+                    f"{first_mapping.created_at:%d.%m.%Y %H:%M}, so it was not mapped "
+                    "again. To map it anew, delete the destination plate first.",
+                    "error",
+                    "room_1",
+                ),
+                # A plate pair that was not mapped before is still mapped
+                mock.call("Mapping SRC_A -> DST_2", "info", "room_1"),
+                mock.call("Mapped SRC_A -> DST_2", "info", "room_1"),
+            ],
+            message.call_args_list,
+        )
+        self.assertEqual(
+            [("SRC_A", "DST_1"), ("SRC_A", "DST_2")],
+            [(source, target) for source, target, _ in self.plate_map_calls],
+        )
+        self.assertEqual(2, PlateMapping.objects.count())
+
+    def test_another_report_for_the_same_plates_is_not_reported(
+        self, message, *refreshes
+    ):
+        self.run_map([transfer("A3", "A3")])
+        with open(self.filename, "w") as file:
+            file.write("another transfer file\n")
+        message.reset_mock()
+
+        self.run_map([transfer("A4", "A4")])
+
+        self.assertEqual(
+            [
+                mock.call("Mapping SRC_A -> DST_1", "info", "room_1"),
+                mock.call("Mapped SRC_A -> DST_1", "info", "room_1"),
+            ],
+            message.call_args_list,
+        )
+
+    def test_the_same_report_after_deleting_the_destination_plate_is_not_reported(
+        self, message, *refreshes
+    ):
+        self.run_map([transfer("A3", "A3", destination="NEW_1")])
+        Plate.objects.get(barcode="NEW_1").delete()
+        message.reset_mock()
+
+        self.run_map([transfer("A3", "A3", destination="NEW_1")])
+
+        texts = [call.args[0] for call in message.call_args_list]
+        self.assertFalse([text for text in texts if "already mapped" in text])
+        self.assertEqual(1, PlateMapping.objects.count())
+
     def test_transfers_from_missing_source_wells_are_reported_once_per_plate_pair(
         self, message, *refreshes
     ):
