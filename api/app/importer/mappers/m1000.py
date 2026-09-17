@@ -105,7 +105,7 @@ class M1000Mapper(BaseMapper):
         plate_description = None
         # The settings of every label, one dict per label. A key that appears
         # again starts the settings of the next label.
-        meta_data = [{}]
+        meta_data: list[dict[str, str]] = [{}]
         position_column, identifier_column = self.determine_indexes(file)
 
         for line in file:
@@ -215,7 +215,7 @@ class M1000Mapper(BaseMapper):
         kwargs["measurement_name"] (e.g. "Lum,Fluo"), or else the "Label" of
         the matching meta data.
         """
-        if kwargs.get("measurement_name"):
-            measurement_names = kwargs.get("measurement_name").split(",")
-            return measurement_names[index]
+        measurement_name = kwargs.get("measurement_name")
+        if measurement_name:
+            return measurement_name.split(",")[index]
         return kwargs.get("meta_data")[index].get(META_DATA_LABEL)

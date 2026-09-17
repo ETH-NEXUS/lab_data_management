@@ -55,6 +55,7 @@ dev = [
   "pur",
   "pytest-django",
   "pytest-cov",
+  "mypy",
 ]
 r = [
   "rpy2[all]==3.5.12",

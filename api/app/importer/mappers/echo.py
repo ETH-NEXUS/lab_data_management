@@ -12,7 +12,7 @@ import os
 import xml.etree.ElementTree as ET
 from io import TextIOWrapper
 from itertools import dropwhile
-from typing import TypedDict
+from typing import TypedDict, cast
 
 from django.core.files import File
 from tqdm import tqdm
@@ -43,14 +43,12 @@ XML_PLATES_ELEMENT = "plateInfo"
 XML_TRANSFERS_ELEMENT = "printmap"
 XML_SOURCE_PLATE = "source"
 XML_DESTINATION_PLATE = "destination"
-# Our key -> the attribute of a <w> transfer element in <printmap>
-XML_TRANSFER_ATTRIBUTES = {
-    "source_well": "n",
-    "destination_well": "dn",
-    "actual_volume": "vl",
-    "current_fluid_volume": "cvl",
-    "DMSO": "fc",
-}
+# Attributes of a <w> transfer element in <printmap>
+XML_SOURCE_WELL = "n"
+XML_DESTINATION_WELL = "dn"
+XML_ACTUAL_VOLUME = "vl"
+XML_CURRENT_FLUID_VOLUME = "cvl"
+XML_DMSO = "fc"
 
 
 class EchoTransfer(TypedDict, total=False):
@@ -124,15 +122,18 @@ class EchoMapper(BaseMapper):
 
         transfers = []
         for well in root.find(XML_TRANSFERS_ELEMENT):
-            transfer = {
+            transfer: EchoTransfer = {
                 "source_plate_name": source_plate_name,
                 "source_plate_barcode": source_plate_barcode,
                 "destination_plate_name": destination_plate_name,
                 "destination_plate_barcode": destination_plate_barcode,
+                "source_well": well.get(XML_SOURCE_WELL),
+                "destination_well": well.get(XML_DESTINATION_WELL),
+                "actual_volume": well.get(XML_ACTUAL_VOLUME),
+                "current_fluid_volume": well.get(XML_CURRENT_FLUID_VOLUME),
+                "DMSO": well.get(XML_DMSO),
+                "transfer_status": "",
             }
-            for key, attribute in XML_TRANSFER_ATTRIBUTES.items():
-                transfer[key] = well.get(attribute)
-            transfer["transfer_status"] = ""
             transfers.append(transfer)
         return transfers
 
@@ -205,11 +206,12 @@ class EchoMapper(BaseMapper):
         {"Source Well": "A3", ...} -> {"source_well": "A3", ...}.
         Columns that the report does not have are left out.
         """
-        transfer = {}
+        transfer: dict[str, str] = {}
         for key, column_name in headers.items():
             if column_name in row:
                 transfer[key] = row[column_name]
-        return transfer
+        # The keys come from `headers` (ldm.yaml), which uses the EchoTransfer keys
+        return cast(EchoTransfer, transfer)
 
     @staticmethod
     def describe_skipped_transfer(row: dict, headers: dict, empty_columns: list) -> str:
@@ -234,7 +236,7 @@ class EchoMapper(BaseMapper):
         """
         room_name = kwargs.get("room_name")
         # Source plates by barcode, so every plate is loaded only once
-        plates = {}
+        plates: dict[str, Plate] = {}
         # (source plate, MappingList) by (source barcode, destination barcode),
         # in the order the plate pairs appear in the report
         plate_pairs = {}

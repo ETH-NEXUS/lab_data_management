@@ -20,6 +20,10 @@ format:
 	@find ./api/app -type f -name '*.py' ! -path '*/migrations/*' -exec autoflake --in-place --remove-unused-variables --remove-all-unused-imports '{}' \;
 	@flake8 ./api/app --exclude */migrations/*
 
+# Type check with mypy in the api container; the checked folders are set in api/app/mypy.ini
+typecheck:
+	@docker-compose -f docker-compose.yml -f docker-compose.dev.yml exec -T api sh -c 'cd /app && mypy'
+
 mainton:
 	@docker-compose -f docker-compose.yml -f docker-compose.prod.yml exec ws sh -c 'touch /web_root/.maintenance'
 

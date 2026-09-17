@@ -194,7 +194,8 @@ class MicroscopeMapper(BaseMapper):
 
         Example: {"Plate Number": ["Plate 1"], "Read": ["Luminescence"], "Gain": "214"}
         """
-        metadata = {}
+        # Values are text or lists of text, see the example above
+        metadata: dict = {}
         current_label = None
         for row in sheet.iter_rows(min_row=1, max_row=XLSX_METADATA_ROWS):
             for index, cell in enumerate(row):

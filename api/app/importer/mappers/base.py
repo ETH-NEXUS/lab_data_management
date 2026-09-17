@@ -9,8 +9,7 @@ share: creating plates, barcode specifications and measurement assignments.
 import os
 from contextlib import redirect_stderr
 from glob import glob
-from io import TextIOWrapper
-from typing import TextIO
+from typing import Any
 
 from chardet.universaldetector import UniversalDetector
 from django.core.files import File
@@ -113,10 +112,12 @@ class BaseMapper:
             return data
         return parsed
 
-    def parse(self, file: TextIOWrapper | str | TextIO, **kwargs):
+    def parse(self, file: Any, **kwargs) -> Any:
+        """Every mapper decides what `file` is and what it returns."""
         raise NotImplementedError
 
-    def map(self, data: list[dict], **kwargs) -> None:
+    def map(self, data: Any, **kwargs) -> None:
+        """`data` is what `parse` of the same mapper returned."""
         raise NotImplementedError
 
     def create_measurement_assignment(
