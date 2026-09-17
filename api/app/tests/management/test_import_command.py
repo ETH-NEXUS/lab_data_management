@@ -4,6 +4,7 @@ Tests for the errors of the import command, as the management page shows them.
 
 import shutil
 import tempfile
+from importlib import import_module
 from os.path import join
 from unittest import mock
 
@@ -15,6 +16,9 @@ from rdkit import Chem
 from compoundlib.models import Compound, CompoundLibrary
 from importer.mapping import SdfMapping
 from core.models import Plate, Project, Well, WellCompound
+
+# The command module is called "import", a Python keyword, so it cannot be imported directly
+yes_or_no = import_module("importer.management.commands.import").yes_or_no
 
 # A library plate file: the compound names, one empty line, the well types
 LIBRARY_PLATE_CSV = (
@@ -333,3 +337,46 @@ class ImportCommandTest(TestCase):
         self.assertFailedWith(
             output, "Row 2 of the template file has 2 cells, but row 1 has 3."
         )
+
+    def test_an_empty_sdf_mapping_file_is_a_schema_error(self):
+        path = self.write_sdf({"NAME": "Aspirin"})
+        mapping_file = self.write("mapping.yml", "")
+
+        output = self.run_import("sdf", input_file=path, mapping_file=mapping_file)
+
+        self.assertTrue(
+            output["messages"][0]["text"].startswith(
+                "MappingFileSchemaError: Error in mapping file schema."
+            )
+        )
+
+    def test_a_missing_template_file_is_an_error_without_refreshing(self):
+        output = self.run_import("template", input_file="/no/such/template.tsv")
+
+        self.assertFailedWith(output, "File does not exist: /no/such/template.tsv")
+        texts = [message["text"] for message in output["messages"]]
+        self.assertNotIn("Refreshing materialized views...", texts)
+
+    def test_an_sdf_import_into_an_existing_library_says_using(self):
+        CompoundLibrary.objects.create(name="Library")
+        path = self.write_sdf(
+            {
+                "NAME": "Aspirin",
+                "PLATE_NUMBER1": "SDF_1",
+                "POS_IN_PLATE": "A1",
+                "PLATE_AMOUNT1": "10",
+            }
+        )
+
+        output = self.run_import("sdf", input_file=path, library_name="Library")
+
+        texts = [message["text"] for message in output["messages"]]
+        self.assertIn("Using library Library.", texts)
+
+
+class YesOrNoTest(TestCase):
+    def test_command_line_values(self):
+        self.assertTrue(yes_or_no("yes"))
+        self.assertTrue(yes_or_no("True"))
+        self.assertFalse(yes_or_no("False"))
+        self.assertFalse(yes_or_no("no"))

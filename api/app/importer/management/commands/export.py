@@ -1,18 +1,23 @@
-from django.core.management.base import BaseCommand
+from django.core.management.base import BaseCommand, CommandError
 from django.core import serializers
 from django.apps import apps
 import os
 from os import makedirs
 from helpers.logger import logger
 
-def export_data(app_name, model_name, _filter=None):
+
+def export_data(app_name, model_name, filters=None):
+    """
+    The objects of the model as YAML. Each filter is "field=value", e.g.
+    ["barcode__startswith=Drug08", "library__name=LLD_24000"].
+    """
     model = apps.get_model(app_label=app_name, model_name=model_name)
-    if _filter:
-        # TODO: Introduce a flexible filter mechanism
-        logger.info(_filter)
-        queryset = model.objects.filter(eval(_filter))
-    else:
-        queryset = model.objects.all()
+    queryset = model.objects.all()
+    for condition in filters or []:
+        if "=" not in condition:
+            raise CommandError(f"The filter '{condition}' is not field=value.")
+        field, value = condition.split("=", 1)
+        queryset = queryset.filter(**{field: value})
 
     return serializers.serialize("yaml", queryset)
 
@@ -28,7 +33,10 @@ class Command(BaseCommand):
             "model", type=str, help="The name of the " "model " "to export"
         )
         parser.add_argument(
-            "--filter", "-f", type=str, help="The filter " "field " "to apply"
+            "--filter",
+            "-f",
+            action="append",
+            help="A filter field=value, e.g. barcode__startswith=Drug08; can be repeated",
         )
         parser.add_argument(
             "--append",
@@ -49,10 +57,7 @@ class Command(BaseCommand):
         app_name = options.get("app")
         model_name = options.get("model")
         output_file = options.get("output_file")
-        _filter = options.get("filter")
-        if _filter and not _filter.startswith("Q("):
-            _filter = f"Q({_filter})"
-        data = export_data(app_name, model_name, _filter)
+        data = export_data(app_name, model_name, options.get("filter"))
 
         makedirs(os.path.split(output_file)[0], exist_ok=True)
         with open(output_file, "a" if options.get("append") else "w") as file:

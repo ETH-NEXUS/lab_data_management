@@ -441,11 +441,12 @@ class EchoMapper(BaseMapper):
             source_plate.map(mapping_list, target_plate)
 
             with open(kwargs["filename"], "rb") as file:
-                PlateMapping.objects.create(
+                plate_mapping = PlateMapping.objects.create(
                     source_plate=source_plate,
                     target_plate=target_plate,
                     mapping_file=File(file, os.path.basename(file.name)),
                 )
+            self.stored_files.append(plate_mapping.mapping_file.name)
             message(f"Mapped {pair_text}", "info", room_name)
             if missing_positions:
                 well_names = [

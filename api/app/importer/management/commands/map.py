@@ -105,6 +105,12 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
 
         path = options.get("path")
+        if not os.path.exists(path):
+            raise CommandError(f"The folder {path} does not exist.")
+        if not os.path.isdir(path):
+            raise CommandError(
+                f"{path} is a file. Please choose the folder that contains it."
+            )
         if options.get("experiment_name", None):
             experiment = Experiment.objects.filter(
                 name=options.get("experiment_name")
@@ -161,7 +167,6 @@ class Command(BaseCommand):
                         "No experiment name provided. If you would like to add missing "
                         "plates, you need to provide the experiment name."
                     )
-                print(options.get("machine"))
                 mapper = MicroscopeMapper()
 
                 if path.endswith(".txt"):

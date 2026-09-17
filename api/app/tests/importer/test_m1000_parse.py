@@ -57,7 +57,7 @@ class M1000ParseTest(SimpleTestCase):
             return M1000Mapper().parse(file, room_name=None)
 
     def test_the_value_lines_become_entries(self):
-        results, _ = self.parse()
+        results = self.parse()["entries"]
 
         self.assertEqual(
             [
@@ -69,12 +69,12 @@ class M1000ParseTest(SimpleTestCase):
             results,
         )
 
-    def test_the_footer_and_the_file_name_give_the_extra_information(self):
-        _, extra = self.parse()
+    def test_the_footer_and_the_file_name_give_the_plate_information(self):
+        data = self.parse()
+        del data["entries"]
 
         self.assertEqual(
             {
-                "room_name": None,
                 "barcode": "demo_1",
                 "measurement_date": datetime(2011, 11, 11, 11, 11, 11),
                 "plate_description": "test",
@@ -87,7 +87,7 @@ class M1000ParseTest(SimpleTestCase):
                     }
                 ],
             },
-            extra,
+            data,
         )
 
     def test_a_value_that_only_starts_like_a_number_stops_the_file(self):

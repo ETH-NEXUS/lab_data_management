@@ -67,4 +67,3 @@ def message(text, type="info", room_name=None):
         logger.warning(text)
     elif type == "debug":
         logger.debug(text)
-    print(text)

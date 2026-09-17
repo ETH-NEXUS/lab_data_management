@@ -45,7 +45,8 @@ class SdfMapping:
 
         with open(mappingFile, "r") as mf:
             mapping = yaml.load(mf, yaml.SafeLoader)
-        if not sameSchema(self.mapping, mapping):
+        # An empty file is read as None
+        if not isinstance(mapping, dict) or not sameSchema(self.mapping, mapping):
             raise MappingFileSchemaError(self.DEFAULT_MAPPING)
 
         self.mapping.update(mapping)

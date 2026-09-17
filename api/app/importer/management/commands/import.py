@@ -12,6 +12,7 @@ import numpy as np
 from os.path import splitext
 from pathlib import Path
 from tqdm import tqdm
+import argparse
 import csv
 from importer.helper import message
 from importer.command_output import error_text
@@ -38,6 +39,15 @@ def well_type_by_name(name: str, well_name: str) -> WellType:
             f"Unknown well type '{name}' in well {well_name}. "
             f"Known well types: {known_names}."
         )
+
+
+def yes_or_no(text: str) -> bool:
+    """A command line value like "yes", "no", "true" or "False" as a boolean."""
+    if text.lower() in ("yes", "true", "1"):
+        return True
+    if text.lower() in ("no", "false", "0"):
+        return False
+    raise argparse.ArgumentTypeError(f"'{text}' is not yes or no")
 
 
 def full_strip(s: str):
@@ -124,7 +134,8 @@ class Command(BaseCommand):
         )
         parser.add_argument(
             "--is_control_plate",
-            help="If the plate is a control plate for an experiment",
+            type=yes_or_no,
+            help="If the plate is a control plate for an experiment: yes or no",
             default=False,
         )
 
@@ -157,16 +168,13 @@ class Command(BaseCommand):
         )
         if created:
             message(f"Created library {library}.", "info", room_name)
-            __debug(f"Created library {library}.")
         else:
-            message(f"Created library {library}.", "info", room_name)
-            __debug(f"Using library {library}.")
+            message(f"Using library {library}.", "info", room_name)
 
         sdf = PandasTools.LoadSDF(
             sdf_file,
             molColName=mapping.structure,
             embedProps=False,
-            includeFingerprints=True,
         )
         required_columns = [mapping.name, mapping.position]
         required_columns += list(mapping.barcodes) + list(mapping.amounts)
@@ -180,6 +188,8 @@ class Command(BaseCommand):
             )
 
         # Import plates
+        # The plates by barcode, so the wells below do not load a plate per row
+        plates = {}
         for mapping_barcode_idx, mapping_barcode in enumerate(mapping.barcodes):
             message(
                 f"Processing plates for barcode column {mapping_barcode}...",
@@ -233,6 +243,7 @@ class Command(BaseCommand):
                         __debug(f"Created plate {plate.barcode}.")
                     else:
                         __debug(f"Using plate {plate.barcode}.")
+                    plates[plate_id] = plate
                     pbar.update(1)
 
             # Import Compounds and Wells
@@ -266,9 +277,7 @@ class Command(BaseCommand):
                     else:
                         __debug(f"Using compound {compound}")
 
-                    compound.save()
-
-                    plate = Plate.objects.get(barcode=row[mapping_barcode])
+                    plate = plates[row[mapping_barcode]]
                     well, created = Well.objects.update_or_create(
                         plate=plate,
                         position=plate.dimension.position(row[mapping.position]),
@@ -502,7 +511,7 @@ class Command(BaseCommand):
             )
 
         else:
-            message(f"File does not exist: {input_file}", "error", room_name)
+            raise CommandError(f"File does not exist: {input_file}")
 
     def import_file(self, options: dict) -> bool:
         """Imports the file of the command; True if something was imported."""

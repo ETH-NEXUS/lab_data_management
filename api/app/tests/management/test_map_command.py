@@ -141,3 +141,17 @@ class MapCommandTest(TestCase):
         failure = logs.records[-1]
         self.assertEqual("Command map echo failed", failure.getMessage())
         self.assertIsNotNone(failure.exc_info)
+
+    def test_a_folder_that_does_not_exist(self):
+        output = self.run_map("echo", path="/no/such/folder")
+
+        self.assertFailedWith(output, "The folder /no/such/folder does not exist.")
+
+    def test_a_file_instead_of_a_folder(self):
+        path = self.write("report.csv", "")
+
+        output = self.run_map("echo", path=path)
+
+        self.assertFailedWith(
+            output, f"{path} is a file. Please choose the folder that contains it."
+        )

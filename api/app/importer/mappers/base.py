@@ -14,6 +14,7 @@ from typing import Any
 from chardet.universaldetector import UniversalDetector
 from django.core.management.base import CommandError
 from django.core.files import File
+from django.core.files.storage import default_storage
 from django.db import transaction
 
 from core.models import (
@@ -65,6 +66,12 @@ class BaseMapper:
     - map(data, **kwargs): writes what parse returned into the database
     """
 
+    def __init__(self) -> None:
+        # The copies of report files saved in the media folder while one file is
+        # mapped, e.g. ["20240610-121212_demo_1_Kx3dP0a.asc"]. A rollback does not
+        # delete them, so a file that fails deletes them itself.
+        self.stored_files: list[str] = []
+
     @staticmethod
     def get_files(glob_pattern: str) -> list[str]:
         """All files that match the pattern; "**" also looks into sub folders."""
@@ -79,8 +86,7 @@ class BaseMapper:
         stores nothing, the error is shown, and the next file is mapped.
 
         All files share the same kwargs: what one file adds ("xml_file",
-        "filename", the extra information of an M1000 file) is still there
-        when the next file is read.
+        "filename") is still there when the next file is read.
         """
         room_name = kwargs.get("room_name")
         filenames = self.get_files(glob_pattern)
@@ -90,12 +96,14 @@ class BaseMapper:
         failed_files = []
         for filename in filenames:
             message(f"Processing file {filename}...", "info", room_name)
+            self.stored_files = []
             try:
                 with transaction.atomic():
                     data = self.read_file(filename, kwargs)
                     kwargs.update({"filename": filename})
                     self.map(data, **kwargs)
             except Exception as error:
+                self.delete_stored_files()
                 failed_files.append(filename)
                 message(
                     f"{filename} was not mapped, nothing of it was stored: "
@@ -124,26 +132,17 @@ class BaseMapper:
         """
         Parses one file and returns what `parse` returned.
 
-        Changes kwargs in place: sets "xml_file" for files that are opened
-        here, and adds the extra information that `parse` may return.
+        Changes kwargs in place: sets "xml_file" for files that are opened here.
         """
         encoding = detect_encoding(filename)
 
         if filename.endswith(FILES_PARSED_BY_NAME):
-            logger.info(f"Processing {filename} as Excel file")
+            logger.info(f"Parsing {filename} by its file name")
             return self.parse(filename, **kwargs)
 
         kwargs.update({"xml_file": filename.endswith(".xml")})
         with open(filename, "r", encoding=encoding) as file:
-            parsed = self.parse(file, **kwargs)
-
-        # The M1000 mapper returns a tuple: (data, extra information)
-        if isinstance(parsed, tuple):
-            data = parsed[0]
-            extra_information = parsed[1]
-            kwargs.update(extra_information)
-            return data
-        return parsed
+            return self.parse(file, **kwargs)
 
     def parse(self, file: Any, **kwargs) -> Any:
         """Every mapper decides what `file` is and what it returns."""
@@ -164,7 +163,14 @@ class BaseMapper:
                 filename=filename,
                 measurement_file=File(file, os.path.basename(file.name)),
             )
-            return assignment
+        self.stored_files.append(assignment.measurement_file.name)
+        return assignment
+
+    def delete_stored_files(self) -> None:
+        """Deletes the report copies of a file whose mapping was rolled back."""
+        for name in self.stored_files:
+            default_storage.delete(name)
+        self.stored_files = []
 
     def create_plate_by_name_and_barcode(
         self,

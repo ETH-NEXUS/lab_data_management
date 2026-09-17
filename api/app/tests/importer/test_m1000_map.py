@@ -55,12 +55,16 @@ class M1000MapTest(TestCase):
     def tearDown(self):
         shutil.rmtree(self.folder)
 
-    def run_map(self, data, **changes):
-        kwargs = {
+    def run_map(self, entries, meta_data=None, **changes):
+        data = {
             "barcode": "demo_1",
-            "filename": self.filename,
             "measurement_date": MEASURED_AT,
-            "meta_data": [{"Label": "Label1"}],
+            "plate_description": None,
+            "meta_data": meta_data or [{"Label": "Label1"}],
+            "entries": entries,
+        }
+        kwargs = {
+            "filename": self.filename,
             "experiment_name": "Experiment",
             "room_name": "room_1",
         }

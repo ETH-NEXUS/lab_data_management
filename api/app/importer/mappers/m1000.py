@@ -33,6 +33,18 @@ class M1000Entry(TypedDict):
     values: list[float | None]  # one value per measured label, e.g. [15.0]
 
 
+class M1000Data(TypedDict):
+    """What `parse` returns for one .asc file."""
+
+    barcode: str  # from the file name, e.g. "demo_1"
+    measurement_date: dt  # e.g. datetime(2011, 11, 11, 11, 11, 11)
+    plate_description: str | None  # e.g. "test"
+    # The settings of every label, in the order of the value columns,
+    # e.g. [{"Label": "Label1", "Integration time": "1000 ms"}]
+    meta_data: list[dict[str, str]]
+    entries: list[M1000Entry]
+
+
 def debug_message(text: str, kwargs: dict) -> None:
     """Sends a debug message, but only when the mapper runs with debug=True."""
     if kwargs.get("debug"):
@@ -88,15 +100,15 @@ class M1000Mapper(BaseMapper):
         file.seek(0)
         raise CommandError(f"File has not the desired format: {file.name}")
 
-    def parse(self, file: TextIOWrapper, **kwargs) -> tuple[list[M1000Entry], dict]:
+    def parse(self, file: TextIOWrapper, **kwargs) -> M1000Data:
         """
         Reads the value lines and the footer.
 
-        Returns the entries and kwargs with the extra information, e.g.
-        ([{"position": "A1", "identifier": "SM1_1", "values": [15.0]}],
-         {..., "barcode": "demo_1", "plate_description": "test",
-          "measurement_date": datetime(2011, 11, 11, 11, 11, 11),
-          "meta_data": [{"Label": "Label1", "Integration time": "1000 ms"}]})
+        Returned data example:
+        {"barcode": "demo_1", "plate_description": "test",
+         "measurement_date": datetime(2011, 11, 11, 11, 11, 11),
+         "meta_data": [{"Label": "Label1", "Integration time": "1000 ms"}],
+         "entries": [{"position": "A1", "identifier": "SM1_1", "values": [15.0]}]}
         """
         barcode = self.barcode_from_file_name(file.name)
 
@@ -130,17 +142,14 @@ class M1000Mapper(BaseMapper):
                     meta_data.append({})
                 meta_data[-1][key] = match.group("value")
 
-        kwargs.update(
-            {
-                "barcode": barcode,
-                "measurement_date": measurement_date,
-                "plate_description": plate_description,
-                # The labels are listed in the footer in the reverse order of
-                # the value columns
-                "meta_data": list(reversed(meta_data)),
-            }
-        )
-        return entries, kwargs
+        return {
+            "barcode": barcode,
+            "measurement_date": measurement_date,
+            "plate_description": plate_description,
+            # The labels are listed in the footer in the reverse order of the value columns
+            "meta_data": list(reversed(meta_data)),
+            "entries": entries,
+        }
 
     def barcode_from_file_name(self, path: str) -> str:
         """ "/data/20240610-121212_demo_1.asc" -> "demo_1"."""
@@ -178,14 +187,15 @@ class M1000Mapper(BaseMapper):
             "values": values,
         }
 
-    def map(self, data: list[M1000Entry], **kwargs) -> None:
+    def map(self, data: M1000Data, **kwargs) -> None:
         """
         Stores every value of every entry as a measurement of its well, and
         links the file to the plate with a measurement assignment.
         """
+        entries = data["entries"]
         plate = self.find_or_create_measured_plate(
-            kwargs["barcode"],
-            len(data),
+            data["barcode"],
+            len(entries),
             kwargs.get("room_name"),
             kwargs.get("experiment_name"),
         )
@@ -193,11 +203,11 @@ class M1000Mapper(BaseMapper):
         with tqdm(
             desc="Processing measurements",
             unit="measurement",
-            total=len(data),
+            total=len(entries),
         ) as progress:
             assignment = self.create_measurement_assignment(plate, kwargs["filename"])
 
-            for entry in data:
+            for entry in entries:
                 debug_message(f"Entry: {entry}", kwargs)
                 position = plate.dimension.position(entry.get("position"))
                 well = plate.well_at(position, create_if_not_exist=True)
@@ -205,8 +215,10 @@ class M1000Mapper(BaseMapper):
                 for index, value in enumerate(entry.get("values")):
                     Measurement.objects.update_or_create(
                         well=well,
-                        label=self.measurement_label(index, kwargs),
-                        measured_at=kwargs.get("measurement_date"),
+                        label=self.measurement_label(
+                            index, data["meta_data"], kwargs.get("measurement_name")
+                        ),
+                        measured_at=data["measurement_date"],
                         defaults={
                             "value": value,
                             "identifier": entry.get("identifier"),
@@ -216,13 +228,14 @@ class M1000Mapper(BaseMapper):
                 progress.update(1)
 
     @staticmethod
-    def measurement_label(index: int, kwargs: dict) -> str:
+    def measurement_label(
+        index: int, meta_data: list[dict[str, str]], measurement_name: str | None
+    ) -> str | None:
         """
         The label of the value in column `index`: the matching name of
-        kwargs["measurement_name"] (e.g. "Lum,Fluo"), or else the "Label" of
-        the matching meta data.
+        `measurement_name` (e.g. "Lum,Fluo"), or else the "Label" of the
+        matching meta data.
         """
-        measurement_name = kwargs.get("measurement_name")
         if measurement_name:
             return measurement_name.split(",")[index]
-        return kwargs["meta_data"][index].get(META_DATA_LABEL)
+        return meta_data[index].get(META_DATA_LABEL)

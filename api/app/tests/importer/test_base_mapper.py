@@ -16,6 +16,7 @@ from core.models import (
     BarcodeSpecification,
     Experiment,
     ExperimentDetail,
+    MeasurementAssignment,
     Plate,
     PlateDetail,
     PlateDimension,
@@ -34,6 +35,7 @@ class RecordingMapper(BaseMapper):
     """
 
     def __init__(self, parse_result):
+        super().__init__()
         self.parse_result = parse_result
         self.parse_calls = []
         self.map_calls = []
@@ -108,18 +110,6 @@ class BaseMapperRunTest(TestCase):
             [(["row"], {"xml_file": True, "filename": path})], mapper.map_calls
         )
 
-    def test_a_parse_result_with_extra_information_is_split(self, message, *refreshes):
-        # The M1000 mapper returns (entries, extra information)
-        path = self.write("20240610-121212_demo_1.asc")
-        mapper = RecordingMapper(parse_result=(["row"], {"barcode": "demo_1"}))
-
-        mapper.run(join(self.folder, "*.asc"))
-
-        self.assertEqual(
-            [(["row"], {"xml_file": False, "barcode": "demo_1", "filename": path})],
-            mapper.map_calls,
-        )
-
     def test_txt_and_xlsx_files_are_parsed_by_name(self, message, *refreshes):
         path = self.write("241014_125455_241008MP-1_1.txt")
         mapper = RecordingMapper(parse_result={"results": []})
@@ -189,6 +179,25 @@ class BaseMapperRunTest(TestCase):
         )
         for refresh in refreshes:
             refresh.assert_called_once_with(concurrently=True)
+
+    def test_the_report_copy_of_a_file_with_an_error_is_deleted(
+        self, message, *refreshes
+    ):
+        path = self.write("20240610-121212_demo_1.asc")
+        dimension = PlateDimension.objects.create(name="dim_96_8x12", rows=8, cols=12)
+        plate = Plate.objects.create(barcode="demo_1", dimension=dimension)
+        media = join(self.folder, "media")
+
+        class FailingMapper(RecordingMapper):
+            def map(self, data, **kwargs):
+                self.create_measurement_assignment(plate, kwargs["filename"])
+                raise CommandError("Unknown well Z99.")
+
+        with override_settings(MEDIA_ROOT=media):
+            FailingMapper(parse_result=["row"]).run(path, room_name="room_1")
+
+        self.assertFalse(MeasurementAssignment.objects.exists())
+        self.assertEqual([], os.listdir(media))
 
     def test_an_unexpected_error_in_a_file_is_logged_with_traceback(
         self, message, *refreshes
