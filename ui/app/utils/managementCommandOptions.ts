@@ -65,7 +65,7 @@ export const importControlPlateOptions: Options = {
   plate_barcode: {
     type: 'str',
     label: 'Plate barcode',
-    required: false,
+    required: true,
   },
 }
 
@@ -89,7 +89,7 @@ export const importLibraryPlateOptions: Options = {
   plate_barcode: {
     type: 'str',
     label: 'Plate barcode',
-    required: false,
+    required: true,
   },
 }
 

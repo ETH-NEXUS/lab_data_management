@@ -1,5 +1,5 @@
 import { defineStore } from 'pinia'
-import { ref } from 'vue'
+import { computed, ref } from 'vue'
 import type { FileSystemItem, GeneralFormData } from '~/types/lab'
 import {
   MANAGEMENT_DELETE_FILE_ENDPOINT,
@@ -38,6 +38,10 @@ const FAILED_OUTPUT_REQUEST_DELAY_MS = 1000
 // A command that has not written a single line in this time did not start,
 // for example because the worker that runs the commands is down
 const COMMAND_START_TIMEOUT_MS = 60000
+// How often the page asks for new output while a command runs
+const OUTPUT_REQUEST_DELAY_MS = 1000
+// The command of this browser, so its output comes back after a reload
+const ROOM_NAME_STORAGE_KEY = 'managementRoomName'
 
 export const useManagementStore = defineStore('managementStore', () => {
   const dataDirectory = ref<FileSystemItem>(createEmptyDirectoryItem())
@@ -110,6 +114,67 @@ export const useManagementStore = defineStore('managementStore', () => {
     activeRoomName.value = ''
     // The output of an earlier command is not read anymore, so nothing is waited for
     isRunningCommand.value = false
+    rememberedRoomName.value = ''
+  }
+
+  /**
+   * The command this browser started last, so its output comes back after a
+   * page reload. Browser storage can be switched off, then nothing is remembered.
+   */
+  const rememberedRoomName = computed({
+    get: (): string => {
+      try {
+        return localStorage.getItem(ROOM_NAME_STORAGE_KEY) ?? ''
+      } catch {
+        return ''
+      }
+    },
+    set: (roomName: string): void => {
+      try {
+        if (roomName === '') {
+          localStorage.removeItem(ROOM_NAME_STORAGE_KEY)
+        } else {
+          localStorage.setItem(ROOM_NAME_STORAGE_KEY, roomName)
+        }
+      } catch {
+        // Nothing is remembered, the output is only lost after a reload
+      }
+    },
+  })
+
+  /**
+   * Shows the output of the command of this browser again, if it is still
+   * running. Called when the management page is opened.
+   */
+  const resumeCommandOutput = async (): Promise<void> => {
+    const roomName = rememberedRoomName.value
+    clearCommandOutput()
+    if (roomName === '') {
+      return
+    }
+
+    let response: LongPollingResponse
+    try {
+      response = await requestApiData<LongPollingResponse>(
+        `${MANAGEMENT_LONG_POLLING_ENDPOINT}${roomName}/`,
+        { method: 'GET', params: { since: '0' } },
+        MANAGEMENT_LONG_POLLING_ERROR_MESSAGE,
+      )
+    } catch (err: unknown) {
+      console.error(MANAGEMENT_LONG_POLLING_ERROR_MESSAGE, err)
+      return
+    }
+
+    if (response.status !== 'running') {
+      rememberedRoomName.value = ''
+      return
+    }
+    commandMessages.value = response.messages
+    commandStatus.value = 'running'
+    activeRoomName.value = roomName
+    rememberedRoomName.value = roomName
+    isRunningCommand.value = true
+    void pollCommandOutput(roomName, response.next)
   }
 
   /**
@@ -161,6 +226,7 @@ export const useManagementStore = defineStore('managementStore', () => {
     commandStatus.value = 'running'
     commandRequestError.value = null
     activeRoomName.value = roomName
+    rememberedRoomName.value = roomName
 
     if (roomName !== '') {
       void pollCommandOutput(roomName, 0)
@@ -245,6 +311,7 @@ export const useManagementStore = defineStore('managementStore', () => {
     if (response.status === 'completed' || response.status === 'failed') {
       commandStatus.value = response.status
       isRunningCommand.value = false
+      rememberedRoomName.value = ''
       // The command may have created or changed files
       await fetchDataDirectory()
       return
@@ -263,7 +330,7 @@ export const useManagementStore = defineStore('managementStore', () => {
 
     setTimeout(() => {
       void pollCommandOutput(roomName, response.next, 0, startedAt)
-    }, 300)
+    }, OUTPUT_REQUEST_DELAY_MS)
   }
 
   /**
@@ -407,6 +474,7 @@ export const useManagementStore = defineStore('managementStore', () => {
     getDataDirectory,
     initialize,
     clearCommandOutput,
+    resumeCommandOutput,
     addSelectedPath,
     removeSelectedPath,
     clearSelectedPaths,

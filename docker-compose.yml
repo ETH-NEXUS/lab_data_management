@@ -1,5 +1,6 @@
 volumes:
   pg_data:
+  redis_data:
   web_root:
   web_root_nuxt:
 
@@ -66,6 +67,11 @@ services:
     image: redis:7-alpine
     hostname: redis
     restart: unless-stopped
+    # The tasks and the command output survive a restart of the container, and
+    # the cache never throws away a task to make room
+    command: redis-server --appendonly yes --maxmemory-policy noeviction
+    volumes:
+      - redis_data:/data
 
   # Runs Celery tasks in the background, with the same code and image as the api
   celery:

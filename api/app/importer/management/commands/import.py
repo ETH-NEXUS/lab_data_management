@@ -333,6 +333,14 @@ class Command(BaseCommand):
                     False,
                     "The number of lines before and after the empty line should be equal.",
                 )
+            columns = len(all_rows[0])
+            for number, row in enumerate(before_empty_line + after_empty_line, start=1):
+                if len(row) != columns:
+                    return (
+                        False,
+                        f"Every line must have {columns} cells, like the first line, "
+                        f"but line {number} has {len(row)}.",
+                    )
             return True, "File format is correct."
 
     def __parse_library_plate_file(
@@ -419,6 +427,7 @@ class Command(BaseCommand):
                 room_name,
             )
 
+        new_compounds: list[str] = []
         with tqdm(
             desc="Processing wells",
             unit="wells",
@@ -437,12 +446,19 @@ class Command(BaseCommand):
                     )
                     if compound is None:
                         compound = Compound.objects.create(name=_compound)
-                        message(f"Created compound {_compound}.", "success", room_name)
+                        new_compounds.append(_compound)
 
                     WellCompound.objects.create(well=well, compound=compound)
                     well.save()
                 pbar.update(1)
 
+        if new_compounds:
+            message(
+                f"Created {len(new_compounds)} new compounds: "
+                f"{', '.join(new_compounds)}",
+                "success",
+                room_name,
+            )
         message(f"Finished processing plate {plate_barcode}.", "success", room_name)
 
     def template(
@@ -523,14 +539,15 @@ class Command(BaseCommand):
                 number_of_rows=options.get("number_of_rows"),
                 number_of_columns=options.get("number_of_columns"),
                 number_of_wells=options.get("number_of_wells"),
+                debug=options.get("debug", False),
                 room_name=options.get("room_name"),
             )
             imported = True
         elif options.get("what") == "template":
             self.template(
                 options.get("input_file"),
-                category_name=options.get("category_name"),
-                template_name=options.get("template_name"),
+                category_name=options.get("category_name") or "Default",
+                template_name=options.get("template_name") or "Default",
                 room_name=options.get("room_name"),
             )
             imported = True

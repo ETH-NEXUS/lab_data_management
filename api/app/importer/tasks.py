@@ -18,8 +18,8 @@ from importer.command_output import (
 from importer.helper import message
 
 
-@shared_task
-def run_management_command(form_data: dict) -> None:
+@shared_task(bind=True)
+def run_management_command(self, form_data: dict) -> None:
     """
     Runs the map or import command that was started on the management page.
     The page reads the messages and the end status through long_polling.
@@ -29,7 +29,8 @@ def run_management_command(form_data: dict) -> None:
      "experiment_name": "Screen 1", "room_name": "12_1726563600000"}
     """
     room_name = form_data.get("room_name")
-    register_running_command(room_name)
+    # In the worker the request knows its name, e.g. "celery@celery"
+    register_running_command(room_name, self.request.hostname or "unknown worker")
     try:
         if form_data.get("command") == "map":
             kwargs = {
@@ -67,6 +68,6 @@ def run_management_command(form_data: dict) -> None:
 
 
 @worker_ready.connect
-def fail_commands_of_the_last_worker(**kwargs) -> None:
+def fail_commands_of_the_last_worker(sender=None, **kwargs) -> None:
     """A restarted worker does not continue the commands it was running."""
-    fail_interrupted_commands()
+    fail_interrupted_commands(sender.hostname if sender else "unknown worker")

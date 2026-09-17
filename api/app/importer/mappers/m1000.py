@@ -193,6 +193,9 @@ class M1000Mapper(BaseMapper):
         links the file to the plate with a measurement assignment.
         """
         entries = data["entries"]
+        labels = self.measurement_labels(
+            entries, data["meta_data"], kwargs.get("measurement_name")
+        )
         plate = self.find_or_create_measured_plate(
             data["barcode"],
             len(entries),
@@ -215,9 +218,7 @@ class M1000Mapper(BaseMapper):
                 for index, value in enumerate(entry.get("values")):
                     Measurement.objects.update_or_create(
                         well=well,
-                        label=self.measurement_label(
-                            index, data["meta_data"], kwargs.get("measurement_name")
-                        ),
+                        label=labels[index],
                         measured_at=data["measurement_date"],
                         defaults={
                             "value": value,
@@ -228,14 +229,31 @@ class M1000Mapper(BaseMapper):
                 progress.update(1)
 
     @staticmethod
-    def measurement_label(
-        index: int, meta_data: list[dict[str, str]], measurement_name: str | None
-    ) -> str | None:
+    def measurement_labels(
+        entries: list[M1000Entry],
+        meta_data: list[dict[str, str]],
+        measurement_name: str | None,
+    ) -> list[str]:
         """
-        The label of the value in column `index`: the matching name of
-        `measurement_name` (e.g. "Lum,Fluo"), or else the "Label" of the
-        matching meta data.
+        The label of every value column: the names of `measurement_name`
+        ("Lum,Fluo" -> ["Lum", "Fluo"]), or else the "Label" of the settings in
+        the footer of the file. A file without a label for every column is refused.
         """
+        columns = max((len(entry["values"]) for entry in entries), default=0)
         if measurement_name:
-            return measurement_name.split(",")[index]
-        return meta_data[index].get(META_DATA_LABEL)
+            labels = measurement_name.split(",")
+            if len(labels) < columns:
+                raise CommandError(
+                    f"The file has {columns} value columns, but only "
+                    f"{len(labels)} measurement names were given: {measurement_name}."
+                )
+            return labels
+
+        labels = [settings.get(META_DATA_LABEL, "") for settings in meta_data]
+        if len(labels) < columns or not all(labels[:columns]):
+            raise CommandError(
+                f"The file has {columns} value columns, but its footer does not "
+                "name every label. Please give the measurement names, "
+                "for example 'Lum,Fluo'."
+            )
+        return labels

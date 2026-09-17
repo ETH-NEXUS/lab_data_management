@@ -9,6 +9,9 @@ Stored messages example:
  {"level": "error", "text": "/data/b.txt was not mapped, nothing of it was stored: ..."}]
 """
 
+import time
+from contextlib import contextmanager
+
 from django.core.cache import cache
 from django.core.management.base import CommandError
 
@@ -19,8 +22,17 @@ RUNNING = "running"
 COMPLETED = "completed"
 FAILED = "failed"
 
-# The rooms of the commands that a worker is running right now, e.g. ["12_1726563600000"]
+# A command does not show more messages than this; the rest is only in the log
+MAX_MESSAGES = 1000
+TOO_MANY_MESSAGES = (
+    f"More than {MAX_MESSAGES} messages: the next ones are only in the server log."
+)
+
+# The worker of every command that is running right now, by room:
+# {"12_1726563600000": "celery@celery"}
 RUNNING_COMMANDS_KEY = "running_commands"
+RUNNING_COMMANDS_LOCK_KEY = "running_commands_lock"
+LOCK_TIMEOUT_SECONDS = 10
 INTERRUPTED_MESSAGE = (
     "The command was interrupted, because the command worker was restarted. "
     "Check what was stored before you run it again."
@@ -43,22 +55,48 @@ def start_command(room_name: str | None) -> None:
     cache.set(status_key(room_name), RUNNING, OUTPUT_TIMEOUT_SECONDS)
 
 
-def register_running_command(room_name: str | None) -> None:
+@contextmanager
+def running_commands_lock():
+    """
+    Holds the list of running commands while it is read and written again, so
+    that two commands starting at the same moment do not overwrite each other.
+    """
+    while not cache.add(RUNNING_COMMANDS_LOCK_KEY, "1", LOCK_TIMEOUT_SECONDS):
+        time.sleep(0.05)
+    try:
+        yield
+    finally:
+        cache.delete(RUNNING_COMMANDS_LOCK_KEY)
+
+
+def register_running_command(room_name: str | None, worker_name: str) -> None:
     """The worker starts the command. It is listed until finish_command."""
     if not room_name:
         return
-    running = cache.get(RUNNING_COMMANDS_KEY, [])
-    if room_name not in running:
-        running.append(room_name)
-    cache.set(RUNNING_COMMANDS_KEY, running, OUTPUT_TIMEOUT_SECONDS)
+    with running_commands_lock():
+        running = cache.get(RUNNING_COMMANDS_KEY, {})
+        running[room_name] = worker_name
+        cache.set(RUNNING_COMMANDS_KEY, running, OUTPUT_TIMEOUT_SECONDS)
 
 
-def fail_interrupted_commands() -> None:
+def forget_running_command(room_name: str) -> None:
+    """The command has ended, so its worker is not running it anymore."""
+    with running_commands_lock():
+        running = cache.get(RUNNING_COMMANDS_KEY, {})
+        if running.pop(room_name, None) is not None:
+            cache.set(RUNNING_COMMANDS_KEY, running, OUTPUT_TIMEOUT_SECONDS)
+
+
+def fail_interrupted_commands(worker_name: str) -> None:
     """
-    Called when the worker starts: a command that is still listed as running
-    was stopped by the restart, so it gets an error and the status "failed".
+    Called when a worker starts: a command that this worker was running was
+    stopped by the restart, so it gets an error and the status "failed".
+    Commands of another worker are left alone.
     """
-    for room_name in cache.get(RUNNING_COMMANDS_KEY, []):
+    running = cache.get(RUNNING_COMMANDS_KEY, {})
+    for room_name in [
+        room for room, worker in running.items() if worker == worker_name
+    ]:
         add_message(room_name, "error", INTERRUPTED_MESSAGE)
         finish_command(room_name)
 
@@ -68,6 +106,9 @@ def add_message(room_name: str | None, level: str, text: str) -> None:
     if not room_name:
         return
     messages = cache.get(messages_key(room_name), [])
+    if len(messages) >= MAX_MESSAGES:
+        # The same message twice in a row is dropped below, so this line is added once
+        level, text = "warning", TOO_MANY_MESSAGES
     new_message = {"level": level, "text": text}
     # A command that reports an error and then raises it would show it twice
     if messages and messages[-1] == new_message:
@@ -86,17 +127,14 @@ def finish_command(room_name: str | None) -> None:
     messages = cache.get(messages_key(room_name), [])
     has_errors = any(message["level"] == "error" for message in messages)
     if has_errors:
-        add_message(room_name, "error", "Command failed.")
+        messages.append({"level": "error", "text": "Command failed."})
         status = FAILED
     else:
-        add_message(room_name, "info", "Command completed.")
+        messages.append({"level": "info", "text": "Command completed."})
         status = COMPLETED
+    cache.set(messages_key(room_name), messages, OUTPUT_TIMEOUT_SECONDS)
     cache.set(status_key(room_name), status, OUTPUT_TIMEOUT_SECONDS)
-
-    running = cache.get(RUNNING_COMMANDS_KEY, [])
-    if room_name in running:
-        running.remove(room_name)
-        cache.set(RUNNING_COMMANDS_KEY, running, OUTPUT_TIMEOUT_SECONDS)
+    forget_running_command(room_name)
 
 
 def read_output(room_name: str, since: int) -> dict:

@@ -19,7 +19,8 @@ const authStore = useAuthStore()
 const { t } = useI18n()
 
 onMounted(() => {
-  managementStore.clearCommandOutput()
+  // A command that is still running shows its output again after a page reload
+  void managementStore.resumeCommandOutput()
 })
 
 /**
