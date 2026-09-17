@@ -20,6 +20,10 @@ from rdkit.Chem import PandasTools
 from rdkit.Chem.rdchem import Mol
 from rdkit import Chem
 
+# Excel saves CSV files with an invisible BOM character at the start. "utf-8-sig"
+# removes it, so the first compound name is not read as "\ufeffDMSO".
+CSV_ENCODING = "utf-8-sig"
+
 
 def full_strip(s: str):
     return s.strip().lstrip()
@@ -289,7 +293,7 @@ class Command(BaseCommand):
                     wbar.update(1)
 
     def __check_file_format(self, input_file: str):
-        with open(input_file, "r") as file:
+        with open(input_file, "r", encoding=CSV_ENCODING) as file:
             reader = csv.reader(file)
             all_rows = list(reader)
             empty_rows = [row for row in all_rows if all(x == "" for x in row)]
@@ -315,7 +319,7 @@ class Command(BaseCommand):
             raise CommandError(f"File format is incorrect: {message_text}")
 
         message("Reading plate file...", "info", room_name)
-        with open(input_file, "r") as file:
+        with open(input_file, "r", encoding=CSV_ENCODING) as file:
             reader = csv.reader(file)
             matrix1 = []
             matrix2 = []
@@ -430,7 +434,7 @@ class Command(BaseCommand):
             well_types = []
             num_rows = 0
             num_cols = 0
-            with open(input_file, "r") as file:
+            with open(input_file, "r", encoding=CSV_ENCODING) as file:
                 message("Reading template file...", "info", room_name)
                 reader = csv.reader(file, delimiter="\t")
                 for row in reader:

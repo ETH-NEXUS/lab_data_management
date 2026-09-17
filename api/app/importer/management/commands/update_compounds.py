@@ -33,7 +33,8 @@ class Command(BaseCommand):
         """
         logger.info(f"Reading compound data from {input_file}")
         try:
-            with open(input_file, "r") as file:
+            # "utf-8-sig" removes the BOM that Excel writes before the first column name
+            with open(input_file, "r", encoding="utf-8-sig") as file:
                 reader = csv.DictReader(file, delimiter="\t")
                 return [row for row in reader]
         except Exception as e:

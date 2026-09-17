@@ -89,6 +89,30 @@ class ImportCommandTest(TestCase):
             ),
         )
 
+    def test_a_library_plate_file_saved_by_excel_uses_the_existing_compound(self):
+        # Excel writes an invisible BOM character before the first compound name
+        aspirin = Compound.objects.create(name="Aspirin")
+        path = self.write("plate.csv", "\ufeff" + LIBRARY_PLATE_CSV)
+
+        output = self.run_import(
+            "library_plate",
+            input_file=path,
+            library_name="Library",
+            plate_barcode="LIB_1",
+        )
+
+        self.assertEqual("completed", output["status"])
+        self.assertEqual(
+            ["Aspirin", "Caffeine"],
+            sorted(Compound.objects.values_list("name", flat=True)),
+        )
+        self.assertEqual(
+            aspirin,
+            WellCompound.objects.get(
+                well__plate__barcode="LIB_1", well__position=0
+            ).compound,
+        )
+
     def test_a_library_plate_file_that_does_not_exist(self):
         output = self.run_import(
             "library_plate",
