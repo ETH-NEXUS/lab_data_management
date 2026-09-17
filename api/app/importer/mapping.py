@@ -1,10 +1,11 @@
+import copy
 import json
 import yaml
 from .helper import sameSchema
 from os.path import isfile
 
 
-class MappingFileSchemaError:
+class MappingFileSchemaError(Exception):
     def __init__(
         self, mapping={}, message="Error in mapping file schema. Should be {}"
     ):
@@ -27,7 +28,8 @@ class SdfMapping:
     }
 
     def __init__(self, mappingFile: str = None):
-        self.mapping = self.DEFAULT_MAPPING
+        # A copy, so loading a mapping file does not change the default for the next import
+        self.mapping = copy.deepcopy(self.DEFAULT_MAPPING)
         if mappingFile:
             self.load(mappingFile)
 

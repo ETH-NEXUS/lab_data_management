@@ -10,6 +10,7 @@ Stored messages example:
 """
 
 from django.core.cache import cache
+from django.core.management.base import CommandError
 
 # The output of a command is kept this long; Redis removes it afterwards.
 OUTPUT_TIMEOUT_SECONDS = 24 * 60 * 60
@@ -81,3 +82,21 @@ def read_output(room_name: str, since: int) -> dict:
         "next": len(messages),
         "status": cache.get(status_key(room_name)),
     }
+
+
+def error_text(error: Exception) -> str:
+    """
+    The text of an error for the management page. A CommandError is written
+    for people, so only its text is shown. Any other error is unexpected: its
+    type is shown too, because its text alone can be empty or unclear.
+
+    CommandError("Project P1 does not exist.") -> "Project P1 does not exist."
+    KeyError("NAME") -> "KeyError: 'NAME'"
+    AssertionError() -> "AssertionError"
+    """
+    if isinstance(error, CommandError):
+        return str(error)
+    error_type = type(error).__name__
+    if not str(error):
+        return error_type
+    return f"{error_type}: {error}"

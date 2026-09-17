@@ -1,5 +1,4 @@
-from django.core.management.base import BaseCommand
-import traceback
+from django.core.management.base import BaseCommand, CommandError
 from os.path import isfile
 from compoundlib.models import Compound, CompoundLibrary
 from core.models import Plate, Well, PlateDimension, WellCompound, WellType, Project
@@ -14,6 +13,8 @@ from pathlib import Path
 from tqdm import tqdm
 import csv
 from importer.helper import message
+from importer.command_output import error_text
+from helpers.logger import logger
 
 from rdkit.Chem import PandasTools
 from rdkit.Chem.rdchem import Mol
@@ -123,161 +124,169 @@ class Command(BaseCommand):
             if debug:
                 message(msg, "debug", room_name)
 
+        if not isfile(sdf_file):
+            raise CommandError(f"File does not exist: {sdf_file}")
+
         message(f"Importing SDF file {sdf_file}...", "info", room_name)
 
         if number_of_wells:
             number_of_rows, number_of_columns = row_col_from_wells(number_of_wells)
-        if isfile(sdf_file):
-            if not library_name:
-                library_name = splitext(Path(sdf_file).name)[0]
-            library, created = CompoundLibrary.objects.update_or_create(
-                name=library_name, defaults={"file_name": Path(sdf_file).name}
+        if not library_name:
+            library_name = splitext(Path(sdf_file).name)[0]
+        library, created = CompoundLibrary.objects.update_or_create(
+            name=library_name, defaults={"file_name": Path(sdf_file).name}
+        )
+        if created:
+            message(f"Created library {library}.", "info", room_name)
+            __debug(f"Created library {library}.")
+        else:
+            message(f"Created library {library}.", "info", room_name)
+            __debug(f"Using library {library}.")
+
+        sdf = PandasTools.LoadSDF(
+            sdf_file,
+            molColName=mapping.structure,
+            embedProps=False,
+            includeFingerprints=True,
+        )
+        required_columns = [mapping.name, mapping.position]
+        required_columns += list(mapping.barcodes) + list(mapping.amounts)
+        missing_columns = [
+            column for column in required_columns if column not in sdf.columns
+        ]
+        if missing_columns:
+            raise CommandError(
+                f"These columns are not in the SDF file {sdf_file}: "
+                f"{', '.join(missing_columns)}. Check the mapping file."
             )
-            if created:
-                message(f"Created library {library}.", "info", room_name)
-                __debug(f"Created library {library}.")
-            else:
-                message(f"Created library {library}.", "info", room_name)
-                __debug(f"Using library {library}.")
 
-            sdf = PandasTools.LoadSDF(
-                sdf_file,
-                molColName=mapping.structure,
-                embedProps=False,
-                includeFingerprints=True,
+        # Import plates
+        for mapping_barcode_idx, mapping_barcode in enumerate(mapping.barcodes):
+            message(
+                f"Processing plates for barcode column {mapping_barcode}...",
+                "info",
+                room_name,
             )
 
-            # Import plates
-            for mapping_barcode_idx, mapping_barcode in enumerate(mapping.barcodes):
-                message(
-                    f"Processing plates for barcode column {mapping_barcode}...",
-                    "info",
-                    room_name,
-                )
-
-                with tqdm(
-                    desc="Processing plates",
-                    unit="plates",
-                    total=len(sdf[mapping_barcode].unique()),
-                ) as pbar:
-                    for plate_id in sdf[mapping_barcode].unique():
-                        # Determinate Plate Dimension
-                        if number_of_columns and number_of_rows:
-                            max_row = number_of_rows
-                            max_col = number_of_columns
-                        else:
-                            max_row = 0
-                            max_col = 0
-                            for position in sdf.loc[sdf[mapping_barcode] == plate_id][
-                                mapping.position
-                            ]:
-                                row, col = PositionMapper.map(position)
-                                max_row = max(max_row, row)
-                                max_col = max(max_col, col)
-                            max_row = normalize_row(max_row)
-                            max_col = normalize_col(max_col)
-
-                        (
-                            plateDimension,
-                            created,
-                        ) = PlateDimension.objects.get_or_create(
-                            rows=max_row,
-                            cols=max_col,
-                            defaults={
-                                "name": f"dim_{max_col*max_row}_{max_col}x{max_row}"
-                            },
-                        )
-                        if created:
-                            __debug(f"Created plate dimension {plateDimension}.")
-                        else:
-                            __debug(f"Using plate dimension {plateDimension}.")
-
-                        plate, created = Plate.objects.update_or_create(
-                            barcode=plate_id,
-                            defaults={
-                                "dimension": plateDimension,
-                                "library": library,
-                            },
-                        )
-                        if created:
-                            __debug(f"Created plate {plate.barcode}.")
-                        else:
-                            __debug(f"Using plate {plate.barcode}.")
-                        pbar.update(1)
-
-                # Import Compounds and Wells
-                with tqdm(
-                    desc="Processing wells", unit="wells", total=len(sdf.index)
-                ) as wbar:
-                    for _, row in sdf.iterrows():
-                        data = row.replace({np.nan: None}).to_dict()
-                        for key in [
-                            mapping.structure,
-                            mapping_barcode,
-                            mapping.amounts[mapping_barcode_idx],
-                            mapping.position,
-                            mapping.name,
+            with tqdm(
+                desc="Processing plates",
+                unit="plates",
+                total=len(sdf[mapping_barcode].unique()),
+            ) as pbar:
+                for plate_id in sdf[mapping_barcode].unique():
+                    # Determinate Plate Dimension
+                    if number_of_columns and number_of_rows:
+                        max_row = number_of_rows
+                        max_col = number_of_columns
+                    else:
+                        max_row = 0
+                        max_col = 0
+                        for position in sdf.loc[sdf[mapping_barcode] == plate_id][
+                            mapping.position
                         ]:
-                            del data[key]
+                            row, col = PositionMapper.map(position)
+                            max_row = max(max_row, row)
+                            max_col = max(max_col, col)
+                        max_row = normalize_row(max_row)
+                        max_col = normalize_col(max_col)
 
-                        compound, created = Compound.objects.update_or_create(
-                            name=row[mapping.name],
-                            defaults={
-                                "structure": Chem.MolToSmiles(row[mapping.structure])
+                    (
+                        plateDimension,
+                        created,
+                    ) = PlateDimension.objects.get_or_create(
+                        rows=max_row,
+                        cols=max_col,
+                        defaults={"name": f"dim_{max_col*max_row}_{max_col}x{max_row}"},
+                    )
+                    if created:
+                        __debug(f"Created plate dimension {plateDimension}.")
+                    else:
+                        __debug(f"Using plate dimension {plateDimension}.")
+
+                    plate, created = Plate.objects.update_or_create(
+                        barcode=plate_id,
+                        defaults={
+                            "dimension": plateDimension,
+                            "library": library,
+                        },
+                    )
+                    if created:
+                        __debug(f"Created plate {plate.barcode}.")
+                    else:
+                        __debug(f"Using plate {plate.barcode}.")
+                    pbar.update(1)
+
+            # Import Compounds and Wells
+            with tqdm(
+                desc="Processing wells", unit="wells", total=len(sdf.index)
+            ) as wbar:
+                for _, row in sdf.iterrows():
+                    data = row.replace({np.nan: None}).to_dict()
+                    for key in [
+                        mapping.structure,
+                        mapping_barcode,
+                        mapping.amounts[mapping_barcode_idx],
+                        mapping.position,
+                        mapping.name,
+                    ]:
+                        del data[key]
+
+                    compound, created = Compound.objects.update_or_create(
+                        name=row[mapping.name],
+                        defaults={
+                            "structure": (
+                                Chem.MolToSmiles(row[mapping.structure])
                                 if isinstance(row[mapping.structure], Mol)
-                                else row[mapping.structure],
-                                "data": data,
-                            },
-                        )
-                        if created:
-                            __debug(f"Created compound {compound}")
-                        else:
-                            __debug(f"Using compound {compound}")
+                                else row[mapping.structure]
+                            ),
+                            "data": data,
+                        },
+                    )
+                    if created:
+                        __debug(f"Created compound {compound}")
+                    else:
+                        __debug(f"Using compound {compound}")
 
-                        compound.save()
+                    compound.save()
 
-                        plate = Plate.objects.get(barcode=row[mapping_barcode])
-                        well, created = Well.objects.update_or_create(
-                            plate=plate,
-                            position=plate.dimension.position(row[mapping.position]),
+                    plate = Plate.objects.get(barcode=row[mapping_barcode])
+                    well, created = Well.objects.update_or_create(
+                        plate=plate,
+                        position=plate.dimension.position(row[mapping.position]),
+                    )
+                    if created:
+                        __debug(
+                            f"Created well {well.plate}: {well.hr_position} ({row[mapping.position]})"
                         )
-                        if created:
-                            __debug(
-                                f"Created well {well.plate}: {well.hr_position} ({row[mapping.position]})"
-                            )
-                        else:
-                            __debug(
-                                f"Using well {well.plate}: {well.hr_position} ({row[mapping.position]})"
-                            )
-                        amount = (
-                            row[mapping.amounts[mapping_barcode_idx]]
-                            if isinstance(
-                                row[mapping.amounts[mapping_barcode_idx]], float
-                            )
-                            or isinstance(
-                                row[mapping.amounts[mapping_barcode_idx]], int
-                            )
-                            else 0
+                    else:
+                        __debug(
+                            f"Using well {well.plate}: {well.hr_position} ({row[mapping.position]})"
                         )
-                        (
-                            well_compound,
-                            created,
-                        ) = WellCompound.objects.update_or_create(
-                            well=well,
-                            compound=compound,
-                            defaults={
-                                "amount": amount,
-                            },
+                    amount = (
+                        row[mapping.amounts[mapping_barcode_idx]]
+                        if isinstance(row[mapping.amounts[mapping_barcode_idx]], float)
+                        or isinstance(row[mapping.amounts[mapping_barcode_idx]], int)
+                        else 0
+                    )
+                    (
+                        well_compound,
+                        created,
+                    ) = WellCompound.objects.update_or_create(
+                        well=well,
+                        compound=compound,
+                        defaults={
+                            "amount": amount,
+                        },
+                    )
+                    if created:
+                        __debug(
+                            f"Created well_compound {well_compound.well} -> {well_compound.compound}"
                         )
-                        if created:
-                            __debug(
-                                f"Created well_compound {well_compound.well} -> {well_compound.compound}"
-                            )
-                        else:
-                            __debug(
-                                f"Using well_compound {well_compound.well} -> {well_compound.compound}"
-                            )
-                        wbar.update(1)
+                    else:
+                        __debug(
+                            f"Using well_compound {well_compound.well} -> {well_compound.compound}"
+                        )
+                    wbar.update(1)
 
     def __check_file_format(self, input_file: str):
         with open(input_file, "r") as file:
@@ -303,24 +312,22 @@ class Command(BaseCommand):
     ):
         is_file_correct, message_text = self.__check_file_format(input_file)
         if not is_file_correct:
-            message(message_text, "error", room_name)
-            return None, None
+            raise CommandError(f"File format is incorrect: {message_text}")
 
-        if isfile(input_file):
-            message("Reading plate file...", "info", room_name)
-            with open(input_file, "r") as file:
-                reader = csv.reader(file)
-                matrix1 = []
-                matrix2 = []
-                current_matrix = matrix1
-                for row in reader:
-                    if all(x == "" for x in row):
-                        row = None
-                    if not row:
-                        current_matrix = matrix2
-                    else:
-                        current_matrix.append(row)
-                return matrix1, matrix2
+        message("Reading plate file...", "info", room_name)
+        with open(input_file, "r") as file:
+            reader = csv.reader(file)
+            matrix1 = []
+            matrix2 = []
+            current_matrix = matrix1
+            for row in reader:
+                if all(x == "" for x in row):
+                    row = None
+                if not row:
+                    current_matrix = matrix2
+                else:
+                    current_matrix.append(row)
+            return matrix1, matrix2
 
     """
     This function imports both library plates and project control  plates.
@@ -335,85 +342,82 @@ class Command(BaseCommand):
         room_name: str = None,
         is_control_plate: bool = False,
     ):
-        if isfile(input_file):
-            compounds, types = self.__parse_library_plate_file(input_file)
-            if compounds is None or types is None:
-                message("File format is incorrect.", "error", room_name)
-                return
-            num_cols = len(compounds[0])
-            num_rows = len(compounds)
-            dimension, _ = PlateDimension.objects.get_or_create(
-                rows=num_rows,
-                cols=num_cols,
-                defaults={"name": f"dim_{num_cols*num_rows}_{num_cols}x{num_rows}"},
-            )
+        if not isfile(input_file):
+            raise CommandError(f"File does not exist: {input_file}")
 
-            compounds = [item for sublist in compounds for item in sublist]
-            types = [item for sublist in types for item in sublist]
-            plate_created = False
-            plate = None
-            library = None
-            if library_name:
-                library, library_created = CompoundLibrary.objects.update_or_create(
-                    name=library_name
-                )
-                if library_created:
-                    message(f"Created library {library_name}.", "success", room_name)
+        compounds, types = self.__parse_library_plate_file(input_file, room_name)
+        num_cols = len(compounds[0])
+        num_rows = len(compounds)
+        dimension, _ = PlateDimension.objects.get_or_create(
+            rows=num_rows,
+            cols=num_cols,
+            defaults={"name": f"dim_{num_cols*num_rows}_{num_cols}x{num_rows}"},
+        )
+
+        compounds = [item for sublist in compounds for item in sublist]
+        types = [item for sublist in types for item in sublist]
+        plate_created = False
+        plate = None
+        library = None
+        if library_name:
+            library, library_created = CompoundLibrary.objects.update_or_create(
+                name=library_name
+            )
+            if library_created:
+                message(f"Created library {library_name}.", "success", room_name)
+            plate, plate_created = Plate.objects.update_or_create(
+                barcode=plate_barcode,
+                dimension=dimension,
+                library=library,
+                is_control_plate=is_control_plate,
+            )
+        elif project_name:
+            try:
+                project = Project.objects.get(name=project_name)
                 plate, plate_created = Plate.objects.update_or_create(
                     barcode=plate_barcode,
                     dimension=dimension,
-                    library=library,
+                    project=project,
                     is_control_plate=is_control_plate,
                 )
-            elif project_name:
-                try:
-                    project = Project.objects.get(name=project_name)
-                    plate, plate_created = Plate.objects.update_or_create(
-                        barcode=plate_barcode,
-                        dimension=dimension,
-                        project=project,
-                        is_control_plate=is_control_plate,
-                    )
-                except Project.DoesNotExist:
-                    message(
-                        f"Project {project_name} does not exist.", "error", room_name
-                    )
+            except Project.DoesNotExist:
+                raise CommandError(f"Project {project_name} does not exist.")
+        else:
+            raise CommandError("Please specify a library name or a project name.")
 
-            if plate_created:
-                message(
-                    f"Created plate {plate_barcode}.",
-                    "success",
-                    room_name,
-                )
+        if plate_created:
+            message(
+                f"Created plate {plate_barcode}.",
+                "success",
+                room_name,
+            )
 
-            with tqdm(
-                desc="Processing wells",
-                unit="wells",
-                total=len(compounds),
-            ) as pbar:
-                for pos, content in enumerate(compounds):
-                    _type = full_strip(types[pos])
-                    _compound = full_strip(content)
-                    if _type != "null" and _compound != "null":
-                        well = plate.well_at(pos, create_if_not_exist=True)
-                        well_type = WellType.by_name(_type)
-                        well.type = well_type
-                        filtered_compounds = Compound.objects.filter(name=_compound)
-                        if len(filtered_compounds) > 0:
-                            compound = filtered_compounds[0]
-                        else:
-                            compound = Compound.objects.create(
-                                name=_compound,
-                            )
-                            message(
-                                f"Created compound {_compound}.", "success", room_name
-                            )
+        with tqdm(
+            desc="Processing wells",
+            unit="wells",
+            total=len(compounds),
+        ) as pbar:
+            for pos, content in enumerate(compounds):
+                _type = full_strip(types[pos])
+                _compound = full_strip(content)
+                if _type != "null" and _compound != "null":
+                    well = plate.well_at(pos, create_if_not_exist=True)
+                    well_type = WellType.by_name(_type)
+                    well.type = well_type
+                    filtered_compounds = Compound.objects.filter(name=_compound)
+                    if len(filtered_compounds) > 0:
+                        compound = filtered_compounds[0]
+                    else:
+                        compound = Compound.objects.create(
+                            name=_compound,
+                        )
+                        message(f"Created compound {_compound}.", "success", room_name)
 
-                        WellCompound.objects.create(well=well, compound=compound)
-                        well.save()
-                        pbar.update(1)
+                    WellCompound.objects.create(well=well, compound=compound)
+                    well.save()
+                    pbar.update(1)
 
-            message(f"Finished processing plate {plate_barcode}.", "success", room_name)
+        message(f"Finished processing plate {plate_barcode}.", "success", room_name)
 
     def template(
         self,
@@ -498,12 +502,7 @@ class Command(BaseCommand):
                 imported = True
             elif options.get("what") == "library_plate":
                 if not (options.get("plate_barcode")):
-                    message(
-                        "ERROR: Please specify plate_barcode.",
-                        "error",
-                        options.get("room_name"),
-                    )
-                    raise ValueError(
+                    raise CommandError(
                         "Please specify plate_barcode when importing a library plate."
                     )
                 else:
@@ -513,12 +512,7 @@ class Command(BaseCommand):
                         barcode=options.get("plate_barcode")
                     )
                     if plate_with_given_barcode:
-                        message(
-                            f"ERROR: Plate with barcode {options.get('plate_barcode')} already exists.",
-                            "error",
-                            options.get("room_name"),
-                        )
-                        raise ValueError(
+                        raise CommandError(
                             f"Plate with barcode {options.get('plate_barcode')} already exists."
                         )
 
@@ -539,6 +533,7 @@ class Command(BaseCommand):
                 PlateDetail.refresh(concurrently=True)
                 WellDetail.refresh(concurrently=True)
 
-        except Exception as ex:
-            message(ex, "error", options.get("room_name"))
-            traceback.print_exc()
+        except Exception as error:
+            message(error_text(error), "error", options.get("room_name"))
+            if not isinstance(error, CommandError):
+                logger.exception(f"Command import {options.get('what')} failed")

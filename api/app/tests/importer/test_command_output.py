@@ -3,10 +3,12 @@ Tests for the output of a command started from the management page.
 """
 
 from django.core.cache import cache
+from django.core.management.base import CommandError
 from django.test import SimpleTestCase
 
 from importer.command_output import (
     add_message,
+    error_text,
     finish_command,
     read_output,
     start_command,
@@ -102,3 +104,16 @@ class CommandOutputTest(SimpleTestCase):
             {"messages": [], "next": 0, "status": None},
             read_output("None", since=0),
         )
+
+
+class ErrorTextTest(SimpleTestCase):
+    def test_a_command_error_is_shown_as_it_is(self):
+        self.assertEqual(
+            "Project P1 does not exist.",
+            error_text(CommandError("Project P1 does not exist.")),
+        )
+
+    def test_any_other_error_shows_its_type(self):
+        self.assertEqual("KeyError: 'NAME'", error_text(KeyError("NAME")))
+        # The text alone would be empty
+        self.assertEqual("AssertionError", error_text(AssertionError()))

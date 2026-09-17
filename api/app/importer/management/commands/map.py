@@ -2,7 +2,7 @@ import os
 import traceback
 from os.path import join
 import yaml
-from django.core.management.base import BaseCommand
+from django.core.management.base import BaseCommand, CommandError
 from importer.mappers import EchoMapper, M1000Mapper, MicroscopeMapper
 from core.models import Experiment
 from importer.helper import message
@@ -76,12 +76,7 @@ class Command(BaseCommand):
                 name=options.get("experiment_name")
             ).first()
             if not experiment:
-                message(
-                    f"No experiment with name '{options.get('experiment_name')}' found in the database.",
-                    "error",
-                    options.get("room_name", None),
-                )
-                raise ValueError(
+                raise CommandError(
                     f"No experiment with name '{options.get('experiment_name')}' found in the database."
                 )
 

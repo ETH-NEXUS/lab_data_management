@@ -5,9 +5,15 @@ import json
 import os
 from django.http import Http404
 from django.core import management
-import traceback
+from django.core.management.base import CommandError
 
-from importer.command_output import finish_command, read_output, start_command
+from helpers.logger import logger
+from importer.command_output import (
+    error_text,
+    finish_command,
+    read_output,
+    start_command,
+)
 from chardet.universaldetector import UniversalDetector
 from contextlib import redirect_stderr
 
@@ -104,8 +110,9 @@ def run_command(request):
                 management.call_command("import", what, **kwargs)
         except Exception as error:
             # An error the command did not handle itself, e.g. an unknown experiment
-            message(str(error), "error", room_name)
-            traceback.print_exc()
+            message(error_text(error), "error", room_name)
+            if not isinstance(error, CommandError):
+                logger.exception(f"Command {form_data.get('command')} failed")
         finish_command(room_name)
 
     return JsonResponse({"status": "ok"})
