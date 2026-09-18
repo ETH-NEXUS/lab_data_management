@@ -51,15 +51,14 @@ export const useManagementStore = defineStore('managementStore', () => {
   const commandStatus = ref<CommandStatus | null>(null)
   // Polling reads only the output of this room; a new command replaces it
   const activeRoomName = ref('')
+  // Every start of the output raises this number, so an older loop stops
+  const pollRound = ref(0)
   const commandRequestError = ref<string | null>(null)
 
   const isLoadingDirectoryContent = ref(false)
   const isRunningCommand = ref(false)
   const isDeletingFile = ref(false)
-  const isDownloadingFile = ref(false)
   const isUploadingFile = ref(false)
-  const isLoadingFileContent = ref(false)
-  const error = ref<string | null>(null)
 
   /**
    * Loads directory tree from backend and stores it.
@@ -69,7 +68,6 @@ export const useManagementStore = defineStore('managementStore', () => {
    */
   const fetchDataDirectory = async (): Promise<FileSystemItem> => {
     isLoadingDirectoryContent.value = true
-    error.value = null
 
     try {
       const response = await requestApiData<DirectoryContentResponse>(
@@ -80,41 +78,20 @@ export const useManagementStore = defineStore('managementStore', () => {
 
       dataDirectory.value = response.directory_content ?? createEmptyDirectoryItem()
       return dataDirectory.value
-    } catch (err: unknown) {
-      error.value = getErrorMessage(err)
-      throw err
     } finally {
       isLoadingDirectoryContent.value = false
     }
   }
 
   /**
-   * Legacy-compatible initialize action.
+   * Loads the directory tree when the page opens. The page and the navigation
+   * tree both call this, but the folders are only read once.
    */
   const initialize = async (): Promise<void> => {
+    if (dataDirectory.value.children.length > 0) {
+      return
+    }
     await fetchDataDirectory()
-  }
-
-  /**
-   * Legacy-compatible alias used by old management page/components.
-   *
-   * Returned data example:
-   * - `{ type: 'directory', name: 'data', path: '/data', children: [] }`
-   */
-  const getDataDirectory = async (): Promise<FileSystemItem> => {
-    return fetchDataDirectory()
-  }
-
-  /**
-   * Clears terminal-like output shown in management command cards.
-   */
-  const clearCommandOutput = (): void => {
-    commandMessages.value = []
-    commandStatus.value = null
-    activeRoomName.value = ''
-    // The output of an earlier command is not read anymore, so nothing is waited for
-    isRunningCommand.value = false
-    rememberedRoomName.value = ''
   }
 
   /**
@@ -143,15 +120,16 @@ export const useManagementStore = defineStore('managementStore', () => {
   })
 
   /**
-   * Shows the output of the command of this browser again, if it is still
-   * running. Called when the management page is opened.
+   * Shows the output of the command of this browser again, when the page is
+   * opened while it runs or after it has ended. Called once per page.
    */
   const resumeCommandOutput = async (): Promise<void> => {
     const roomName = rememberedRoomName.value
-    clearCommandOutput()
-    if (roomName === '') {
+    // Nothing was started from this browser, or this page runs a command itself
+    if (roomName === '' || activeRoomName.value !== '') {
       return
     }
+    const round = pollRound.value
 
     let response: LongPollingResponse
     try {
@@ -161,35 +139,33 @@ export const useManagementStore = defineStore('managementStore', () => {
         MANAGEMENT_LONG_POLLING_ERROR_MESSAGE,
       )
     } catch (err: unknown) {
+      // The command stays remembered, so opening the page again tries once more
       console.error(MANAGEMENT_LONG_POLLING_ERROR_MESSAGE, err)
       return
     }
 
-    if (response.status !== 'running') {
-      rememberedRoomName.value = ''
+    // A command that was started while the answer was on its way keeps the page
+    if (round !== pollRound.value || activeRoomName.value !== '') {
       return
     }
+
     commandMessages.value = response.messages
-    commandStatus.value = 'running'
+    commandStatus.value = response.status
+    // The output of a command that has ended is shown once
+    rememberedRoomName.value = ''
+
+    if (response.status !== 'running') {
+      return
+    }
+
     activeRoomName.value = roomName
     rememberedRoomName.value = roomName
     isRunningCommand.value = true
-    void pollCommandOutput(roomName, response.next)
+    void pollCommandOutput(roomName, response.next, 0, Date.now(), round)
   }
 
   /**
-   * Adds one selected path to the legacy selected list.
-   *
-   * Accepted data example:
-   * - `'/data/imports/file.csv'`
-   */
-  const addSelectedPath = (path: string): void => {
-    selectedPath.value = path
-    selectedPaths.value.push(path)
-  }
-
-  /**
-   * Removes first matching selected path from the legacy selected list.
+   * Removes one path from the list of selected paths.
    *
    * Accepted data example:
    * - `'/data/imports/file.csv'`
@@ -202,14 +178,6 @@ export const useManagementStore = defineStore('managementStore', () => {
   }
 
   /**
-   * Clears all selected management paths.
-   */
-  const clearSelectedPaths = (): void => {
-    selectedPath.value = ''
-    selectedPaths.value = []
-  }
-
-  /**
    * Starts one management command and reads its output while it runs.
    * The request only starts the command (it runs in the celery container), so
    * `isRunningCommand` stays true until the output says the command has ended.
@@ -219,7 +187,8 @@ export const useManagementStore = defineStore('managementStore', () => {
    */
   const runCommand = async (formData: GeneralFormData): Promise<void> => {
     isRunningCommand.value = true
-    error.value = null
+    // A loop that still reads the output of an earlier command stops now
+    pollRound.value += 1
 
     const roomName = typeof formData.room_name === 'string' ? formData.room_name : ''
     commandMessages.value = [{ level: 'info', text: `Executing command: ${String(formData.command)}` }]
@@ -229,7 +198,7 @@ export const useManagementStore = defineStore('managementStore', () => {
     rememberedRoomName.value = roomName
 
     if (roomName !== '') {
-      void pollCommandOutput(roomName, 0)
+      void pollCommandOutput(roomName, 0, 0, Date.now(), pollRound.value)
     }
 
     try {
@@ -242,11 +211,9 @@ export const useManagementStore = defineStore('managementStore', () => {
         MANAGEMENT_RUN_COMMAND_ERROR_MESSAGE,
       )
     } catch (err: unknown) {
-      error.value = getErrorMessage(err)
       // The command did not start, polling stops after its next read
-      commandRequestError.value = error.value
+      commandRequestError.value = getErrorMessage(err)
       isRunningCommand.value = false
-      throw err
     }
 
     // Without a room name there is no output to wait for
@@ -256,8 +223,9 @@ export const useManagementStore = defineStore('managementStore', () => {
   }
 
   /**
-   * Adds the new output of a command every 300 ms, until the command has
+   * Adds the new output of a command every second, until the command has
    * completed or failed. A failed request is repeated, up to 5 requests in a row.
+   * A loop of an earlier command (`round`) stops as soon as a new one starts.
    *
    * Accepted data example:
    * - `roomName = '12_1726563600000', since = 4` (the first 4 messages are already shown)
@@ -267,8 +235,9 @@ export const useManagementStore = defineStore('managementStore', () => {
     since: number,
     failedRequests = 0,
     startedAt = Date.now(),
+    round = pollRound.value,
   ): Promise<void> => {
-    if (roomName !== activeRoomName.value) {
+    if (round !== pollRound.value || roomName !== activeRoomName.value) {
       return
     }
 
@@ -284,7 +253,7 @@ export const useManagementStore = defineStore('managementStore', () => {
       // A short network problem must not stop showing the output, so ask again
       if (failedRequests + 1 < MAX_FAILED_OUTPUT_REQUESTS) {
         setTimeout(() => {
-          void pollCommandOutput(roomName, since, failedRequests + 1, startedAt)
+          void pollCommandOutput(roomName, since, failedRequests + 1, startedAt, round)
         }, FAILED_OUTPUT_REQUEST_DELAY_MS)
         return
       }
@@ -297,7 +266,7 @@ export const useManagementStore = defineStore('managementStore', () => {
       return
     }
 
-    if (roomName !== activeRoomName.value) {
+    if (round !== pollRound.value || roomName !== activeRoomName.value) {
       return
     }
     commandMessages.value.push(...response.messages)
@@ -313,7 +282,11 @@ export const useManagementStore = defineStore('managementStore', () => {
       isRunningCommand.value = false
       rememberedRoomName.value = ''
       // The command may have created or changed files
-      await fetchDataDirectory()
+      try {
+        await fetchDataDirectory()
+      } catch (err: unknown) {
+        console.error(MANAGEMENT_DIRECTORY_CONTENT_ERROR_MESSAGE, err)
+      }
       return
     }
 
@@ -329,7 +302,7 @@ export const useManagementStore = defineStore('managementStore', () => {
     }
 
     setTimeout(() => {
-      void pollCommandOutput(roomName, response.next, 0, startedAt)
+      void pollCommandOutput(roomName, response.next, 0, startedAt, round)
     }, OUTPUT_REQUEST_DELAY_MS)
   }
 
@@ -341,7 +314,6 @@ export const useManagementStore = defineStore('managementStore', () => {
    */
   const deleteFile = async (path: string): Promise<void> => {
     isDeletingFile.value = true
-    error.value = null
 
     try {
       await requestApiVoid(
@@ -354,9 +326,6 @@ export const useManagementStore = defineStore('managementStore', () => {
       )
 
       await fetchDataDirectory()
-    } catch (err: unknown) {
-      error.value = getErrorMessage(err)
-      throw err
     } finally {
       isDeletingFile.value = false
     }
@@ -369,27 +338,15 @@ export const useManagementStore = defineStore('managementStore', () => {
    * - `'/data/imports/file.txt'`
    */
   const downloadFile = async (path: string): Promise<Blob> => {
-    isDownloadingFile.value = true
-    error.value = null
-
-    try {
-      const blob = await requestApiData<Blob>(
-        MANAGEMENT_DOWNLOAD_FILE_ENDPOINT,
-        {
-          method: 'POST',
-          body: { file_path: path },
-          responseType: 'blob',
-        },
-        MANAGEMENT_DOWNLOAD_FILE_ERROR_MESSAGE,
-      )
-
-      return blob
-    } catch (err: unknown) {
-      error.value = getErrorMessage(err)
-      throw err
-    } finally {
-      isDownloadingFile.value = false
-    }
+    return await requestApiData<Blob>(
+      MANAGEMENT_DOWNLOAD_FILE_ENDPOINT,
+      {
+        method: 'POST',
+        body: { file_path: path },
+        responseType: 'blob',
+      },
+      MANAGEMENT_DOWNLOAD_FILE_ERROR_MESSAGE,
+    )
   }
 
   /**
@@ -400,7 +357,6 @@ export const useManagementStore = defineStore('managementStore', () => {
    */
   const uploadFile = async (directoryPath: string, file: File): Promise<void> => {
     isUploadingFile.value = true
-    error.value = null
 
     try {
       const formData = new FormData()
@@ -417,9 +373,6 @@ export const useManagementStore = defineStore('managementStore', () => {
       )
 
       await fetchDataDirectory()
-    } catch (err: unknown) {
-      error.value = getErrorMessage(err)
-      throw err
     } finally {
       isUploadingFile.value = false
     }
@@ -435,26 +388,16 @@ export const useManagementStore = defineStore('managementStore', () => {
    * - `'first line\\nsecond line'`
    */
   const getFileContent = async (path: string): Promise<string> => {
-    isLoadingFileContent.value = true
-    error.value = null
+    const response = await requestApiData<FileContentResponse>(
+      MANAGEMENT_GET_FILE_CONTENT_ENDPOINT,
+      {
+        method: 'POST',
+        body: { file_path: path },
+      },
+      MANAGEMENT_GET_FILE_CONTENT_ERROR_MESSAGE,
+    )
 
-    try {
-      const response = await requestApiData<FileContentResponse>(
-        MANAGEMENT_GET_FILE_CONTENT_ENDPOINT,
-        {
-          method: 'POST',
-          body: { file_path: path },
-        },
-        MANAGEMENT_GET_FILE_CONTENT_ERROR_MESSAGE,
-      )
-
-      return response.content ?? ''
-    } catch (err: unknown) {
-      error.value = getErrorMessage(err)
-      throw err
-    } finally {
-      isLoadingFileContent.value = false
-    }
+    return response.content ?? ''
   }
 
   return {
@@ -466,18 +409,11 @@ export const useManagementStore = defineStore('managementStore', () => {
     isLoadingDirectoryContent,
     isRunningCommand,
     isDeletingFile,
-    isDownloadingFile,
     isUploadingFile,
-    isLoadingFileContent,
-    error,
     fetchDataDirectory,
-    getDataDirectory,
     initialize,
-    clearCommandOutput,
     resumeCommandOutput,
-    addSelectedPath,
     removeSelectedPath,
-    clearSelectedPaths,
     runCommand,
     deleteFile,
     downloadFile,

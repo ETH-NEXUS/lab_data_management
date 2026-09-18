@@ -1,25 +1,32 @@
 import os
 from os.path import join
+
 import yaml
 from django.core.management.base import BaseCommand, CommandError
-from importer.mappers import EchoMapper, M1000Mapper, MicroscopeMapper
+
 from core.models import Experiment
-from importer.helper import message
-from importer.command_output import error_text
 from importer.config import Config
-from helpers.logger import logger
+from importer.helper import message
+from importer.mappers import BaseMapper, EchoMapper, M1000Mapper, MicroscopeMapper
+
+# Without an experiment name the mappers cannot create a missing plate
+NO_EXPERIMENT_NAME = (
+    "No experiment name provided. If you would like to add missing plates, "
+    "you need to provide the experiment name."
+)
 
 
-def has_csv_files(directory):
-    for root, dirs, files in os.walk(directory):
-        for file in files:
-            if file.endswith(".csv"):
-                return True
-    return False
-
-
-def die(message):
-    raise CommandError(message)
+def first_pattern_with_files(path: str, patterns: tuple[str, ...]) -> str:
+    """
+    The first file pattern of `patterns` that finds files in the folder, e.g.
+    the Echo CSV pattern, or the XML pattern when the folder has no CSV reports.
+    The last pattern is used when none of them finds a file, so that the mapper
+    can say which files it looked for.
+    """
+    for pattern in patterns:
+        if BaseMapper.get_files(join(path, pattern)):
+            return pattern
+    return patterns[-1]
 
 
 class Command(BaseCommand):
@@ -52,7 +59,10 @@ class Command(BaseCommand):
         )
 
         parser.add_argument(
-            "--measurement_name", "-n", help="You need to provide a measurement name "
+            "--measurement_name",
+            "-n",
+            help="The label of the measured values, e.g. 'Lum'. Without it, the "
+            "label of the file is used.",
         )
 
         parser.add_argument(
@@ -96,11 +106,26 @@ class Command(BaseCommand):
         return columns
 
     @staticmethod
-    def show_error(error: Exception, options: dict) -> None:
-        """Shows the error on the management page; an unexpected one also goes to the log."""
-        message(error_text(error), "error", options.get("room_name"))
-        if not isinstance(error, CommandError):
-            logger.exception(f"Command map {options.get('machine')} failed")
+    def warn_about_unused_column_file(options: dict) -> None:
+        """Only the Echo mapper reads a column file, the other machines ignore it."""
+        if options.get("mapping_file"):
+            message(
+                f"The column file {options['mapping_file']} is only used for echo "
+                f"reports, not for {options.get('machine')}.",
+                "warning",
+                options.get("room_name"),
+            )
+
+    @staticmethod
+    def warn_about_unused_measurement_name(options: dict) -> None:
+        """An Echo report has no measurements, so it has no measurement name."""
+        if options.get("measurement_name"):
+            message(
+                f"The measurement name {options['measurement_name']} is not used "
+                "for echo reports, only for measurement files.",
+                "warning",
+                options.get("room_name"),
+            )
 
     def handle(self, *args, **options):
 
@@ -121,66 +146,52 @@ class Command(BaseCommand):
                 )
 
         if options.get("machine") == "echo":
+            self.warn_about_unused_measurement_name(options)
             headers = EchoMapper.DEFAULT_COLUMNS
             if options.get("mapping_file"):
                 headers = self.read_echo_columns(options.get("mapping_file"))
-            try:
-                mapper = EchoMapper()
-                # if in the folder which was provided as 'path' arguments there are no .csv files we use xml_blob, otherwise the file_blob
-                if has_csv_files(path):
-                    file_blob = Config.current.importer.echo.default.file_blob
-                else:
-                    file_blob = Config.current.importer.echo.default.xml_blob
-                mapper.run(
-                    join(path, file_blob),
-                    headers=headers,
-                    debug=options.get("debug", False),
-                    room_name=options.get("room_name", None),
-                    experiment_name=options.get("experiment_name", None),
-                )
-            except Exception as error:
-                self.show_error(error, options)
+            echo = Config.current.importer.echo.default
+            pattern = first_pattern_with_files(path, (echo.file_blob, echo.xml_blob))
+            EchoMapper().run(
+                join(path, pattern),
+                headers=headers,
+                debug=options.get("debug", False),
+                room_name=options.get("room_name"),
+                experiment_name=options.get("experiment_name"),
+            )
 
         elif options.get("machine") == "m1000":
-            try:
-                if not options.get("experiment_name", None):
-                    die(
-                        "No experiment name provided. If you would like to add missing "
-                        "plates, you need to provide the experiment name."
-                    )
-                measurement_name = options.get("measurement_name", None)
-                mapper = M1000Mapper()
-                mapper.run(
-                    join(path, Config.current.importer.m1000.default.file_blob),
-                    debug=options.get("debug", False),
-                    measurement_name=measurement_name,
-                    experiment_name=options.get("experiment_name", None),
-                    room_name=options.get("room_name", None),
-                )
+            if not options.get("experiment_name"):
+                raise CommandError(NO_EXPERIMENT_NAME)
+            self.warn_about_unused_column_file(options)
+            M1000Mapper().run(
+                join(path, Config.current.importer.m1000.default.file_blob),
+                debug=options.get("debug", False),
+                measurement_name=options.get("measurement_name"),
+                experiment_name=options.get("experiment_name"),
+                room_name=options.get("room_name"),
+            )
 
-            except Exception as error:
-                self.show_error(error, options)
         elif options.get("machine") in ["microscope", "C10-imager", "C10-reader"]:
-            try:
-                if not options.get("experiment_name", None):
-                    die(
-                        "No experiment name provided. If you would like to add missing "
-                        "plates, you need to provide the experiment name."
-                    )
-                mapper = MicroscopeMapper()
-
-                if path.endswith(".txt"):
-                    _blob = Config.current.importer.microscope.default.file_blob
-                else:
-                    _blob = Config.current.importer.microscope.default.txt_blob
-                    logger.info(f"Using blob: {_blob}")
-                mapper.run(
-                    join(path, _blob),
-                    debug=options.get("debug", False),
-                    experiment_name=options.get("experiment_name", None),
-                    room_name=options.get("room_name", None),
-                    measurement_name=options.get("measurement_name", None),
+            if not options.get("experiment_name"):
+                raise CommandError(NO_EXPERIMENT_NAME)
+            self.warn_about_unused_column_file(options)
+            # The C10 writes .txt files in the reader mode and .xlsx in the imager
+            # mode, so the chosen mode decides which files are read. The old name
+            # "microscope" does not say the mode, there both are looked for.
+            microscope = Config.current.importer.microscope.default
+            if options.get("machine") == "C10-reader":
+                pattern = microscope.txt_blob
+            elif options.get("machine") == "C10-imager":
+                pattern = microscope.file_blob
+            else:
+                pattern = first_pattern_with_files(
+                    path, (microscope.txt_blob, microscope.file_blob)
                 )
-
-            except Exception as error:
-                self.show_error(error, options)
+            MicroscopeMapper().run(
+                join(path, pattern),
+                debug=options.get("debug", False),
+                experiment_name=options.get("experiment_name"),
+                room_name=options.get("room_name"),
+                measurement_name=options.get("measurement_name"),
+            )

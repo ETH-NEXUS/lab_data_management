@@ -130,3 +130,52 @@ class EchoParseTest(SimpleTestCase):
             "A <w> element of the XML report has no 'n' attribute.",
         ):
             EchoMapper().parse(StringIO(report), xml_file=True)
+
+    def test_a_report_without_the_optional_columns_is_read(self):
+        # Some Echo exports have no "Current Fluid Volume" and no "% DMSO"
+        report = (
+            "Run ID,14618\n"
+            "\n"
+            "Source Plate Name,Source Plate Barcode,Source Plate Type,Source Well,"
+            "Destination Plate Name,Destination Plate Barcode,Destination Well,"
+            "Actual Volume,Transfer Status\n"
+            "384LDV_DMSO,Drug08_J,384LDV_DMSO,A3,Greiner_384PS_781904,2026Wagner12,"
+            "A3,10,\n"
+        )
+
+        entries = EchoMapper().parse(StringIO(report))
+
+        self.assertEqual(["A3"], [entry["source_well"] for entry in entries])
+        self.assertNotIn("DMSO", entries[0])
+        self.assertNotIn("current_fluid_volume", entries[0])
+
+    def test_a_report_without_a_needed_column_is_refused(self):
+        # The report has no "Source Well", so no transfer could be read from it
+        report = (
+            "Source Plate Name,Source Plate Barcode,Source Plate Type,"
+            "Destination Plate Name,Destination Plate Barcode,Destination Well,"
+            "Actual Volume,Transfer Status\n"
+            "384LDV_DMSO,Drug08_J,384LDV_DMSO,Greiner_384PS_781904,2026Wagner12,"
+            "A3,10,\n"
+        )
+
+        with self.assertRaisesMessage(
+            CommandError, "The report has no column Source Well."
+        ):
+            EchoMapper().parse(StringIO(report))
+
+    def test_a_file_without_a_header_row_is_refused(self):
+        with self.assertRaisesMessage(CommandError, "The report has no column"):
+            EchoMapper().parse(StringIO("just some text\nand another line\n"))
+
+    def test_a_report_without_a_single_transfer_is_refused(self):
+        report = (
+            "Source Plate Name,Source Plate Barcode,Source Plate Type,Source Well,"
+            "Destination Plate Name,Destination Plate Barcode,Destination Well,"
+            "Actual Volume,Transfer Status\n"
+        )
+
+        with self.assertRaisesMessage(
+            CommandError, "does not contain a single transfer"
+        ):
+            EchoMapper().parse(StringIO(report))

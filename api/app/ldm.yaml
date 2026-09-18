@@ -27,8 +27,3 @@ importer:
     default:
       file_blob: "**/*.xlsx"
       txt_blob: "**/*.txt"
-  dat:
-    default:
-      file_blob: "**/*.dat"
-
-

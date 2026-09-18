@@ -43,6 +43,10 @@ def messages_key(room_name: str) -> str:
     return f"command_messages_{room_name}"
 
 
+def error_flag_key(room_name: str) -> str:
+    return f"command_had_error_{room_name}"
+
+
 def status_key(room_name: str) -> str:
     return f"command_status_{room_name}"
 
@@ -52,6 +56,7 @@ def start_command(room_name: str | None) -> None:
     if not room_name:
         return
     cache.set(messages_key(room_name), [], OUTPUT_TIMEOUT_SECONDS)
+    cache.set(error_flag_key(room_name), False, OUTPUT_TIMEOUT_SECONDS)
     cache.set(status_key(room_name), RUNNING, OUTPUT_TIMEOUT_SECONDS)
 
 
@@ -105,6 +110,10 @@ def add_message(room_name: str | None, level: str, text: str) -> None:
     """Adds one message, e.g. add_message("12_1726", "error", "File not found")."""
     if not room_name:
         return
+    if level == "error":
+        # Remembered separately: after the limit below, the level is not kept
+        cache.set(error_flag_key(room_name), True, OUTPUT_TIMEOUT_SECONDS)
+
     messages = cache.get(messages_key(room_name), [])
     if len(messages) >= MAX_MESSAGES:
         # The same message twice in a row is dropped below, so this line is added once
@@ -125,7 +134,9 @@ def finish_command(room_name: str | None) -> None:
     if not room_name:
         return
     messages = cache.get(messages_key(room_name), [])
-    has_errors = any(message["level"] == "error" for message in messages)
+    has_errors = cache.get(error_flag_key(room_name)) or any(
+        message["level"] == "error" for message in messages
+    )
     if has_errors:
         messages.append({"level": "error", "text": "Command failed."})
         status = FAILED

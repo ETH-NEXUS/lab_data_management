@@ -41,7 +41,10 @@ class ManagementPageTestCase(TestCase):
         return path
 
     def start_command(self, **form_data):
-        """Starts a command as the page does and returns the response."""
+        """
+        Starts a command as the page does and returns the response. In the tests
+        Celery runs the task right away, so the command is done when this returns.
+        """
         data = {"room_name": ROOM_NAME}
         data.update(form_data)
         return self.client.post(

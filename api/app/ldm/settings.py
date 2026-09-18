@@ -203,6 +203,9 @@ MEDIA_ROOT = "/vol/web/media"
 # The management page shows this folder and only works with files inside it
 MANAGEMENT_DATA_ROOT = "/data"
 
+# The reports and the notebooks that write them live here
+NOTEBOOKS_ROOT = "/notebooks"
+
 # Default primary key field type
 # https://docs.djangoproject.com/en/4.1/ref/settings/#default-auto-field
 

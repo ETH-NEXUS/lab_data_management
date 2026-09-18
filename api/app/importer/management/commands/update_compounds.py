@@ -5,7 +5,7 @@ because the data from SDF files is incomplete.
 """
 
 import csv
-from typing import Dict, Any
+from typing import Dict
 from django.core.management import BaseCommand
 from django.core.management.base import CommandError
 from django.db import transaction
@@ -24,10 +24,10 @@ class Command(BaseCommand):
             "-i",
             type=str,
             required=True,
-            help="The input CSV file containing compound data.",
+            help="The input file with the compound data, columns separated by tabs.",
         )
 
-    def read_csv_compound_data(self, input_file: str) -> list[str] | list[Any]:
+    def read_csv_compound_data(self, input_file: str) -> list[dict]:
         """
         Reads compound data from the provided CSV file.
 
@@ -52,15 +52,11 @@ class Command(BaseCommand):
         :param compound: The compound instance to update.
         :param new_data: Dictionary containing the new data.
         """
-        try:
-            compound_data = compound.data if compound.data else {}
-            logger.info(f"Updating compound '{compound.name}' with new data.")
-            compound_data.update(new_data)
-            compound.data = compound_data
-            compound.save()
-            logger.info(f"Successfully updated compound '{compound.name}'.")
-        except Exception as e:
-            logger.error(f"Error updating compound '{compound.name}': {str(e)}")
+        compound_data = compound.data if compound.data else {}
+        logger.info(f"Updating compound '{compound.name}' with new data.")
+        compound_data.update(new_data)
+        compound.data = compound_data
+        compound.save()
 
     def import_compound_data(self, input_file: str) -> None:
         """
@@ -93,10 +89,6 @@ class Command(BaseCommand):
         Main handler method for the command.
         """
         input_file: str = options.get("input_file")
-        if not input_file:
-            logger.error("Input file is required.")
-            return
-
         logger.info(f"Starting compound data import from {input_file}")
         # All compounds are updated together: after an error nothing is stored
         with transaction.atomic():

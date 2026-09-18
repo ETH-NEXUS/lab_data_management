@@ -6,6 +6,10 @@ from core.models import Plate, Well, PlateDimension, WellCompound, WellType, Pro
 from platetemplate.models import PlateTemplate, PlateTemplateCategory
 from importer.mapping import SdfMapping
 from importer.helper import row_col_from_wells, normalize_col, normalize_row
+
+# Excel writes an invisible BOM character at the start of a CSV file, and
+# some files are not UTF-8 at all. detect_encoding finds both.
+from importer.mappers.base import detect_encoding
 from core.utils.plates.positions import PositionMapper
 from core.models import WellDetail, PlateDetail
 import numpy as np
@@ -15,16 +19,10 @@ from tqdm import tqdm
 import argparse
 import csv
 from importer.helper import message
-from importer.command_output import error_text
-from helpers.logger import logger
 
 from rdkit.Chem import PandasTools
 from rdkit.Chem.rdchem import Mol
 from rdkit import Chem
-
-# Excel saves CSV files with an invisible BOM character at the start. "utf-8-sig"
-# removes it, so the first compound name is not read as "\ufeffDMSO".
-CSV_ENCODING = "utf-8-sig"
 
 
 def well_type_by_name(name: str, well_name: str) -> WellType:
@@ -188,6 +186,11 @@ class Command(BaseCommand):
                 f"These columns are not in the SDF file {sdf_file}: "
                 f"{', '.join(missing_columns)}. Check the mapping file."
             )
+        if len(mapping.amounts) != len(mapping.barcodes):
+            raise CommandError(
+                f"The mapping file names {len(mapping.barcodes)} barcode columns "
+                f"but {len(mapping.amounts)} amount columns."
+            )
 
         # Import plates
         # The plates by barcode, so the wells below do not load a plate per row
@@ -263,9 +266,16 @@ class Command(BaseCommand):
                     ]:
                         del data[key]
 
+                    # The oldest one, if the same name was imported more than once
+                    existing = (
+                        Compound.objects.filter(name=row[mapping.name])
+                        .order_by("id")
+                        .first()
+                    )
                     compound, created = Compound.objects.update_or_create(
-                        name=row[mapping.name],
+                        id=existing.id if existing else None,
                         defaults={
+                            "name": row[mapping.name],
                             "structure": (
                                 Chem.MolToSmiles(row[mapping.structure])
                                 if isinstance(row[mapping.structure], Mol)
@@ -319,9 +329,14 @@ class Command(BaseCommand):
                     wbar.update(1)
 
     def __check_file_format(self, input_file: str):
-        with open(input_file, "r", encoding=CSV_ENCODING) as file:
+        with open(input_file, "r", encoding=detect_encoding(input_file)) as file:
             reader = csv.reader(file)
             all_rows = list(reader)
+            if not any(any(cell for cell in row) for row in all_rows):
+                return False, "The file is empty."
+            # An editor that ends the file with a newline adds an empty last row
+            while all_rows and all(cell == "" for cell in all_rows[-1]):
+                all_rows.pop()
             empty_rows = [row for row in all_rows if all(x == "" for x in row)]
             if len(empty_rows) != 1:
                 return False, "The file should contain exactly one empty line."
@@ -353,7 +368,7 @@ class Command(BaseCommand):
             raise CommandError(f"File format is incorrect: {message_text}")
 
         message("Reading plate file...", "info", room_name)
-        with open(input_file, "r", encoding=CSV_ENCODING) as file:
+        with open(input_file, "r", encoding=detect_encoding(input_file)) as file:
             reader = csv.reader(file)
             matrix1 = []
             matrix2 = []
@@ -470,7 +485,7 @@ class Command(BaseCommand):
     ):
         if isfile(input_file):
             # One row of the plate per line, one well type per cell, e.g. "C<TAB>R10<TAB>P1"
-            with open(input_file, "r", encoding=CSV_ENCODING) as file:
+            with open(input_file, "r", encoding=detect_encoding(input_file)) as file:
                 message("Reading template file...", "info", room_name)
                 rows = list(csv.reader(file, delimiter="\t"))
             if not rows:
@@ -527,9 +542,10 @@ class Command(BaseCommand):
         else:
             raise CommandError(f"File does not exist: {input_file}")
 
-    def import_file(self, options: dict) -> bool:
-        """Imports the file of the command; True if something was imported."""
-        imported = False
+    def import_file(self, options: dict) -> None:
+        """Imports the file of the command."""
+        if not options.get("input_file"):
+            raise CommandError("Please give the file to import.")
         if options.get("what") == "sdf":
             mapping = SdfMapping(options.get("mapping_file"))
             self.sdf(
@@ -542,7 +558,6 @@ class Command(BaseCommand):
                 debug=options.get("debug", False),
                 room_name=options.get("room_name"),
             )
-            imported = True
         elif options.get("what") == "template":
             self.template(
                 options.get("input_file"),
@@ -550,7 +565,6 @@ class Command(BaseCommand):
                 template_name=options.get("template_name") or "Default",
                 room_name=options.get("room_name"),
             )
-            imported = True
         elif options.get("what") == "library_plate":
             if not (options.get("plate_barcode")):
                 raise CommandError(
@@ -575,23 +589,23 @@ class Command(BaseCommand):
                     is_control_plate=options.get("is_control_plate"),
                     project_name=options.get("project_name"),
                 )
-                imported = True
-        return imported
 
     def handle(self, *args, **options):
         room_name = options.get("room_name")
         try:
             # One import is saved as a whole: after an error nothing of it is stored
             with transaction.atomic():
-                imported = self.import_file(options)
-        except Exception as error:
-            message(error_text(error), "error", room_name)
-            message("Nothing of this import was stored.", "warning", room_name)
-            if not isinstance(error, CommandError):
-                logger.exception(f"Command import {options.get('what')} failed")
-            return
+                self.import_file(options)
+        except Exception:
+            # The caller shows the error itself: the page through the Celery task,
+            # the command line through the exit code
+            message(
+                "This import failed, nothing of it was stored. The reason:",
+                "warning",
+                room_name,
+            )
+            raise
 
-        if imported:
-            message("Refreshing materialized views...", "info", room_name)
-            PlateDetail.refresh(concurrently=True)
-            WellDetail.refresh(concurrently=True)
+        message("Refreshing materialized views...", "info", room_name)
+        PlateDetail.refresh(concurrently=True)
+        WellDetail.refresh(concurrently=True)

@@ -87,7 +87,8 @@ class MicroscopeMapper(BaseMapper):
             layout = self.parse_xlsx_layout(sheet)
         elif extension == "txt":
             with open(file, "r", encoding=detect_encoding(file)) as content:
-                lines = [line.strip() for line in content.readlines() if line.strip()]
+                # The empty lines are kept: they end the block of results
+                lines = [line.strip() for line in content.readlines()]
             metadata = self.parse_txt_metadata(lines)
             results = self.parse_txt_results(lines, measurement_name)
             # A .txt file has no layout block
@@ -182,6 +183,8 @@ class MicroscopeMapper(BaseMapper):
                     else:
                         # Not a number, e.g. a text column
                         continue
+                    if value is None:
+                        continue
                     Measurement.objects.update_or_create(
                         well=well,
                         label=label,
@@ -198,9 +201,16 @@ class MicroscopeMapper(BaseMapper):
         well: Well, well_name: str, layout: dict[str, str]
     ) -> None:
         """Sets the well type if the layout has the well, e.g. {"A1": "P"}."""
-        if layout and well_name in layout:
+        if not layout or well_name not in layout:
+            return
+        try:
             well.type = WellType.objects.get(name=layout[well_name])
-            well.save()
+        except WellType.DoesNotExist:
+            raise CommandError(
+                f"The layout of well {well_name} says '{layout[well_name]}', "
+                "but there is no well type with this name."
+            )
+        well.save()
 
     @staticmethod
     def parse_xlsx_metadata(sheet: Worksheet) -> dict:
@@ -250,7 +260,11 @@ class MicroscopeMapper(BaseMapper):
                 results_start_row = index + 2
                 break
 
-        # A sheet without header row stops here with an IndexError
+        if not header_rows:
+            raise CommandError(
+                f"The sheet has no results: no row has '{WELL_ID_COLUMN}' or "
+                f"'{WELL_COLUMN}' in its second column."
+            )
         headers = [header for header in header_rows[0] if header is not None]
         results = []
         if headers and results_start_row:
@@ -329,7 +343,7 @@ class MicroscopeMapper(BaseMapper):
         Example: [{"Well": "A1", "Lum": "16727"}]
         """
         label = measurement_name or DEFAULT_MEASUREMENT_NAME
-        results = []
+        results: list[dict] = []
         in_results = False
         for line in lines:
             if not in_results:
@@ -337,8 +351,12 @@ class MicroscopeMapper(BaseMapper):
                     in_results = True
                 continue
 
-            if line.strip() == "":
-                break
+            if line == "":
+                # An empty line before the table is skipped, one after it ends
+                # the table: what follows is the footer, not a result
+                if results:
+                    break
+                continue
             parts = line.split("\t")
             if len(parts) != 2:
                 continue

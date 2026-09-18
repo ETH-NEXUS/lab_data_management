@@ -153,17 +153,32 @@ class BaseMapper:
     def create_measurement_assignment(
         self, plate: Plate, filename: str
     ) -> MeasurementAssignment:
-        """Links the measurement file to the plate, with status "success"."""
+        """
+        Links the measurement file to the plate, with status "success".
+
+        A file that was mapped before keeps its assignment and the copy of the
+        file that belongs to it. Older imports created several assignments for
+        the same file, so the oldest one is taken.
+        """
+        assignment = (
+            MeasurementAssignment.objects.filter(plate=plate, filename=filename)
+            .order_by("id")
+            .first()
+        )
+        if assignment:
+            assignment.status = "success"
+            assignment.save()
+            return assignment
+
         with open(filename, "rb") as file:
-            assignment, created = MeasurementAssignment.objects.update_or_create(
-                status="success",
+            assignment = MeasurementAssignment.objects.create(
                 plate=plate,
                 filename=filename,
+                status="success",
                 measurement_file=File(file, os.path.basename(file.name)),
             )
-        if created:
-            # An assignment that was there already keeps the copy it already has
-            self.stored_files.append(assignment.measurement_file.name)
+        # The copy is deleted again if the mapping of this file fails
+        self.stored_files.append(assignment.measurement_file.name)
         return assignment
 
     def delete_stored_files(self) -> None:
@@ -188,11 +203,10 @@ class BaseMapper:
         barcode prefix. A missing specification is created for the experiment
         `experiment_name`; without an experiment name a CommandError is raised.
         """
-        try:
-            barcode_specification = BarcodeSpecification.objects.get(
-                prefix=barcode_prefix(barcode)
-            )
-        except BarcodeSpecification.DoesNotExist:
+        barcode_specification = self.find_barcode_specification(
+            barcode, experiment_name
+        )
+        if barcode_specification is None:
             if not experiment_name:
                 text = (
                     f"No barcode specification found for {barcode} and no experiment "
@@ -218,21 +232,68 @@ class BaseMapper:
             ),
         )
 
+    @staticmethod
+    def find_barcode_specification(
+        barcode: str, experiment_name: str | None
+    ) -> BarcodeSpecification | None:
+        """
+        The barcode specification of the prefix of `barcode`, or None.
+
+        A prefix can have a specification in more than one experiment, because
+        they are made by hand on the experiment page. The one of the experiment
+        the user named wins, otherwise the oldest one decides where a new plate
+        belongs.
+        """
+        specifications = BarcodeSpecification.objects.filter(
+            prefix=barcode_prefix(barcode)
+        ).order_by("id")
+        if experiment_name:
+            of_the_experiment = specifications.filter(
+                experiment__name=experiment_name
+            ).first()
+            if of_the_experiment:
+                return of_the_experiment
+        return specifications.first()
+
     def get_or_create_barcode_specification(
         self, barcode: str, experiment_name: str | None
     ) -> BarcodeSpecification:
         """
-        The barcode specification of the barcode prefix in the experiment, with
-        the values the importer uses for new specifications.
+        The barcode specification of the barcode prefix. A missing one is
+        created for the experiment `experiment_name` with the values the
+        importer uses; an existing one is taken as it is.
         """
-        barcode_specification, _ = BarcodeSpecification.objects.get_or_create(
+        barcode_specification = self.find_barcode_specification(
+            barcode, experiment_name
+        )
+        if barcode_specification:
+            return barcode_specification
+
+        return BarcodeSpecification.objects.create(
             prefix=barcode_prefix(barcode),
+            experiment=self.experiment_by_name(experiment_name),
             # A new list every time, so the shared default can not be changed
             sides=list(NEW_BARCODE_SPECIFICATION_SIDES),
             number_of_plates=NEW_BARCODE_SPECIFICATION_NUMBER_OF_PLATES,
-            experiment=Experiment.objects.get(name=experiment_name),
         )
-        return barcode_specification
+
+    @staticmethod
+    def experiment_by_name(experiment_name: str | None) -> Experiment:
+        """
+        The experiment with this name. Experiment names are only unique inside
+        a project, so the same name in two projects has to be renamed first.
+        """
+        experiments = Experiment.objects.filter(name=experiment_name).order_by("id")
+        if not experiments:
+            raise CommandError(f"There is no experiment named '{experiment_name}'.")
+        if len(experiments) > 1:
+            projects = ", ".join(experiment.project.name for experiment in experiments)
+            raise CommandError(
+                f"There is more than one experiment named '{experiment_name}' "
+                f"(in the projects {projects}), so it is not clear which one to "
+                "use. Please rename one of them."
+            )
+        return experiments[0]
 
     def find_or_create_measured_plate(
         self,
@@ -257,9 +318,15 @@ class BaseMapper:
             barcode_specification = self.get_or_create_barcode_specification(
                 barcode, experiment_name
             )
+            dimension = PlateDimension.by_num_wells(number_of_wells)
+            if dimension is None:
+                raise CommandError(
+                    f"{number_of_wells} wells do not fit on a plate, so the plate "
+                    f"{barcode} cannot be created."
+                )
             return Plate.objects.create(
                 barcode=barcode,
-                dimension=PlateDimension.by_num_wells(number_of_wells),
+                dimension=dimension,
                 experiment=barcode_specification.experiment,
             )
 

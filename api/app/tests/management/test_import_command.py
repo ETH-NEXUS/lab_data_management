@@ -105,6 +105,22 @@ class ImportCommandTest(ManagementPageTestCase):
 
         self.assertIs(False, Plate.objects.get(barcode="LIB_1").is_control_plate)
 
+    def test_a_control_plate_of_a_project(self):
+        path = self.write("plate.csv", LIBRARY_PLATE_CSV)
+        project = Project.objects.create(name="Project")
+
+        self.run_import(
+            "library_plate",
+            input_file=path,
+            project_name="Project",
+            plate_barcode="CTRL_1",
+            is_control_plate=True,
+        )
+
+        plate = Plate.objects.get(barcode="CTRL_1")
+        self.assertIs(True, plate.is_control_plate)
+        self.assertEqual(project, plate.project)
+
     def test_an_error_in_the_middle_of_a_plate_file_stores_nothing(self):
         # Aspirin is imported first, then the well type "XX" does not exist
         path = self.write(
@@ -125,7 +141,10 @@ class ImportCommandTest(ManagementPageTestCase):
             )
         )
         self.assertIn(
-            {"level": "warning", "text": "Nothing of this import was stored."},
+            {
+                "level": "warning",
+                "text": "This import failed, nothing of it was stored. The reason:",
+            },
             output["messages"],
         )
         self.assertFalse(CompoundLibrary.objects.exists())
@@ -311,7 +330,8 @@ class ImportCommandTest(ManagementPageTestCase):
 
         self.assertFailedWith(output, "KeyError: 'NAME'")
         failure = logs.records[-1]
-        self.assertEqual("Command import sdf failed", failure.getMessage())
+        self.assertIn("Command failed:", failure.getMessage())
+        self.assertIn("'what': 'sdf'", failure.getMessage())
         self.assertIsNotNone(failure.exc_info)
 
     def test_a_mapping_file_does_not_change_the_default_mapping(self):

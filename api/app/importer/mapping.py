@@ -7,7 +7,7 @@ from os.path import isfile
 
 class MappingFileSchemaError(Exception):
     def __init__(
-        self, mapping={}, message="Error in mapping file schema. Should be {}"
+        self, mapping=None, message="Error in mapping file schema. Should be {}"
     ):
         self.message = message.format(mapping)
         super().__init__(self.message)
@@ -64,7 +64,7 @@ class SdfMapping:
         return self.mapping["compound"]["structure"]
 
     @property
-    def barcodes(self) -> tuple[str]:
+    def barcodes(self) -> tuple[str, ...]:
         if isinstance(self.mapping["plate"]["barcode"], str):
             return (self.mapping["plate"]["barcode"],)
         return tuple(self.mapping["plate"]["barcode"])
@@ -74,7 +74,7 @@ class SdfMapping:
         return self.mapping["plate"]["position"]
 
     @property
-    def amounts(self) -> tuple[float]:
+    def amounts(self) -> tuple[str, ...]:
         if isinstance(self.mapping["plate"]["amount"], str):
             return (self.mapping["plate"]["amount"],)
         return tuple(self.mapping["plate"]["amount"])

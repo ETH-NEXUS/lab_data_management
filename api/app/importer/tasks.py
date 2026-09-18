@@ -31,6 +31,8 @@ def run_management_command(self, form_data: dict) -> None:
     room_name = form_data.get("room_name")
     # In the worker the request knows its name, e.g. "celery@celery"
     register_running_command(room_name, self.request.hostname or "unknown worker")
+    # The first line of the output: from here on the page knows the worker has it
+    message(f"Running command: {form_data.get('command')}", "info", room_name)
     try:
         if form_data.get("command") == "map":
             kwargs = {
@@ -62,7 +64,8 @@ def run_management_command(self, form_data: dict) -> None:
         # An error the command did not handle itself, e.g. an unknown experiment
         message(error_text(error), "error", room_name)
         if not isinstance(error, CommandError):
-            logger.exception(f"Command {form_data.get('command')} failed")
+            # The form data says which command and which file it was
+            logger.exception(f"Command failed: {form_data}")
     finally:
         finish_command(room_name)
 

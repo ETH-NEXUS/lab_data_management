@@ -1,16 +1,20 @@
-from django.http import JsonResponse, HttpResponse
+import os
+import re
+
+from django.conf import settings
+from django.http import Http404, HttpResponse, JsonResponse
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.exceptions import ValidationError
 from rest_framework.permissions import IsAuthenticated
-import os
-from django.http import Http404
-from django.conf import settings
 
 from importer.command_output import read_output, start_command
 from management.paths import check_command_paths, data_path
 from importer.tasks import run_management_command
 from chardet.universaldetector import UniversalDetector
 from contextlib import redirect_stderr
+
+# A room name is made by the page, e.g. "12_1726563600000"
+ROOM_NAME = re.compile(r"\w{1,64}")
 
 
 def list_files(start_path):
@@ -28,7 +32,9 @@ def list_files(start_path):
                     data["children"].append(
                         {"type": "file", "name": entry.name, "path": entry.path}
                     )
-                elif entry.is_dir():
+                # A link to another folder is not followed: the lab shares
+                # contain links that would send this into a circle
+                elif entry.is_dir(follow_symlinks=False):
                     data["children"].append(walk(entry.path))
         return data
 
@@ -37,7 +43,8 @@ def list_files(start_path):
 
 # The views of the management page are for logged in users only. As DRF views
 # they also check the CSRF token of POST requests, which the UI sends. DRF reads
-# the request body for that check, so the views use request.data, not request.body.
+# the request body for that check, so the views use request.data (or request.POST
+# for an upload), never request.body.
 @api_view(["GET"])
 @permission_classes([IsAuthenticated])
 def directory_content(request):
@@ -54,6 +61,8 @@ def run_command(request):
     check_command_paths(form_data)
 
     room_name = form_data.get("room_name")
+    if not isinstance(room_name, str) or not ROOM_NAME.fullmatch(room_name):
+        raise ValidationError(f"This is not a room name: {room_name}")
     start_command(room_name)
     # The command runs in the celery container; the page reads its output
     # through long_polling while it runs
@@ -79,6 +88,8 @@ def long_polling(request, room_name):
 @permission_classes([IsAuthenticated])
 def delete_file(request):
     path = data_path(request.data.get("path"))
+    if os.path.isdir(path):
+        raise ValidationError(f"{path} is a folder, only files can be deleted.")
     if os.path.exists(path):
         os.remove(path)
     return JsonResponse({"status": "ok"})

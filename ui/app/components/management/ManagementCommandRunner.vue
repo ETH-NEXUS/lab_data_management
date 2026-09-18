@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onMounted } from 'vue'
+import { computed } from 'vue'
 import ManagementDynamicForm from '~/components/management/ManagementDynamicForm.vue'
 import { useAuthStore } from '~/stores/auth'
 import { useManagementStore } from '~/stores/management'
@@ -17,11 +17,6 @@ const props = defineProps<Props>()
 const managementStore = useManagementStore()
 const authStore = useAuthStore()
 const { t } = useI18n()
-
-onMounted(() => {
-  // A command that is still running shows its output again after a page reload
-  void managementStore.resumeCommandOutput()
-})
 
 /**
  * Builds command payload with legacy-compatible management fields.

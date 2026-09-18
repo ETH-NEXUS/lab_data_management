@@ -100,3 +100,16 @@ class DataRootTest(ManagementPageTestCase):
 
         self.assertEqual(400, response.status_code)
         self.assertEqual(["The request has no form_data."], response.json())
+
+    def test_a_room_name_that_is_not_a_name_is_refused(self):
+        response = self.post(
+            "run_command", {"form_data": {"command": "map", "room_name": "../secret"}}
+        )
+
+        self.assertEqual(400, response.status_code)
+
+    def test_a_folder_is_not_deleted(self):
+        response = self.post("delete_file", {"path": self.folder})
+
+        self.assertEqual(400, response.status_code)
+        self.assertIn("only files can be deleted", response.json()[0])

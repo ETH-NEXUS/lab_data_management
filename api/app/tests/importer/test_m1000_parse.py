@@ -6,6 +6,7 @@ import shutil
 import tempfile
 from datetime import datetime
 from io import StringIO
+from unittest import mock
 from os.path import join
 
 from django.core.management.base import CommandError
@@ -97,6 +98,12 @@ class M1000ParseTest(SimpleTestCase):
         ):
             M1000Mapper().read_value_line(["A1", "SM1_1", "12abc"], 0, 1)
 
+    def test_a_column_that_is_no_number_keeps_its_place(self):
+        # "OVER" means the reader saw more light than it can measure
+        entry = M1000Mapper().read_value_line(["A1", "SM1_1", "OVER", "15"], 0, 1)
+
+        self.assertEqual([None, 15.0], entry["values"])
+
 
 class M1000DetermineIndexesTest(SimpleTestCase):
     def determine(self, text):
@@ -135,3 +142,34 @@ class M1000DetermineIndexesTest(SimpleTestCase):
             "File has not the desired format: test.asc", str(raised.exception)
         )
         self.assertEqual(0, file.tell())
+
+
+class M1000MeasurementDateTest(SimpleTestCase):
+    def parse(self, name, footer=""):
+        file = StringIO("A1\tSM1_1\t15\n" + footer)
+        file.name = name
+        return M1000Mapper().parse(file)
+
+    def test_the_date_of_the_footer_is_used(self):
+        data = self.parse(
+            "/data/20240610-121212_demo_1.asc",
+            "Date of measurement: 2024-06-11/Time of measurement: 08:30:00\n",
+        )
+
+        self.assertEqual(datetime(2024, 6, 11, 8, 30, 0), data["measurement_date"])
+
+    def test_without_a_date_in_the_footer_the_file_name_is_used(self):
+        data = self.parse("/data/20240610-121212_demo_1.asc")
+
+        self.assertEqual(datetime(2024, 6, 10, 12, 12, 12), data["measurement_date"])
+
+    @mock.patch("importer.mappers.m1000.message")
+    def test_without_any_date_the_time_of_the_import_is_used(self, message):
+        data = self.parse("/data/demo_1.asc")
+
+        self.assertIsNotNone(data["measurement_date"])
+        self.assertIn(
+            "Neither the file nor its name says when it was measured",
+            message.call_args.args[0],
+        )
+        self.assertEqual("warning", message.call_args.args[1])

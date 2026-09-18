@@ -199,6 +199,25 @@ class BaseMapperRunTest(TestCase):
         self.assertFalse(MeasurementAssignment.objects.exists())
         self.assertEqual([], os.listdir(media))
 
+    def test_a_file_with_two_assignments_from_older_imports_is_mapped(
+        self, message, *refreshes
+    ):
+        # Older imports created one assignment per run for the same file
+        path = self.write("20240610-121212_demo_1.asc")
+        dimension = PlateDimension.objects.create(name="dim_96_8x12", rows=8, cols=12)
+        plate = Plate.objects.create(barcode="demo_1", dimension=dimension)
+        for _ in range(2):
+            MeasurementAssignment.objects.create(
+                plate=plate, filename=path, status="success"
+            )
+
+        assignment = RecordingMapper(parse_result=[]).create_measurement_assignment(
+            plate, path
+        )
+
+        self.assertEqual(MeasurementAssignment.objects.earliest("id"), assignment)
+        self.assertEqual(2, MeasurementAssignment.objects.count())
+
     def test_a_file_that_was_assigned_before_keeps_its_stored_copy(
         self, message, *refreshes
     ):
@@ -314,6 +333,44 @@ class BaseMapperPlateTest(TestCase):
         )
         # The map command shows the error, so it is not sent here too
         message.assert_not_called()
+        self.assertFalse(Plate.objects.exists())
+
+    def test_the_specification_of_the_named_experiment_is_used(self, message):
+        # The same prefix can be specified in more than one experiment
+        other = Experiment.objects.create(name="Other", project=self.experiment.project)
+        BarcodeSpecification.objects.create(prefix="ABC", experiment=other)
+        BarcodeSpecification.objects.create(prefix="ABC", experiment=self.experiment)
+
+        plate = BaseMapper().create_plate_by_name_and_barcode(
+            "Corning_96",
+            "",
+            "ABC_1",
+            "Source",
+            experiment_name="Experiment",
+            room_name="room_1",
+        )
+
+        self.assertEqual(self.experiment, plate.experiment)
+        self.assertEqual(2, BarcodeSpecification.objects.count())
+        message.assert_not_called()
+
+    def test_two_experiments_with_the_same_name_are_refused(self, message):
+        other_project = Project.objects.create(name="Other project")
+        Experiment.objects.create(name="Experiment", project=other_project)
+
+        with self.assertRaises(CommandError) as raised:
+            BaseMapper().create_plate_by_name_and_barcode(
+                "Corning_96",
+                "",
+                "ABC_1",
+                "Source",
+                experiment_name="Experiment",
+                room_name="room_1",
+            )
+
+        self.assertIn(
+            "more than one experiment named 'Experiment'", str(raised.exception)
+        )
         self.assertFalse(Plate.objects.exists())
 
     def test_a_name_without_plate_size_is_refused(self, message):

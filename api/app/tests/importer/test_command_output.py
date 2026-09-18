@@ -124,6 +124,20 @@ class CommandOutputTest(SimpleTestCase):
         )
         self.assertEqual({"level": "info", "text": "Command completed."}, messages[-1])
 
+    def test_an_error_after_the_message_limit_still_fails_the_command(self):
+        start_command("room_1")
+        for number in range(MAX_MESSAGES + 1):
+            add_message("room_1", "info", f"line {number}")
+        add_message("room_1", "error", "The last file could not be read.")
+
+        finish_command("room_1")
+
+        output = read_output("room_1", since=0)
+        self.assertEqual("failed", output["status"])
+        self.assertEqual(
+            {"level": "error", "text": "Command failed."}, output["messages"][-1]
+        )
+
 
 class InterruptedCommandTest(SimpleTestCase):
     def setUp(self):

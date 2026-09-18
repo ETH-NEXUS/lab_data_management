@@ -9,6 +9,7 @@ from unittest import mock
 from django.core.cache import cache
 
 from core.models import Experiment, Measurement, Project
+from importer.command_output import RUNNING_COMMANDS_KEY
 from tests.management.base import ManagementPageTestCase
 
 # A shortened C10 reader file; the header line names the values "Lum"
@@ -48,8 +49,9 @@ class RunCommandTest(ManagementPageTestCase):
         levels_and_texts = [
             (message["level"], message["text"]) for message in output["messages"]
         ]
-        self.assertEqual("warning", levels_and_texts[0][0])
-        self.assertIn("No files found that match", levels_and_texts[0][1])
+        self.assertEqual(("info", "Running command: map"), levels_and_texts[0])
+        self.assertEqual("warning", levels_and_texts[1][0])
+        self.assertIn("No files found that match", levels_and_texts[1][1])
         self.assertEqual(("info", "Command completed."), levels_and_texts[-1])
 
     def test_an_error_outside_the_command_is_shown_once_and_the_command_failed(self):
@@ -60,13 +62,10 @@ class RunCommandTest(ManagementPageTestCase):
         self.assertEqual("failed", output["status"])
         self.assertEqual(
             [
-                {
-                    "level": "error",
-                    "text": "No experiment with name 'No such experiment' found in the database.",
-                },
-                {"level": "error", "text": "Command failed."},
+                "No experiment with name 'No such experiment' found in the database.",
+                "Command failed.",
             ],
-            output["messages"],
+            self.errors(output),
         )
 
     def test_the_command_is_sent_to_celery_and_the_request_returns_at_once(self):
@@ -84,17 +83,14 @@ class RunCommandTest(ManagementPageTestCase):
     def test_a_finished_command_is_no_longer_listed_as_running(self):
         self.run_map()
 
-        self.assertEqual({}, cache.get("running_commands"))
+        self.assertEqual({}, cache.get(RUNNING_COMMANDS_KEY))
 
     def test_an_unknown_command_is_an_error(self):
         self.run_map(command="do_something")
 
         output = self.read_output()
         self.assertEqual("failed", output["status"])
-        self.assertEqual(
-            {"level": "error", "text": "Unknown command: do_something"},
-            output["messages"][0],
-        )
+        self.assertEqual("Unknown command: do_something", self.errors(output)[0])
 
     def test_an_unknown_machine_is_an_error(self):
         self.run_map(machine="pipetting_robot")

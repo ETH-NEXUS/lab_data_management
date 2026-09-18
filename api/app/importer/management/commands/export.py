@@ -1,3 +1,4 @@
+from django.core.exceptions import FieldError
 from django.core.management.base import BaseCommand, CommandError
 from django.core import serializers
 from django.apps import apps
@@ -11,13 +12,21 @@ def export_data(app_name, model_name, filters=None):
     The objects of the model as YAML. Each filter is "field=value", e.g.
     ["barcode__startswith=Drug08", "library__name=LLD_24000"].
     """
-    model = apps.get_model(app_label=app_name, model_name=model_name)
+    try:
+        model = apps.get_model(app_label=app_name, model_name=model_name)
+    except LookupError as error:
+        raise CommandError(str(error))
+
     queryset = model.objects.all()
     for condition in filters or []:
         if "=" not in condition:
             raise CommandError(f"The filter '{condition}' is not field=value.")
         field, value = condition.split("=", 1)
-        queryset = queryset.filter(**{field: value})
+        try:
+            queryset = queryset.filter(**{field: value})
+        # A wrong field name gives a FieldError, a wrong value a ValueError
+        except (FieldError, ValueError) as error:
+            raise CommandError(f"The filter '{condition}' does not work: {error}")
 
     return serializers.serialize("yaml", queryset)
 

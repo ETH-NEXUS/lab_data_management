@@ -26,6 +26,10 @@ const activeConfig = computed(() => {
 onMounted(async () => {
   pageErrorMessage.value = null
 
+  // A command of this browser shows its output again, whether it is still
+  // running or ended while the page was closed. Once per page, not per tab.
+  void managementStore.resumeCommandOutput()
+
   try {
     await managementStore.initialize()
   } catch (err: unknown) {

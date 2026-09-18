@@ -2,11 +2,11 @@
 Plate information of an experiment: prefilling and saving it.
 """
 
-import json
-import traceback
 from django.shortcuts import get_object_or_404
-from django.views.decorators.csrf import csrf_exempt
 from django.http import JsonResponse
+from rest_framework.decorators import api_view, permission_classes
+from rest_framework.permissions import IsAuthenticated
+
 from helpers.logger import logger
 from ..models import (
     Plate,
@@ -98,54 +98,46 @@ def get_new_plate_infos(experiment):
     return plate_info
 
 
+@api_view(["GET"])
+@permission_classes([IsAuthenticated])
 def prefill_plate_info(request):
-    try:
-        if request.method == "GET":
-            experiment_id = request.GET.get("experiment_id")
-            if not experiment_id:
-                return JsonResponse({"error": "Experiment ID not provided"}, status=400)
+    """The plate information of an experiment, prefilled for the form."""
+    experiment_id = request.GET.get("experiment_id")
+    if not experiment_id:
+        return JsonResponse({"error": "Experiment ID not provided"}, status=400)
 
-            existing_plate_info = get_existing_plate_infos(experiment_id)
-            if existing_plate_info:
-                return JsonResponse({"plate_info": existing_plate_info}, status=200)
+    existing_plate_info = get_existing_plate_infos(experiment_id)
+    if existing_plate_info:
+        return JsonResponse({"plate_info": existing_plate_info}, status=200)
 
-            experiment = get_object_or_404(Experiment, pk=experiment_id)
-            new_plate_info = get_new_plate_infos(experiment)
-            return JsonResponse({"plate_info": new_plate_info}, status=200)
-    except Exception as e:
-        traceback.print_exc()
-        return JsonResponse({"error": str(e)}, status=500)
+    experiment = get_object_or_404(Experiment, pk=experiment_id)
+    return JsonResponse({"plate_info": get_new_plate_infos(experiment)}, status=200)
 
 
-@csrf_exempt
+@api_view(["POST"])
+@permission_classes([IsAuthenticated])
 def save_plate_info(request):
-    try:
-        if request.method == "POST":
-            data = json.loads(request.body.decode("utf-8"))
-            experiment_id = data.get("experiment_id")
-            plate_info = data.get("plate_info")
-            if not experiment_id:
-                return JsonResponse({"error": "Experiment ID not provided"}, status=400)
-            if not plate_info:
-                return JsonResponse({"error": "Plate info not provided"}, status=400)
+    """Stores the plate information of an experiment."""
+    experiment_id = request.data.get("experiment_id")
+    plate_info = request.data.get("plate_info")
+    if not experiment_id:
+        return JsonResponse({"error": "Experiment ID not provided"}, status=400)
+    if not plate_info:
+        return JsonResponse({"error": "Plate info not provided"}, status=400)
 
-            experiment = Experiment.objects.get(pk=experiment_id)
-
-            for item in plate_info:
-                plate = Plate.objects.get(barcode=item["plate_barcode"])
-                defaults = {
-                    "lib_plate_barcode": item["lib_plate_barcode"],
-                    "label": item["measurement_label"],
-                    "replicate": item["replicate"],
-                    "measurement_time": item["measurement_timestamp"],
-                    "cell_type": item["cell_type"],
-                    "condition": item["condition"],
-                }
-                PlateInfo.objects.update_or_create(
-                    plate=plate, experiment=experiment, defaults=defaults
-                )
-
-            return JsonResponse({"status": "Plate info saved successfully"}, status=200)
-    except Exception as e:
-        traceback.print_exc()
-        return JsonResponse({"error": str(e)}, status=500)
+    experiment = Experiment.objects.get(pk=experiment_id)
+    for item in plate_info:
+        plate = Plate.objects.get(barcode=item["plate_barcode"])
+        PlateInfo.objects.update_or_create(
+            plate=plate,
+            experiment=experiment,
+            defaults={
+                "lib_plate_barcode": item["lib_plate_barcode"],
+                "label": item["measurement_label"],
+                "replicate": item["replicate"],
+                "measurement_time": item["measurement_timestamp"],
+                "cell_type": item["cell_type"],
+                "condition": item["condition"],
+            },
+        )
+    return JsonResponse({"status": "Plate info saved successfully"}, status=200)

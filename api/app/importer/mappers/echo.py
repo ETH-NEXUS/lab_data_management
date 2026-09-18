@@ -11,6 +11,7 @@ import csv
 import os
 import xml.etree.ElementTree as ET
 from io import TextIOWrapper
+from collections.abc import Sequence
 from itertools import dropwhile
 from typing import TypedDict, cast
 
@@ -82,12 +83,12 @@ def required_xml_attribute(element: ET.Element, name: str) -> str:
     return value
 
 
-def number_or_none(text: str) -> float | None:
+def number_or_none(text: str | None) -> float | None:
     """ "10.184" -> 10.184, and "" or None -> None."""
     return float(text) if text else None
 
 
-def percent_or_none(text: str) -> float | None:
+def percent_or_none(text: str | None) -> float | None:
     """ "98.7%" or "98.7" -> 98.7, and "" or None -> None."""
     return float(text.replace("%", "")) if text else None
 
@@ -114,10 +115,19 @@ class EchoMapper(BaseMapper):
           "current_fluid_volume": "10.184", "DMSO": "98.744"}]
         """
         if kwargs.get("xml_file"):
-            return self.parse_xml(file)
+            transfers = self.parse_xml(file)
+        else:
+            headers = kwargs.get("headers", EchoMapper.DEFAULT_COLUMNS)
+            transfers = self.parse_csv(file, headers, kwargs.get("room_name"))
 
-        headers = kwargs.get("headers", EchoMapper.DEFAULT_COLUMNS)
-        return self.parse_csv(file, headers, kwargs.get("room_name"))
+        # Without this the file would be reported as mapped although nothing
+        # was read, for example when the report only has a header row.
+        if not transfers:
+            raise CommandError(
+                "The report does not contain a single transfer, so there is "
+                "nothing to map."
+            )
+        return transfers
 
     def parse_xml(self, file: TextIOWrapper) -> list[EchoTransfer]:
         """
@@ -176,6 +186,7 @@ class EchoMapper(BaseMapper):
         e.g. {"source_well": "Source Well", "DMSO": "% DMSO", ...}.
         """
         rows = csv.DictReader(self.skip_to_header_row(file, headers), delimiter=",")
+        self.check_column_names(rows.fieldnames, headers)
         transfers = []
         # Example: ["Drug08_J A3 -> 2026Wagner12 A3 (Actual Volume empty)"]
         skipped_transfers = []
@@ -185,10 +196,11 @@ class EchoMapper(BaseMapper):
                 transfers.append(self.rename_columns(row, headers))
                 continue
 
+            # A short line has None instead of "" in the columns it does not reach
             empty_columns = [
                 headers.get(key)
                 for key in REQUIRED_COLUMNS
-                if row[headers.get(key)] == ""
+                if row.get(headers.get(key)) in (None, "")
             ]
             # A section line like "[DETAILS],,,," has all required columns
             # empty and is skipped silently. Only a row with some empty columns
@@ -207,7 +219,25 @@ class EchoMapper(BaseMapper):
                 "warning",
                 room_name,
             )
+
         return transfers
+
+    @staticmethod
+    def check_column_names(column_names: Sequence[str] | None, headers: dict) -> None:
+        """
+        Refuses a file that does not have every column the mapping needs. Without
+        this check a missing column ends in a KeyError while the rows are read.
+        `column_names` is None when the header row was not found at all.
+        """
+        found = set(column_names or [])
+        missing = [
+            headers[key] for key in REQUIRED_COLUMNS if headers.get(key) not in found
+        ]
+        if missing:
+            raise CommandError(
+                f"The report has no column {', '.join(missing)}. Is it an Echo "
+                "transfer report?"
+            )
 
     @staticmethod
     def skip_to_header_row(file: TextIOWrapper, headers: dict):
@@ -285,11 +315,11 @@ class EchoMapper(BaseMapper):
             for transfer in data:
                 # All values are read first: a broken number stops the import
                 # here, even for a transfer whose source plate is missing.
-                source_plate_name = transfer["source_plate_name"]
+                source_plate_name = transfer.get("source_plate_name", "")
                 source_plate_barcode = transfer["source_plate_barcode"]
                 destination_plate_name = transfer["destination_plate_name"]
-                current_amount = number_or_none(transfer["current_fluid_volume"])
-                current_dmso = percent_or_none(transfer["DMSO"])
+                current_amount = number_or_none(transfer.get("current_fluid_volume"))
+                current_dmso = percent_or_none(transfer.get("DMSO"))
                 destination_plate_type = transfer.get("destination_plate_type", "")
                 destination_plate_barcode = transfer["destination_plate_barcode"]
 
@@ -407,7 +437,7 @@ class EchoMapper(BaseMapper):
             from_pos=source_plate.dimension.position(transfer["source_well"]),
             to_pos=destination_plate.dimension.position(transfer["destination_well"]),
             amount=float(transfer["actual_volume"]),
-            status=transfer["transfer_status"],
+            status=transfer.get("transfer_status", ""),
             # A control plate passes its well types on to the destination plate
             map_type=source_plate.is_control_plate,
             current_amount=current_amount,

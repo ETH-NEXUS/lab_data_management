@@ -25,7 +25,10 @@ class LoginRequiredTest(TestCase):
         responses.append(self.client.get(reverse("directory_content")))
         responses.append(self.client.get(reverse("long_polling", args=["room_1"])))
 
-        self.assertEqual([403] * 7, [response.status_code for response in responses])
+        self.assertEqual(
+            [403] * (len(POST_VIEWS) + 2),
+            [response.status_code for response in responses],
+        )
 
     def test_with_login_the_output_can_be_read(self):
         self.client.force_login(User.objects.create_user("tester"))

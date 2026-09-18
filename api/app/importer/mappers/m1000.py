@@ -30,7 +30,8 @@ class M1000Entry(TypedDict):
 
     position: str  # the well, e.g. "A1"
     identifier: str  # e.g. "SM1_1"
-    values: list[float | None]  # one value per measured label, e.g. [15.0]
+    # One value per value column, None where the column is not a number, e.g. [15.0, None]
+    values: list[float | None]
 
 
 class M1000Data(TypedDict):
@@ -113,8 +114,7 @@ class M1000Mapper(BaseMapper):
         barcode = self.barcode_from_file_name(file.name)
 
         entries = []
-        # Used when the footer has no date of measurement
-        measurement_date = tz.now()
+        measurement_date = None
         plate_description = None
         # The settings of every label, one dict per label. A key that appears
         # again starts the settings of the next label.
@@ -126,8 +126,8 @@ class M1000Mapper(BaseMapper):
             # A value line has at least three parts (position, identifier, value)
             if len(parts) >= 3 and re.match(self.RE_POS, parts[position_column]):
                 entry = self.read_value_line(parts, position_column, identifier_column)
-                # A line without values is ignored
-                if len(entry["values"]) > 0:
+                # A line without any number is ignored
+                if any(value is not None for value in entry["values"]):
                     debug_message(f"result: {entry}", kwargs)
                     entries.append(entry)
             elif match := re.match(self.RE_DATE_OF_MEASUREMENT, line):
@@ -141,6 +141,21 @@ class M1000Mapper(BaseMapper):
                 if key in meta_data[-1]:
                     meta_data.append({})
                 meta_data[-1][key] = match.group("value")
+
+        if measurement_date is None:
+            # The name of the file decides, so that reading the same file again
+            # updates its measurements instead of storing a second set of them
+            measurement_date = self.date_from_file_name(file.name)
+
+        if measurement_date is None:
+            message(
+                "Neither the file nor its name says when it was measured, so the "
+                "time of this import is used. Reading the file again would store "
+                "its values a second time.",
+                "warning",
+                kwargs.get("room_name"),
+            )
+            measurement_date = tz.now()
 
         return {
             "barcode": barcode,
@@ -159,18 +174,34 @@ class M1000Mapper(BaseMapper):
             raise CommandError(f"File name {file_name} does not match conventions.")
         return match.group("barcode")
 
+    def date_from_file_name(self, path: str) -> dt | None:
+        """ "/data/20240610-121212_demo_1.asc" -> datetime(2024, 6, 10, 12, 12, 12)."""
+        match = re.match(self.RE_FILENAME, os.path.basename(path))
+        if not match or not match.group("date"):
+            return None
+        try:
+            return dt.strptime(
+                f"{match.group('date')} {match.group('time')}", "%Y%m%d %H%M%S"
+            )
+        except ValueError:
+            return None
+
     def read_value_line(
         self, parts: list[str], position_column: int, identifier_column: int
     ) -> M1000Entry:
         """
         ["A1", "SM1_1", "15", ""] -> {"position": "A1", "identifier": "SM1_1", "values": [15.0]}.
-        Every other column that looks like a number becomes a value. A column
-        that only starts like a number (e.g. "12abc") refuses the file, because
-        a measurement needs a value.
+
+        Every column that is not the well or the identifier is a value column.
+        A column that is not a number at all (e.g. "OVER") keeps its place as
+        None, so the values still match their labels. A column that only starts
+        like a number (e.g. "12abc") refuses the file.
         """
-        values = []
+        values: list[float | None] = []
         for index, part in enumerate(parts):
             if index in (position_column, identifier_column):
+                continue
+            if not part.strip():
                 continue
             if re.match(self.RE_NUM, part) or re.match(self.RE_SCIENTIFIC, part):
                 value = convert_sci_to_float(part)
@@ -180,6 +211,8 @@ class M1000Mapper(BaseMapper):
                         "a number."
                     )
                 values.append(value)
+            else:
+                values.append(None)
 
         return {
             "position": parts[position_column],
@@ -215,7 +248,10 @@ class M1000Mapper(BaseMapper):
                 position = plate.dimension.position(entry.get("position"))
                 well = plate.well_at(position, create_if_not_exist=True)
 
-                for index, value in enumerate(entry.get("values")):
+                for index, value in enumerate(entry["values"]):
+                    if value is None:
+                        # The column of this well is not a number, e.g. "OVER"
+                        continue
                     Measurement.objects.update_or_create(
                         well=well,
                         label=labels[index],

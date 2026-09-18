@@ -106,7 +106,8 @@ class MapCommandTest(ManagementPageTestCase):
 
         self.assertFailedWith(output, "KeyError: 'DMSO'")
         failure = logs.records[-1]
-        self.assertEqual("Command map echo failed", failure.getMessage())
+        self.assertIn("Command failed:", failure.getMessage())
+        self.assertIn("'machine': 'echo'", failure.getMessage())
         self.assertIsNotNone(failure.exc_info)
 
     def test_a_folder_that_does_not_exist(self):
@@ -123,4 +124,58 @@ class MapCommandTest(ManagementPageTestCase):
 
         self.assertFailedWith(
             output, f"{path} is a file. Please choose the folder that contains it."
+        )
+
+    def test_a_folder_with_xlsx_files_is_mapped_for_c10(self):
+        self.write("241014_125455_241008MP-1_1.xlsx", "not a real workbook")
+
+        with mock.patch("importer.management.commands.map.MicroscopeMapper.run") as run:
+            self.run_map("C10-imager")
+
+        self.assertTrue(run.call_args.args[0].endswith("**/*.xlsx"))
+
+    def test_a_folder_with_only_xml_reports_is_mapped_for_echo(self):
+        # A csv that is not an Echo report must not hide the xml reports
+        self.write("notes.csv", "a,b\n")
+        self.write("ID-1-transfer-Echo_01_1.xml", "<transfer/>")
+
+        with mock.patch("importer.management.commands.map.EchoMapper.run") as run:
+            self.run_map("echo")
+
+        self.assertTrue(run.call_args.args[0].endswith("**/*[_-][Tt]ransfer[_-]*.xml"))
+
+    def test_a_column_file_for_another_machine_is_reported(self):
+        path = self.echo_column_file({"source_well": "Source Well"})
+
+        output = self.run_map("m1000", mapping_file=path)
+
+        self.assertIn(
+            f"The column file {path} is only used for echo reports, not for m1000.",
+            [message["text"] for message in output["messages"]],
+        )
+
+    def test_the_c10_reader_does_not_read_the_xlsx_files_of_the_imager(self):
+        # A stray .txt file must not decide what a C10-imager run reads
+        self.write("241014_125455_241008MP-1_1.xlsx", "not a real workbook")
+        self.write("notes.txt", "a note\n")
+
+        with mock.patch("importer.management.commands.map.MicroscopeMapper.run") as run:
+            self.run_map("C10-imager")
+            imager_pattern = run.call_args.args[0]
+            self.run_map("C10-reader")
+            reader_pattern = run.call_args.args[0]
+
+        self.assertTrue(imager_pattern.endswith("**/*.xlsx"))
+        self.assertTrue(reader_pattern.endswith("**/*.txt"))
+
+    def test_a_measurement_name_for_echo_is_reported(self):
+        self.write("ID-1-transfer-Echo_01_1.xml", "<transfer/>")
+
+        with mock.patch("importer.management.commands.map.EchoMapper.run"):
+            output = self.run_map("echo", measurement_name="Lum")
+
+        self.assertIn(
+            "The measurement name Lum is not used for echo reports, "
+            "only for measurement files.",
+            [message["text"] for message in output["messages"]],
         )
