@@ -51,7 +51,9 @@ class DataRootTest(ManagementPageTestCase):
         self.assertEqual(400, response.status_code)
 
     def test_a_command_with_a_path_outside_the_data_folder_is_not_started(self):
-        with mock.patch("management.views.run_management_command.delay") as delay:
+        with mock.patch(
+            "management.views.commands.run_management_command.delay"
+        ) as delay:
             response = self.post(
                 "run_command",
                 {

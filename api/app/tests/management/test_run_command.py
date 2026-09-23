@@ -69,7 +69,9 @@ class RunCommandTest(ManagementPageTestCase):
         )
 
     def test_the_command_is_sent_to_celery_and_the_request_returns_at_once(self):
-        with mock.patch("management.views.run_management_command.delay") as delay:
+        with mock.patch(
+            "management.views.commands.run_management_command.delay"
+        ) as delay:
             response = self.run_map()
 
         self.assertEqual(200, response.status_code)
