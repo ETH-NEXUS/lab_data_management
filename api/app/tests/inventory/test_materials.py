@@ -1,4 +1,4 @@
-from unittest import skip
+from django.contrib.auth.models import User
 from django.urls import reverse
 from django.test import override_settings
 from django.core.files.uploadedfile import SimpleUploadedFile
@@ -9,7 +9,6 @@ import tempfile
 from inventory.static_models import ItemType, MaterialMaster
 
 
-@skip("Does not authenticate, so the API answers 403, see plan.md")
 class InventoryMaterialReagentTests(APITestCase):
     """
     Covers reagent-specific material metadata.
@@ -21,6 +20,9 @@ class InventoryMaterialReagentTests(APITestCase):
         self.override_media.enable()
         self.addCleanup(self.override_media.disable)
         self.addCleanup(shutil.rmtree, self.media_root, ignore_errors=True)
+
+        # The inventory API is for logged in users only
+        self.client.force_authenticate(User.objects.create_user("tester"))
 
         self.reagent_item_type = ItemType.objects.create(name="reagent")
         self.device_item_type = ItemType.objects.create(name="device")

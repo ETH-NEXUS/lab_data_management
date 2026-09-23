@@ -183,10 +183,10 @@ class Command(BaseCommand):
             if options.get("machine") == "C10-reader":
                 pattern = microscope.txt_blob
             elif options.get("machine") == "C10-imager":
-                pattern = microscope.file_blob
+                pattern = microscope.xlsx_blob
             else:
                 pattern = first_pattern_with_files(
-                    path, (microscope.txt_blob, microscope.file_blob)
+                    path, (microscope.txt_blob, microscope.xlsx_blob)
                 )
             MicroscopeMapper().run(
                 join(path, pattern),

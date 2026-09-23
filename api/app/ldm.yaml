@@ -25,5 +25,5 @@ importer:
 
   microscope:
     default:
-      file_blob: "**/*.xlsx"
+      xlsx_blob: "**/*.xlsx"
       txt_blob: "**/*.txt"
