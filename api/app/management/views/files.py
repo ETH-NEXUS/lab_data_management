@@ -101,8 +101,18 @@ def upload_file(request):
     directory_path = data_path(directory_path)
     os.makedirs(directory_path, exist_ok=True)
     # Only the name of the uploaded file, never a path it may carry
-    file_path = os.path.join(directory_path, os.path.basename(uploaded_file.name))
-    with open(file_path, "wb+") as destination:
+    file_name = os.path.basename(uploaded_file.name)
+    file_path = os.path.join(directory_path, file_name)
+    # "x" creates the file only if there is none yet, so an upload never
+    # replaces a file that is already there (or that is being written right now)
+    try:
+        destination = open(file_path, "xb")
+    except FileExistsError:
+        raise ValidationError(
+            f"A file named {file_name} already exists in {directory_path}. "
+            "Delete it first or rename the new file."
+        )
+    with destination:
         for chunk in uploaded_file.chunks():
             destination.write(chunk)
 

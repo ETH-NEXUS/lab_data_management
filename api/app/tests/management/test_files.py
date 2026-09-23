@@ -147,6 +147,39 @@ class FileViewsTest(ManagementPageTestCase):
         with open(join(folder, "a.csv"), "rb") as file:
             self.assertEqual(b"1,2", file.read())
 
+    def test_an_upload_does_not_replace_a_file_with_the_same_name(self):
+        path = self.write("a.csv", "old")
+
+        response = self.client.post(
+            reverse("upload_file"),
+            {
+                "directory_path": self.folder,
+                "file": SimpleUploadedFile("a.csv", b"new"),
+            },
+        )
+
+        self.assertEqual(400, response.status_code)
+        self.assertEqual(
+            [
+                f"A file named a.csv already exists in {self.folder}. "
+                "Delete it first or rename the new file."
+            ],
+            response.json(),
+        )
+        with open(path) as file:
+            self.assertEqual("old", file.read())
+
+    def test_an_upload_does_not_replace_a_folder_with_the_same_name(self):
+        os.mkdir(join(self.folder, "echo"))
+
+        response = self.client.post(
+            reverse("upload_file"),
+            {"directory_path": self.folder, "file": SimpleUploadedFile("echo", b"x")},
+        )
+
+        self.assertEqual(400, response.status_code)
+        self.assertTrue(os.path.isdir(join(self.folder, "echo")))
+
     def test_an_upload_without_a_file_says_so(self):
         response = self.client.post(
             reverse("upload_file"), {"directory_path": self.folder}
