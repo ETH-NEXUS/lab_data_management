@@ -7,7 +7,7 @@ from unittest import mock
 import requests
 from django.test import SimpleTestCase
 
-from harvest.harvest_client import TIMEOUT_SECONDS, HarvestClient
+from harvest.harvest_client import TIMEOUT_SECONDS, USER_AGENT, HarvestClient
 
 
 def harvest_response(status_code, text):
@@ -34,6 +34,10 @@ class HarvestClientTest(SimpleTestCase):
             params=None,
             timeout=TIMEOUT_SECONDS,
         )
+
+    def test_the_client_names_this_app_to_harvest(self):
+        self.assertEqual(USER_AGENT, self.client.headers["User-Agent"])
+        self.assertIn("github.com/ETH-NEXUS/lab_data_management", USER_AGENT)
 
     @mock.patch("harvest.harvest_client.requests.get")
     def test_an_error_of_harvest_is_logged_and_raised(self, get):

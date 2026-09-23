@@ -12,6 +12,11 @@ logger = logging.getLogger(__name__)
 # does not answer would block a server worker forever
 TIMEOUT_SECONDS = 10
 
+# Harvest asks every client to name itself and a way to reach its authors
+USER_AGENT = (
+    "LDM lab_data_management (https://github.com/ETH-NEXUS/lab_data_management)"
+)
+
 
 class HarvestClient:
     def __init__(self, access_token, account_id):
@@ -21,7 +26,7 @@ class HarvestClient:
         self.headers = {
             "Authorization": f"Bearer {self.access_token}",
             "Harvest-Account-Id": f"{self.account_id}",
-            "User-Agent": "Harvest API Example",
+            "User-Agent": USER_AGENT,
             "Content-Type": "application/json",
         }
 
