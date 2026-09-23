@@ -2,43 +2,57 @@ import os
 import re
 
 from django.conf import settings
-from django.http import Http404, HttpResponse, JsonResponse
+from django.http import FileResponse, Http404, JsonResponse
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.exceptions import ValidationError
 from rest_framework.permissions import IsAuthenticated
 
 from importer.command_output import read_output, start_command
-from management.paths import check_command_paths, data_path
+from importer.mappers.base import detect_encoding
 from importer.tasks import run_management_command
-from chardet.universaldetector import UniversalDetector
-from contextlib import redirect_stderr
+from management.paths import check_command_paths, data_path
 
 # A room name is made by the page, e.g. "12_1726563600000"
 ROOM_NAME = re.compile(r"\w{1,64}")
 
 
-def list_files(start_path):
-    def walk(path):
-        data = {
-            "type": "directory",
-            "name": os.path.basename(path),
-            "children": [],
-            "path": path,
-        }
+def folder_tree(path: str) -> dict:
+    """
+    A folder with everything in it, e.g.
+    {"type": "directory", "name": "echo", "path": "/data/echo", "children": [
+        {"type": "file", "name": "run.xml", "path": "/data/echo/run.xml"}]}
+    """
+    tree = {
+        "type": "directory",
+        "name": os.path.basename(path),
+        "children": [],
+        "path": path,
+    }
+    # The snapshots of the lab shares hold old copies of every file; they are
+    # listed as a folder, but not opened
+    if ".snapshots" in path:
+        return tree
 
-        if not ".snapshots" in path:
-            for entry in os.scandir(path):
-                if entry.is_file():
-                    data["children"].append(
-                        {"type": "file", "name": entry.name, "path": entry.path}
-                    )
-                # A link to another folder is not followed: the lab shares
-                # contain links that would send this into a circle
-                elif entry.is_dir(follow_symlinks=False):
-                    data["children"].append(walk(entry.path))
-        return data
+    for entry in os.scandir(path):
+        if entry.is_file():
+            tree["children"].append(
+                {"type": "file", "name": entry.name, "path": entry.path}
+            )
+        # A link to another folder is not followed: the lab shares
+        # contain links that would send this into a circle
+        elif entry.is_dir(follow_symlinks=False):
+            tree["children"].append(folder_tree(entry.path))
+    return tree
 
-    return walk(start_path)
+
+def existing_file(path: str) -> str:
+    """The path of a file inside the data folder that can be read."""
+    path = data_path(path)
+    if os.path.isdir(path):
+        raise ValidationError(f"{path} is a folder, not a file.")
+    if not os.path.exists(path):
+        raise Http404("File not found")
+    return path
 
 
 # The views of the management page are for logged in users only. As DRF views
@@ -48,7 +62,7 @@ def list_files(start_path):
 @api_view(["GET"])
 @permission_classes([IsAuthenticated])
 def directory_content(request):
-    content = list_files(settings.MANAGEMENT_DATA_ROOT)
+    content = folder_tree(settings.MANAGEMENT_DATA_ROOT)
     return JsonResponse({"directory_content": content})
 
 
@@ -98,17 +112,14 @@ def delete_file(request):
 @api_view(["POST"])
 @permission_classes([IsAuthenticated])
 def download_file(request):
-    file_path = data_path(request.data.get("file_path"))
-    if not os.path.exists(file_path):
-        raise Http404("File not found")
-
-    response = HttpResponse(
-        open(file_path, "rb"), content_type="application/octet-stream"
+    file_path = existing_file(request.data.get("file_path"))
+    # FileResponse sends the file in parts and closes it afterwards
+    return FileResponse(
+        open(file_path, "rb"),
+        as_attachment=True,
+        filename=os.path.basename(file_path),
+        content_type="application/octet-stream",
     )
-    response["Content-Disposition"] = (
-        f'attachment; filename="{os.path.basename(file_path)}"'
-    )
-    return response
 
 
 @api_view(["POST"])
@@ -135,19 +146,7 @@ def upload_file(request):
 @api_view(["POST"])
 @permission_classes([IsAuthenticated])
 def get_file_content(request):
-    file_path = data_path(request.data.get("file_path"))
-    if not os.path.exists(file_path):
-        raise Http404("File not found")
-
-    with redirect_stderr(None):
-        detector = UniversalDetector()
-        with open(file_path, "rb") as file:
-            for line in file:
-                detector.feed(line)
-                if detector.done:
-                    break
-            detector.close()
-        encoding = detector.result.get("encoding")
-
+    file_path = existing_file(request.data.get("file_path"))
+    encoding = detect_encoding(file_path)
     with open(file_path, "r", encoding=encoding) as file:
         return JsonResponse({"content": file.read()})

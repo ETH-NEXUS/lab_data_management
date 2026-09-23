@@ -112,6 +112,29 @@ class FileViewsTest(ManagementPageTestCase):
 
         self.assertEqual(404, response.status_code)
 
+    def test_a_file_with_a_german_name_is_downloaded_with_its_name(self):
+        path = self.write("Lösung.csv", "1")
+
+        response = self.post("download_file", {"file_path": path})
+
+        self.assertEqual(200, response.status_code)
+        self.assertEqual(
+            "attachment; filename*=utf-8''L%C3%B6sung.csv",
+            response["Content-Disposition"],
+        )
+
+    def test_a_folder_is_not_downloaded(self):
+        response = self.post("download_file", {"file_path": self.folder})
+
+        self.assertEqual(400, response.status_code)
+        self.assertIn("is a folder", response.json()[0])
+
+    def test_a_folder_is_not_read(self):
+        response = self.post("get_file_content", {"file_path": self.folder})
+
+        self.assertEqual(400, response.status_code)
+        self.assertIn("is a folder", response.json()[0])
+
     def test_a_file_is_uploaded_into_a_new_folder(self):
         folder = join(self.folder, "new", "folder")
 
