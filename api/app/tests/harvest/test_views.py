@@ -144,3 +144,14 @@ class HarvestViewsTest(TestCase):
         response = self.client.get(reverse("update_harvest_info", args=[999999]))
 
         self.assertEqual(404, response.status_code)
+
+    def test_without_login_both_views_are_refused_and_harvest_is_not_asked(self):
+        self.client.logout()
+        project = Project.objects.create(name="Old name", harvest_id=7)
+
+        responses = [self.projects(), self.update(project)]
+
+        self.assertEqual([403, 403], [response.status_code for response in responses])
+        self.harvest_get.assert_not_called()
+        project.refresh_from_db()
+        self.assertEqual("Old name", project.name)

@@ -9,7 +9,8 @@ import requests
 from django.conf import settings
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404
-from django.views.decorators.csrf import csrf_exempt
+from rest_framework.decorators import api_view, permission_classes
+from rest_framework.permissions import IsAuthenticated
 
 from core.models import Project
 
@@ -29,6 +30,10 @@ def harvest_unavailable(error: requests.RequestException) -> JsonResponse:
     return JsonResponse({"error": HARVEST_UNAVAILABLE}, status=502)
 
 
+# Both views are for logged in users only. The update stays a GET request,
+# because the UI sends it as one.
+@api_view(["GET"])
+@permission_classes([IsAuthenticated])
 def harvest_projects(request):
     """
     The Harvest projects the user can choose from, e.g.
@@ -48,7 +53,8 @@ def harvest_projects(request):
     return JsonResponse({"projects": projects})
 
 
-@csrf_exempt
+@api_view(["GET"])
+@permission_classes([IsAuthenticated])
 def update_harvest_info(request, project_id):
     """Takes over the name and the notes of the linked Harvest project."""
     project = get_object_or_404(Project, id=project_id)
