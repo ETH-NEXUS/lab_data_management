@@ -68,8 +68,11 @@ services:
     hostname: redis
     restart: unless-stopped
     # The tasks and the command output survive a restart of the container, and
-    # the cache never throws away a task to make room
-    command: redis-server --appendonly yes --maxmemory-policy noeviction
+    # the cache never throws away a task to make room. The limit stops a leak
+    # from growing until the container is killed: Redis then refuses new writes
+    # with an error instead. It uses about 2 MB, the output of a command is kept
+    # for 24 hours.
+    command: redis-server --appendonly yes --maxmemory 256mb --maxmemory-policy noeviction
     volumes:
       - redis_data:/data
 

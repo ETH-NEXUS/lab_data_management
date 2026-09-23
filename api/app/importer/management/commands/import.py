@@ -5,6 +5,13 @@ from compoundlib.models import Compound, CompoundLibrary
 from core.models import Plate, Well, PlateDimension, WellCompound, WellType, Project
 from platetemplate.models import PlateTemplate, PlateTemplateCategory
 from importer.mapping import SdfMapping
+from importer.sdf_amounts import (
+    amount_in_nanoliter,
+    is_volume_column,
+    not_a_number_warning,
+    unknown_unit_warning,
+)
+from collections import Counter
 from importer.helper import row_col_from_wells, normalize_col, normalize_row
 
 # Excel writes an invisible BOM character at the start of a CSV file, and
@@ -252,6 +259,11 @@ class Command(BaseCommand):
                     pbar.update(1)
 
             # Import Compounds and Wells
+            amount_column = mapping.amounts[mapping_barcode_idx]
+            if not is_volume_column(amount_column):
+                message(unknown_unit_warning(amount_column), "warning", room_name)
+            # The values that are not a number, e.g. {"<24": 2486}
+            not_a_number: Counter[str] = Counter()
             with tqdm(
                 desc="Processing wells", unit="wells", total=len(sdf.index)
             ) as wbar:
@@ -302,12 +314,13 @@ class Command(BaseCommand):
                         __debug(
                             f"Using well {well.plate}: {well.hr_position} ({row[mapping.position]})"
                         )
-                    amount = (
-                        row[mapping.amounts[mapping_barcode_idx]]
-                        if isinstance(row[mapping.amounts[mapping_barcode_idx]], float)
-                        or isinstance(row[mapping.amounts[mapping_barcode_idx]], int)
-                        else 0
-                    )
+                    amount = 0.0
+                    if is_volume_column(amount_column):
+                        volume = amount_in_nanoliter(row[amount_column])
+                        if volume is None:
+                            not_a_number[str(row[amount_column])] += 1
+                        else:
+                            amount = volume
                     (
                         well_compound,
                         created,
@@ -327,6 +340,12 @@ class Command(BaseCommand):
                             f"Using well_compound {well_compound.well} -> {well_compound.compound}"
                         )
                     wbar.update(1)
+            if not_a_number:
+                message(
+                    not_a_number_warning(amount_column, not_a_number),
+                    "warning",
+                    room_name,
+                )
 
     def __check_file_format(self, input_file: str):
         with open(input_file, "r", encoding=detect_encoding(input_file)) as file:

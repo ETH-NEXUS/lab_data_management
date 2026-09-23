@@ -286,6 +286,69 @@ class ImportCommandTest(ManagementPageTestCase):
             ),
         )
 
+    def test_the_sdf_volumes_are_stored_in_nanoliter(self):
+        mapping_file = self.write(
+            "mapping.yml",
+            "compound:\n  identifier: ID\n  name: NAME\n  structure: Structure\n"
+            "plate:\n  barcode: [Barcode_Copy1, Barcode_Copy2]\n"
+            "  position: POS_IN_PLATE\n  amount: [Vol_Copy1, Vol_Copy2]\n",
+        )
+        path = self.write_sdf(
+            {
+                "NAME": "Aspirin",
+                "POS_IN_PLATE": "A1",
+                "Barcode_Copy1": "COPY_1",
+                "Vol_Copy1": "24.0",
+                "Barcode_Copy2": "COPY_2",
+                "Vol_Copy2": "<24",
+            }
+        )
+
+        output = self.run_import(
+            "sdf", input_file=path, library_name="Library", mapping_file=mapping_file
+        )
+
+        self.assertEqual("completed", output["status"])
+        self.assertEqual(
+            [("COPY_1", 24000.0), ("COPY_2", 0.0)],
+            list(
+                WellCompound.objects.order_by("well__plate__barcode").values_list(
+                    "well__plate__barcode", "amount"
+                )
+            ),
+        )
+        self.assertIn(
+            {
+                "level": "warning",
+                "text": "Column Vol_Copy2 has no exact volume ('<24' in 1 wells), "
+                "so these amounts are set to 0.",
+            },
+            output["messages"],
+        )
+
+    def test_an_sdf_amount_of_an_unknown_unit_is_not_stored(self):
+        path = self.write_sdf(
+            {
+                "NAME": "Aspirin",
+                "PLATE_NUMBER1": "SDF_1",
+                "POS_IN_PLATE": "A1",
+                "PLATE_AMOUNT1": "247.0",
+            }
+        )
+
+        output = self.run_import("sdf", input_file=path, library_name="Library")
+
+        self.assertEqual("completed", output["status"])
+        self.assertEqual(0, WellCompound.objects.get().amount)
+        self.assertIn(
+            {
+                "level": "warning",
+                "text": "The amounts in column PLATE_AMOUNT1 are not stored (set to 0), "
+                "because only the Vol_Copy… columns are known to be volumes in µL.",
+            },
+            output["messages"],
+        )
+
     def test_an_sdf_file_that_does_not_exist(self):
         path = join(self.folder, "missing.sdf")
 
