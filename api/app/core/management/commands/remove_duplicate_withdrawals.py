@@ -2,20 +2,22 @@
 Removes the withdrawals that a new mapping of the same Echo report repeated.
 
 See core/utils/wells/duplicate_withdrawals.py for which withdrawals count as
-duplicates. Every other withdrawal without target well stays: it may be a real
-transfer to a plate that was deleted later.
+duplicates: only those that a plate mapped anew repeats as a whole. Every other
+withdrawal without target well stays: it may be a real transfer to a plate that
+was deleted later.
 
 Example:
     python manage.py remove_duplicate_withdrawals --dry-run
 """
 
-from collections import defaultdict
-
 from django.core.management.base import BaseCommand
 from django.db import transaction
 
 from core.models import PlateDetail, WellDetail, WellWithdrawal
-from core.utils.wells.duplicate_withdrawals import duplicate_withdrawals
+from core.utils.wells.duplicate_withdrawals import (
+    RepeatedMapping,
+    repeated_mappings,
+)
 
 # How many wells of a plate the report lists before it only counts them
 LISTED_WELLS = 10
@@ -32,9 +34,12 @@ class Command(BaseCommand):
         )
 
     def handle(self, *args, **options):
-        duplicates = list(duplicate_withdrawals())
+        repeated = repeated_mappings()
+        duplicates = []
+        for mapping in repeated:
+            duplicates.extend(mapping.duplicates)
         without_target = WellWithdrawal.objects.filter(target_well__isnull=True)
-        self.report(duplicates, without_target.count())
+        self.report(repeated, len(duplicates), without_target.count())
 
         if options["dry_run"] or not duplicates:
             self.stdout.write("Nothing was changed.")
@@ -51,24 +56,27 @@ class Command(BaseCommand):
             self.style.SUCCESS(f"Removed {len(duplicates)} duplicate withdrawals.")
         )
 
-    def report(self, duplicates: list, without_target_count: int) -> None:
+    def report(
+        self,
+        repeated: list[RepeatedMapping],
+        duplicate_count: int,
+        without_target_count: int,
+    ) -> None:
         """
-        Prints the duplicates by plate, e.g.
-        "LIB_001: 3 duplicates, 60.0 nL (A1, A2, B7)".
+        Prints the duplicates by repeated mapping, e.g.
+        "LIB_001 -> EXP_1 (mapped anew): 3 duplicates, 60.0 nL (A1, A2, B7)".
         """
         self.stdout.write(f"Withdrawals without target well: {without_target_count}")
-        self.stdout.write(f"Of these, duplicates: {len(duplicates)}")
+        self.stdout.write(f"Of these, duplicates: {duplicate_count}")
 
-        wells_by_plate = defaultdict(list)
-        for withdrawal in duplicates:
-            wells_by_plate[withdrawal.well.plate.barcode].append(withdrawal)
-        for barcode in sorted(wells_by_plate):
-            withdrawals = wells_by_plate[barcode]
-            total = sum(withdrawal.amount for withdrawal in withdrawals)
-            wells = [withdrawal.well.hr_position for withdrawal in withdrawals]
+        for mapping in repeated:
+            total = sum(withdrawal.amount for withdrawal in mapping.duplicates)
+            wells = [withdrawal.well.hr_position for withdrawal in mapping.duplicates]
             listed = ", ".join(wells[:LISTED_WELLS])
             if len(wells) > LISTED_WELLS:
                 listed += f" and {len(wells) - LISTED_WELLS} more"
             self.stdout.write(
-                f"{barcode}: {len(withdrawals)} duplicates, {total} nL ({listed})"
+                f"{mapping.source_plate.barcode} -> {mapping.target_plate.barcode} "
+                f"(mapped anew): {len(mapping.duplicates)} duplicates, {total} nL "
+                f"({listed})"
             )

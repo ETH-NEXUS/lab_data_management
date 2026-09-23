@@ -8,35 +8,114 @@ mapping adds the same withdrawals again.
 
 A withdrawal without target well can also be a real one: the liquid was
 transferred, and the experiment plate was deleted later for another reason.
-So only a clear repetition counts as duplicate (see `duplicate_withdrawals`).
+Two different Echo runs can also agree by chance in a single well. So a
+mapping only counts as repeated when it repeats a whole plate
+(see `repeated_mappings`).
 """
 
-from django.db.models import Exists, OuterRef, QuerySet
+from collections import Counter, defaultdict
+from dataclasses import dataclass, field
 
-from core.models import WellWithdrawal
+from core.models import Plate, WellWithdrawal
 
 
-def duplicate_withdrawals() -> QuerySet:
+@dataclass
+class RepeatedMapping:
     """
-    The withdrawals without target well that a later withdrawal of the same
-    well repeats: same amount and same Echo reading (current_amount and
-    current_dmso of the source well at the transfer).
-
-    The reading is what tells two transfers apart: the amounts are standard
-    volumes (10, 20, 30 nL ...), but the volume left in the well is lower after
-    every real transfer. A withdrawal without reading is never a duplicate here,
-    because nothing tells whether it was the same transfer.
+    A plate mapped anew, and the withdrawals without target well it repeats, e.g.
+    RepeatedMapping(source_plate=<Plate LIB_001>, target_plate=<Plate EXP_1>,
+                    duplicates=[<WellWithdrawal A1 (20.0)>, ...])
     """
-    later_repetition = WellWithdrawal.objects.filter(
-        well=OuterRef("well"),
-        target_well__isnull=False,
-        created_at__gt=OuterRef("created_at"),
-        amount=OuterRef("amount"),
-        current_amount=OuterRef("current_amount"),
-        current_dmso=OuterRef("current_dmso"),
-    )
+
+    source_plate: Plate
+    target_plate: Plate
+    duplicates: list = field(default_factory=list)
+
+
+def withdrawal_key(withdrawal: WellWithdrawal) -> tuple:
+    """What the same transfer has in common, e.g. (well id, 20.0, 9.86, 96.1)."""
     return (
-        WellWithdrawal.objects.filter(target_well__isnull=True)
-        .filter(Exists(later_repetition))
-        .select_related("well__plate__dimension")
+        withdrawal.well_id,
+        withdrawal.amount,
+        withdrawal.current_amount,
+        withdrawal.current_dmso,
     )
+
+
+def has_reading(withdrawal: WellWithdrawal) -> bool:
+    """True if the Echo reported the volume and the DMSO of the source well."""
+    return withdrawal.current_amount is not None and withdrawal.current_dmso is not None
+
+
+def repeated_mappings() -> list[RepeatedMapping]:
+    """
+    The plates that repeat a mapping whose target plate was deleted.
+
+    A target plate repeats earlier withdrawals without target well when
+    - it came from a report (a PlateMapping from the source plate; a plate copy
+      has none) and was created after these withdrawals,
+    - every withdrawal from the source plate into it has an Echo reading, and
+    - each of them has a withdrawal without target well with the same well,
+      amount and reading. One report gives the same numbers again; two
+      different runs can agree in a well, but not in a whole plate.
+
+    If the same report was mapped several times, every full set is a duplicate.
+    A withdrawal is used for one repeated mapping only.
+    """
+    orphans_by_source = defaultdict(list)
+    orphans = (
+        WellWithdrawal.objects.filter(target_well__isnull=True)
+        .select_related("well__plate__dimension")
+        .order_by("created_at", "id")
+    )
+    for orphan in orphans:
+        if has_reading(orphan):
+            orphans_by_source[orphan.well.plate_id].append(orphan)
+
+    results = []
+    for source_plate_id, pool in orphans_by_source.items():
+        source_plate = pool[0].well.plate
+        target_plates = (
+            Plate.objects.filter(
+                mapped_from_plates__source_plate_id=source_plate_id,
+                created_at__gt=pool[0].created_at,
+            )
+            .distinct()
+            .order_by("created_at", "id")
+        )
+        for target_plate in target_plates:
+            duplicates = repeated_withdrawals(pool, source_plate, target_plate)
+            if not duplicates:
+                continue
+            for duplicate in duplicates:
+                pool.remove(duplicate)
+            results.append(RepeatedMapping(source_plate, target_plate, duplicates))
+    return results
+
+
+def repeated_withdrawals(pool: list, source_plate: Plate, target_plate: Plate) -> list:
+    """
+    The withdrawals of `pool` (without target well, of the source plate) that
+    `target_plate` repeats as a whole, or [] if it does not.
+    """
+    mapped = list(
+        WellWithdrawal.objects.filter(
+            well__plate=source_plate, target_well__plate=target_plate
+        )
+    )
+    if not mapped or not all(has_reading(withdrawal) for withdrawal in mapped):
+        return []
+    needed = Counter(withdrawal_key(withdrawal) for withdrawal in mapped)
+
+    earlier_by_key = defaultdict(list)
+    for orphan in pool:
+        if orphan.created_at < target_plate.created_at:
+            earlier_by_key[withdrawal_key(orphan)].append(orphan)
+
+    # How many times the whole plate is repeated; 0 if one withdrawal is missing
+    full_sets = min(len(earlier_by_key[key]) // count for key, count in needed.items())
+
+    duplicates = []
+    for key, count in needed.items():
+        duplicates.extend(earlier_by_key[key][: full_sets * count])
+    return duplicates
