@@ -173,7 +173,9 @@ class Command(BaseCommand):
             unchanged=unchanged,
             empty_barcodes=empty_barcodes,
             plates_of_other_libraries=sorted(plates_of_other_libraries),
-            plates_not_in_file=sorted(set(plates) - plates_in_file),
+            plates_not_in_file=sorted(
+                barcode or "(no barcode)" for barcode in set(plates) - plates_in_file
+            ),
             missing_well_compounds=missing_well_compounds,
         )
 

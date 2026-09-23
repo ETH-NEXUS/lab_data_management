@@ -35,9 +35,13 @@ const createEmptyDirectoryItem = (): FileSystemItem => ({
 // The command output is asked for this many times in a row before giving up
 const MAX_FAILED_OUTPUT_REQUESTS = 5
 const FAILED_OUTPUT_REQUEST_DELAY_MS = 1000
-// A command that has not written a single line in this time did not start,
-// for example because the worker that runs the commands is down
+// A command that has not written a single line in this time has not started yet:
+// it waits in the queue behind other commands, or the worker is down
 const COMMAND_START_TIMEOUT_MS = 60000
+// Shown once, as info: a command that starts later still ends as usual, and a
+// warning would mark it "completed with warnings" although nothing was wrong
+const COMMAND_WAITING_MESSAGE =
+  'The command has not started yet: it is waiting for the worker (other commands run first), or the worker is down.'
 // How often the page asks for new output while a command runs
 const OUTPUT_REQUEST_DELAY_MS = 1000
 // The command of this browser, so its output comes back after a reload
@@ -290,15 +294,12 @@ export const useManagementStore = defineStore('managementStore', () => {
       return
     }
 
-    // Without a single line after a minute the command never started
-    if (response.next === 0 && Date.now() - startedAt > COMMAND_START_TIMEOUT_MS) {
-      commandMessages.value.push({
-        level: 'error',
-        text: 'The command did not start. The worker that runs the commands may be down.',
-      })
-      commandStatus.value = 'failed'
-      isRunningCommand.value = false
-      return
+    // Without a single line after a minute the command waits for the worker. The
+    // page keeps asking, so the output shows up as soon as the worker takes it.
+    const hasNotStarted = response.next === 0 && Date.now() - startedAt > COMMAND_START_TIMEOUT_MS
+    const waitingIsShown = commandMessages.value.some((message) => message.text === COMMAND_WAITING_MESSAGE)
+    if (hasNotStarted && !waitingIsShown) {
+      commandMessages.value.push({ level: 'info', text: COMMAND_WAITING_MESSAGE })
     }
 
     setTimeout(() => {

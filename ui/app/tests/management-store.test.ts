@@ -92,16 +92,28 @@ describe('the management store while a command runs', () => {
     ])
   })
 
-  it('says that a command did not start when nothing is written for a minute', async () => {
+  it('says once that a command waits when nothing is written for a minute, and keeps asking', async () => {
     const store = useManagementStore()
     answerWith({ messages: [], next: 0, status: 'running' })
 
     await store.runCommand(FORM_DATA)
-    await vi.advanceTimersByTimeAsync(61_000)
+    await vi.advanceTimersByTimeAsync(65_000)
 
-    expect(store.commandStatus).toBe('failed')
+    expect(store.commandStatus).toBe('running')
+    expect(store.isRunningCommand).toBe(true)
+    const waiting = store.commandMessages.filter((message) => message.text.includes('has not started yet'))
+    expect(waiting).toEqual([expect.objectContaining({ level: 'info' })])
+
+    // The worker takes the command later: its output comes as usual
+    answerWith(running('Processing file a.csv...'), finished('completed'))
+    await vi.advanceTimersByTimeAsync(3000)
+
+    expect(store.commandStatus).toBe('completed')
     expect(store.isRunningCommand).toBe(false)
-    expect(store.commandMessages.at(-1)?.text).toContain('did not start')
+    expect(store.commandMessages.map((message) => message.text).slice(-2)).toEqual([
+      'Processing file a.csv...',
+      'Command completed.',
+    ])
   })
 
   it('asks again when a request for the output fails', async () => {

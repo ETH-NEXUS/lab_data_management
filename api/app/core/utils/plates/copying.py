@@ -191,8 +191,9 @@ def copy_library_plates(
                         amount=copied_amount,
                     )
 
-                # Library plates are imported without any volume, so their wells
-                # have no nanoliter bookkeeping to withdraw from. Withdrawing
+                # A library well without a volume (an SDF value like "<24", or a
+                # library whose amounts were not filled with `fill_sdf_amounts`)
+                # has no nanoliter bookkeeping to withdraw from. Withdrawing
                 # anyway would push Well.amount below zero, which then shows up
                 # as a negative volume on the plate page.
                 withdrawal_volume = target_volume if has_source_volume else 0

@@ -164,12 +164,17 @@ class RepairLibraryWellsTest(TestCase):
         compound = Compound.objects.get(name="Carbasalate calcium")
         self.assertEqual(SMILES, compound.structure)
         self.assertEqual("T3608", compound.data["CatalogNumber"])
-        for plate in self.plates:
+        # The volumes of the record in nL: Vol_Copy1 "6", Vol_Copy2 "<24"
+        for plate, amount in zip(self.plates, (6000.0, 0.0)):
             well_compound = WellCompound.objects.get(
                 well__plate=plate, well__position=self.l11
             )
             self.assertEqual(compound, well_compound.compound)
-            self.assertEqual(0, well_compound.amount)
+            self.assertEqual(amount, well_compound.amount)
+        self.assertIn(
+            "No amount: Vol_Copy2 is '<24', not an exact volume, so the amount is 0",
+            output,
+        )
         self.assertIn("Skipped: plate TEST_MISSING does not exist", output)
         # Only well L11, nothing for the normal record in A3
         self.assertEqual(2, Well.objects.count())
@@ -188,6 +193,18 @@ class RepairLibraryWellsTest(TestCase):
         self.assertIn("Already there: TEST_A L11: Carbasalate calcium", output)
         self.assertEqual(1, Compound.objects.count())
         self.assertEqual(2, WellCompound.objects.count())
+
+    def test_a_well_compound_of_an_earlier_run_gets_the_amount(self):
+        self.run_command()
+        WellCompound.objects.update(amount=0)
+
+        output = self.run_command()
+
+        self.assertIn("Already there: TEST_A L11: Carbasalate calcium (6000.0 nL)", output)
+        self.assertEqual(
+            6000.0,
+            WellCompound.objects.get(well__plate=self.plates[0]).amount,
+        )
 
     def test_a_well_with_another_compound_stops_without_changes(self):
         other = Compound.objects.create(name="Something else")

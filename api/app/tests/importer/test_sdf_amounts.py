@@ -21,6 +21,11 @@ class SdfAmountsTest(SimpleTestCase):
     def test_a_value_that_is_not_a_number_gives_none(self):
         self.assertIsNone(amount_in_nanoliter("<24"))
 
+    def test_a_value_that_is_not_a_possible_volume_gives_none(self):
+        self.assertIsNone(amount_in_nanoliter("nan"))
+        self.assertIsNone(amount_in_nanoliter("inf"))
+        self.assertIsNone(amount_in_nanoliter("-5"))
+
     def test_only_the_vol_copy_columns_are_volumes(self):
         self.assertTrue(is_volume_column("Vol_Copy1"))
         self.assertFalse(is_volume_column("PLATE_AMOUNT1"))

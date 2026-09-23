@@ -13,7 +13,7 @@ from django.test import TestCase
 from rdkit import Chem
 
 from compoundlib.models import Compound, CompoundLibrary
-from core.models import Plate, WellCompound
+from core.models import Plate, PlateDimension, WellCompound
 
 MAPPING = (
     "compound:\n  identifier: ID\n  name: NAME\n  structure: Structure\n"
@@ -136,6 +136,49 @@ class FillSdfAmountsTest(TestCase):
             "1 plates of the file are not in library Library and were skipped: COPY_1.",
             output,
         )
+
+    def test_a_column_that_is_not_a_volume_is_not_used(self):
+        self.sdf_file = self.write_sdf(
+            {"NAME": "Aspirin", "POS_IN_PLATE": "A1", "Vol_Copy1": "24.0",
+             "Weight_Copy2": "247.0"},
+            {"NAME": "Caffeine", "POS_IN_PLATE": "B2", "Vol_Copy1": "6",
+             "Weight_Copy2": "262.0"},
+        )
+        with open(self.mapping_file, "w") as file:
+            file.write(MAPPING.replace("Vol_Copy2", "Weight_Copy2"))
+
+        output = self.fill()
+
+        self.assertEqual(
+            [0.0, 0.0],
+            list(
+                WellCompound.objects.filter(well__plate__barcode="COPY_2")
+                .values_list("amount", flat=True)
+            ),
+        )
+        self.assertIn("2 amounts changed", output)
+        self.assertIn(
+            "The amounts in column Weight_Copy2 are not stored (set to 0)", output
+        )
+
+    def test_a_plate_copy_without_barcode_is_skipped(self):
+        self.sdf_file = self.write_sdf(
+            {"NAME": "Aspirin", "POS_IN_PLATE": "A1", "Vol_Copy1": "24.0",
+             "Barcode_Copy2": ""},
+        )
+        # Like plate 592 of ActiTarg: a plate with an empty barcode in the library
+        Plate.objects.create(
+            barcode="",
+            dimension=PlateDimension.objects.get(name="dim_384_16x24"),
+            library=CompoundLibrary.objects.get(name="Library"),
+        )
+
+        output = self.fill()
+
+        self.assertIn(
+            "1 plate copies of the file have no barcode and were skipped.", output
+        )
+        self.assertIn("(no barcode)", output)
 
     def test_an_unknown_library_is_an_error(self):
         with self.assertRaisesMessage(CommandError, "There is no library Missing."):

@@ -1,6 +1,6 @@
 """
 Reading an SDF library file with the columns its mapping file names.
-Used by the `import sdf` and the `fill_sdf_amounts` commands.
+Used by the `import sdf`, `fill_sdf_amounts` and `repair_library_wells` commands.
 """
 
 from django.core.management.base import CommandError
@@ -17,8 +17,7 @@ def load_sdf(sdf_file: str, mapping: SdfMapping) -> DataFrame:
     "Vol_Copy1": "24.0", "POS_IN_PLATE": "A1", "Structure": <Mol>}.
 
     Stops with a CommandError when a column of the mapping is missing, or when
-    the number of barcode and amount columns differ (they belong together by
-    their order: the first amount column is the amount on the first plate copy).
+    the number of barcode and amount columns differ.
     """
     sdf = PandasTools.LoadSDF(
         sdf_file,
@@ -35,9 +34,18 @@ def load_sdf(sdf_file: str, mapping: SdfMapping) -> DataFrame:
             f"These columns are not in the SDF file {sdf_file}: "
             f"{', '.join(missing_columns)}. Check the mapping file."
         )
+    check_amount_columns(mapping)
+    return sdf
+
+
+def check_amount_columns(mapping: SdfMapping) -> None:
+    """
+    The barcode and amount columns belong together by their order (the first
+    amount column is the amount on the first plate copy), so there must be as
+    many of each.
+    """
     if len(mapping.amounts) != len(mapping.barcodes):
         raise CommandError(
             f"The mapping file names {len(mapping.barcodes)} barcode columns "
             f"but {len(mapping.amounts)} amount columns."
         )
-    return sdf

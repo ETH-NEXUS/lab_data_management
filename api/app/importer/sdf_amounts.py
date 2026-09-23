@@ -25,7 +25,8 @@ def amount_in_nanoliter(value: str | float | None) -> float | None:
     A volume in µL from the SDF file, in nL:
     "6" -> 6000.0, "24.0" -> 24000.0.
     An empty value is a copy without this compound -> 0.0.
-    A value that is not a number, e.g. "<24" (less than 24 µL) -> None.
+    A value that is not a number, e.g. "<24" (less than 24 µL), or not a
+    possible volume, e.g. "nan", "inf" or "-5" -> None.
     """
     # RDKit reads the properties as text; a property that a record does not
     # have is NaN.
@@ -39,6 +40,9 @@ def amount_in_nanoliter(value: str | float | None) -> float | None:
     try:
         microliter = float(text)
     except ValueError:
+        return None
+    # float() also reads "nan" and "inf"
+    if not math.isfinite(microliter) or microliter < 0:
         return None
     return microliter * NANOLITER_PER_MICROLITER
 

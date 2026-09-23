@@ -7,9 +7,11 @@ Example: "Carbasalate?Calcium" in 20211119_NEXUS_FDA_approved.sdf has an oxygen
 atom with three bonds, so well L11 is empty in Drug08_A ... Drug08_I.
 
 This command reads that one record from the SDF file without checking the
-structure, takes the well and the plate barcodes from it, and creates the
-compound, the well and the well compound. The corrected structure and the name
-are given on the command line.
+structure, takes the well, the plate barcodes and the volumes from it, and
+creates the compound, the well and the well compound. The corrected structure
+and the name are given on the command line. `fill_sdf_amounts` cannot fill
+these wells (it reads the file with the structure check), so running this
+command again also sets the amount of a well compound that is already there.
 
 Example arguments (run with --dry-run first, then without it):
 
@@ -39,10 +41,12 @@ from core.models import (
     WellDetail,
 )
 from importer.mapping import SdfMapping
-
-# Same as the other wells of the library: `import sdf` stores 0, because RDKit
-# reads the volumes of an SDF file as text.
-WELL_COMPOUND_AMOUNT = 0
+from importer.sdf_amounts import (
+    amount_in_nanoliter,
+    is_volume_column,
+    unknown_unit_warning,
+)
+from importer.sdf_file import check_amount_columns
 
 
 def read_sdf_record(sdf_file: str, identifier_column: str, identifier: str) -> dict:
@@ -109,6 +113,7 @@ class Command(BaseCommand):
             raise CommandError(f"RDKit cannot read the SMILES {options['smiles']}.")
 
         mapping = SdfMapping(options["mapping_file"])
+        check_amount_columns(mapping)
         fields = read_sdf_record(
             options["input_file"], mapping.identifier, options["identifier"]
         )
@@ -129,10 +134,11 @@ class Command(BaseCommand):
             )
             self.report("Created" if created else "Using", f"compound {compound}")
 
-            for barcode_column in mapping.barcodes:
+            for barcode_column, amount_column in zip(mapping.barcodes, mapping.amounts):
                 barcode = fields.get(barcode_column)
                 if barcode:
-                    self.add_to_plate(barcode, well_coordinate, compound)
+                    amount = self.amount_of_copy(amount_column, fields.get(amount_column))
+                    self.add_to_plate(barcode, well_coordinate, compound, amount)
 
             if options["dry_run"]:
                 # Everything above ran for real, but nothing is kept
@@ -145,7 +151,26 @@ class Command(BaseCommand):
         ExperimentDetail.refresh(concurrently=True)
         self.report("Done", "materialized views refreshed")
 
-    def add_to_plate(self, barcode: str, well_coordinate: str, compound: Compound):
+    def amount_of_copy(self, amount_column: str, value: str | None) -> float:
+        """
+        The volume of one plate copy in nL, like `import sdf` stores it,
+        e.g. ("Vol_Copy1", "6") -> 6000.0; 0 when the volume is not known.
+        """
+        if not is_volume_column(amount_column):
+            self.report("No amount", unknown_unit_warning(amount_column))
+            return 0.0
+        amount = amount_in_nanoliter(value)
+        if amount is None:
+            self.report(
+                "No amount",
+                f"{amount_column} is '{value}', not an exact volume, so the amount is 0",
+            )
+            return 0.0
+        return amount
+
+    def add_to_plate(
+        self, barcode: str, well_coordinate: str, compound: Compound, amount: float
+    ):
         plate = Plate.objects.filter(barcode=barcode).first()
         if plate is None:
             self.report("Skipped", f"plate {barcode} does not exist")
@@ -163,14 +188,15 @@ class Command(BaseCommand):
                 f"{names}. Nothing was changed."
             )
 
-        _, well_compound_created = WellCompound.objects.get_or_create(
+        # update_or_create: a well compound from an earlier run gets the amount too
+        _, well_compound_created = WellCompound.objects.update_or_create(
             well=well,
             compound=compound,
-            defaults={"amount": WELL_COMPOUND_AMOUNT},
+            defaults={"amount": amount},
         )
         self.report(
             "Created" if well_compound_created else "Already there",
-            f"{barcode} {well_coordinate}: {compound}",
+            f"{barcode} {well_coordinate}: {compound} ({amount} nL)",
         )
 
     def report(self, action: str, text: str):
