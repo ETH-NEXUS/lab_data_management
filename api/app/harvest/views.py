@@ -30,8 +30,8 @@ def harvest_unavailable(error: requests.RequestException) -> JsonResponse:
     return JsonResponse({"error": HARVEST_UNAVAILABLE}, status=502)
 
 
-# Both views are for logged in users only. The update stays a GET request,
-# because the UI sends it as one.
+# Both views are for logged in users only. As DRF views they also check the
+# CSRF token of the update, which is a POST because it changes the project.
 @api_view(["GET"])
 @permission_classes([IsAuthenticated])
 def harvest_projects(request):
@@ -53,7 +53,7 @@ def harvest_projects(request):
     return JsonResponse({"projects": projects})
 
 
-@api_view(["GET"])
+@api_view(["POST"])
 @permission_classes([IsAuthenticated])
 def update_harvest_info(request, project_id):
     """Takes over the name and the notes of the linked Harvest project."""

@@ -68,7 +68,7 @@ export const useHarvestStore = defineStore('harvestStore', () => {
     try {
       const data = await requestApiData<HarvestUpdateResponse>(
         getHarvestUpdateEndpoint(projectId),
-        { method: 'GET' },
+        { method: 'POST' },
         HARVEST_UPDATE_ERROR_MESSAGE,
       )
 

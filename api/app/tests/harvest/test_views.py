@@ -9,7 +9,7 @@ from unittest import mock
 
 import requests
 from django.contrib.auth.models import User
-from django.test import TestCase, override_settings
+from django.test import Client, TestCase, override_settings
 from django.urls import reverse
 
 from core.models import Project
@@ -48,7 +48,7 @@ class HarvestViewsTest(TestCase):
         return self.client.get(reverse("harvest_projects"))
 
     def update(self, project):
-        return self.client.get(reverse("update_harvest_info", args=[project.id]))
+        return self.client.post(reverse("update_harvest_info", args=[project.id]))
 
     def test_the_harvest_projects_are_listed(self):
         response = self.projects()
@@ -141,7 +141,7 @@ class HarvestViewsTest(TestCase):
         self.harvest_get.assert_not_called()
 
     def test_an_unknown_project_answers_404(self):
-        response = self.client.get(reverse("update_harvest_info", args=[999999]))
+        response = self.client.post(reverse("update_harvest_info", args=[999999]))
 
         self.assertEqual(404, response.status_code)
 
@@ -155,3 +155,39 @@ class HarvestViewsTest(TestCase):
         self.harvest_get.assert_not_called()
         project.refresh_from_db()
         self.assertEqual("Old name", project.name)
+
+    def test_an_update_with_get_is_refused(self):
+        project = Project.objects.create(name="Old name", harvest_id=7)
+
+        response = self.client.get(reverse("update_harvest_info", args=[project.id]))
+
+        self.assertEqual(405, response.status_code)
+        self.harvest_get.assert_not_called()
+
+    def test_an_update_without_csrf_token_is_refused(self):
+        client = Client(enforce_csrf_checks=True)
+        client.force_login(User.objects.get(username="tester"))
+        project = Project.objects.create(name="Old name", harvest_id=7)
+
+        response = client.post(reverse("update_harvest_info", args=[project.id]))
+
+        self.assertEqual(403, response.status_code)
+        self.assertIn("CSRF", response.json()["detail"])
+        self.harvest_get.assert_not_called()
+
+    def test_an_update_with_csrf_token_works_like_the_ui(self):
+        # The UI gets the CSRF cookie first and sends the token in a header
+        client = Client(enforce_csrf_checks=True)
+        client.force_login(User.objects.get(username="tester"))
+        client.get(reverse("auth-cookie"))
+        token = client.cookies["csrftoken"].value
+        project = Project.objects.create(name="Old name", harvest_id=7)
+
+        response = client.post(
+            reverse("update_harvest_info", args=[project.id]),
+            HTTP_X_CSRFTOKEN=token,
+        )
+
+        self.assertEqual({"success": True}, response.json())
+        project.refresh_from_db()
+        self.assertEqual("SNL Screening 2026", project.name)
