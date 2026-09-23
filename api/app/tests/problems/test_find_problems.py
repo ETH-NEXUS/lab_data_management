@@ -8,8 +8,8 @@ go wrong - a single well that was fine unflagged the whole plate again.
 
 from datetime import timedelta
 
-from django.core.management import call_command
-from django.test import TestCase
+from django.core.management import CommandError, call_command
+from django.test import SimpleTestCase, TestCase
 from django.utils import timezone
 
 from compoundlib.models import Compound, CompoundLibrary
@@ -136,3 +136,12 @@ class MarkEmptyWellsTest(TestCase):
         self.add_well(0, [(2.0, 95)])
         self.recalculate()
         self.assertEqual("empty_wells", self.plate.status)
+
+
+class UnknownProblemTest(SimpleTestCase):
+    def test_an_unknown_problem_is_an_error(self):
+        # A typo used to do nothing and report nothing
+        with self.assertRaises(CommandError) as raised:
+            call_command("find_problems", "mark_empty_well")
+
+        self.assertIn("invalid choice: 'mark_empty_well'", str(raised.exception))

@@ -8,7 +8,9 @@ from core.utils.wells.threshold_checks import is_below_threshold
 
 class Command(BaseCommand):
     def add_arguments(self, parser):
-        parser.add_argument("what", help="Which problem to solve")  # mark_empty_wells
+        parser.add_argument(
+            "what", choices=["mark_empty_wells"], help="Which problem to solve"
+        )
 
     def mark_empty_wells(self):
         threshold = Threshold.current()

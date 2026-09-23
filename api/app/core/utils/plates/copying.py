@@ -1,7 +1,14 @@
 from collections.abc import Iterable
 from django.conf import settings
 from django.db import transaction
-from core.models import Plate, PlateDetail, Well, WellCompound, WellDetail, WellWithdrawal
+from core.models import (
+    Plate,
+    PlateDetail,
+    Well,
+    WellCompound,
+    WellDetail,
+    WellWithdrawal,
+)
 from core.utils.wells.volume_units import nanoliter_to_microliter
 
 
@@ -13,7 +20,7 @@ def build_copied_plate_barcode(source_barcode: str) -> str:
     Example output:
     {"barcode": "LIB_001_COPY_29.05.26"}
     """
-    copy_suffix = f"_COPY"
+    copy_suffix = "_COPY"
     barcode = f"{source_barcode}{copy_suffix}"
     max_length = Plate._meta.get_field("barcode").max_length
 
