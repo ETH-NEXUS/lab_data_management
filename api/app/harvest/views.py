@@ -1,41 +1,73 @@
+"""
+Projects of this app can be linked to a project in Harvest, the time tracking
+of the lab. They then take over its name and notes.
+"""
+
+import logging
+
+import requests
+from django.conf import settings
 from django.http import JsonResponse
+from django.shortcuts import get_object_or_404
 from django.views.decorators.csrf import csrf_exempt
 
-from .harvest_client import HarvestClient
-from django.conf import settings
 from core.models import Project
-from django.shortcuts import get_object_or_404
-from os import environ
+
+from .harvest_client import HarvestClient
+
+logger = logging.getLogger(__name__)
 
 client = HarvestClient(settings.HARVEST_ACCESS_TOKEN, settings.HARVEST_ACCOUNT_ID)
 
-HARVEST_PROJECT_FILTER = environ.get("HARVEST_PROJECT_FILTER")
+HARVEST_UNAVAILABLE = "Harvest could not be asked, please try again later."
+HARVEST_NOT_SET_UP = "Harvest is not set up on this server."
 
 
-def harvest_projects(request, filter_string=HARVEST_PROJECT_FILTER):
+def harvest_unavailable(error: requests.RequestException) -> JsonResponse:
+    """The answer when Harvest cannot be reached or answers with an error."""
+    logger.warning("Harvest request failed: %s", error)
+    return JsonResponse({"error": HARVEST_UNAVAILABLE}, status=502)
+
+
+def harvest_projects(request):
+    """
+    The Harvest projects the user can choose from, e.g.
+    {"projects": [{"id": 7, "name": "Screening 2026", "notes": "...", ...}]}
+    """
     if settings.HARVEST_ACCESS_TOKEN is None:
         return JsonResponse({"projects": []})
-    projects = client.get("projects")
-    if filter_string:
-        projects = {
-            "projects": list(
-                filter(lambda x: filter_string in x["name"], projects["projects"])
-            )
-        }
-    return JsonResponse(projects)
+
+    try:
+        projects = client.get("projects")["projects"]
+    except requests.RequestException as error:
+        return harvest_unavailable(error)
+
+    name_filter = settings.HARVEST_PROJECT_FILTER
+    if name_filter:
+        projects = [project for project in projects if name_filter in project["name"]]
+    return JsonResponse({"projects": projects})
 
 
 @csrf_exempt
 def update_harvest_info(request, project_id):
+    """Takes over the name and the notes of the linked Harvest project."""
     project = get_object_or_404(Project, id=project_id)
-    available_harvest_projects = client.get("projects")["projects"]
+    if not project.harvest_id:
+        return JsonResponse({"success": True})
+    if settings.HARVEST_ACCESS_TOKEN is None:
+        return JsonResponse({"error": HARVEST_NOT_SET_UP}, status=400)
 
-    if project.harvest_id:
-        harvest_project = list(
-            filter(lambda x: x["id"] == project.harvest_id, available_harvest_projects)
-        )[0]
-        project.name = harvest_project["name"]
-        project.harvest_notes = harvest_project["notes"]
-        project.save()
+    try:
+        harvest_project = client.get(f"projects/{project.harvest_id}")
+    except requests.HTTPError as error:
+        if error.response.status_code == 404:
+            message = f"Project {project.harvest_id} is no longer in Harvest."
+            return JsonResponse({"error": message}, status=404)
+        return harvest_unavailable(error)
+    except requests.RequestException as error:
+        return harvest_unavailable(error)
 
+    project.name = harvest_project["name"]
+    project.harvest_notes = harvest_project["notes"]
+    project.save()
     return JsonResponse({"success": True})

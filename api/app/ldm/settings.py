@@ -375,6 +375,8 @@ JUPYTER_URL = environ.get("JUPYTER_URL", "http://api:8888")
 ###
 HARVEST_ACCESS_TOKEN = environ.get("HARVEST_ACCESS_TOKEN")
 HARVEST_ACCOUNT_ID = environ.get("HARVEST_ACCOUNT_ID")
+# Only Harvest projects whose name contains this text are offered, e.g. "SNL"
+HARVEST_PROJECT_FILTER = environ.get("HARVEST_PROJECT_FILTER")
 
 
 ###

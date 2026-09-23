@@ -1,4 +1,16 @@
+"""
+A small client for the Harvest API v2 (https://help.getharvest.com/api-v2/).
+"""
+
+import logging
+
 import requests
+
+logger = logging.getLogger(__name__)
+
+# Harvest answers within a second; without a limit a request to a Harvest that
+# does not answer would block a server worker forever
+TIMEOUT_SECONDS = 10
 
 
 class HarvestClient:
@@ -14,14 +26,26 @@ class HarvestClient:
         }
 
     def get(self, endpoint, params=None):
+        """
+        The answer of Harvest as a dict, e.g. get("projects/7") ->
+        {"id": 7, "name": "Screening 2026", "notes": "...", ...}
+
+        Raises requests.RequestException when Harvest cannot be reached or
+        answers with an error.
+        """
         response = requests.get(
-            f"{self.base_url}{endpoint}", headers=self.headers, params=params
+            f"{self.base_url}{endpoint}",
+            headers=self.headers,
+            params=params,
+            timeout=TIMEOUT_SECONDS,
         )
-        try:
-            response.raise_for_status()
-        except requests.exceptions.HTTPError as e:
-            print("Error:", e)
-            print("Response headers:", response.headers)
-            print("Response body:", response.text)
-            raise
+        if not response.ok:
+            # The answer says what is wrong, e.g. that the token is not valid
+            logger.error(
+                "Harvest answered %s for %s: %s",
+                response.status_code,
+                endpoint,
+                response.text,
+            )
+        response.raise_for_status()
         return response.json()
