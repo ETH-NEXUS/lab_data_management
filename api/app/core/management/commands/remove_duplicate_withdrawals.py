@@ -1,82 +1,118 @@
 """
-Removes the withdrawals that a new mapping of the same Echo report repeated.
+Finds withdrawals that a plate mapped anew may have repeated, and removes them
+for a plate only when someone confirms that it was mapped anew.
 
-See core/utils/wells/duplicate_withdrawals.py for which withdrawals count as
-duplicates: only those that a plate mapped anew repeats as a whole. Every other
-withdrawal without target well stays: it may be a real transfer to a plate that
-was deleted later.
+The database cannot tell a report mapped again from a real transfer to a
+replicate plate with the same numbers (see core/utils/wells/duplicate_withdrawals.py),
+so without --target-plate this command only lists the candidates.
 
-Example:
-    python manage.py remove_duplicate_withdrawals --dry-run
+Examples:
+    python manage.py remove_duplicate_withdrawals
+    python manage.py remove_duplicate_withdrawals --target-plate EXP_1 --dry-run
+    python manage.py remove_duplicate_withdrawals --target-plate EXP_1
 """
 
-from django.core.management.base import BaseCommand
+from django.core.management.base import BaseCommand, CommandError
 from django.db import transaction
 
-from core.models import PlateDetail, WellDetail, WellWithdrawal
-from core.utils.wells.duplicate_withdrawals import (
-    RepeatedMapping,
-    repeated_mappings,
-)
+from core.models import Plate, PlateDetail, WellDetail, WellWithdrawal
+from core.utils.wells.duplicate_withdrawals import RepeatedMapping, repeated_mappings
 
-# How many wells of a plate the report lists before it only counts them
+# How many wells of a plate the output lists before it only counts them
 LISTED_WELLS = 10
 
 
 class Command(BaseCommand):
-    help = "Remove withdrawals that a new mapping of the same Echo report repeated."
+    help = (
+        "List plates that may repeat withdrawals of a deleted plate; remove them "
+        "for one plate with --target-plate once you know it was mapped anew."
+    )
 
     def add_arguments(self, parser):
         parser.add_argument(
+            "--target-plate",
+            help=(
+                "Barcode of a plate that was deleted and mapped again from the "
+                "same report; one set of its repeated withdrawals is removed"
+            ),
+        )
+        parser.add_argument(
             "--dry-run",
             action="store_true",
-            help="Only report what would be removed, change nothing",
+            help="With --target-plate: only show what would be removed",
         )
 
     def handle(self, *args, **options):
-        repeated = repeated_mappings()
-        duplicates = []
-        for mapping in repeated:
-            duplicates.extend(mapping.duplicates)
-        without_target = WellWithdrawal.objects.filter(target_well__isnull=True)
-        self.report(repeated, len(duplicates), without_target.count())
+        barcode = options["target_plate"]
+        if barcode is None:
+            self.list_candidates()
+            return
 
-        if options["dry_run"] or not duplicates:
-            self.stdout.write("Nothing was changed.")
+        if not Plate.objects.filter(barcode=barcode).exists():
+            raise CommandError(f"There is no plate {barcode}.")
+        repeated = repeated_mappings(target_barcode=barcode)
+        if not repeated:
+            self.stdout.write(
+                f"{barcode} does not repeat withdrawals without target well. "
+                "Nothing was changed."
+            )
+            return
+
+        label = "Would remove" if options["dry_run"] else "Removing"
+        to_remove = []
+        for mapping in repeated:
+            self.stdout.write(f"{label}: {self.describe(mapping)}")
+            to_remove.extend(mapping.one_set)
+        if options["dry_run"]:
+            self.stdout.write("Dry run: nothing was changed.")
             return
 
         with transaction.atomic():
             WellWithdrawal.objects.filter(
-                id__in=[withdrawal.id for withdrawal in duplicates]
+                id__in=[withdrawal.id for withdrawal in to_remove]
             ).delete()
         # The remaining amount of a well in the views subtracts all withdrawals
         PlateDetail.refresh(concurrently=True)
         WellDetail.refresh(concurrently=True)
         self.stdout.write(
-            self.style.SUCCESS(f"Removed {len(duplicates)} duplicate withdrawals.")
+            self.style.SUCCESS(
+                f"Removed {len(to_remove)} withdrawals that {barcode} repeated."
+            )
         )
 
-    def report(
-        self,
-        repeated: list[RepeatedMapping],
-        duplicate_count: int,
-        without_target_count: int,
-    ) -> None:
-        """
-        Prints the duplicates by repeated mapping, e.g.
-        "LIB_001 -> EXP_1 (mapped anew): 3 duplicates, 60.0 nL (A1, A2, B7)".
-        """
-        self.stdout.write(f"Withdrawals without target well: {without_target_count}")
-        self.stdout.write(f"Of these, duplicates: {duplicate_count}")
-
+    def list_candidates(self) -> None:
+        """Prints the plates that may repeat withdrawals; changes nothing."""
+        without_target = WellWithdrawal.objects.filter(target_well__isnull=True)
+        repeated = repeated_mappings()
+        self.stdout.write(f"Withdrawals without target well: {without_target.count()}")
+        self.stdout.write(
+            f"Plates that repeat some of them as a whole: {len(repeated)}"
+        )
         for mapping in repeated:
-            total = sum(withdrawal.amount for withdrawal in mapping.duplicates)
-            wells = [withdrawal.well.hr_position for withdrawal in mapping.duplicates]
-            listed = ", ".join(wells[:LISTED_WELLS])
-            if len(wells) > LISTED_WELLS:
-                listed += f" and {len(wells) - LISTED_WELLS} more"
+            self.stdout.write(f"  {self.describe(mapping)}")
+        if repeated:
             self.stdout.write(
-                f"{mapping.source_plate.barcode} -> {mapping.target_plate.barcode} "
-                f"(mapped anew): {len(mapping.duplicates)} duplicates, {total} nL "
-                f"({listed})"
+                "Such a plate is either the same report mapped again (the "
+                "withdrawals are counted twice) or a real transfer with the same "
+                "numbers, e.g. a replicate plate. The database cannot tell which. "
+                "Only if you know that a plate was deleted and mapped again, run:\n"
+                "  python manage.py remove_duplicate_withdrawals "
+                "--target-plate <barcode> --dry-run"
             )
+        self.stdout.write("Nothing was changed.")
+
+    def describe(self, mapping: RepeatedMapping) -> str:
+        """
+        One line per plate, e.g. "EXP_1 (from LIB_001): 2 withdrawals, 50.0 nL
+        (A1, A2), repeated 1 time(s)".
+        """
+        total = sum(withdrawal.amount for withdrawal in mapping.one_set)
+        wells = [withdrawal.well.hr_position for withdrawal in mapping.one_set]
+        listed = ", ".join(wells[:LISTED_WELLS])
+        if len(wells) > LISTED_WELLS:
+            listed += f" and {len(wells) - LISTED_WELLS} more"
+        return (
+            f"{mapping.target_plate.barcode} (from {mapping.source_plate.barcode}): "
+            f"{len(mapping.one_set)} withdrawals, {total} nL ({listed}), "
+            f"repeated {mapping.full_sets} time(s)"
+        )
