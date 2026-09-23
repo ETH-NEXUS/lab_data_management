@@ -22,6 +22,12 @@ from management.paths import check_command_paths
 ROOM_NAME = re.compile(r"\w{1,64}")
 
 
+def check_room_name(room_name) -> None:
+    """Refuses anything but a room name the page makes, e.g. "12_1726563600000"."""
+    if not isinstance(room_name, str) or not ROOM_NAME.fullmatch(room_name):
+        raise ValidationError(f"This is not a room name: {room_name}")
+
+
 @api_view(["POST"])
 @permission_classes([IsAuthenticated])
 def run_command(request):
@@ -31,8 +37,7 @@ def run_command(request):
     check_command_paths(form_data)
 
     room_name = form_data.get("room_name")
-    if not isinstance(room_name, str) or not ROOM_NAME.fullmatch(room_name):
-        raise ValidationError(f"This is not a room name: {room_name}")
+    check_room_name(room_name)
     start_command(room_name)
     # The command runs in the celery container; the page reads its output
     # through long_polling while it runs
@@ -49,6 +54,7 @@ def long_polling(request, room_name):
     Example: GET /api/long_polling/12_1726/?since=3
     -> {"messages": [{"level": "error", "text": "..."}], "next": 4, "status": "failed"}
     """
+    check_room_name(room_name)
     since = request.GET.get("since", "0")
     since = int(since) if since.isdigit() else 0
     return JsonResponse(read_output(room_name, since))

@@ -209,3 +209,11 @@ class LongPollingTest(ManagementPageTestCase):
         output = self.client.get(url).json()
 
         self.assertEqual({"messages": [], "next": 0, "status": None}, output)
+
+    def test_a_room_name_that_is_not_a_name_is_refused(self):
+        url = reverse("long_polling", args=["not-a-room!"])
+
+        response = self.client.get(url)
+
+        self.assertEqual(400, response.status_code)
+        self.assertEqual(["This is not a room name: not-a-room!"], response.json())
