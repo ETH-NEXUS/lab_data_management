@@ -4,7 +4,8 @@ command is not stopped by the timeout of the web server.
 """
 
 from celery import shared_task
-from celery.signals import worker_ready
+from celery.exceptions import WorkerLostError
+from celery.signals import task_failure, worker_ready
 from django.core import management
 from django.core.management.base import CommandError
 
@@ -12,6 +13,7 @@ from helpers.logger import logger
 from importer.command_output import (
     error_text,
     fail_interrupted_commands,
+    fail_lost_command,
     finish_command,
     register_running_command,
 )
@@ -74,3 +76,22 @@ def run_management_command(self, form_data: dict) -> None:
 def fail_commands_of_the_last_worker(sender=None, **kwargs) -> None:
     """A restarted worker does not continue the commands it was running."""
     fail_interrupted_commands(sender.hostname if sender else "unknown worker")
+
+
+@task_failure.connect
+def fail_the_command_of_a_lost_process(
+    sender=None, exception=None, args=None, **kwargs
+) -> None:
+    """
+    The process that ran a command was killed, e.g. because it used too much
+    memory. The `finally` of the task then never runs, so the main process of
+    the worker, which still gets this signal, ends the command instead.
+    Any other error is handled by the task itself.
+    """
+    if sender is None or sender.name != run_management_command.name:
+        return
+    if not isinstance(exception, WorkerLostError):
+        return
+    # The task was started with run_management_command.delay(form_data)
+    form_data = args[0] if args else {}
+    fail_lost_command(form_data.get("room_name"))

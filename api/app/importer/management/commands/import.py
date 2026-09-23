@@ -5,6 +5,7 @@ from compoundlib.models import Compound, CompoundLibrary
 from core.models import Plate, Well, PlateDimension, WellCompound, WellType, Project
 from platetemplate.models import PlateTemplate, PlateTemplateCategory
 from importer.mapping import SdfMapping
+from importer.sdf_file import load_sdf
 from importer.sdf_amounts import (
     amount_in_nanoliter,
     is_volume_column,
@@ -27,7 +28,6 @@ import argparse
 import csv
 from importer.helper import message
 
-from rdkit.Chem import PandasTools
 from rdkit.Chem.rdchem import Mol
 from rdkit import Chem
 
@@ -178,26 +178,7 @@ class Command(BaseCommand):
         else:
             message(f"Using library {library}.", "info", room_name)
 
-        sdf = PandasTools.LoadSDF(
-            sdf_file,
-            molColName=mapping.structure,
-            embedProps=False,
-        )
-        required_columns = [mapping.name, mapping.position]
-        required_columns += list(mapping.barcodes) + list(mapping.amounts)
-        missing_columns = [
-            column for column in required_columns if column not in sdf.columns
-        ]
-        if missing_columns:
-            raise CommandError(
-                f"These columns are not in the SDF file {sdf_file}: "
-                f"{', '.join(missing_columns)}. Check the mapping file."
-            )
-        if len(mapping.amounts) != len(mapping.barcodes):
-            raise CommandError(
-                f"The mapping file names {len(mapping.barcodes)} barcode columns "
-                f"but {len(mapping.amounts)} amount columns."
-            )
+        sdf = load_sdf(sdf_file, mapping)
 
         # Import plates
         # The plates by barcode, so the wells below do not load a plate per row

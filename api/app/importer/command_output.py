@@ -37,6 +37,11 @@ INTERRUPTED_MESSAGE = (
     "The command was interrupted, because the command worker was restarted. "
     "Check what was stored before you run it again."
 )
+LOST_PROCESS_MESSAGE = (
+    "The command was stopped, because the process that ran it was killed "
+    "(for example, it used too much memory). The file it was reading was not "
+    "stored; check what was stored before you run it again."
+)
 
 
 def messages_key(room_name: str) -> str:
@@ -104,6 +109,15 @@ def fail_interrupted_commands(worker_name: str) -> None:
     ]:
         add_message(room_name, "error", INTERRUPTED_MESSAGE)
         finish_command(room_name)
+
+
+def fail_lost_command(room_name: str | None) -> None:
+    """
+    The process that ran the command was killed in the middle of it, so the
+    command could not end itself: it gets an error and the status "failed".
+    """
+    add_message(room_name, "error", LOST_PROCESS_MESSAGE)
+    finish_command(room_name)
 
 
 def add_message(room_name: str | None, level: str, text: str) -> None:
