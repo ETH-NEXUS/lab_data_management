@@ -12,7 +12,6 @@ Example:
         --mapping-file /data/sdf/20200617_EPC_1250_mapping.yml --dry-run
 """
 
-import math
 from collections import Counter
 from os.path import isfile
 
@@ -29,19 +28,10 @@ from importer.sdf_amounts import (
     not_a_number_warning,
     unknown_unit_warning,
 )
-from importer.sdf_file import load_sdf
+from importer.sdf_file import is_empty_barcode, load_sdf
 
 # How many barcodes or wells a message lists before it only counts them
 LISTED_EXAMPLES = 10
-
-
-def is_empty(value) -> bool:
-    """True for a value the SDF record does not have: None, NaN or ""."""
-    if value is None:
-        return True
-    if isinstance(value, float) and math.isnan(value):
-        return True
-    return str(value).strip() == ""
 
 
 def some_of(items: list) -> str:
@@ -133,7 +123,7 @@ class Command(BaseCommand):
 
             for _, row in sdf.iterrows():
                 barcode = row[barcode_column]
-                if is_empty(barcode):
+                if is_empty_barcode(barcode):
                     empty_barcodes += 1
                     continue
                 plate = plates.get(barcode)
@@ -173,9 +163,7 @@ class Command(BaseCommand):
             unchanged=unchanged,
             empty_barcodes=empty_barcodes,
             plates_of_other_libraries=sorted(plates_of_other_libraries),
-            plates_not_in_file=sorted(
-                barcode or "(no barcode)" for barcode in set(plates) - plates_in_file
-            ),
+            plates_not_in_file=sorted(set(plates) - plates_in_file),
             missing_well_compounds=missing_well_compounds,
         )
 

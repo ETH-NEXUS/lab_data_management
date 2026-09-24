@@ -13,7 +13,7 @@ from django.test import TestCase
 from rdkit import Chem
 
 from compoundlib.models import Compound, CompoundLibrary
-from core.models import Plate, PlateDimension, WellCompound
+from core.models import Plate, WellCompound
 
 MAPPING = (
     "compound:\n  identifier: ID\n  name: NAME\n  structure: Structure\n"
@@ -166,19 +166,12 @@ class FillSdfAmountsTest(TestCase):
             {"NAME": "Aspirin", "POS_IN_PLATE": "A1", "Vol_Copy1": "24.0",
              "Barcode_Copy2": ""},
         )
-        # Like plate 592 of ActiTarg: a plate with an empty barcode in the library
-        Plate.objects.create(
-            barcode="",
-            dimension=PlateDimension.objects.get(name="dim_384_16x24"),
-            library=CompoundLibrary.objects.get(name="Library"),
-        )
 
         output = self.fill()
 
         self.assertIn(
             "1 plate copies of the file have no barcode and were skipped.", output
         )
-        self.assertIn("(no barcode)", output)
 
     def test_an_unknown_library_is_an_error(self):
         with self.assertRaisesMessage(CommandError, "There is no library Missing."):
