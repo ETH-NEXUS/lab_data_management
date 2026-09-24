@@ -30,9 +30,14 @@ mainton:
 maintoff:
 	@docker-compose -f docker-compose.yml -f docker-compose.prod.yml exec ws sh -c 'rm -f /web_root/.maintenance'
 
+# The code is mounted into the containers, so a new commit often builds the same
+# image and `up` keeps the old containers: gunicorn and celery would go on running
+# the old code, and migrate and the UI build would not run. So these three are
+# always recreated; db and redis are left alone.
 redeploy: env_var
 	@git pull
 	@docker compose -f docker-compose.yml -f docker-compose.prod.yml up --build -d
+	@docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d --force-recreate api celery ui
 
 ps:
 	@docker ps --format "$(FORMAT)"
