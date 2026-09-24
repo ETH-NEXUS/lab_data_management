@@ -30,8 +30,8 @@ class RecordingMapper(BaseMapper):
     """
     Remembers what run() hands to parse() and map().
 
-    parse_calls example: [(("open file", "/tmp/a.csv", "ascii", "hello\\n"), {"xml_file": False})]
-    map_calls example:   [(["row"], {"xml_file": False, "filename": "/tmp/a.csv"})]
+    parse_calls example: [(("open file", "/tmp/a.csv", "ascii", "hello\\n"), {})]
+    map_calls example:   [(["row"], {"filename": "/tmp/a.csv"})]
     """
 
     def __init__(self, parse_result):
@@ -80,13 +80,13 @@ class BaseMapperRunTest(TestCase):
             [
                 (
                     ("open file", path, "ascii", "hello\n"),
-                    {"room_name": "room_1", "xml_file": False},
+                    {"room_name": "room_1"},
                 )
             ],
             mapper.parse_calls,
         )
         self.assertEqual(
-            [(["row"], {"room_name": "room_1", "xml_file": False, "filename": path})],
+            [(["row"], {"room_name": "room_1", "filename": path})],
             mapper.map_calls,
         )
         self.assertEqual(
@@ -98,17 +98,6 @@ class BaseMapperRunTest(TestCase):
         )
         for refresh in refreshes:
             refresh.assert_called_once_with(concurrently=True)
-
-    def test_an_xml_file_is_marked_as_xml(self, message, *refreshes):
-        path = self.write("a.xml")
-        mapper = RecordingMapper(parse_result=["row"])
-
-        mapper.run(join(self.folder, "*.xml"))
-
-        self.assertEqual({"xml_file": True}, mapper.parse_calls[0][1])
-        self.assertEqual(
-            [(["row"], {"xml_file": True, "filename": path})], mapper.map_calls
-        )
 
     def test_txt_and_xlsx_files_are_parsed_by_name(self, message, *refreshes):
         path = self.write("241014_125455_241008MP-1_1.txt")

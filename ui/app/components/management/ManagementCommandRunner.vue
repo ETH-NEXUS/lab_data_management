@@ -5,6 +5,7 @@ import { useAuthStore } from '~/stores/auth'
 import { useManagementStore } from '~/stores/management'
 import type { GeneralFormData, Options } from '~/types/lab'
 import type { CommandMessage } from '~/types/management'
+import { summarizeCommandErrors } from '~/utils/commandErrors'
 
 type Props = {
   options: Options
@@ -80,6 +81,9 @@ const commandSummary = computed(() => {
   return null
 })
 
+// The error texts, shown in the summary so they are seen without scrolling the log
+const commandErrors = computed(() => summarizeCommandErrors(managementStore.commandMessages))
+
 const messageClass = (message: CommandMessage): string => {
   if (message.level === 'error') {
     return 'bg-red-50 text-red-800'
@@ -112,7 +116,16 @@ const messageClass = (message: CommandMessage): string => {
         :icon="commandSummary.icon"
         :title="commandSummary.title"
         variant="subtle"
-      />
+      >
+        <template v-if="managementStore.commandStatus === 'failed' && commandErrors.shown.length > 0" #description>
+          <ul class="list-disc space-y-1 pl-5">
+            <li v-for="(text, index) in commandErrors.shown" :key="index" class="whitespace-pre-wrap" v-text="text" />
+          </ul>
+          <p v-if="commandErrors.notShown > 0" class="mt-1">
+            {{ t('management.command_more_errors', { count: commandErrors.notShown }) }}
+          </p>
+        </template>
+      </UAlert>
       <div class="max-h-80 overflow-auto rounded-xl border border-slate-200 bg-white p-2">
         <p
           v-for="(message, index) in managementStore.commandMessages"

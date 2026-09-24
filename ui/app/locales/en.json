@@ -122,6 +122,7 @@
     "command_completed": "Command completed.",
     "command_completed_with_warnings": "Command completed with warnings. They are marked yellow below.",
     "command_failed": "Command failed. The errors are marked red below.",
+    "command_more_errors": "And {count} more errors in the log below.",
     "form": {
       "select_placeholder": "Select option"
     },

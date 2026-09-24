@@ -42,13 +42,6 @@ REPORT_WITH_EMPTY_VOLUME = f"""Run ID,446,,,,,,,,,,,,,,,,
 """
 
 
-# A shortened Echo XML report: two transfers in <printmap>, and a plate
-# measurement under <platemap> that also uses <w> elements.
-XML_REPORT = """<?xml version="1.0"?>
-<transfer style="startstop" date="2024-06-21 09:28:06.000"><plateInfo><plate type="source" name="384LDV_DMSO" barcode="24MP_Test1_1"/><plate type="destination" name="Corning_384_4516" barcode="240618MP-1_2"/></plateInfo><printmap total="2"><w n="A1" r="0" c="0" dn="A1" dr="0" dc="0" cvl="5.543" vl="5.583" fld="DMSO" fc="99.701" reason=""/><w n="B2" r="1" c="1" dn="C3" dr="2" dc="2" cvl="5.262" vl="5.302" fld="DMSO" fc="98.443" reason=""/></printmap><platemap><measbottof><w n="P24" r="15" c="23" mbtof="32.414"/></measbottof></platemap></transfer>
-"""
-
-
 class EchoParseTest(SimpleTestCase):
     def test_section_lines_are_not_read_as_transfers(self):
         # The "[DETAILS],,,," line used to become an entry with empty wells,
@@ -77,59 +70,6 @@ class EchoParseTest(SimpleTestCase):
             "warning",
             "room_1",
         )
-
-    def test_an_xml_report_is_read_from_the_printmap(self):
-        # Only the <w> elements of <printmap> are transfers; the <w> elements
-        # under <platemap> are plate measurements and must be ignored.
-        entries = EchoMapper().parse(StringIO(XML_REPORT), xml_file=True)
-
-        plates = {
-            "source_plate_name": "384LDV_DMSO",
-            "source_plate_barcode": "24MP_Test1_1",
-            "destination_plate_name": "Corning_384_4516",
-            "destination_plate_barcode": "240618MP-1_2",
-            "transfer_status": "",
-        }
-        self.assertEqual(
-            [
-                {
-                    **plates,
-                    "source_well": "A1",
-                    "destination_well": "A1",
-                    "actual_volume": "5.583",
-                    "current_fluid_volume": "5.543",
-                    "DMSO": "99.701",
-                },
-                {
-                    **plates,
-                    "source_well": "B2",
-                    "destination_well": "C3",
-                    "actual_volume": "5.302",
-                    "current_fluid_volume": "5.262",
-                    "DMSO": "98.443",
-                },
-            ],
-            entries,
-        )
-
-    def test_an_xml_file_that_is_not_a_transfer_report_is_refused(self):
-        report = '<?xml version="1.0"?><report><reportheader/><reportbody/></report>'
-
-        with self.assertRaisesMessage(
-            CommandError,
-            "The XML file has no <plateInfo> or <printmap>, so it is not an Echo "
-            "transfer report.",
-        ):
-            EchoMapper().parse(StringIO(report), xml_file=True)
-
-    def test_an_xml_transfer_without_source_well_is_refused(self):
-        report = XML_REPORT.replace('<w n="A1" ', "<w ")
-
-        with self.assertRaisesMessage(
-            CommandError,
-            "A <w> element of the XML report has no 'n' attribute.",
-        ):
-            EchoMapper().parse(StringIO(report), xml_file=True)
 
     def test_a_report_without_the_optional_columns_is_read(self):
         # Some Echo exports have no "Current Fluid Volume" and no "% DMSO"

@@ -19,7 +19,7 @@ NO_EXPERIMENT_NAME = (
 def first_pattern_with_files(path: str, patterns: tuple[str, ...]) -> str:
     """
     The first file pattern of `patterns` that finds files in the folder, e.g.
-    the Echo CSV pattern, or the XML pattern when the folder has no CSV reports.
+    the C10 txt pattern, or the xlsx pattern when the folder has no txt files.
     The last pattern is used when none of them finds a file, so that the mapper
     can say which files it looked for.
     """
@@ -151,9 +151,8 @@ class Command(BaseCommand):
             if options.get("mapping_file"):
                 headers = self.read_echo_columns(options.get("mapping_file"))
             echo = Config.current.importer.echo.default
-            pattern = first_pattern_with_files(path, (echo.file_blob, echo.xml_blob))
             EchoMapper().run(
-                join(path, pattern),
+                join(path, echo.file_blob),
                 headers=headers,
                 debug=options.get("debug", False),
                 room_name=options.get("room_name"),

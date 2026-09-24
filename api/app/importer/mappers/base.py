@@ -85,8 +85,8 @@ class BaseMapper:
         Every file is mapped in its own transaction: a file with an error
         stores nothing, the error is shown, and the next file is mapped.
 
-        All files share the same kwargs: what one file adds ("xml_file",
-        "filename") is still there when the next file is read.
+        All files share the same kwargs: what one file adds ("filename") is
+        still there when the next file is read.
         """
         room_name = kwargs.get("room_name")
         filenames = self.get_files(glob_pattern)
@@ -131,14 +131,11 @@ class BaseMapper:
     def read_file(self, filename: str, kwargs: dict):
         """
         Parses one file and returns what `parse` returned.
-
-        Changes kwargs in place: sets "xml_file" for files that are opened here.
         """
         if filename.endswith(FILES_PARSED_BY_NAME):
             logger.info(f"Parsing {filename} by its file name")
             return self.parse(filename, **kwargs)
 
-        kwargs.update({"xml_file": filename.endswith(".xml")})
         with open(filename, "r", encoding=detect_encoding(filename)) as file:
             return self.parse(file, **kwargs)
 

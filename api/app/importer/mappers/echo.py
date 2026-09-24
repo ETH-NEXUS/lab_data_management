@@ -2,14 +2,13 @@
 Maps Echo transfer reports onto plates.
 
 An Echo report lists liquid transfers, each from a well of a source plate to a
-well of a destination plate. `parse` reads the report (CSV or XML) into a list
-of transfers. `map` groups the transfers by plate pair and lets Plate.map move
+well of a destination plate. `parse` reads the CSV report into a list of
+transfers. `map` groups the transfers by plate pair and lets Plate.map move
 the compounds.
 """
 
 import csv
 import os
-import xml.etree.ElementTree as ET
 from io import TextIOWrapper
 from collections.abc import Sequence
 from itertools import dropwhile
@@ -40,19 +39,6 @@ REQUIRED_COLUMNS = (
 # many times, at the end of `map`.
 MAX_QUEUE_RETRIES = 3
 
-# Names in the Echo XML export. They are set by the Echo software.
-XML_PLATES_ELEMENT = "plateInfo"
-XML_TRANSFERS_ELEMENT = "printmap"
-XML_SOURCE_PLATE = "source"
-XML_DESTINATION_PLATE = "destination"
-# Attributes of a <w> transfer element in <printmap>
-XML_SOURCE_WELL = "n"
-XML_DESTINATION_WELL = "dn"
-XML_ACTUAL_VOLUME = "vl"
-XML_CURRENT_FLUID_VOLUME = "cvl"
-XML_DMSO = "fc"
-
-
 class EchoTransfer(TypedDict, total=False):
     """
     One transfer of an Echo report. All values are text, as in the report.
@@ -61,7 +47,7 @@ class EchoTransfer(TypedDict, total=False):
 
     source_plate_name: str  # the plate type, e.g. "384LDV_DMSO"
     source_plate_barcode: str  # e.g. "Drug08_J"
-    source_plate_type: str  # only in CSV reports
+    source_plate_type: str  # e.g. "384LDV_DMSO"
     source_well: str  # e.g. "L11"
     destination_plate_name: str  # the plate type, e.g. "Greiner_384PS_781904"
     destination_plate_barcode: str  # e.g. "2026Wagner12"
@@ -71,16 +57,6 @@ class EchoTransfer(TypedDict, total=False):
     current_fluid_volume: str  # volume left in the source well in µL, e.g. "10.184"
     DMSO: str  # DMSO in the source well in %, e.g. "98.744" or "98.7%"
     transfer_status: str  # empty for a transfer that worked
-
-
-def required_xml_attribute(element: ET.Element, name: str) -> str:
-    """The attribute of an XML element, e.g. the source well "n" of a <w> transfer."""
-    value = element.get(name)
-    if value is None:
-        raise CommandError(
-            f"A <{element.tag}> element of the XML report has no '{name}' attribute."
-        )
-    return value
 
 
 def number_or_none(text: str | None) -> float | None:
@@ -114,11 +90,8 @@ class EchoMapper(BaseMapper):
           "actual_volume": "10", "transfer_status": "",
           "current_fluid_volume": "10.184", "DMSO": "98.744"}]
         """
-        if kwargs.get("xml_file"):
-            transfers = self.parse_xml(file)
-        else:
-            headers = kwargs.get("headers", EchoMapper.DEFAULT_COLUMNS)
-            transfers = self.parse_csv(file, headers, kwargs.get("room_name"))
+        headers = kwargs.get("headers", EchoMapper.DEFAULT_COLUMNS)
+        transfers = self.parse_csv(file, headers, kwargs.get("room_name"))
 
         # Without this the file would be reported as mapped although nothing
         # was read, for example when the report only has a header row.
@@ -127,55 +100,6 @@ class EchoMapper(BaseMapper):
                 "The report does not contain a single transfer, so there is "
                 "nothing to map."
             )
-        return transfers
-
-    def parse_xml(self, file: TextIOWrapper) -> list[EchoTransfer]:
-        """
-        An XML report names the two plates once in <plateInfo>, and every
-        transfer is a <w> element in <printmap>.
-        """
-        root = ET.parse(file).getroot()
-        plates = root.find(XML_PLATES_ELEMENT)
-        printmap = root.find(XML_TRANSFERS_ELEMENT)
-        if plates is None or printmap is None:
-            raise CommandError(
-                f"The XML file has no <{XML_PLATES_ELEMENT}> or "
-                f"<{XML_TRANSFERS_ELEMENT}>, so it is not an Echo transfer report."
-            )
-
-        # Plate names and fill levels may be missing; "" is read like an empty CSV value
-        source_plate_name = ""
-        source_plate_barcode = None
-        destination_plate_name = ""
-        destination_plate_barcode = None
-        for plate in plates:
-            if plate.get("type") == XML_SOURCE_PLATE:
-                source_plate_name = plate.get("name", "")
-                source_plate_barcode = plate.get("barcode")
-            elif plate.get("type") == XML_DESTINATION_PLATE:
-                destination_plate_name = plate.get("name", "")
-                destination_plate_barcode = plate.get("barcode")
-        if source_plate_barcode is None or destination_plate_barcode is None:
-            raise CommandError(
-                f"The <{XML_PLATES_ELEMENT}> of the XML report has no source or "
-                "destination plate barcode."
-            )
-
-        transfers = []
-        for well in printmap:
-            transfer: EchoTransfer = {
-                "source_plate_name": source_plate_name,
-                "source_plate_barcode": source_plate_barcode,
-                "destination_plate_name": destination_plate_name,
-                "destination_plate_barcode": destination_plate_barcode,
-                "source_well": required_xml_attribute(well, XML_SOURCE_WELL),
-                "destination_well": required_xml_attribute(well, XML_DESTINATION_WELL),
-                "actual_volume": required_xml_attribute(well, XML_ACTUAL_VOLUME),
-                "current_fluid_volume": well.get(XML_CURRENT_FLUID_VOLUME, ""),
-                "DMSO": well.get(XML_DMSO, ""),
-                "transfer_status": "",
-            }
-            transfers.append(transfer)
         return transfers
 
     def parse_csv(

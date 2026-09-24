@@ -134,15 +134,14 @@ class MapCommandTest(ManagementPageTestCase):
 
         self.assertTrue(run.call_args.args[0].endswith("**/*.xlsx"))
 
-    def test_a_folder_with_only_xml_reports_is_mapped_for_echo(self):
-        # A csv that is not an Echo report must not hide the xml reports
-        self.write("notes.csv", "a,b\n")
+    def test_only_csv_reports_are_mapped_for_echo(self):
+        # Echo XML reports are not read any more (September 2026)
         self.write("ID-1-transfer-Echo_01_1.xml", "<transfer/>")
 
         with mock.patch("importer.management.commands.map.EchoMapper.run") as run:
             self.run_map("echo")
 
-        self.assertTrue(run.call_args.args[0].endswith("**/*[_-][Tt]ransfer[_-]*.xml"))
+        self.assertTrue(run.call_args.args[0].endswith("**/*[_-][Tt]ransfer[_-]*.csv"))
 
     def test_a_column_file_for_another_machine_is_reported(self):
         path = self.echo_column_file({"source_well": "Source Well"})
@@ -169,7 +168,7 @@ class MapCommandTest(ManagementPageTestCase):
         self.assertTrue(reader_pattern.endswith("**/*.txt"))
 
     def test_a_measurement_name_for_echo_is_reported(self):
-        self.write("ID-1-transfer-Echo_01_1.xml", "<transfer/>")
+        self.write("ID-1-transfer-Echo_01_1.csv", "a,b\n")
 
         with mock.patch("importer.management.commands.map.EchoMapper.run"):
             output = self.run_map("echo", measurement_name="Lum")
