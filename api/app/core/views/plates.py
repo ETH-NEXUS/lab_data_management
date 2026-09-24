@@ -33,6 +33,7 @@ from ..utils.plates.archive_guard import (
     ensure_plate_can_be_changed,
     is_archived_library_plate,
 )
+from ..utils.plates.deletion import delete_plate_with_withdrawals
 
 
 GLOBAL_NOW = datetime.now().replace(microsecond=0)
@@ -90,7 +91,7 @@ class PlateViewSet(PlateArchiveMixin, viewsets.ModelViewSet):
 
     def perform_destroy(self, instance):
         ensure_plate_can_be_changed(instance)
-        super().perform_destroy(instance)
+        delete_plate_with_withdrawals(instance)
 
     @action(detail=False, methods=["get"])
     def barcodes(self, request):

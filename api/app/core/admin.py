@@ -23,6 +23,7 @@ from .models import (
     PlateInfo,
 )
 from .utils.plates.copying import copy_library_plates
+from .utils.plates.deletion import delete_plate_with_withdrawals
 
 
 class CopySelectedPlatesForm(forms.Form):
@@ -91,6 +92,16 @@ class PlateAdmin(admin.ModelAdmin):
         "archived",
     )
     actions = (copy_selected_plates,)
+
+    # Deleting a plate here also deletes the withdrawals into it (see deletion.py).
+    # The confirmation page does not list them, because Django would only empty
+    # their target well.
+    def delete_model(self, request, obj):
+        delete_plate_with_withdrawals(obj)
+
+    def delete_queryset(self, request, queryset):
+        for plate in queryset:
+            delete_plate_with_withdrawals(plate)
 
     def get_wells(self, plate: Plate):
         out = "<table><tr>"
