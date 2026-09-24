@@ -3,6 +3,8 @@ Reading an SDF library file with the columns its mapping file names.
 Used by the `import sdf`, `fill_sdf_amounts` and `repair_library_wells` commands.
 """
 
+import math
+
 from django.core.management.base import CommandError
 from pandas import DataFrame
 from rdkit.Chem import PandasTools
@@ -49,3 +51,22 @@ def check_amount_columns(mapping: SdfMapping) -> None:
             f"The mapping file names {len(mapping.barcodes)} barcode columns "
             f"but {len(mapping.amounts)} amount columns."
         )
+
+
+def is_empty_barcode(barcode: str | float | None) -> bool:
+    """
+    True when a plate copy barcode of an SDF record is missing, e.g. "", "  "
+    or NaN (a record without the property). Such a record is not on that copy.
+    """
+    if barcode is None:
+        return True
+    if isinstance(barcode, float):
+        return math.isnan(barcode)
+    return barcode.strip() == ""
+
+
+def empty_barcode_warning(column_name: str, count: int) -> str:
+    return (
+        f"Column {column_name}: {count} records without a barcode, "
+        f"so these wells are not imported for this plate copy."
+    )

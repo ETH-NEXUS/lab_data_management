@@ -326,6 +326,55 @@ class ImportCommandTest(ManagementPageTestCase):
             output["messages"],
         )
 
+    def test_sdf_records_without_a_barcode_are_not_put_on_a_plate(self):
+        mapping_file = self.write(
+            "mapping.yml",
+            "compound:\n  identifier: ID\n  name: NAME\n  structure: Structure\n"
+            "plate:\n  barcode: [Barcode_Copy1, Barcode_Copy2]\n"
+            "  position: POS_IN_PLATE\n  amount: [Vol_Copy1, Vol_Copy2]\n",
+        )
+        volumes = {"Vol_Copy1": "10", "Vol_Copy2": "10"}
+        on_both_copies = {"Barcode_Copy1": "COPY_1", "Barcode_Copy2": "COPY_2"}
+        only_on_copy_1 = {"Barcode_Copy1": "COPY_1", "Barcode_Copy2": ""}
+        on_no_copy = {"Barcode_Copy1": "", "Barcode_Copy2": " "}
+        path = self.write_sdf(
+            {"NAME": "Aspirin", "POS_IN_PLATE": "A1", **on_both_copies, **volumes},
+            {"NAME": "Caffeine", "POS_IN_PLATE": "A2", **only_on_copy_1, **volumes},
+            {"NAME": "Ibuprofen", "POS_IN_PLATE": "A3", **on_no_copy, **volumes},
+        )
+
+        output = self.run_import(
+            "sdf", input_file=path, library_name="Library", mapping_file=mapping_file
+        )
+
+        self.assertEqual("completed", output["status"])
+        self.assertEqual(
+            ["COPY_1", "COPY_2"],
+            list(Plate.objects.order_by("barcode").values_list("barcode", flat=True)),
+        )
+        self.assertEqual(
+            [
+                ("COPY_1", "Aspirin"),
+                ("COPY_1", "Caffeine"),
+                ("COPY_2", "Aspirin"),
+            ],
+            list(
+                WellCompound.objects.order_by(
+                    "well__plate__barcode", "compound__name"
+                ).values_list("well__plate__barcode", "compound__name")
+            ),
+        )
+        # A compound on no copy is still in the library's compound list
+        self.assertTrue(Compound.objects.filter(name="Ibuprofen").exists())
+        self.assertIn(
+            {
+                "level": "warning",
+                "text": "Column Barcode_Copy2: 2 records without a barcode, "
+                "so these wells are not imported for this plate copy.",
+            },
+            output["messages"],
+        )
+
     def test_an_sdf_amount_of_an_unknown_unit_is_not_stored(self):
         path = self.write_sdf(
             {

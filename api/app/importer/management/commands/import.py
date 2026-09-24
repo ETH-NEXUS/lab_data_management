@@ -5,7 +5,7 @@ from compoundlib.models import Compound, CompoundLibrary
 from core.models import Plate, Well, PlateDimension, WellCompound, WellType, Project
 from platetemplate.models import PlateTemplate, PlateTemplateCategory
 from importer.mapping import SdfMapping
-from importer.sdf_file import load_sdf
+from importer.sdf_file import empty_barcode_warning, is_empty_barcode, load_sdf
 from importer.sdf_amounts import (
     amount_in_nanoliter,
     is_volume_column,
@@ -196,6 +196,11 @@ class Command(BaseCommand):
                 total=len(sdf[mapping_barcode].unique()),
             ) as pbar:
                 for plate_id in sdf[mapping_barcode].unique():
+                    # A record without a barcode is not on this plate copy. Before,
+                    # these records all ended up on one plate with the barcode ''.
+                    if is_empty_barcode(plate_id):
+                        pbar.update(1)
+                        continue
                     # Determinate Plate Dimension
                     if number_of_columns and number_of_rows:
                         max_row = number_of_rows
@@ -245,6 +250,7 @@ class Command(BaseCommand):
                 message(unknown_unit_warning(amount_column), "warning", room_name)
             # The values that are not a number, e.g. {"<24": 2486}
             not_a_number: Counter[str] = Counter()
+            records_without_barcode = 0
             with tqdm(
                 desc="Processing wells", unit="wells", total=len(sdf.index)
             ) as wbar:
@@ -282,6 +288,11 @@ class Command(BaseCommand):
                     else:
                         __debug(f"Using compound {compound}")
 
+                    # The compound above is still imported: it may be on another copy.
+                    if is_empty_barcode(row[mapping_barcode]):
+                        records_without_barcode += 1
+                        wbar.update(1)
+                        continue
                     plate = plates[row[mapping_barcode]]
                     well, created = Well.objects.update_or_create(
                         plate=plate,
@@ -324,6 +335,12 @@ class Command(BaseCommand):
             if not_a_number:
                 message(
                     not_a_number_warning(amount_column, not_a_number),
+                    "warning",
+                    room_name,
+                )
+            if records_without_barcode:
+                message(
+                    empty_barcode_warning(mapping_barcode, records_without_barcode),
                     "warning",
                     room_name,
                 )
