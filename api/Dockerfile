@@ -49,14 +49,17 @@ gpg --keyserver keyserver.ubuntu.com --recv-key '95C0FAF38DB3CCAD0C080A7BDC78B2D
 gpg --armor --export '95C0FAF38DB3CCAD0C080A7BDC78B2DDEABC47B7' | gpg --dearmor | tee /usr/share/keyrings/cran.gpg > /dev/null && \
 echo "deb [signed-by=/usr/share/keyrings/cran.gpg] https://cloud.r-project.org/bin/linux/debian bookworm-cran40/" | tee /etc/apt/sources.list.d/cran.list \
 ;fi
-RUN if [ "${ENABLE_R}" = "True" ]; then apt-get update && apt-get install -y r-base cmake; fi
+# libuv1-dev is needed to build the R package "fs", which rmarkdown and ggExtra depend on
+RUN if [ "${ENABLE_R}" = "True" ]; then apt-get update && apt-get install -y r-base cmake libuv1-dev; fi
 # R dependencies are installed at the end to avoid rebuild the whole image in case we want to add 
 # an additional R dependency
 
 ARG ENABLE_JUPYTER
 ARG TARGETARCH
 
-RUN if [ "${ENABLE_JUPYTER}" = "True" ]; then \
+# Quarto is also needed without Jupyter: the statistics reports (api/app/statistics) are rendered with it
+# set -e: a broken download must fail the build, otherwise the broken layer is cached
+RUN set -e; if [ "${ENABLE_JUPYTER}" = "True" ] || [ "${ENABLE_R}" = "True" ]; then \
       ARCH="${TARGETARCH:-$(dpkg --print-architecture)}"; \
       case "${ARCH}" in \
         amd64) \

@@ -1,0 +1,1018 @@
+---
+title: 'Project: `r params$project`'
+subtitle: 'Screen: `r params$screen`'
+author: 'Type: `r params$hts_type`'
+date: 'Date: `r format(Sys.Date(), "%d-%m-%Y")`'
+format:
+  html:
+    fig-width: 8.0
+    fig-height: 6.0
+  pdf:
+    fig-width: 7.0
+    fig-height: 5.0
+  docx:
+    fig-width: 7.0
+    fig-height: 5.0
+    reference-doc: mystyles.docx
+editor_options:
+  chunk_output_type: console
+params:
+  project: 2023_snl_sartori_biochemical
+  screen: 250122_screen_report
+  hts_type: single
+  condi_yes: MC38
+  condi_no: SW620
+  geom_cor: 'no'
+  act_cut: log10(1.5)
+  fdr_cut: 0.01
+  select_cut: 0.3
+  select_cut_yes: 2 * act_cut
+  select_cut_no: act_cut
+  path_data: C:/Users/mprummer/Downloads/250113 Screen NEXUS LLD-S_Label2 (1).csv
+  path_meta: C:/Users/mprummer/Downloads/experiment_data (1).csv
+  path_lib: C:/Users/mprummer/Downloads/250113 Screen NEXUS LLD-S_Label2.csv
+  path_output: C:/Users/mprummer/Downloads/
+  path_SLmisc: C:/Users/mprummer/OneDrive - ETH Zurich/00_NEXUS/Statistics/Projects/2025_internal_LDM/
+execute:
+  echo: false
+  warning: false
+  message: false
+---
+
+
+
+```{r}
+#| label: setup
+#| include: FALSE
+
+knitr::opts_chunk$set(echo = F, error=F, message=F, warning=F, cache=F, results='hide', fig.show = "hide")
+```
+
+
+```{r}
+
+# params = list(
+#   project = "2024_snl_suter_PARP7",
+#   screen = "20250513 Screen Batch 1",
+#   hts_type = "single", # c("single", "selectivity", "doseresponse")
+#   geom_cor = "median polish", # c("no", "median polish", "local polynomial fit", "loess")
+#   act_cut = "log10(1.5)", # must be a string
+#   fdr_cut = 0.01, # [0, 1]
+#   select_cut = 0.3, # [0, oo]
+#   select_cut_x = "2 * act_cut", # target act, must be a string
+#   select_cut_y = "act_cut", # counter act, must be a string
+#   # path to measurement data "MAIN INFO"
+#   path_data = "C:/Users/mprummer/OneDrive - ETH Zurich/00_NEXUS/Statistics/Projects/2024_snl_suter_PARP7/20250513 Screen Batch 1/20250513 Screen Batch 1_Lum_CTG_chemical_info.csv",
+#   # path to experiment description "EXPERIMENT DATA"
+#   path_meta = "C:/Users/mprummer/OneDrive - ETH Zurich/00_NEXUS/Statistics/Projects/2024_snl_suter_PARP7/20250513 Screen Batch 1/experiment_data-4.csv",
+#   # path to library description "CHEMICAL INFO"
+#   path_lib = "C:/Users/mprummer/OneDrive - ETH Zurich/00_NEXUS/Statistics/Projects/2025_internal_LDM/241126_Screen_NexusApproved_SW620_Lum.csv",
+#   # output path for all result files
+#   path_output = output_dir
+# )
+
+```
+
+
+```{r}
+#| label: init
+
+#####################################################################################
+## NO USER INPUT REQUIRED
+#####################################################################################
+source(paste0(params$path_SLmisc, "SLmisc.R") )
+
+# packages
+lby = c("RColorBrewer", "ggplot2", "gplots", "ggrepel", "cowplot", 
+        "ggpubr", "ggExtra", "dplyr", "reshape2", "lubridate",
+        "reshape2", "knitr", "pheatmap", "tidyr", "locfit", "robust","MASS")
+# no lib.loc: in the Docker image MASS is in the system library, not in .libPaths()[1]
+resp = lapply(lby, require, character.only=T, warn.conflicts=F, quietly=T)
+if(!all(unlist(resp))) stop("Could not load one or more required packages")
+rm(resp)
+
+# functions
+'%&%' = function(a,b) paste(a,b,sep="")
+theme_set(theme_bw(12))
+
+# custom palettes
+type.pal = brewer.pal(9,"Set1")
+type.pal = c(type.pal[2:1], "black", type.pal[3:9], brewer.pal(8,"Dark2"))
+
+# read in parameters
+hts_type = params$hts_type #c("single", "selectivity", "doseresponse")[1]
+lib_type = params$lib_type #c("actitarg", "nexus_fda", "selleckchem_clinical", "LLD")[4]
+geom_cor = params$geom_cor #c("no", "median polish", "local polynomial fit", "loess")[1]
+act_cut = eval(parse(text=params$act_cut))
+fdr_cut = params$fdr_cut
+select_cut = params$select_cut
+path_data = params$path_data
+path_meta = params$path_meta
+path_libfile = params$path_lib
+path_output = params$path_output
+
+```
+
+
+
+```{r}
+#| label: load_data
+
+d_in = read.LDM(path_data)
+id_keep = which(!duplicated(d_in))
+d_in = d_in[id_keep, ]
+meta_plates = read.ExpData(path_meta)
+id_keep = which(!duplicated(meta_plates))
+meta_plates = meta_plates[id_keep, ]
+dd = left_join(d_in, meta_plates)
+```
+
+
+```{r}
+#| label: screen_specific_cleaning
+
+if(file.exists(path_output %&% "clean.R")) {
+  source(path_output %&% "clean.R", local=myEnv)
+}
+```
+
+
+
+```{r}
+#| label: clean_data
+
+dd = dd[!is.na(dd$cpd_type), ]
+dd$meas = dd$measurement_label
+dd$cpd_type = factor(dd$cpd_type, levels = union(c("N", "P", "C"), unique(dd$cpd_type)))
+dd$meas = factor(dd$meas)
+dd$lib_plate = factor(dd$lib_plate, levels=unique(dd$lib_plate))
+dd$replicate = factor(dd$replicate, levels=unique(dd$replicate))
+dd$cell_type = factor(dd$cell_type, levels=unique(dd$cell_type))
+dd$condition = factor(dd$condition, levels=unique(dd$condition))
+dd$layout = factor(dd$layout, levels=unique(dd$layout))
+```
+
+
+```{r}
+#| label: plate_order
+
+dd$meas_ts = as_datetime(dd$measurement_timestamp)
+dd$plate = factor(dd$plate, levels=unique(dd$plate[order(dd$meas_ts)]))
+```
+
+
+# Objectives 
+
+...
+
+# Assay description
+
+...
+
+### Test conditions & compound libraries
+
+...
+
+
+# Experimental design
+
+
+We obtained a data description file with the layout for each plate for which a summary is shown in @tab-meta_descr. 
+
+```{r}
+#| label: tbl-meta_descr
+#| results: asis
+#| tbl-cap: "Description of the meta data table. The content of this table shows the kind and amout of data expected from the design."
+
+kable(colNames.colValues(meta_plates, 80), 
+      rownames=F)
+```
+
+
+# Analysis plan 
+
+### Preprocessing
+
+Systematic variation from plate to plate is removed by standard normalization procedures[^Malo]. Following common practice, assay quality is evaluated on the basis of the SSMD and the Z' factor. Within-plate row-wise or column-wise stripe patterns as well as edge effects can arise during plate preparation. These patterns are eliminated using the median polish method of Tuckey[^Tukey] or by subtracting a smooth polynomial using the loess function[^Boutros].
+
+[^Malo]: Malo N, Hanley JA, Cerquozzi S, Pelletier J, Nadon R (2006) "Statistical practice in high-throughput screening data analysis" _Nat Biotech_ **24**, 167-175. DOI: 10.1038/nbt1186.
+[^Tukey]: Tukey, J. W. (1977). "Exploratory Data Analysis", Reading Massachusetts: Addison-Wesley.
+[^Boutros]: Boutros M, Brás LP, Huber W (2006). "Analysis of cell-based RNAi screens" _Genome Biology_ **7**, R66. DOI: 10.1186/gb-2006-7-7-r66.
+
+
+### Differential activity analysis 
+
+Differential activity was analyzed following the workflow sketched in [^prummer]. Briefly, for each single-dose measurement of a compound, a Z-test is performed against the Null hypothesis that its activity is indistinguishable from the negative controls. For this to be valid, the distribution of activities of the negative controls are checked to be normal. The mean and variance of the distribution is estimated robustly for each plate and, if appropriate, smoothly averaged over a range of consecutive plates. 
+
+The semi-automated workflow is implemented in the _R environment for statistical computing_[^biocref].
+
+[^prummer]: Prummer M (2012) "Hypothesis Testing in High-Throughput Screening for drug discovery" _J Biomol Screen_ **17**, 519-529. DOI: 10.1177/1087057111431278.
+ 
+[^biocref]: Huber W et al. (2015) "Orchestrating high-throughput genomic analysis with Bioconductor" _Nat Methods_ **12**, 115-121. DOI: 10.1038/nmeth.3252.
+
+
+
+
+# Data description
+
+```{r}
+#| label: compute_stats
+
+assay_plates = unique(dd$plate)
+nr_assay_plates = length(assay_plates)
+lib_plates = unique(dd$lib_plate)
+nr_lib_plates = length(lib_plates)
+layouts = unique(dd$layout)
+nr_layouts = length(layouts)
+experiments = unique(dd$experiment)
+nr_experiments = length(experiments)
+replicates = unique(dd$replicate)
+nr_replicates = length(replicates)
+conditions = unique(dd$condition)
+nr_conditions = length(conditions)
+measurements = unique(dd$measurement_label)
+nr_measurements = length(measurements)
+cell_types = unique(dd$cell_type)
+nr_cell_types = length(cell_types)
+```
+
+
+We received data files from `r nr_assay_plates` plate(s), with `r nr_measurements` measurement(s) per well: 
+
+
+```{r}
+#| label: tbl-plate_table
+#| results: asis
+#| tbl-cap: "List of plates in the screen and their size."
+
+tmp = table(dd$plate, dd$meas)
+
+if(length(dim(tmp)) == 1){
+  tmp = data.frame(plate=names(tmp), size=as.numeric(tmp), stringsAsFactors = F)
+} else {
+  tmp = melt(tmp)
+  names(tmp) = c("plate", "measurement", "size")
+}
+tab = tapply(as.character(tmp$plate), tmp$size, concat.chr.max, nchar_max=80)
+tab = data.frame(Barcode=as.character(tab), Size=names(tab))
+kable(tab)
+```
+
+
+```{r}
+#| label: tbl-screen_summary
+#| results: asis
+#| tbl-cap: "Number of wells for the different compound types."
+
+tab = as.matrix(table(dd$cpd_type))
+colnames(tab) = "Nr of wells"
+# tab = dd[dd$channel == levels(dd$channel)[1], ]
+# tab = cbind(as.matrix(table(tab$type, tab$plate)), "Total" = as.numeric(table(tab$type)))
+kable(tab)
+```
+
+## Plate layout
+
+
+```{r}
+#| label: fig-plate_layout
+#| fig-show: asis
+#| fig-width: 6
+#| fig-height: 3.5
+#| fig-cap: "Heatmap representation of compound well allocation. "
+#| fig-dpi: 300
+
+col.pal = colorRampPalette( rev(brewer.pal(9, "Blues")) )(length(unique(dd$conc)))
+col.pal = c(type.pal[seq_along(unique(dd$cpd_type))], col.pal)
+p1 = ggplate.hm(dd, "cpd_type", plot=F)
+plot(p1  + facet_wrap(~layout, scales="free", nrow = 2))
+```
+
+
+# Preprocessing, QC
+
+## Control wells
+
+
+```{r}
+#| label: fig-controls_nonorm
+#| fig-show: asis
+#| fig-width: 6
+#| fig-height: 4
+#| fig-cap: "Raw signal of control wells."
+#| fig-dpi: 300
+
+nr_rows = floor(sqrt(length(levels(dd$meas))))
+ggplot(dd[dd$cpd_type!="C", ], aes(x=plate, y=raw, group=cpd_type, color=cpd_type)) +
+  geom_jitter(width=rel(0.2), show.legend = T) + ylab("Raw signal") + xlab("") +
+  scale_color_manual(name="", values=type.pal, drop=F) +
+  facet_wrap(~meas, nrow=nr_rows, scales="free_y") +
+  guides(color=guide_legend(ncol=1, byrow=T)) +
+  #coord_cartesian(ylim=c(0,1.1*max(tmp$value, na.rm=T))) + 
+  theme(strip.text = element_text(size=10), 
+        axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5, size=rel(0.99)),
+        legend.position="right",
+        legend.text=element_text(size=rel(0.8)))
+
+```
+
+## Transformation
+
+The raw signal is of heteroscedastic nature, i.e., the variance is not uniform but dependent on the signal strength. This makes interpretation of signal to noise levels difficult. We therefore transform the raw signal according to
+
+$$ y = log_{10}(raw) $$
+
+
+```{r}
+#| label: fig-controls_trafo
+#| fig-show: asis
+#| fig-width: 6
+#| fig-height: 4
+#| fig-cap: "Transformed signal of control wells."
+#| fig-dpi: 300
+
+dd$trafo = log10(1 + dd$raw)
+
+ggplot(dd[dd$cpd_type!="C", ], aes(x=plate, y=trafo, group=cpd_type, color=cpd_type)) +
+  geom_jitter(width=rel(0.2), show.legend = T) + ylab("Transformed signal") + xlab("") +
+  scale_color_manual(name="", values=type.pal, drop=F) +
+  facet_wrap(~meas, nrow=1, scales="free_y") +
+  guides(color=guide_legend(ncol=1, byrow=T)) +
+  theme(strip.text = element_text(size=10), 
+        axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5, size=rel(0.99)),
+        legend.position="right",
+        legend.text=element_text(size=rel(0.8)))
+
+```
+
+## Normalization 
+
+Percent-control normalization according to
+
+$$ Z = \frac{y - median(y_N)}{median(y_P) - median(y_N)}$$
+
+```{r}
+#| label: plate_qc
+
+plate_stats = get_plateStats(dd, "trafo")
+plate_stats$label = gsub(".*_(.*)", "\\1", plate_stats$plate)
+
+ggplot(plate_stats, aes(x=med, y=mad, color=cpd_type, label=label)) + 
+  geom_point(alpha=0, show.legend = T) + 
+  geom_abline(slope=1, intercept=0, linetype=2) +
+  geom_label(size=3, show.legend = F) +
+  facet_wrap(~meas, scales = "free")+
+  scale_color_manual(name="", values=type.pal, drop=F) +
+  guides(color = guide_legend(override.aes = aes(label = "", alpha = 1))) 
+
+tmp = melt(plate_stats, measure.vars = c("med", "mad"))
+plate_stats = dcast(tmp, plate + meas + label ~ variable + cpd_type, 
+                    value.var = "value")
+plate_stats$z_prime = 1 - 3*(plate_stats$mad_N + plate_stats$mad_P) / 
+                         abs(plate_stats$med_P - plate_stats$med_N)
+plate_stats$SSMD = abs(plate_stats$med_P - plate_stats$med_N) / 
+                sqrt(plate_stats$mad_N^2 + plate_stats$mad_P^2)
+
+dd = left_join(dd, plate_stats)
+dd$norm = (dd$trafo - dd$med_N) / (dd$med_P - dd$med_N)
+
+```
+
+```{r}
+#| label: fig-ctr_norm
+#| fig-show: asis
+#| fig-width: 6
+#| fig-height: 4
+#| fig-cap: "Log-transformed signal of compound wells before (trafo) and after normalization (norm)."
+#| fig-dpi: 300
+
+tmp = melt(dd, measure.vars = c("trafo", "norm"), 
+           value.name = "value", variable.name = "signal")
+ggplot(tmp[tmp$cpd_type=="C", ], aes(x=plate, y=value, group=cpd_type, color=cpd_type)) +
+  geom_jitter(width=0.2, show.legend = T) + ylab("Signal") + xlab("") +
+  scale_color_manual(name="", values=type.pal, drop=F) +
+  facet_grid(signal ~ meas, scales="free_y") + 
+  guides(color=guide_legend(ncol=1,byrow=T)) +
+  theme(strip.text = element_text(size=10), 
+        axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5, size=rel(0.99)),
+        legend.position="right", legend.title=element_text(size=rel(0.8)),
+        legend.text=element_text(size=rel(0.8)))
+```
+
+
+## Screen quality: Z' and SSMD
+
+The Strictly Standardized Mean Difference is defined as
+
+$$ SSMD = \frac{\mu_P - \mu_N}{(\sigma_P^2+\sigma_N^2)^{-1/2}},$$
+and the _Z-prime factor_ as
+
+$$ Z'= 1- \frac{6 \bar{\sigma}}{\Delta\mu},$$
+with $\bar{\sigma} = 1/2\cdot(\sigma_P+\sigma_N)$ the average standard deviation and $\Delta\mu = \mu_P - \mu_N$ the difference in mean of the positive and the negative control. Both are standard QC measures to judge the quality of entire screens and make comparison between screens. 
+
+```{r}
+#| label: fig-zprime
+#| fig-show: asis
+#| fig-width: 7
+#| fig-height: 3
+#| fig-cap: "Plate-wise QC parameters. (A) Z' factor (B) SSMD. The colored background indicates the ranges for good (green), medium (yellow) and bad quality (red)."
+#| fig-dpi: 300
+
+cols=brewer.pal(9,"Set1")[c(1,6,3)]
+y_lims = c(min(0, min(plate_stats$z_prime)) - 0.1, 1)
+p1 = ggplot(plate_stats, aes(x=plate, y=z_prime)) + ylab("Z' factor") + xlab("") +
+  #scale_y_continuous(limits=c(-0.2,1)) + 
+  geom_hline(yintercept=c(0,0.5)) +
+  geom_rect(xmin=0, xmax=length(levels(tmp$plate))+1, ymin=-Inf, ymax=0, fill=cols[1]) + 
+  geom_rect(xmin=0, xmax=length(levels(tmp$plate))+1, ymin=0, ymax=0.5, fill=cols[2]) + 
+  geom_rect(xmin=0, xmax=length(levels(tmp$plate))+1, ymin=0.5, ymax=1, fill=cols[3]) + 
+  geom_point() + 
+  scale_y_continuous(limits = y_lims) + 
+  theme(axis.text.x = element_text(angle = 90, hjust = 1), 
+        strip.text = element_text(size=10))
+#ggMarginal(p1, type="histogram", margins="y")
+p2 = ggplot(plate_stats, aes(x=plate, y=SSMD)) + xlab("") +
+  #scale_y_continuous(limits=c(-0.2,1)) + 
+  geom_hline(yintercept=c(0,0.5)) +
+  geom_rect(xmin=0, xmax=length(levels(tmp$plate))+1, ymin=0, ymax=3, fill=cols[1]) + 
+  geom_rect(xmin=0, xmax=length(levels(tmp$plate))+1, ymin=3, ymax=6, fill=cols[2]) + 
+  geom_rect(xmin=0, xmax=length(levels(tmp$plate))+1, ymin=6, ymax=Inf, fill=cols[3]) + 
+  geom_point() + 
+  scale_y_continuous(limits = c(0, max(plate_stats$SSMD)+0.1)) + 
+  theme(axis.text.x = element_text(angle = 90, hjust = 1), 
+        strip.text = element_text(size=10))
+plot_grid(p1, p2, nrow=1, labels = "AUTO")
+
+```
+
+```{r}
+#| label: tbl-zprime_stats
+#| results: asis
+#| tbl-cap: "Comprehensive Z' statistics for the screen."
+
+tab = plate_stats$z_prime
+tab = quantile(tab, c(0,0.05,0.5,1), na.rm=T)
+tab = as.matrix(tab)
+tab = rbind(tab,length(which(plate_stats$z_prime>0.5)))
+colnames(tab) = ""
+rownames(tab) = c("Min", "P(Z' > x) = 95%", "Median", "Max", "Nr plates: Z' > 0.5")
+kable(signif(tab,2))
+
+```
+
+
+```{r}
+
+qc.string = "bad"
+if(tab[2,1]> -0.1) qc.string = "borderline"
+if(tab[2,1]> 0.1) qc.string = "fair"
+if(tab[2,1]> 0.25) qc.string = "good"
+if(tab[2,1]> 0.5) qc.string = "very good"
+if(tab[2,1]> 0.75) qc.string = "excellent"
+
+```
+
+
+```{r}
+#| label: plate_min_effect
+
+plate_stats = get_plateStats(dd, "norm")
+tmp = melt(plate_stats, measure.vars = c("med", "mad"))
+plate_stats = dcast(tmp, plate + meas ~ variable + cpd_type, value.var = "value")
+
+x01 = qnorm(0.99, sd = plate_stats$mad_N)
+dz_min = qnorm(0.9, mean = x01, sd = plate_stats$mad_N)
+ci = round(quantile(dz_min, c(0.025, 0.5, 0.975), na.rm=T), 2)
+```
+
+In summary, the overall quality of the screen was `r qc.string`. More than 95% of all plates had Z' > `r signif(tab[2,1],2)` and `r round(tab[5,1],0)` plates had $Z' > 0.5$. Based on a maximum false positive rate of 0.01 and a maximum false negative rate of 0.1, the estimated minimum detectable effect size in this screen is `r ci[2] %&% ", 95%CI [" %&% ci[1] %&% ", " %&% ci[3] %&% "]"`.
+
+
+
+## Geometric patterns
+
+
+```{r}
+#| label: fig-plate_row_col
+#| fig-show: asis
+#| fig-width: 12
+#| fig-height: 12
+#| fig-cap: "Normalized signal versus column (A) or row number (B) for the first 2 plates. Systematic row or column effects can be identified if present."
+#| fig-dpi: 300
+
+plates_included = levels(dd$plate)
+plates_included = plates_included[seq_len(min(2, length(plates_included)))]
+tmp = dd[dd$plate %in% plates_included, ]
+p1 = ggplot(tmp, aes(x=row, y=norm, color=cpd_type)) + geom_point() +
+  scale_color_manual(name="", values=type.pal, drop=F) +
+  facet_wrap(~ meas + plate, ncol=2)
+p2 = ggplot(tmp, aes(x=col, y=norm, color=cpd_type)) + geom_point() +
+  scale_color_manual(name="", values=type.pal, drop=F) +
+  facet_wrap(~ meas + plate, ncol=2)
+
+ggarrange(p1, p2, nrow=2, labels = "AUTO", common.legend = T, legend = "right")
+
+```
+
+
+
+```{r}
+#| label: geom_cor
+
+dd = dd[order(dd$plate, dd$row, dd$col), ]
+dd$cor = dd$cor.mp = dd$cor.loc = dd$cor.loess = dd$norm
+
+for(ii in levels(dd$plate)){
+  # ii = dd$plate[1]
+  td = dd[dd$plate == ii & dd$cpd_type=="C", ]
+  mat = matrix(td$norm, nrow = length(unique(td$row)), byrow=F)
+  m = medpolish(mat, eps = 1e-5, maxiter = 200, trace.iter=F, na.rm=T)
+  dd$cor.mp[dd$plate == ii & dd$cpd_type=="C"] = as.numeric(m$residuals)
+}
+
+## assumes a column "pattern" in dd, a 2-level factor defining a pattern
+## Examples: (i) stripes affecting some rows or (ii) some column, or (iii) all outer wells.
+## TODO: extend to work with an arbitrary amount of regions.
+
+if("pattern" %in% names(dd)){
+  geom_cor="loess"
+  dd$pattern[dd$pattern==""] = NA
+  dd$pattern = factor(dd$pattern)
+  region = levels(dd$pattern)
+}
+
+center_row = max(dd$row)/2
+center_col = max(dd$col)/2
+
+for(ii in levels(dd$plate)){
+  # ii = dd$plate[1]
+  id_select = dd$plate == ii & dd$cpd_type=="C"
+  df = dd[id_select, ]
+  df$xpos = df$col - center_col
+  df$ypos = df$row - center_row
+  if (nrow(df) > 4 & !all(is.na(df$norm))){
+    sdf = df # subset(df, !is.na(df$norm))
+    # Fit a local polynomial model to the normalized, centered data per plate.
+    m = locfit(norm ~ lp(xpos, ypos), data = sdf, lfproc=locfit.robust)
+    # Subtract the polynomial from the normalized data
+    dd$cor.loc[id_select] = df$norm - predict(m, newdata=df)
+    # loess model:
+    if("pattern" %in% names(dd)){
+      for(jj in seq_along(region)) {
+        mjj = loess(norm ~ row + col, data = sdf[sdf$pattern == region[jj], ], span=0.5)
+        dd$cor.loess[id_select & dd$pattern == region[jj]] = mjj$y - mjj$fitted 
+      }
+    } else {
+      m = loess(norm ~ row + col, data = sdf, span=0.5)
+      dd$cor.loess[id_select] = m$y - m$fitted 
+    }
+  }
+}
+
+
+```
+
+
+```{r}
+#| label: correction_comparison
+
+tmp = dd[dd$plate %in% plates_included,]
+p1 = ggplot(tmp, aes(x=cor, y=cor.loess, color=cpd_type)) + geom_point() +
+  scale_color_manual(name="", values=type.pal, drop=F) +
+  facet_wrap(~meas + plate, ncol=2) + xlab("Median polish")
+p2 = ggplot(tmp, aes(x=cor.loc, y=cor.loess, color=cpd_type)) + geom_point() +
+  scale_color_manual(name="", values=type.pal, drop=F) +
+  facet_wrap(~ meas + plate, ncol=2)
+#plot_grid(p1, p2, nrow=2, labels = "AUTO")
+ggarrange(p1, p2, nrow=2, labels = "AUTO", common.legend = T, legend = "right")
+
+if(geom_cor=="median polish") dd$cor = dd$cor.mp
+if(geom_cor=="loess") dd$cor = dd$cor.loess
+if(geom_cor=="local polynomial fit") dd$cor = dd$cor.loc
+```
+
+
+```{r}
+#| label: fig-norm_cor_row
+#| fig-show: asis
+#| fig-width: 12
+#| fig-height: 12
+#| fig-cap: "Normalized (A) and geometry-corrected signal (B) versus row number. Systematic row effects should not be visible any more."
+#| fig-dpi: 300
+
+tmp = dd[dd$plate %in% plates_included,]
+p1 = ggplot(tmp, aes(x=row, y=norm, color=cpd_type)) + geom_point() +
+  scale_color_manual(name="", values=type.pal, drop=F) +
+  facet_wrap(~meas + plate, ncol=2)
+p2 = ggplot(tmp, aes(x=col, y=norm, color=cpd_type)) + geom_point() +
+  scale_color_manual(name="", values=type.pal, drop=F) +
+  facet_wrap(~meas + plate, ncol=2)
+p3 = ggplot(tmp, aes(x=row, y=cor, color=cpd_type)) + geom_point() +
+  scale_color_manual(name="", values=type.pal, drop=F) +
+  facet_wrap(~meas + plate, ncol=2)
+p4 = ggplot(tmp, aes(x=col, y=cor, color=cpd_type)) + geom_point() +
+  scale_color_manual(name="", values=type.pal, drop=F) +
+  facet_wrap(~meas + plate, ncol=2)
+Sys.sleep(5)
+ggarrange(p1, p3, nrow=2, ncol=1, labels = "AUTO", 
+          common.legend = T, legend = "right")
+Sys.sleep(5)
+```
+
+
+```{r}
+#| label: fig-norm_cor_col
+#| fig-show: asis
+#| fig-width: 12
+#| fig-height: 12
+#| fig-cap: "Normalized (A) and geometry-corrected signal (B) versus column number. Systematic column effects should not be visible any more."
+#| fig-dpi: 300
+
+ggarrange(p2, p4, nrow=2, ncol=1, labels = "AUTO", 
+          common.legend = T, legend = "right")
+Sys.sleep(5)
+```
+
+
+```{r}
+#| label: plate_hmap
+
+p1 = ggplate.hm(dd, "raw") + ggtitle("Raw signal")
+p2 = ggplate.hm(dd, "norm") + ggtitle("Normalized signal")
+p3 = ggplate.hm(dd, "cor") + ggtitle("Geometry corrected signal")
+
+## some useful condition how to order plates
+## 1. multiple conditions, multiple celltypes:
+if(nr_conditions * nr_cell_types > 1) {
+  height = 4 + 2.5 * nr_lib_plates
+  width = 4 + 3.5 * nr_conditions*nr_cell_types
+  p1 = p1  + facet_grid(dd$lib_plate ~ dd$cell_type + dd$condition)
+  p2 = p2  + facet_grid(dd$lib_plate ~ dd$cell_type + dd$condition)
+  p3 = p3  + facet_grid(dd$lib_plate ~ dd$cell_type + dd$condition)
+}
+## 2. single condition, single celltype, many plates:
+if(nr_conditions * nr_cell_types == 1) {
+  height = 3 + 2.5 * sqrt(nr_lib_plates)
+  width = 6 + 4.5 * sqrt(nr_lib_plates)
+  nr_columns = floor(1.5 * sqrt(nr_lib_plates))
+  p1 = p1  + facet_wrap(~dd$lib_plate, ncol = nr_columns)
+  p2 = p2  + facet_wrap(~dd$lib_plate, ncol = nr_columns)
+  p3 = p3  + facet_wrap(~dd$lib_plate, ncol = nr_columns)
+}
+
+
+if(!file.exists(path_output%&% "plate_hmap_raw.png")) {
+  ggsave(path_output%&% "plate_hmap_raw.png", p1, units = "cm", 
+       width=width, height=height, dpi = 300)
+} 
+if(!file.exists(path_output%&% "plate_hmap_norm.png")) {
+  ggsave(path_output%&% "plate_hmap_norm.png", p2, units = "cm", 
+       width=width, height=height, dpi = 300)
+}
+if(!file.exists(path_output%&% "plate_hmap_cor.png")) {
+  ggsave(path_output%&% "plate_hmap_cor.png", p3, units = "cm", 
+       width=width, height=height, dpi = 300)
+}
+
+```
+
+Plate heatmaps of raw, normalized, and corrected signal are stored as image files. 
+Based on good practice and visual inspection, we decided to apply `r geom_cor` correction.
+
+
+## Plate similarity & outlier detection
+
+
+Multidimensional scaling allows to visualize the (dis-) similarity between plates in two dimensions for convenient plotting (@fig-mds). For less than 3 data points, the plot is empty.
+
+
+```{r}
+#| label: fig-mds
+#| fig-show: asis
+#| fig-width: 5
+#| fig-height: 3
+#| fig-cap: "Plate similarity in a 2D projection by multi-dimensional scaling. "
+#| fig-dpi: 300
+
+tmp = dd[order(dd$plate, dd$row, dd$col),]
+mdat = acast(tmp[tmp$cpd_type == "C", ], well ~ plate + meas, value.var = "cor")
+mdat[which(!is.finite(mdat))] = 0
+sampleDist = dist( t( mdat ) )
+#attr(sampleDist, "Labels") = as.character(meta$plate)
+sampleDistMatrix = as.matrix( sampleDist )
+if(nrow(sampleDistMatrix) < 3){
+  d.mds = data.frame(V1=0, V2=0)
+  t.range = c(-1,1)
+  t.color="none"
+  t.label="EMPTY"
+  percentVar = c(0,0)
+} else {
+  d.mds = cmdscale(sampleDist, k=(nrow(sampleDistMatrix)-1), eig = T, add=T)
+  percentVar = d.mds$eig/sum(d.mds$eig)
+  d.mds = as.data.frame(d.mds$points)
+  t.range = 1.5*c(min(d.mds[,1:2]), max(d.mds[,1:2]))
+  t.label = gsub("(.*)_" %&% dd$meas[1], "\\1", colnames(mdat))
+  #t.color = gsub(".*_(.*)_" %&% dd$meas[1], "\\1", colnames(mdat))
+  t.color = meta_plates$condition[match(t.label, meta_plates$plate)]
+}
+ggplot(d.mds, aes(x=V1, y=V2, col=t.color)) + 
+  geom_text(aes(x=V1, y = V2, label=t.label), 
+            size=3, show.legend=F) + 
+  geom_point(size=-1) +
+  scale_colour_brewer(name = "Condition", palette="Dark2") + 
+  xlim(t.range) + ylim(t.range) +
+  guides(colour = guide_legend(override.aes = list(size=3, shape=15)))+  
+  xlab(paste0("PC1: ", round(100* percentVar[1]), "% variance")) +
+  ylab(paste0("PC2: ", round(100* percentVar[2]), "% variance")) 
+
+```
+
+
+
+
+# Differential Activity Analysis
+
+
+```{r}
+#| label: z_test1
+
+# replace plate stats with plate stats from "cor" signal
+plate_stats = get_plateStats(dd, "cor")
+tmp = melt(plate_stats, measure.vars = c("med", "mad"))
+plate_stats = dcast(tmp, plate + meas ~ variable + cpd_type, value.var = "value")
+plate_stats = left_join(plate_stats, unique(dd[, c("plate", "cell_type")]))
+id_keep = !grepl("med|mad", names(dd))
+dd = left_join(dd[, id_keep], plate_stats)
+
+# use only negative controls (or cpds)
+t.med = dd$med_N
+t.mad = dd$mad_N
+t.med.id = "negative controls"
+t.mad.id = "negative controls"
+t.med.diff = abs(median(dd$med_N, na.rm=T) - median(dd$med_C, na.rm=T))
+t.mad.diff = abs(median(dd$mad_N, na.rm=T) - median(dd$mad_C, na.rm=T))
+if (t.med.diff > 0.02) {
+  t.med = dd$med_C
+  t.med.id = "compounds"
+}
+if (t.mad.diff > 0.02) {
+  t.mad = dd$mad_C
+  t.mad.id = "compounds"
+} 
+
+dd$z = (dd$cor - t.med) / t.mad
+dd = dd[is.finite(dd$z), ]
+dd$pval = 2 - 2 * pnorm(abs(dd$z))
+
+```
+
+
+
+```{r}
+#| label: neg_dist1
+#| fig-dpi: 300
+
+## density plot
+neg = dd[dd$cpd_type=="N",]
+quant = dnorm(neg$cor, mean=median(neg$cor), sd=mad(neg$cor))
+p1 = ggplot(dd, aes(cor, after_stat(density), group=cpd_type, color=cpd_type)) + 
+  stat_density(linewidth=1, show.legend=T, geom="line", position="identity") +
+  scale_color_manual(name="", values=type.pal, drop=F) +
+  scale_x_continuous(limits=c(-1,2)) +
+  guides(color = guide_legend(override.aes = list(size=3))) +
+  labs(x="Corrected signal", y="Density") + ggtitle("Density Plot")
+## qq-plot
+# quantile x group matrix:
+y = matrix(unlist(tapply(dd$cor, dd$cpd_type, quantile, c(0.25,0.75), na.rm=T)), 
+           ncol=2, byrow=T)
+x = qnorm( c(0.25, 0.75))         # Find the matching normal values on the x-axis
+slope = t(diff(t(y))) / diff(x)   # Compute the line slope
+int = y[,1] - slope * x[1]        # Compute the line intercept
+# assemble the qqline data frame:
+qqline = data.frame(int=int, slope=slope, type=levels(droplevels(dd$cpd_type)))
+levels(qqline$type) = levels(dd$cpd_type)
+# do the plot
+p2 = ggplot(dd, aes(sample=cor, group=cpd_type, color=cpd_type)) + stat_qq(distribution = qnorm) +
+  geom_abline(data = qqline, aes(intercept=int, slope=slope)) + 
+  scale_color_manual(name="", values=type.pal, drop=F) +
+  labs(x="Theoretical Quantiles", y="Signal Quantiles") + ggtitle("Normal QQ Plot")
+## MvA plot, 1 point for each compound type on each plate
+meas.vars = grep("med|mad", names(plate_stats))
+tmp = melt(plate_stats, id.vars = 1, measure.vars = meas.vars)
+tmp$cpd_type = gsub(".*_(.*)", "\\1", tmp$variable)
+tmp$cpd_type = factor(tmp$cpd_type, levels=levels(dd$cpd_type))
+tmp$variable = gsub("(.*)_.*", "\\1", tmp$variable)
+tmp = dcast(tmp, plate + cpd_type ~ variable)
+p3 = ggplot(tmp, aes(x=med, y=mad, group=cpd_type, color=cpd_type)) + 
+  geom_jitter(width=rel(0.05)) + labs(x="Median", y="MAD") + 
+  #scale_y_continuous(limits=c(0,1)) +
+  #scale_x_continuous(limits=c(-0.1,1.1), breaks=seq(0,1,0.2)) + 
+  scale_color_manual(name="", values=type.pal, drop=F) + ggtitle("Mean Variance Plot")
+```
+
+
+
+The distributions of normalized and corrected signals for all controls and compounds in @fig-neg_dist is a useful illustration for the correspondence between model assumptions and the data. Based on a careful examination of the distributions, the plate-wise median of the `r t.med.id` and the plate-wise MAD of the `r t.mad.id` was used for testing.
+
+
+```{r}
+#| label: fig-neg_dist
+#| fig-show: asis
+#| fig-width: 7
+#| fig-height: 5
+#| fig-cap: "Distribution of controls and compounds. (A) Empirical probability density, (B) Quantile-Quantile plot, (C) plate-wise MAD vs plate-wise median. (D) P-value distribution. Regular PVD's can have 2 distinct shapes: (i) uniform if there is no DEG (plateau at density = 1). (ii) a peak at small p-values and a plateau < 1 for p -> 1; the plateau value corresponds to the proportion of DEG's. Any other shape is irregular and sensitively indicates a violation of the model assumptions."
+#| fig-dpi: 300
+
+p4 = ggplot(dd[dd$cpd_type=="C", ], aes(pval, after_stat(density))) + 
+  geom_histogram(bins=100, fill="grey50", col="white") + 
+  geom_hline(yintercept = 1, col="black") + xlab("P-value") + ylab("Density") + 
+  theme(legend.position="none") + #coord_cartesian(ylim=c(0, 5)) + 
+  ggtitle("PVD Plot")
+
+#plot_grid(p1,p2,p3,p4, nrow=2, labels = "AUTO")MM
+ggarrange(p1, p2, p3, p4, nrow=2, ncol=2, labels = "AUTO", 
+          common.legend = T, legend = "right")
+```
+
+
+
+
+
+The volcano-plots in @fig-volcano11 display the relation between the significance of the test, expressed as the negative logarithm of the false discovery rate (FDR), and the effect size, expressed as the logarithm of the fold-change. 
+
+```{r}
+volcano_caption = "Volcano plots. The horizontal line corresponds to FDR = " %&% fdr_cut %&% " and genes below this line are labeled 'not significant'. The two vertical lines correspond to a " %&% act_cut %&% "-fold change in expression and genes outside this range are labeled 'strong'. The legend refers to 'not' - not significant and weak effect; 'signif & strong' - significant and strong effect; 'signif' - significant but weak effect; 'strong' - not significant but strong effect."
+
+```
+
+
+```{r}
+#| label: fig-volcano11
+#| fig-show: asis
+#| fig-width: 10
+#| fig-height: 5
+#| fig-cap: !expr volcano_caption
+#| fig-dpi: 300
+
+dd$padj = p.adjust(dd$pval, method="BH")
+dd$padj[dd$padj==0] = min(dd$padj[dd$padj>0])
+dd$hit = c("not","signif")[as.numeric(dd$padj < fdr_cut)+1]
+dd$hit[abs(dd$cor) > (act_cut) & dd$hit== "signif"] = "signif & strong"
+dd$hit[abs(dd$cor) > (act_cut) & dd$hit== "not"] = "strong"
+dd$hit = factor(dd$hit, levels=c("not", "strong", "signif", "signif & strong"))
+
+ggplot(dd[!is.na(dd$hit),], aes(x=cor, y=-log10(padj), col=cpd_type)) + 
+  geom_point(shape=16, size=0.9) + 
+  geom_hline(yintercept = -log10(fdr_cut)) + 
+  geom_vline(xintercept = c(-1,1)*(act_cut)) +
+  xlab("Effect size [normalized]") + 
+  ylab(expression(paste("Significance [", -log[10](padj), "]"))) +
+  scale_color_manual(values = type.pal, name="Cpd type", drop=F) +
+  #theme(legend.justification=c(0,1), legend.position=c(0.7,0.35)) +
+  theme(legend.justification=c(0,1), legend.position="right") +
+  guides(color = guide_legend(override.aes = list(size=3, shape=15))) +
+  facet_wrap(~condition, scales="free")
+
+```
+
+
+
+```{r}
+#| label: tbl-deasum_ctr1
+#| results: asis
+#| eval: true
+#| tbl-cap: "DAA summary for the control and reference compounds."
+
+dd$direction = as.character(dd$hit)
+dd$direction[dd$cor > 0] = dd$hit[dd$cor > 0] %&% " up"
+dd$direction[dd$cor < 0] = dd$hit[dd$cor < 0] %&% " down"
+dd$direction = factor(dd$direction, 
+                        levels=c("signif & strong down", "signif down",
+                                 "strong down", "not down",
+                                 "not up", "strong up",
+                                 "signif up", "signif & strong up"))
+tmp = dd[dd$cpd_type != "C",]
+tmp$cpd_type = droplevels(tmp$cpd_type)
+m = table(tmp$direction, tmp$cpd_type)
+#kable(addmargins(m, margin = 1))
+kable(t(as.matrix(m)))
+```
+
+
+```{r}
+#| label: fig-volcano21
+#| fig-show: asis
+#| fig-width: 10
+#| fig-height: 5
+#| fig-cap: !expr volcano_caption
+#| fig-dpi: 300
+
+res = dd[dd$cpd_type=="C",]
+#res$lib_plate = droplevels(res$lib_plate)
+res$padj = p.adjust(res$pval, method="BH")
+res$padj[res$padj==0] = min(res$padj[res$padj>0])
+res$hit = c("not","signif")[as.numeric(res$padj < fdr_cut)+1]
+res$hit[abs(res$cor) > act_cut & res$hit== "signif"] = "signif & strong"
+res$hit[abs(res$cor) > act_cut & res$hit== "not"] = "strong"
+res$hit = factor(res$hit, levels=c("not", "strong", "signif", "signif & strong"))
+res$direction = as.character(res$hit)
+res$direction[res$cor > 0] = res$hit[res$cor > 0] %&% " up"
+res$direction[res$cor < 0] = res$hit[res$cor < 0] %&% " down"
+res$direction = factor(res$direction, 
+                        levels=c("signif & strong down", "signif down",
+                                 "strong down", "not down",
+                                 "not up", "strong up",
+                                 "signif up", "signif & strong up"))
+
+cbPalette = c("#000000", "#009E73", "#56B4E9", "#D55E00", 
+              "#F0E442", "#0072B2", "#E69F00", "#CC79A7")
+res$uwid = res$lib_plate %&% "-" %&% res$well
+hit_label = res$name
+hit_label[res$hit != "signif & strong"] = NA
+ggplot(res, aes(x=cor, y=-log10(padj), col=hit, label=hit_label)) + 
+  geom_hline(yintercept = -log10(fdr_cut)) + 
+  geom_vline(xintercept = c(-1,1)*(act_cut)) +
+  geom_point(shape=16, size=0.9, show.legend = T) + 
+  #geom_label_repel(show.legend = F) +
+  xlab("Effect size [normalized]") + 
+  ylab(expression(paste("Significance [", -log[10](padj), "]"))) +
+  scale_color_manual(values = cbPalette, name="DAA class", drop=F) +
+  #scale_x_continuous(limits = c(-1,1.5)) +
+  scale_y_continuous(limits = c(-0.1,12)) +
+  #theme(legend.justification=c(0,1), legend.position=c(0.7,0.35)) +
+  theme(legend.justification=c(0,1), legend.position="right") +
+  guides(color = guide_legend(override.aes = list(size=3)))+
+  facet_wrap(~condition, scales="free")
+```
+
+```{r}
+#| label: tbl-deasum_cpd1
+#| results: asis
+#| tbl-cap: "DAA summary for the test compounds."
+
+
+m = table(res$condition, res$direction)
+#kable(addmargins(m, margin = 1))
+kable(as.matrix(m))
+
+```
+
+In summary, among the `r nrow(res)` tested compounds, `r length(which(as.numeric(res$hit)>2))` were found to be differentially active and `r length(which(res$hit=="signif & strong"))` additionally showed strong activity above the chosen threshold. This corresponds to an overall hit rate of `r signif(length(which(as.numeric(res$hit)>2))/nrow(res)*100,2)` percent. An overview on the test results is given in @tab-deasum_cpd1.
+
+
+
+# Description of result files
+
+Results are stored in tab-delimited text file format: one file containing the normalized, corrected readout of all wells including the controls (`DAA_allwells.tsv`) and one file containing the DAA results of the significantly and strongly active compounds with substance name and physico-chemical properties and descriptors added (`DAA_results.tsv`). The description of the exported columns is described in @tab-daares and in the documentation of the library supplier.
+
+
+
+```{r}
+#| label: tbl-daares
+#| results: asis
+#| tbl-cap: "Description of `DAA_results.txt` file header."
+
+col.id = c("lib_plate", "plate", "well", 
+           "raw", "norm", "cor", 
+           "z", "pval", "padj", 
+           "direction", "compound")
+m = matrix( c(col.id, "Library plate", "Assay plate barcode", 
+              "Well ID", "raw signal", "normalized signal", 
+              "corrected signal", "Z-statistics", "two-sided raw p-value", 
+              "two-sided adjusted p-value (=FDR)", "direction of the effect",
+              "Compound name"), 
+            ncol=2, byrow=F)
+colnames(m) = c("Name","Description")
+kable(m)
+```
+
+
+
+```{r}
+#| label: save11
+#| eval: true
+
+# save plate statistics:
+plate_stats$z_prime = 1 - 3*(plate_stats$mad_N + plate_stats$mad_P) / 
+  abs(plate_stats$med_P - plate_stats$med_N)
+plate_stats$SSMD = abs(plate_stats$med_P - plate_stats$med_N) / 
+  sqrt(plate_stats$mad_N^2 + plate_stats$mad_P^2)
+write.table(plate_stats, file = path_output %&% "plate_stats.tsv", 
+            sep="\t", row.names = F, na = "")
+
+# save all wells w/o FDR or cpd info
+out = dd[order(dd$cell_type, dd$lib_plate, dd$plate, dd$well, decreasing=F), ]
+out = out[!is.na(dd$padj), ]
+write.table(out[, col.id[1:9]], file = path_output %&% "DAA_allwells.tsv", 
+            sep="\t", row.names = F, na = "")
+
+# save only hits w/ FDR & cpd info
+out = res[which(res$hit == "signif & strong"), c("uid", col.id[1:10])]
+lib_desc = read.csv(path_libfile)
+lib_desc = lib_desc[, c(1, 10:ncol(lib_desc))]
+out = left_join(out, lib_desc, by = c("uid" = "unique_identifier"))
+write.table(out[, -1], file = path_output %&% "DAA_results.tsv", 
+            sep="\t", row.names = F, na = "")
+```
+
+
