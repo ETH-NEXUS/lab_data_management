@@ -173,22 +173,25 @@ class AnalysisTaskTest(TestCase):
         output = self.run_task(label="Fluo")
 
         self.assertEqual("failed", output["status"])
-        (error,) = self.error_texts(output)[:1]
-        self.assertIn('has no plate information for the measurement "Fluo"', error)
-        self.assertIn('with "add experiment data"', error)
-        self.assertIn("Plate information exists for: Lum.", error)
+        self.assertEqual(
+            'The experiment "Screen 1" has no plate information for the measurement '
+            '"Fluo". Add it with "add experiment data". '
+            "Plate information exists for: Lum.",
+            self.error_texts(output)[0],
+        )
 
-    def test_without_positive_controls_the_report_does_not_start(self):
+    def test_a_plate_without_positive_controls_gets_a_warning(self):
         WellType.objects.filter(name="P").update(name="X")
 
-        with mock.patch("analysis.report.subprocess.run") as quarto:
-            output = self.run_task(quarto=quarto)
+        output = self.run_task()
 
-        quarto.assert_not_called()
-        self.assertEqual("failed", output["status"])
-        self.assertIn(
-            "No plate of this measurement has positive (P) control wells",
-            self.error_texts(output)[0],
+        warnings = [m["text"] for m in output["messages"] if m["level"] == "warning"]
+        self.assertEqual(
+            [
+                "Plate SP_1 has no P control wells, so the report cannot normalize "
+                "it and leaves it out of the results."
+            ],
+            warnings,
         )
 
     def test_a_selectivity_with_an_unknown_condition_names_the_known_ones(self):
@@ -204,13 +207,13 @@ class AnalysisTaskTest(TestCase):
             tasks.run_analysis.delay(form_data)
 
         quarto.assert_not_called()
-        self.assertIn(
-            "Not in the plate information of this measurement: 'not irradiated'. "
-            "Its conditions are: 'irradiated'.",
+        self.assertEqual(
+            "Condition not in the plate information: not irradiated. "
+            "The conditions of this measurement are: irradiated.",
             self.error_texts(read_output(ROOM, 0))[0],
         )
 
-    def test_an_r_error_names_the_failed_step_and_the_log(self):
+    def test_an_r_error_shows_the_end_of_the_r_output_and_the_log(self):
         def failing_quarto(command, cwd, **kwargs):
             return mock.Mock(returncode=1, stdout="", stderr=R_ERROR_OUTPUT)
 
@@ -219,9 +222,12 @@ class AnalysisTaskTest(TestCase):
         log_path = os.path.join(self.run_folder(), "render.log")
         self.assertEqual("failed", output["status"])
         self.assertEqual(
-            'The R report failed in the step "init" (single.qmd:73-110):\n'
+            "The R report failed:\n"
+            "processing file: single.qmd\n"
             "Error:\n"
             "! Could not load one or more required packages\n"
+            "Quitting from single.qmd:73-110 [init]\n"
+            "Execution halted\n"
             f"The full output is in {log_path}",
             self.error_texts(output)[0],
         )

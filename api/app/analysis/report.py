@@ -37,14 +37,12 @@ FORMULA = re.compile(r"(?:[0-9.\s*/+\-()]|log10|log2|act_cut)+")
 
 # A report of a whole screen takes a few minutes; this only stops one that hangs
 RENDER_TIMEOUT_SECONDS = 60 * 60
-# At most this many lines of the R error are shown when a report fails
+# The last lines of the R output that are shown when a report fails
 ERROR_LINES = 15
 
 # Quarto colors its output and prints the progress of the report, e.g. "36/75 [plate_qc]"
 COLOR_CODE = re.compile(r"\x1b\[[0-9;]*m")
 PROGRESS_LINE = re.compile(r"^\s*\d+/\d+(\s|$)")
-# Where R stopped, e.g. "Quitting from single.qmd:73-110 [init]"
-FAILED_STEP = re.compile(r"Quitting from (.*?)\s*\[([^\]]+)\]")
 
 
 def check_settings(analysis_type: str, chosen_settings: dict) -> dict:
@@ -122,15 +120,9 @@ def render_report(analysis_type: str, report_params: dict, folder: str) -> str:
             text=True,
             timeout=RENDER_TIMEOUT_SECONDS,
         )
-    except FileNotFoundError:
-        raise CommandError(
-            "Quarto is not installed in the celery container, so no report can be "
-            "made. The image has to be built with ENABLE_R=True."
-        )
     except subprocess.TimeoutExpired:
         raise CommandError(
-            f"The R report was stopped after {RENDER_TIMEOUT_SECONDS // 60} minutes: "
-            f"it should take a few minutes only. The input files are in {folder}."
+            f"The R report was stopped after {RENDER_TIMEOUT_SECONDS // 60} minutes."
         )
 
     with open(log_path, "w") as log_file:
@@ -142,34 +134,23 @@ def render_report(analysis_type: str, report_params: dict, folder: str) -> str:
 
 def render_error_text(quarto_output: str, log_path: str) -> str:
     """
-    The R error of a failed report, readable on the page. Example:
-    'The R report failed in the step "init" (single.qmd:73-110):
+    The end of the R output of a failed report, without colors and progress lines.
+    Example:
+    'The R report failed:
      Error:
      ! Could not load one or more required packages
+     Quitting from single.qmd:73-110 [init]
+     Execution halted
      The full output is in /vol/web/media/analysis/105/.../render.log'
     """
     lines = []
     for line in COLOR_CODE.sub("", quarto_output).splitlines():
         if line.strip() and not PROGRESS_LINE.match(line):
             lines.append(line.rstrip())
-
-    heading = "The R report failed:"
-    details = lines[-ERROR_LINES:]
-    for index, line in enumerate(lines):
-        failed_step = FAILED_STEP.search(line)
-        if failed_step:
-            where, step = failed_step.groups()
-            heading = f'The R report failed in the step "{step}" ({where}):'
-            # The R error is printed right before the step, starting with "Error"
-            error_start = max(0, index - ERROR_LINES)
-            for error_index in range(index - 1, error_start - 1, -1):
-                if lines[error_index].startswith("Error"):
-                    error_start = error_index
-                    break
-            details = lines[error_start:index]
-            break
-
-    return "\n".join([heading, *details, f"The full output is in {log_path}"])
+    last_lines = lines[-ERROR_LINES:]
+    return "\n".join(
+        ["The R report failed:", *last_lines, f"The full output is in {log_path}"]
+    )
 
 
 def pack_results(zip_path: str, report_path: str, output_folder: str) -> None:
