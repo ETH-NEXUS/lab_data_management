@@ -30,7 +30,9 @@ class AnalysisViewsTest(TestCase):
         # One finished run with a zip, and one failed run without
         os.makedirs(os.path.join(self.folder, "105", RUN_NAME))
         os.makedirs(os.path.join(self.folder, "105", "20260929-130014_selectivity_Lum"))
-        with open(os.path.join(self.folder, "105", RUN_NAME, f"{RUN_NAME}.zip"), "wb") as f:
+        with open(
+            os.path.join(self.folder, "105", RUN_NAME, f"{RUN_NAME}.zip"), "wb"
+        ) as f:
             f.write(b"a zip")
 
     def login(self):
@@ -47,8 +49,12 @@ class AnalysisViewsTest(TestCase):
 
     def test_start_runs_the_task_and_the_output_is_running(self):
         self.login()
-        form_data = {"experiment_id": 105, "label": "Lum_CTG",
-                     "analysis_type": "single", "room_name": "3_1727600000000"}
+        form_data = {
+            "experiment_id": 105,
+            "label": "Lum_CTG",
+            "analysis_type": "single",
+            "room_name": "3_1727600000000",
+        }
 
         with mock.patch.object(views.run_analysis, "delay") as delay:
             response = self.client.post(
@@ -62,7 +68,9 @@ class AnalysisViewsTest(TestCase):
     def test_only_finished_runs_are_listed(self):
         self.login()
 
-        response = self.client.get(reverse("list_analysis_results"), {"experiment_id": 105})
+        response = self.client.get(
+            reverse("list_analysis_results"), {"experiment_id": 105}
+        )
 
         self.assertEqual({"results": [f"{RUN_NAME}.zip"]}, response.json())
 

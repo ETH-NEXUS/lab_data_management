@@ -175,23 +175,62 @@ class AnalysisTaskTest(TestCase):
         self.assertEqual("failed", output["status"])
         self.assertEqual(
             'The experiment "Screen 1" has no plate information for the measurement '
-            '"Fluo". Add it with "add experiment data". '
-            "Plate information exists for: Lum.",
+            '"Fluo". The report needs it for every plate (library plate, replicate, '
+            "cell type, condition). Add it on the experiment page with "
+            '"add experiment data" and save it. Plate information exists for: "Lum".',
             self.error_texts(output)[0],
         )
 
-    def test_a_plate_without_positive_controls_gets_a_warning(self):
-        WellType.objects.filter(name="P").update(name="X")
+    def test_a_label_without_measurements_names_the_labels_there_are(self):
+        PlateInfo.objects.update(label="Other")
+
+        output = self.run_task(label="Other")
+
+        self.assertEqual(
+            'The experiment "Screen 1" has no measurements "Other". '
+            'Its measurements are: "Fluo", "Lum".',
+            self.error_texts(output)[0],
+        )
+
+    def test_a_plate_without_controls_gets_a_warning(self):
+        # A second plate with compound wells only; SP_1 has its controls
+        plate = Plate.objects.create(
+            barcode="SP_2",
+            dimension=self.wells[0].plate.dimension,
+            experiment=self.experiment,
+        )
+        well = Well.objects.create(plate=plate, position=0, type=self.wells[2].type)
+        Measurement.objects.create(
+            well=well, label="Lum", value=1, measured_at=datetime(2025, 5, 16, 10, 0)
+        )
 
         output = self.run_task()
 
         warnings = [m["text"] for m in output["messages"] if m["level"] == "warning"]
         self.assertEqual(
             [
-                "Plate SP_1 has no P control wells, so the report cannot normalize "
-                "it and leaves it out of the results."
+                "These plates have measurements but no plate information, so the "
+                "report has no library plate, replicate, cell type or condition for "
+                'them: SP_2. Add it with "add experiment data".',
+                "Plate SP_2 has no N and no P control wells, so the report cannot "
+                "normalize it and leaves it out of the results.",
             ],
             warnings,
+        )
+        self.assertEqual("completed", output["status"])
+
+    def test_without_controls_on_any_plate_r_is_not_started(self):
+        WellType.objects.filter(name="P").update(name="X")
+
+        with mock.patch("analysis.report.subprocess.run") as quarto:
+            output = self.run_task(quarto=quarto)
+
+        quarto.assert_not_called()
+        self.assertEqual("failed", output["status"])
+        self.assertIn(
+            "No plate of this measurement has both negative (N) and positive (P) "
+            "control wells",
+            self.error_texts(output)[0],
         )
 
     def test_a_selectivity_with_an_unknown_condition_names_the_known_ones(self):
@@ -208,12 +247,14 @@ class AnalysisTaskTest(TestCase):
 
         quarto.assert_not_called()
         self.assertEqual(
-            "Condition not in the plate information: not irradiated. "
-            "The conditions of this measurement are: irradiated.",
+            "A selectivity analysis compares two conditions of the plate information, "
+            'but these are not in it: "not irradiated". The conditions of this '
+            'measurement are: "irradiated". Type two of them exactly like this, or '
+            'correct the conditions with "add experiment data".',
             self.error_texts(read_output(ROOM, 0))[0],
         )
 
-    def test_an_r_error_shows_the_end_of_the_r_output_and_the_log(self):
+    def test_an_r_error_names_the_step_the_r_error_and_the_log(self):
         def failing_quarto(command, cwd, **kwargs):
             return mock.Mock(returncode=1, stdout="", stderr=R_ERROR_OUTPUT)
 
@@ -222,12 +263,14 @@ class AnalysisTaskTest(TestCase):
         log_path = os.path.join(self.run_folder(), "render.log")
         self.assertEqual("failed", output["status"])
         self.assertEqual(
-            "The R report failed:\n"
-            "processing file: single.qmd\n"
+            'The R report stopped with an error in the step "init" '
+            "(single.qmd:73-110).\n"
+            "The data passed the checks of LDM, so this is a problem inside the R "
+            "script or a case it does not handle. Send the full output to the "
+            "statistics group.\n"
+            "R error:\n"
             "Error:\n"
             "! Could not load one or more required packages\n"
-            "Quitting from single.qmd:73-110 [init]\n"
-            "Execution halted\n"
             f"The full output is in {log_path}",
             self.error_texts(output)[0],
         )

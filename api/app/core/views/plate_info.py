@@ -55,7 +55,10 @@ def get_new_plate_infos(experiment):
     plates = Plate.objects.filter(experiment=experiment)
     for plate in plates:
         logger.info(f"Plate: {plate.barcode}")
-        plate_details = PlateDetail.objects.get(pk=plate.id)
+        # A plate mapped after the last refresh of the materialized views is not there yet
+        plate_details = PlateDetail.objects.filter(pk=plate.id).first()
+        if plate_details is None:
+            continue
         measurement_labels = plate_details.measurement_labels
         measurement_timestamps = plate_details.measurement_timestamps
 
@@ -101,17 +104,41 @@ def get_new_plate_infos(experiment):
 @api_view(["GET"])
 @permission_classes([IsAuthenticated])
 def prefill_plate_info(request):
-    """The plate information of an experiment, prefilled for the form."""
+    """
+    The plate information of an experiment for the form: one row per plate and
+    measurement label, with the values that were saved before.
+    """
     experiment_id = request.GET.get("experiment_id")
     if not experiment_id:
         return JsonResponse({"error": "Experiment ID not provided"}, status=400)
 
-    existing_plate_info = get_existing_plate_infos(experiment_id)
-    if existing_plate_info:
-        return JsonResponse({"plate_info": existing_plate_info}, status=200)
-
     experiment = get_object_or_404(Experiment, pk=experiment_id)
-    return JsonResponse({"plate_info": get_new_plate_infos(experiment)}, status=200)
+    plate_info = with_saved_values(
+        get_new_plate_infos(experiment), get_existing_plate_infos(experiment_id)
+    )
+    return JsonResponse({"plate_info": plate_info}, status=200)
+
+
+def with_saved_values(new_rows: list[dict], saved_rows: list[dict]) -> list[dict]:
+    """
+    The rows of every plate and label, with the saved values where a row was saved.
+    Before, only the saved rows were shown, so a label that was never saved could
+    not be added any more. A saved row whose measurements are gone is kept.
+
+    new_rows:   [{"plate_barcode": "SP_1", "measurement_label": "Lum", "condition": "", ...},
+                 {"plate_barcode": "SP_1", "measurement_label": "Fluo", "condition": "", ...}]
+    saved_rows: [{"plate_barcode": "SP_1", "measurement_label": "Lum", "condition": "KO", ...}]
+    returns:    [{... "Lum", "condition": "KO", ...}, {... "Fluo", "condition": "", ...}]
+    """
+    saved_by_key = {
+        (row["plate_barcode"], row["measurement_label"]): row for row in saved_rows
+    }
+    rows = []
+    for row in new_rows:
+        key = (row["plate_barcode"], row["measurement_label"])
+        rows.append(saved_by_key.pop(key, row))
+    rows.extend(saved_by_key.values())
+    return rows
 
 
 @api_view(["POST"])
@@ -128,12 +155,14 @@ def save_plate_info(request):
     experiment = Experiment.objects.get(pk=experiment_id)
     for item in plate_info:
         plate = Plate.objects.get(barcode=item["plate_barcode"])
+        # One row per plate and measurement label: a plate measured twice (e.g. Lum
+        # and Fluo) has two rows, and the second must not overwrite the first
         PlateInfo.objects.update_or_create(
             plate=plate,
             experiment=experiment,
+            label=item["measurement_label"],
             defaults={
                 "lib_plate_barcode": item["lib_plate_barcode"],
-                "label": item["measurement_label"],
                 "replicate": item["replicate"],
                 "measurement_time": item["measurement_timestamp"],
                 "cell_type": item["cell_type"],

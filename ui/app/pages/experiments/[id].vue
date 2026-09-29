@@ -105,6 +105,21 @@ watch(
   { immediate: true },
 )
 
+// A finished analysis of this experiment adds its zip to the list
+watch(
+  () => analysisStore.status,
+  async (analysisStatus) => {
+    if (analysisStatus !== 'completed') return
+    if (!experiment.value || analysisStore.experimentId !== experiment.value.id) return
+
+    try {
+      await analysisStore.fetchResults(experiment.value.id)
+    } catch (err: unknown) {
+      console.error(err)
+    }
+  },
+)
+
 const downloadAnalysisResult = async (name: string) => {
   if (!experiment.value) return
 

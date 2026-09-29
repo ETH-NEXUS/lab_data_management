@@ -15,7 +15,7 @@ import os
 import pandas as pd
 from django.core.management.base import CommandError
 
-from core.models import Experiment
+from core.models import Experiment, Measurement
 from core.views.plate_info import get_existing_plate_infos
 from ldm.ldm import get_experiment_measurements
 
@@ -54,17 +54,29 @@ def write_input_files(
     ]
     if not plate_infos:
         labels = sorted({info["measurement_label"] for info in all_plate_infos})
-        raise CommandError(
+        text = (
             f'The experiment "{experiment.name}" has no plate information for the '
-            f'measurement "{label}". Add it with "add experiment data". '
-            f"Plate information exists for: {', '.join(labels) or 'no measurement'}."
+            f'measurement "{label}". The report needs it for every plate (library '
+            "plate, replicate, cell type, condition). Add it on the experiment page "
+            'with "add experiment data" and save it.'
         )
+        if labels:
+            text += f" Plate information exists for: {quoted(labels)}."
+        else:
+            text += " The experiment has no plate information for any measurement yet."
+        raise CommandError(text)
     check_conditions(conditions, plate_infos)
 
     main_info = get_experiment_measurements(experiment.name, label, "main", csv=True)
     if main_info.empty:
+        labels = (
+            Measurement.objects.filter(well__plate__experiment=experiment)
+            .values_list("label", flat=True)
+            .distinct()
+        )
         raise CommandError(
-            f'The experiment "{experiment.name}" has no measurements "{label}".'
+            f'The experiment "{experiment.name}" has no measurements "{label}". '
+            f"Its measurements are: {quoted(sorted(labels)) or 'none'}."
         )
     chemical_info = get_experiment_measurements(
         experiment.name, label, "chemical", csv=True
@@ -81,7 +93,37 @@ def write_input_files(
     main_info.to_csv(paths["path_data"], index=False)
     chemical_info.to_csv(paths["path_lib"], index=False)
     experiment_data[EXPERIMENT_DATA_COLUMNS].to_csv(paths["path_meta"], index=False)
-    return paths, control_warnings(main_info)
+    warnings = plate_warnings(main_info, experiment_data) + control_warnings(main_info)
+    return paths, warnings
+
+
+def quoted(names: list[str]) -> str:
+    """
+    Names in quotes, so a space at the end is seen.
+    ["Lum", "Log "] -> '"Lum", "Log "'
+    """
+    return ", ".join(f'"{name}"' for name in names)
+
+
+def plate_warnings(main_info: pd.DataFrame, experiment_data: pd.DataFrame) -> list[str]:
+    """Plates with measurements but no plate information, and the other way round."""
+    measured = set(main_info["plate"])
+    described = set(experiment_data["plate"])
+    warnings = []
+    without_info = sorted(measured - described)
+    if without_info:
+        warnings.append(
+            "These plates have measurements but no plate information, so the report "
+            "has no library plate, replicate, cell type or condition for them: "
+            f"{', '.join(without_info)}. Add it with \"add experiment data\"."
+        )
+    without_measurements = sorted(described - measured)
+    if without_measurements:
+        warnings.append(
+            "These plates have plate information but no measurements of this label, "
+            f"so they are not in the report: {', '.join(without_measurements)}."
+        )
+    return warnings
 
 
 def check_conditions(conditions: list[str], plate_infos: list[dict]) -> None:
@@ -93,8 +135,10 @@ def check_conditions(conditions: list[str], plate_infos: list[dict]) -> None:
     unknown = [condition for condition in conditions if condition not in known]
     if unknown:
         raise CommandError(
-            f"Condition not in the plate information: {', '.join(unknown)}. "
-            f"The conditions of this measurement are: {', '.join(known)}."
+            "A selectivity analysis compares two conditions of the plate information, "
+            f"but these are not in it: {quoted(unknown)}. The conditions of this "
+            f"measurement are: {quoted(known)}. Type two of them exactly like this, "
+            'or correct the conditions with "add experiment data".'
         )
 
 
@@ -105,11 +149,19 @@ def control_warnings(main_info: pd.DataFrame) -> list[str]:
     plate 20250513SP_29 has no P wells and no results).
     """
     warnings = []
-    for plate, controls in main_info.groupby("plate")["control"]:
+    plates = main_info.groupby("plate")["control"]
+    for plate, controls in plates:
         missing = [control for control in ["N", "P"] if control not in set(controls)]
         if missing:
             warnings.append(
                 f"Plate {plate} has no {' and no '.join(missing)} control wells, so "
                 "the report cannot normalize it and leaves it out of the results."
             )
+    # Without a single plate to normalize, R stops with an error that does not say why
+    if len(warnings) == len(plates):
+        raise CommandError(
+            "No plate of this measurement has both negative (N) and positive (P) "
+            "control wells, so the report cannot normalize any plate. Check the well "
+            "types of the plate layout.\n" + "\n".join(warnings)
+        )
     return warnings

@@ -27,12 +27,17 @@ const conditionNo = ref('')
 watch(
   () => props.open,
   (isOpen) => {
-    if (isOpen && selectedLabel.value === '') {
+    // The page is kept when another experiment is opened, so its labels may differ
+    if (isOpen && !props.labels.includes(selectedLabel.value)) {
       selectedLabel.value = props.labels[0] ?? ''
     }
   },
   { immediate: true },
 )
+
+// The messages of the last run belong to its experiment only
+const isThisExperiment = computed(() => analysisStore.experimentId === props.experimentId)
+const isRunningElsewhere = computed(() => analysisStore.isRunning && !isThisExperiment.value)
 
 const canStart = computed(() => {
   if (analysisStore.isRunning) return false
@@ -62,6 +67,9 @@ const close = () => {
 
 // The summary above the messages, once the analysis has ended
 const summary = computed(() => {
+  if (!isThisExperiment.value) {
+    return null
+  }
   if (analysisStore.status === 'failed') {
     return { color: 'error' as const, icon: 'i-lucide-circle-x', title: t('experiments.analysis.failed') }
   }
@@ -129,7 +137,14 @@ const fieldClass =
           </div>
         </div>
 
-        <div v-if="analysisStore.messages.length > 0 || analysisStore.isRunning" class="space-y-2">
+        <p v-if="isRunningElsewhere" class="text-sm text-amber-700">
+          {{ t('experiments.analysis.running_elsewhere', { id: analysisStore.experimentId }) }}
+        </p>
+
+        <div
+          v-if="isThisExperiment && (analysisStore.messages.length > 0 || analysisStore.isRunning)"
+          class="space-y-2"
+        >
           <UAlert v-if="summary" :color="summary.color" :icon="summary.icon" :title="summary.title" variant="subtle" />
           <div class="max-h-80 overflow-auto rounded-xl border border-slate-200 bg-white p-2">
             <p

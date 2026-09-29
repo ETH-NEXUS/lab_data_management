@@ -35,6 +35,8 @@ export const useAnalysisStore = defineStore('analysisStore', () => {
   const messages = ref<CommandMessage[]>([])
   const status = ref<CommandStatus | null>(null)
   const isRunning = ref(false)
+  // The experiment of the last run: its messages are only shown on that experiment
+  const experimentId = ref<number | null>(null)
   // e.g. ['20260929-125825_single_Lum_CTG.zip'], newest first
   const results = ref<string[]>([])
 
@@ -47,6 +49,7 @@ export const useAnalysisStore = defineStore('analysisStore', () => {
   const startAnalysis = async (payload: Omit<StartAnalysisPayload, 'room_name'>): Promise<void> => {
     // A new room for every run, so the output of an earlier run is never shown
     const roomName = `${payload.experiment_id}_${Date.now()}`
+    experimentId.value = payload.experiment_id
     messages.value = []
     status.value = 'running'
     isRunning.value = true
@@ -65,7 +68,6 @@ export const useAnalysisStore = defineStore('analysisStore', () => {
     }
 
     await readOutput(roomName)
-    await fetchResults(payload.experiment_id)
   }
 
   /**
@@ -145,6 +147,7 @@ export const useAnalysisStore = defineStore('analysisStore', () => {
     messages,
     status,
     isRunning,
+    experimentId,
     results,
     startAnalysis,
     fetchResults,

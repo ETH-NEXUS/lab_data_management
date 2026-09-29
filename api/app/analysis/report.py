@@ -43,6 +43,8 @@ ERROR_LINES = 15
 # Quarto colors its output and prints the progress of the report, e.g. "36/75 [plate_qc]"
 COLOR_CODE = re.compile(r"\x1b\[[0-9;]*m")
 PROGRESS_LINE = re.compile(r"^\s*\d+/\d+(\s|$)")
+# Where R stopped, e.g. "Quitting from single.qmd:73-110 [init]"
+FAILED_STEP = re.compile(r"Quitting from (\S+) \[([^\]]*)\]")
 
 
 def check_settings(analysis_type: str, chosen_settings: dict) -> dict:
@@ -120,9 +122,16 @@ def render_report(analysis_type: str, report_params: dict, folder: str) -> str:
             text=True,
             timeout=RENDER_TIMEOUT_SECONDS,
         )
+    except FileNotFoundError:
+        raise CommandError(
+            "Quarto is not installed in the celery container, so the R report cannot "
+            "run. The Docker image has to be built with ENABLE_R=True."
+        )
     except subprocess.TimeoutExpired:
         raise CommandError(
-            f"The R report was stopped after {RENDER_TIMEOUT_SECONDS // 60} minutes."
+            f"The R report was stopped after {RENDER_TIMEOUT_SECONDS // 60} minutes; "
+            "a report usually takes a few minutes. The input files of this run are "
+            f"in {folder}."
         )
 
     with open(log_path, "w") as log_file:
@@ -134,22 +143,47 @@ def render_report(analysis_type: str, report_params: dict, folder: str) -> str:
 
 def render_error_text(quarto_output: str, log_path: str) -> str:
     """
-    The end of the R output of a failed report, without colors and progress lines.
-    Example:
-    'The R report failed:
+    What went wrong in a failed report: the step of the .qmd where R stopped, and
+    the R error, without colors and progress lines. Example:
+    'The R report stopped with an error in the step "init" (single.qmd:73-110).
+     The data passed the checks of LDM, so this is a problem inside the R script ...
+     R error:
      Error:
      ! Could not load one or more required packages
-     Quitting from single.qmd:73-110 [init]
-     Execution halted
      The full output is in /vol/web/media/analysis/105/.../render.log'
     """
     lines = []
     for line in COLOR_CODE.sub("", quarto_output).splitlines():
         if line.strip() and not PROGRESS_LINE.match(line):
             lines.append(line.rstrip())
-    last_lines = lines[-ERROR_LINES:]
+
+    heading = "The R report stopped with an error."
+    error_lines = lines[-ERROR_LINES:]
+    for index, line in enumerate(lines):
+        failed_step = FAILED_STEP.search(line)
+        if not failed_step:
+            continue
+        where, step = failed_step.groups()
+        heading = f'The R report stopped with an error in the step "{step}" ({where}).'
+        # The R error is printed right before, from the line that starts with "Error"
+        error_start = max(0, index - ERROR_LINES)
+        for error_index in range(index - 1, error_start - 1, -1):
+            if lines[error_index].startswith("Error"):
+                error_start = error_index
+                break
+        error_lines = lines[error_start:index]
+        break
+
     return "\n".join(
-        ["The R report failed:", *last_lines, f"The full output is in {log_path}"]
+        [
+            heading,
+            "The data passed the checks of LDM, so this is a problem inside the R "
+            "script or a case it does not handle. Send the full output to the "
+            "statistics group.",
+            "R error:",
+            *error_lines,
+            f"The full output is in {log_path}",
+        ]
     )
 
 
