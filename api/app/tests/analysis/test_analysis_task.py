@@ -12,11 +12,14 @@ import zipfile
 from datetime import datetime
 from unittest import mock
 
+import pandas as pd
 from celery.exceptions import WorkerLostError
 from django.core.cache import cache
 from django.test import TestCase
 
 from analysis import tasks
+from analysis.input_files import MAIN_COLUMNS
+from compoundlib.models import Compound
 from core.models import (
     Experiment,
     Measurement,
@@ -25,9 +28,11 @@ from core.models import (
     PlateInfo,
     Project,
     Well,
+    WellCompound,
     WellType,
 )
 from importer.command_output import read_output, start_command
+from ldm.ldm import get_experiment_measurements
 
 ROOM = "7_1727600000000"
 
@@ -355,6 +360,73 @@ class AnalysisTaskTest(TestCase):
         )
         self.assertEqual([], self.saved_files())
 
+    def test_main_info_from_the_chemical_export_is_the_main_export(self):
+        # A compound with library data in one well, as in a real screen
+        compound = Compound.objects.create(name="Cpd 1", data={"ID": "X1", "MW": 300.5})
+        WellCompound.objects.create(well=self.wells[2], compound=compound, amount=10)
+
+        main = get_experiment_measurements(
+            "Screen 1", "Lum", "main", csv=True, experiment_id=self.experiment.id
+        )
+        chemical = get_experiment_measurements(
+            "Screen 1", "Lum", "chemical", csv=True, experiment_id=self.experiment.id
+        )
+
+        pd.testing.assert_frame_equal(main, chemical[MAIN_COLUMNS])
+
+    def test_a_file_mapped_twice_is_used_once_with_a_warning(self):
+        # The same values once more, one day later
+        for well in self.wells:
+            Measurement.objects.create(
+                well=well,
+                label="Lum",
+                value=well.position,
+                measured_at=datetime(2025, 5, 17, 10, 0),
+            )
+
+        output = self.run_task()
+
+        self.assertEqual(4, len(self.read_input("main_info.csv")))
+        warnings = [m["text"] for m in output["messages"] if m["level"] == "warning"]
+        self.assertEqual(
+            [
+                'The measurement "Lum" was mapped more than once: 4 readings are copies '
+                "of another reading of the same well with the same value. Each well is "
+                "used once in the report."
+            ],
+            warnings,
+        )
+        self.assertEqual("completed", output["status"])
+
+    def test_two_readings_with_different_values_stop_the_analysis(self):
+        Measurement.objects.create(
+            well=self.wells[0],
+            label="Lum",
+            value=99,
+            measured_at=datetime(2025, 5, 17, 10, 0),
+        )
+
+        with mock.patch("analysis.report.subprocess.run") as quarto:
+            output = self.run_task(quarto=quarto)
+
+        quarto.assert_not_called()
+        self.assertEqual(
+            'The measurement "Lum" has more than one reading with different values on '
+            "1 well(s) (e.g. well A1 of plate SP_1). The report can use one reading per "
+            "well only: map the readings with different measurement names, or keep "
+            "only the reading that belongs to the analysis.",
+            self.error_texts(output)[0],
+        )
+
+    def test_the_results_are_deleted_with_the_experiment(self):
+        self.run_task()
+        self.assertEqual(1, len(self.saved_files()))
+        experiment_folder = os.path.join(self.folder, str(self.experiment.id))
+
+        self.experiment.delete()
+
+        self.assertFalse(os.path.exists(experiment_folder))
+
     def test_a_report_that_takes_too_long_says_so(self):
         def stopped_quarto(command, cwd, **kwargs):
             # GNU timeout ends with 124 when the time was up
@@ -363,8 +435,9 @@ class AnalysisTaskTest(TestCase):
         output = self.run_task(quarto=stopped_quarto)
 
         self.assertEqual(
-            "The R report was stopped after 60 minutes; a report usually takes a few "
-            "minutes.",
+            "The R report was stopped after 15 minutes; a report usually takes one or "
+            "two minutes, so it probably hung. Send this message to the statistics "
+            "group.",
             self.error_texts(output)[0],
         )
 

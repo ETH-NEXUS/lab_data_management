@@ -20,6 +20,24 @@ from core.models import Experiment, Measurement
 from core.views.plate_info import get_existing_plate_infos
 from ldm.ldm import get_experiment_measurements
 
+# The columns of get_experiment_measurements(type="main") in ldm/ldm.py. The
+# "chemical" export has the same rows with the compound data added, so main_info
+# is taken from it instead of reading every well a second time (about 20 s for a
+# screen of 26 plates). A test checks that both give the same main_info.
+MAIN_COLUMNS = [
+    "unique_identifier",
+    "well_coordinate",
+    "value",
+    "plate",
+    "plate_row",
+    "plate_column",
+    "control",
+    "measurement",
+    "is_invalid",
+    "measured_at",
+    "compound",
+]
+
 # Same columns and order as downloadCsv() in ui/app/pages/add_data/[experiment_id].vue
 EXPERIMENT_DATA_COLUMNS = [
     "measurement_label",
@@ -74,10 +92,10 @@ def write_input_files(
         raise CommandError(text)
     check_conditions(conditions, plate_infos)
 
-    main_info = get_experiment_measurements(
-        experiment.name, label, "main", csv=True, experiment_id=experiment.id
+    chemical_info = get_experiment_measurements(
+        experiment.name, label, "chemical", csv=True, experiment_id=experiment.id
     )
-    if main_info.empty:
+    if chemical_info.empty:
         labels = (
             Measurement.objects.filter(well__plate__experiment=experiment)
             .values_list("label", flat=True)
@@ -87,16 +105,11 @@ def write_input_files(
             f'The experiment "{experiment.name}" has no measurements "{label}". '
             f"Its measurements are: {quoted(sorted(labels)) or 'none'}."
         )
+    chemical_info, repeated_warnings = remove_repeated_readings(chemical_info, label)
     positive, negative = controls["positive"], controls["negative"]
-    check_chosen_controls(main_info, positive, negative)
-    main_info = rename_controls(main_info, positive, negative)
-    chemical_info = rename_controls(
-        get_experiment_measurements(
-            experiment.name, label, "chemical", csv=True, experiment_id=experiment.id
-        ),
-        positive,
-        negative,
-    )
+    check_chosen_controls(chemical_info, positive, negative)
+    chemical_info = rename_controls(chemical_info, positive, negative)
+    main_info = chemical_info[MAIN_COLUMNS]
     experiment_data = pd.DataFrame(plate_infos).rename(
         columns={"plate_barcode": "plate"}
     )
@@ -109,9 +122,49 @@ def write_input_files(
     main_info.to_csv(paths["path_data"], index=False)
     chemical_info.to_csv(paths["path_lib"], index=False)
     experiment_data[EXPERIMENT_DATA_COLUMNS].to_csv(paths["path_meta"], index=False)
-    warnings = plate_warnings(main_info, experiment_data)
+    warnings = repeated_warnings + plate_warnings(main_info, experiment_data)
     warnings += control_warnings(main_info, positive, negative)
     return paths, warnings
+
+
+def remove_repeated_readings(
+    chemical_info: pd.DataFrame, label: str
+) -> tuple[pd.DataFrame, list[str]]:
+    """
+    The report needs one reading per well. A measurement file that was mapped
+    twice gives each well a second row with the same value and another time
+    (seen on prod: experiments 83, 86 and 110); the copy is removed, with a
+    warning. Two readings with different values cannot be told apart by the
+    report, so they stop the analysis.
+
+    Returned data example:
+    (the rows without the copies, ['The measurement "Lum" was mapped twice: ...'])
+    """
+    columns_without_time = [
+        column for column in chemical_info.columns if column != "measured_at"
+    ]
+    without_copies = chemical_info.drop_duplicates(subset=columns_without_time)
+    copies = len(chemical_info) - len(without_copies)
+
+    repeated = without_copies[without_copies["unique_identifier"].duplicated()]
+    if not repeated.empty:
+        example = repeated.iloc[0]
+        raise CommandError(
+            f'The measurement "{label}" has more than one reading with different values '
+            f"on {repeated['unique_identifier'].nunique()} well(s) (e.g. well "
+            f"{example['well_coordinate']} of plate {example['plate']}). The report can "
+            "use one reading per well only: map the readings with different measurement "
+            "names, or keep only the reading that belongs to the analysis."
+        )
+
+    warnings = []
+    if copies > 0:
+        warnings.append(
+            f'The measurement "{label}" was mapped more than once: {copies} readings '
+            "are copies of another reading of the same well with the same value. "
+            "Each well is used once in the report."
+        )
+    return without_copies, warnings
 
 
 def quoted(names: list[str]) -> str:

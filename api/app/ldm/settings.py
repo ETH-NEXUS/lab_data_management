@@ -400,6 +400,10 @@ CELERY_BROKER_URL = environ.get("CELERY_BROKER_URL", "redis://redis:6379/0")
 CELERY_ACCEPT_CONTENT = ["json"]
 CELERY_TASK_SERIALIZER = "json"
 CELERY_RESULT_SERIALIZER = "json"
+# The statistical analysis runs R for minutes. It has a queue and a worker of its
+# own (service celery-analysis in docker-compose.yml), so the map and import
+# commands of the celery service never wait for it.
+CELERY_TASK_ROUTES = {"analysis.tasks.run_analysis": {"queue": "analysis"}}
 
 # Database 1 is the cache. It is shared by all server processes, so a message
 # written by one process (e.g. of a running command) can be read by another one.

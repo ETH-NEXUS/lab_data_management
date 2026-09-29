@@ -49,36 +49,30 @@ gpg --keyserver keyserver.ubuntu.com --recv-key '95C0FAF38DB3CCAD0C080A7BDC78B2D
 gpg --armor --export '95C0FAF38DB3CCAD0C080A7BDC78B2DDEABC47B7' | gpg --dearmor | tee /usr/share/keyrings/cran.gpg > /dev/null && \
 echo "deb [signed-by=/usr/share/keyrings/cran.gpg] https://cloud.r-project.org/bin/linux/debian bookworm-cran40/" | tee /etc/apt/sources.list.d/cran.list \
 ;fi
-# libuv1-dev is needed to build the R package "fs", which rmarkdown and ggExtra depend on
-RUN if [ "${ENABLE_R}" = "True" ]; then apt-get update && apt-get install -y r-base cmake libuv1-dev; fi
+# Libraries some R packages are built against: libuv1-dev for "fs" (rmarkdown, ggExtra),
+# harfbuzz, fribidi and the image libraries for "textshaping" and "ragg" (tidyverse)
+RUN if [ "${ENABLE_R}" = "True" ]; then apt-get update && apt-get install -y r-base cmake libuv1-dev \
+      libharfbuzz-dev libfribidi-dev libfreetype6-dev libpng-dev libtiff5-dev libjpeg-dev libwebp-dev; fi
 # R dependencies are installed at the end to avoid rebuild the whole image in case we want to add 
 # an additional R dependency
 
 ARG ENABLE_JUPYTER
 ARG TARGETARCH
 
-# Quarto is also needed without Jupyter: the statistics reports (api/app/statistics) are rendered with it
-# set -e: a broken download must fail the build, otherwise the broken layer is cached
+# Quarto is also needed without Jupyter: the statistics reports (api/app/statistics) are rendered with it.
+# set -e: a broken download must fail the build, otherwise the broken layer is cached.
+# TinyTeX (for PDF reports) comes from its own install script on both architectures:
+# it is checked on amd64 and arm64, `quarto install tinytex` could not be checked on amd64.
 RUN set -e; if [ "${ENABLE_JUPYTER}" = "True" ] || [ "${ENABLE_R}" = "True" ]; then \
       ARCH="${TARGETARCH:-$(dpkg --print-architecture)}"; \
-      case "${ARCH}" in \
-        amd64) \
-          QUARTO_DEB="quarto-1.4.156-linux-amd64.deb"; \
-          wget -q "https://github.com/quarto-dev/quarto-cli/releases/download/v1.4.156/${QUARTO_DEB}"; \
-          dpkg -i "${QUARTO_DEB}"; \
-          quarto install tinytex; \
-          ;; \
-        arm64) \
-          QUARTO_DEB="quarto-1.4.156-linux-arm64.deb"; \
-          wget -q "https://github.com/quarto-dev/quarto-cli/releases/download/v1.4.156/${QUARTO_DEB}"; \
-          dpkg -i "${QUARTO_DEB}"; \
-          wget -qO- "https://tinytex.yihui.org/install-bin-unix.sh" | sh; \
-          ;; \
-        *) \
-          echo "Unsupported architecture for Quarto: ${ARCH}" >&2; \
-          exit 1; \
-          ;; \
-      esac; \
+      if [ "${ARCH}" != "amd64" ] && [ "${ARCH}" != "arm64" ]; then \
+        echo "Unsupported architecture for Quarto: ${ARCH}" >&2; \
+        exit 1; \
+      fi; \
+      QUARTO_DEB="quarto-1.4.156-linux-${ARCH}.deb"; \
+      wget -q "https://github.com/quarto-dev/quarto-cli/releases/download/v1.4.156/${QUARTO_DEB}"; \
+      dpkg -i "${QUARTO_DEB}"; \
+      wget -qO- "https://tinytex.yihui.org/install-bin-unix.sh" | sh; \
     fi
 ENV PATH="/root/bin:/root/.TinyTeX/bin/aarch64-linux:/root/.TinyTeX/bin/x86_64-linux:${PATH}"
 
@@ -88,13 +82,22 @@ RUN apt-get install -y libsasl2-dev python-dev-is-python3 libldap2-dev libssl-de
 
 
 # 2. Optimized R Layer
+# The R packages of the notebooks and of the statistics reports (api/app/statistics)
+ENV R_PACKAGES="ggplot2 DT BioRssay repr tidyverse car ggpubr lawstat RColorBrewer gplots ggrepel cowplot ggExtra pheatmap reshape2 drc knitr locfit robust lubridate rmarkdown"
 RUN if [ "${ENABLE_R}" = "True" ]; then \
-      R -q -e 'options(repos = c(CRAN = "https://packagemanager.posit.co/cran/latest")); install.packages(c( \
-        "ggplot2", "DT", "BioRssay", "repr", "tidyverse", "car", \
-        "ggpubr", "lawstat", "RColorBrewer", "gplots", "ggrepel", \
-        "cowplot", "ggExtra", "pheatmap", "reshape2", "drc", \
-        "knitr", "locfit", "robust", "lubridate", "rmarkdown" \
-      ), Ncpus = max(1L, parallel::detectCores() - 1L))'; \
+      R -q -e 'options(repos = c(CRAN = "https://packagemanager.posit.co/cran/latest")); \
+        install.packages(strsplit(Sys.getenv("R_PACKAGES"), " ")[[1]], \
+        Ncpus = max(1L, parallel::detectCores() - 1L))'; \
+    fi
+
+# install.packages only warns when a package fails to build, so the image would be
+# built without it. Every package of the list, and what the reports load from
+# tidyverse and base R, must load here: a missing one fails the build, not an
+# analysis or a notebook later.
+RUN if [ "${ENABLE_R}" = "True" ]; then \
+      Rscript -e 'needed <- c(strsplit(Sys.getenv("R_PACKAGES"), " ")[[1]], "dplyr", "tidyr", "MASS"); \
+        missing <- needed[!sapply(needed, requireNamespace, quietly = TRUE)]; \
+        if (length(missing) > 0) stop("R packages not installed: ", paste(missing, collapse = ", "))'; \
     fi
 
 # RUN --mount=type=cache,target=/root/.cache/pak \

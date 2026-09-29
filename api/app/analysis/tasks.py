@@ -163,11 +163,15 @@ def make_analysis(form_data: dict, room_name: str | None) -> str:
         temporary_zip_path = os.path.join(folder, f"{run_name}.zip")
         pack_results(temporary_zip_path, report_path, output_folder)
 
-        # Moved only when it is complete, so the page never lists a half written zip
+        # /tmp and the media folder are different disks, so the zip is copied
+        # under a name the page does not list (".part") and then renamed: a rename
+        # in one folder happens at once, so the page never lists a half copied zip
         experiment_folder = os.path.join(ANALYSIS_FOLDER, str(experiment.id))
         os.makedirs(experiment_folder, exist_ok=True)
         zip_path = unused_zip_path(experiment_folder, run_name)
-        shutil.move(temporary_zip_path, zip_path)
+        partial_path = zip_path + ".part"
+        shutil.copyfile(temporary_zip_path, partial_path)
+        os.replace(partial_path, zip_path)
     return zip_path
 
 

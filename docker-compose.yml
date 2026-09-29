@@ -95,6 +95,25 @@ services:
       - db
       - redis
 
+  # Runs the statistical analyses (R reports, several minutes each), one at a
+  # time, so the map and import commands of the celery service never wait for them
+  celery-analysis:
+    build:
+      context: api
+      args:
+        ENABLE_JUPYTER: ${ENABLE_JUPYTER}
+        ENABLE_R: ${ENABLE_R}
+    hostname: celery-analysis
+    restart: unless-stopped
+    command: celery -A ldm worker -l info -Q analysis --concurrency 1
+    volumes:
+      - ./api/app:/app
+      - ./api/media:/vol/web/media:z
+    env_file: .env
+    depends_on:
+      - db
+      - redis
+
   db:
     build:
       context: db

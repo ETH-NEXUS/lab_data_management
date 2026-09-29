@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref, watch } from 'vue'
+import { computed, onMounted, ref, watch } from 'vue'
 import { useQueryClient } from '@tanstack/vue-query'
 import { useExperimentQuery } from '~/composables/useExperimentQuery'
 import { useProjectQuery } from '~/composables/useProjectsQuery'
@@ -104,6 +104,11 @@ watch(
   },
   { immediate: true },
 )
+
+// After a page reload, the analysis this browser started last is shown again
+onMounted(() => {
+  void analysisStore.resumeAnalysis()
+})
 
 // A finished analysis of this experiment adds its zip to the list
 watch(

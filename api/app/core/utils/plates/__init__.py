@@ -5,4 +5,5 @@ Helpers for plates.
 - `mapping.py`        lists of well-to-well transfers used to map one plate onto another
 - `copying.py`        copying library plates (the admin action)
 - `archive_guard.py`  keeps archived library plates from being changed through the API
+- `plate_infos.py`    the rows of the "add experiment data" form, with the saved values
 """

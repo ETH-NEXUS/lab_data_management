@@ -30,6 +30,10 @@ services:
         DEPENDENCIES: prod
     volumes:
       - /lab_shared_drive:/data
+  celery-analysis:
+    build:
+      args:
+        DEPENDENCIES: prod
   ui:
     command:
       - /bin/sh

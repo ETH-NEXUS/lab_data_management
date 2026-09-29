@@ -28,9 +28,28 @@ const MAX_FAILED_OUTPUT_REQUESTS = 5
 // command of the management page) and only says why nothing happens.
 const START_TIMEOUT_MS = 60000
 const WAITING_MESSAGE =
-  'The analysis has not started yet: it is waiting for the celery worker (other commands or analyses run first), or the worker is down.'
+  'The analysis has not started yet: the analysis worker (container celery-analysis) runs one analysis at a time and another one runs first, or the worker is down.'
+
+// The run this browser started last, so its output comes back after a page reload
+const ROOM_NAME_STORAGE_KEY = 'analysis_room_name'
 
 const wait = (milliseconds: number) => new Promise((resolve) => setTimeout(resolve, milliseconds))
+
+const rememberRoomName = (roomName: string): void => {
+  try {
+    localStorage.setItem(ROOM_NAME_STORAGE_KEY, roomName)
+  } catch {
+    // Browser storage is switched off: the output is only lost after a reload
+  }
+}
+
+const rememberedRoomName = (): string => {
+  try {
+    return localStorage.getItem(ROOM_NAME_STORAGE_KEY) ?? ''
+  } catch {
+    return ''
+  }
+}
 
 /**
  * The statistical analysis of an experiment: it runs in the celery container, the
@@ -57,6 +76,7 @@ export const useAnalysisStore = defineStore('analysisStore', () => {
   const startAnalysis = async (payload: Omit<StartAnalysisPayload, 'room_name'>): Promise<void> => {
     // A new room for every run, so the output of an earlier run is never shown
     const roomName = `${payload.experiment_id}_${Date.now()}`
+    rememberRoomName(roomName)
     experimentId.value = payload.experiment_id
     messages.value = []
     status.value = 'running'
@@ -79,10 +99,43 @@ export const useAnalysisStore = defineStore('analysisStore', () => {
   }
 
   /**
-   * Adds the new messages every 2 seconds, until the analysis has completed or failed.
+   * Shows the last analysis of this browser again after a page reload: its
+   * messages so far and, while it still runs, the new ones. The room name starts
+   * with the experiment id, e.g. '105_1727600000000'.
    */
-  const readOutput = async (roomName: string): Promise<void> => {
-    let since = 0
+  const resumeAnalysis = async (): Promise<void> => {
+    const roomName = rememberedRoomName()
+    // Nothing was started from this browser, or this page shows a run already
+    if (roomName === '' || status.value !== null) return
+
+    let response: LongPollingResponse
+    try {
+      response = await requestApiData<LongPollingResponse>(
+        `${MANAGEMENT_LONG_POLLING_ENDPOINT}${roomName}/`,
+        { method: 'GET', params: { since: '0' } },
+        MANAGEMENT_LONG_POLLING_ERROR_MESSAGE,
+      )
+    } catch {
+      return
+    }
+    // A run started while the answer was on its way keeps the page. The output
+    // of a run is kept for a day; after that the status is empty.
+    if (status.value !== null || response.status === null) return
+
+    experimentId.value = Number(roomName.split('_')[0])
+    messages.value = response.messages
+    status.value = response.status
+    if (response.status === 'running') {
+      isRunning.value = true
+      await readOutput(roomName, response.next)
+    }
+  }
+
+  /**
+   * Adds the new messages every 2 seconds, until the analysis has completed or failed.
+   * `since` is the number of messages that are shown already.
+   */
+  const readOutput = async (roomName: string, since = 0): Promise<void> => {
     let failedRequests = 0
     const startedAt = Date.now()
 
@@ -172,6 +225,7 @@ export const useAnalysisStore = defineStore('analysisStore', () => {
     experimentId,
     results,
     startAnalysis,
+    resumeAnalysis,
     fetchResults,
     downloadResult,
   }

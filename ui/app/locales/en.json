@@ -31,6 +31,9 @@
       "update": "Update",
       "delete": "Delete",
       "close": "Close"
+    },
+    "command_output": {
+      "more_errors": "And {count} more errors in the log below."
     }
   },
   "navigation": {
@@ -122,7 +125,6 @@
     "command_completed": "Command completed.",
     "command_completed_with_warnings": "Command completed with warnings. They are marked yellow below.",
     "command_failed": "Command failed. The errors are marked red below.",
-    "command_more_errors": "And {count} more errors in the log below.",
     "form": {
       "select_placeholder": "Select option"
     },
@@ -329,6 +331,10 @@
       "positive_control": "Positive control (P in the report)",
       "negative_control": "Negative control (N in the report)",
       "same_controls": "The positive and the negative control must be different well types.",
+      "no_well_types": "The well types of this measurement are not known yet, so the controls cannot be chosen. Press the refresh button at the top right to recalculate the data, then open this window again.",
+      "choose_condition": "Choose a condition",
+      "too_few_conditions": "A selectivity analysis compares two conditions, but the plate information of this measurement has fewer than two. Fill in the column \"Condition\" with \"add experiment data\" and save it.",
+      "same_conditions": "The two conditions must be different.",
       "condition_yes": "Condition of interest",
       "condition_no": "Counter condition",
       "start_button": "Run analysis",

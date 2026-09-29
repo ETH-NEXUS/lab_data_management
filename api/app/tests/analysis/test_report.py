@@ -31,6 +31,10 @@ class CheckSettingsTest(SimpleTestCase):
         with self.assertRaisesMessage(CommandError, "Unknown analysis setting"):
             check_settings("single", {"path_output": "/etc/"})
 
+    def test_settings_that_are_not_names_with_values_are_refused(self):
+        with self.assertRaisesMessage(CommandError, "must be names with values"):
+            check_settings("single", "fdr_cut=0.05")
+
     def test_an_unknown_analysis_type_is_refused(self):
         with self.assertRaisesMessage(CommandError, "Unknown analysis type"):
             check_settings("doseresponse", {})

@@ -4,9 +4,10 @@ import BaseButton from '~/components/common/BaseButton.vue'
 import CommandOutputLog from '~/components/common/CommandOutputLog.vue'
 import WavesModalWrapper from '~/components/common/WavesModalWrapper.vue'
 import { useAnalysisStore } from '~/stores/analysis'
+import { useExperimentStore } from '~/stores/experiments'
 import { usePlateViewStore } from '~/stores/plateView'
 import type { AnalysisType } from '~/types/analysis'
-import type { ExperimentDetails } from '~/types/lab'
+import type { ExperimentDetails, PlateInfo } from '~/types/lab'
 
 const props = defineProps<{
   open: boolean
@@ -22,6 +23,7 @@ const emit = defineEmits<{
 
 const { t } = useI18n()
 const analysisStore = useAnalysisStore()
+const experimentStore = useExperimentStore()
 const plateViewStore = usePlateViewStore()
 
 const analysisType = ref<AnalysisType>('single')
@@ -30,9 +32,36 @@ const conditionYes = ref('')
 const conditionNo = ref('')
 const positiveControl = ref('')
 const negativeControl = ref('')
+// The plate information of the experiment, the source of the conditions
+const plateInfos = ref<PlateInfo[]>([])
 
 // The well types of the chosen measurement, e.g. ['C', 'N1', 'P1']
 const wellTypes = computed(() => Object.keys(props.stats[selectedLabel.value] ?? {}).sort())
+
+// The conditions of the chosen measurement, e.g. ['irradiated', 'not irradiated']
+const conditions = computed(() => {
+  const names = plateInfos.value
+    .filter((plateInfo) => plateInfo.measurement_label === selectedLabel.value)
+    .map((plateInfo) => plateInfo.condition)
+    .filter((condition) => condition !== '')
+  return [...new Set(names)].sort()
+})
+
+const loadConditions = async () => {
+  try {
+    plateInfos.value = await experimentStore.fetchPrefilledPlateInfo(props.experimentId)
+  } catch (err: unknown) {
+    // Without them the selects stay empty and the hint below them says why
+    console.error(err)
+    plateInfos.value = []
+  }
+}
+
+// A condition that the chosen measurement does not have is chosen anew
+watch(conditions, (names) => {
+  if (!names.includes(conditionYes.value)) conditionYes.value = ''
+  if (!names.includes(conditionNo.value)) conditionNo.value = ''
+})
 
 /**
  * The control that is chosen first: the one saved under "Show results", else the
@@ -63,7 +92,10 @@ watch(
     if (isOpen && !props.labels.includes(selectedLabel.value)) {
       selectedLabel.value = props.labels[0] ?? ''
     }
-    if (isOpen) chooseDefaultControls()
+    if (isOpen) {
+      chooseDefaultControls()
+      void loadConditions()
+    }
   },
   { immediate: true },
 )
@@ -89,16 +121,15 @@ const canStart = computed(() => {
   if (positiveControl.value === '' || negativeControl.value === '') return false
   if (positiveControl.value === negativeControl.value) return false
   if (analysisType.value === 'selectivity') {
-    return conditionYes.value.trim() !== '' && conditionNo.value.trim() !== ''
+    if (conditionYes.value === '' || conditionNo.value === '') return false
+    return conditionYes.value !== conditionNo.value
   }
   return true
 })
 
 const start = async () => {
   const settings =
-    analysisType.value === 'selectivity'
-      ? { condi_yes: conditionYes.value.trim(), condi_no: conditionNo.value.trim() }
-      : {}
+    analysisType.value === 'selectivity' ? { condi_yes: conditionYes.value, condi_no: conditionNo.value } : {}
   await analysisStore.startAnalysis({
     experiment_id: props.experimentId,
     label: selectedLabel.value,
@@ -188,21 +219,44 @@ const fieldClass =
         <p v-if="positiveControl !== '' && positiveControl === negativeControl" class="pl-1 text-sm text-red-600">
           {{ t('experiments.analysis.same_controls') }}
         </p>
+        <!-- The well types come from the calculated experiment details, which new measurements are not in yet -->
+        <p v-if="selectedLabel !== '' && wellTypes.length === 0" class="pl-1 text-sm text-red-600">
+          {{ t('experiments.analysis.no_well_types') }}
+        </p>
 
         <div v-if="analysisType === 'selectivity'" class="grid grid-cols-2 gap-3">
           <div>
             <label class="mb-1 block pl-1 text-sm font-medium text-slate-700">
               {{ t('experiments.analysis.condition_yes') }}
             </label>
-            <input v-model="conditionYes" type="text" :class="fieldClass" :disabled="analysisStore.isRunning" />
+            <select v-model="conditionYes" :class="[fieldClass, 'cursor-pointer']" :disabled="analysisStore.isRunning">
+              <option value="">{{ t('experiments.analysis.choose_condition') }}</option>
+              <option v-for="condition in conditions" :key="`yes-${condition}`" :value="condition">
+                {{ condition }}
+              </option>
+            </select>
           </div>
           <div>
             <label class="mb-1 block pl-1 text-sm font-medium text-slate-700">
               {{ t('experiments.analysis.condition_no') }}
             </label>
-            <input v-model="conditionNo" type="text" :class="fieldClass" :disabled="analysisStore.isRunning" />
+            <select v-model="conditionNo" :class="[fieldClass, 'cursor-pointer']" :disabled="analysisStore.isRunning">
+              <option value="">{{ t('experiments.analysis.choose_condition') }}</option>
+              <option v-for="condition in conditions" :key="`no-${condition}`" :value="condition">
+                {{ condition }}
+              </option>
+            </select>
           </div>
         </div>
+        <p v-if="analysisType === 'selectivity' && conditions.length < 2" class="pl-1 text-sm text-red-600">
+          {{ t('experiments.analysis.too_few_conditions') }}
+        </p>
+        <p
+          v-if="analysisType === 'selectivity' && conditionYes !== '' && conditionYes === conditionNo"
+          class="pl-1 text-sm text-red-600"
+        >
+          {{ t('experiments.analysis.same_conditions') }}
+        </p>
 
         <p v-if="isRunningElsewhere" class="text-sm text-amber-700">
           {{ t('experiments.analysis.running_elsewhere', { id: analysisStore.experimentId }) }}

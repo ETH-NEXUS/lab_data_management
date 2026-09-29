@@ -45,6 +45,11 @@ services:
       args:
         DEPENDENCIES: dev
 
+  celery-analysis:
+    build:
+      args:
+        DEPENDENCIES: dev
+
   db:
     ports:
       - "54390:5432"

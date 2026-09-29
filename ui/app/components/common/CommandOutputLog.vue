@@ -73,7 +73,7 @@ const messageClass = (message: CommandMessage): string => {
           <li v-for="(text, index) in errors.shown" :key="index" class="whitespace-pre-wrap" v-text="text" />
         </ul>
         <p v-if="errors.notShown > 0" class="mt-1">
-          {{ t('management.command_more_errors', { count: errors.notShown }) }}
+          {{ t('common.command_output.more_errors', { count: errors.notShown }) }}
         </p>
       </template>
     </UAlert>

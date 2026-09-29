@@ -35,8 +35,10 @@ NUMBER_SETTINGS = ["fdr_cut", "select_cut"]
 FORMULA_SETTINGS = ["act_cut", "select_cut_yes", "select_cut_no"]
 FORMULA = re.compile(r"(?:[0-9.\s*/+\-()]|log10|log2|act_cut)+")
 
-# A report of a whole screen takes a few minutes; this only stops one that hangs
-RENDER_TIMEOUT_SECONDS = 60 * 60
+# The biggest screen with plate information on prod (75 plates, 28800 wells) takes
+# 106 s. The analysis worker runs one report at a time, so a report that hangs is
+# stopped after 15 minutes and does not keep the other analyses waiting for long.
+RENDER_TIMEOUT_SECONDS = 15 * 60
 # Exit codes of GNU timeout: the time was up, or the command (quarto) was not found
 TIMED_OUT = 124
 COMMAND_NOT_FOUND = 127
@@ -60,6 +62,11 @@ def check_settings(analysis_type: str, chosen_settings: dict) -> dict:
     """
     if analysis_type not in ANALYSIS_TYPES:
         raise CommandError(f"Unknown analysis type: {analysis_type}")
+    if not isinstance(chosen_settings, dict):
+        raise CommandError(
+            'The analysis settings must be names with values, e.g. {"fdr_cut": 0.05}, '
+            f"not {chosen_settings!r}."
+        )
 
     checked: dict = dict(DEFAULT_SETTINGS)
     for name, value in chosen_settings.items():
@@ -126,7 +133,8 @@ def render_report(analysis_type: str, report_params: dict, folder: str) -> str:
     if result.returncode == TIMED_OUT:
         raise CommandError(
             f"The R report was stopped after {RENDER_TIMEOUT_SECONDS // 60} minutes; "
-            "a report usually takes a few minutes."
+            "a report usually takes one or two minutes, so it probably hung. Send "
+            "this message to the statistics group."
         )
     if result.returncode == COMMAND_NOT_FOUND:
         raise CommandError(
