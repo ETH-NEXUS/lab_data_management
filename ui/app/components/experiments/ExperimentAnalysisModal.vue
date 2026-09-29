@@ -32,6 +32,8 @@ const positiveControl = ref('')
 const negativeControl = ref('')
 // The conditions of the chosen measurement, e.g. ['irradiated', 'not irradiated']
 const conditions = ref<string[]>([])
+// Whether the conditions are there: the hints below the selects depend on it
+const conditionsState = ref<'loading' | 'loaded' | 'failed'>('loading')
 
 // The well types of the chosen measurement, e.g. ['C', 'N1', 'P1']
 const wellTypes = computed(() => Object.keys(props.stats[selectedLabel.value] ?? {}).sort())
@@ -39,18 +41,30 @@ const wellTypes = computed(() => Object.keys(props.stats[selectedLabel.value] ??
 // Only a selectivity analysis needs the conditions, so they are loaded for it only
 watch(
   () => [props.open, analysisType.value, selectedLabel.value, props.experimentId],
-  async () => {
+  async (_newValues, _oldValues, onCleanup) => {
     if (!props.open || analysisType.value !== 'selectivity' || selectedLabel.value === '') return
+    // When the label changes before the answer arrives, the late answer is ignored
+    let isOutdated = false
+    onCleanup(() => {
+      isOutdated = true
+    })
+
+    conditionsState.value = 'loading'
+    let loaded: string[] = []
+    let state: 'loaded' | 'failed' = 'loaded'
     try {
-      conditions.value = await analysisStore.fetchConditions(props.experimentId, selectedLabel.value)
+      loaded = await analysisStore.fetchConditions(props.experimentId, selectedLabel.value)
     } catch (err: unknown) {
-      // Without them the selects stay empty and the hint below them says why
       console.error(err)
-      conditions.value = []
+      state = 'failed'
     }
+    if (isOutdated) return
+
+    conditions.value = loaded
+    conditionsState.value = state
     // A condition that the chosen measurement does not have is chosen anew
-    if (!conditions.value.includes(conditionYes.value)) conditionYes.value = ''
-    if (!conditions.value.includes(conditionNo.value)) conditionNo.value = ''
+    if (!loaded.includes(conditionYes.value)) conditionYes.value = ''
+    if (!loaded.includes(conditionNo.value)) conditionNo.value = ''
   },
   { immediate: true },
 )
@@ -237,9 +251,17 @@ const fieldClass =
             </select>
           </div>
         </div>
-        <p v-if="analysisType === 'selectivity' && conditions.length < 2" class="pl-1 text-sm text-red-600">
-          {{ t('experiments.analysis.too_few_conditions') }}
-        </p>
+        <template v-if="analysisType === 'selectivity'">
+          <p v-if="conditionsState === 'loading'" class="pl-1 text-sm text-slate-500">
+            {{ t('experiments.analysis.loading_conditions') }}
+          </p>
+          <p v-else-if="conditionsState === 'failed'" class="pl-1 text-sm text-red-600">
+            {{ t('experiments.analysis.conditions_failed') }}
+          </p>
+          <p v-else-if="conditions.length < 2" class="pl-1 text-sm text-red-600">
+            {{ t('experiments.analysis.too_few_conditions') }}
+          </p>
+        </template>
         <p
           v-if="analysisType === 'selectivity' && conditionYes !== '' && conditionYes === conditionNo"
           class="pl-1 text-sm text-red-600"

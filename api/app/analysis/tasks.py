@@ -38,7 +38,7 @@ ANALYSIS_FOLDER = os.path.join(settings.MEDIA_ROOT, "analysis")
 
 # A run starts within seconds, or after one or two other analyses (about 2 minutes
 # each). One that waited longer, is not started: the worker was not running. The
-# page stops waiting after the same time (START_GIVE_UP_MS in ui/app/stores/analysis.ts).
+# page stops waiting a minute later (START_GIVE_UP_MS in ui/app/stores/analysis.ts).
 MAX_WAITING_SECONDS = 10 * 60
 
 LOST_PROCESS_MESSAGE = (
@@ -108,8 +108,8 @@ def fail_the_analysis_of_a_lost_process(
 def check_waiting_time(form_data: dict) -> None:
     """
     An analysis that waited too long in the queue (the analysis worker was not
-    running) is not started any more: the page stopped waiting for it after the
-    same time, and nobody expects its result hours later.
+    running) is not started any more: the page stops waiting for it a minute
+    later, and nobody expects its result hours later.
     `queued_at` is set by the start view, e.g. 1727600000.5 (seconds).
     """
     waited_seconds = time.time() - float(form_data.get("queued_at") or time.time())

@@ -32,11 +32,13 @@ const MAX_FAILED_OUTPUT_REQUESTS = 5
 const START_TIMEOUT_MS = 60000
 const WAITING_MESSAGE =
   'The analysis has not started yet: the analysis worker (container celery-analysis) runs one analysis at a time and another one runs first, or the worker is down.'
-// An analysis that has not started after this time is given up: the worker does
-// not start it any more either (MAX_WAITING_SECONDS in api/app/analysis/tasks.py)
-const START_GIVE_UP_MS = 10 * 60 * 1000
+// An analysis that has not started after this time is given up. The worker does
+// not start one that waited more than 10 minutes (MAX_WAITING_SECONDS in
+// api/app/analysis/tasks.py); the page waits a minute longer, so it never gives
+// up a run that the worker still starts.
+const START_GIVE_UP_MS = 11 * 60 * 1000
 const GIVE_UP_MESSAGE =
-  'The analysis did not start within 10 minutes: the analysis worker (container celery-analysis) is probably not running. It will not start later; start the analysis again when the worker runs.'
+  'The analysis did not start within 11 minutes: the analysis worker (container celery-analysis) is probably not running. It will not start later; start the analysis again when the worker runs.'
 
 // The run this browser started last, so its output comes back after a page reload
 const ROOM_NAME_STORAGE_KEY = 'analysis_room_name'

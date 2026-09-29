@@ -6,6 +6,7 @@ left in the media folder that no page shows any more.
 import os
 import shutil
 
+from django.db import transaction
 from django.db.models.signals import post_delete
 from django.dispatch import receiver
 
@@ -20,5 +21,7 @@ def delete_analysis_results(sender, instance, **kwargs) -> None:
     Removes <MEDIA_ROOT>/analysis/<experiment id>/ with all its zips.
     """
     experiment_folder = os.path.join(tasks.ANALYSIS_FOLDER, str(instance.id))
-    # An experiment that was never analysed has no folder
-    shutil.rmtree(experiment_folder, ignore_errors=True)
+    # Only once the deletion is stored: when it is rolled back, the experiment is
+    # still there and keeps its results. An experiment that was never analysed
+    # has no folder.
+    transaction.on_commit(lambda: shutil.rmtree(experiment_folder, ignore_errors=True))

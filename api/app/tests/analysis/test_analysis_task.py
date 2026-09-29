@@ -16,6 +16,7 @@ from unittest import mock
 import pandas as pd
 from celery.exceptions import WorkerLostError
 from django.core.cache import cache
+from django.db import transaction
 from django.test import TestCase
 
 from analysis import tasks
@@ -424,9 +425,22 @@ class AnalysisTaskTest(TestCase):
         self.assertEqual(1, len(self.saved_files()))
         experiment_folder = os.path.join(self.folder, str(self.experiment.id))
 
-        self.experiment.delete()
+        with self.captureOnCommitCallbacks(execute=True):
+            self.experiment.delete()
 
         self.assertFalse(os.path.exists(experiment_folder))
+
+    def test_the_results_stay_when_the_deletion_is_rolled_back(self):
+        self.run_task()
+        experiment_folder = os.path.join(self.folder, str(self.experiment.id))
+
+        with self.assertRaises(RuntimeError):
+            with transaction.atomic():
+                self.experiment.delete()
+                raise RuntimeError("a later step of the same request fails")
+
+        self.assertTrue(os.path.exists(experiment_folder))
+        self.assertTrue(Experiment.objects.filter(name="Screen 1").exists())
 
     def test_a_killed_report_says_why_it_may_have_been_killed(self):
         def killed_quarto(command, cwd, **kwargs):

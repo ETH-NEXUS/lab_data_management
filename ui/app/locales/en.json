@@ -333,6 +333,8 @@
       "same_controls": "The positive and the negative control must be different well types.",
       "no_well_types": "The well types of this measurement are not known yet, so the controls cannot be chosen. Press the refresh button at the top right to recalculate the data, then open this window again.",
       "choose_condition": "Choose a condition",
+      "loading_conditions": "Loading the conditions of this measurement…",
+      "conditions_failed": "The conditions of this measurement could not be loaded. Close this window and open it again; if it keeps failing, the api container may be down.",
       "too_few_conditions": "A selectivity analysis compares two conditions, but the plate information of this measurement has fewer than two. Fill in the column \"Condition\" with \"add experiment data\" and save it.",
       "same_conditions": "The two conditions must be different.",
       "condition_yes": "Condition of interest",
