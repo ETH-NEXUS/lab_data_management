@@ -45,6 +45,8 @@ export const useAnalysisStore = defineStore('analysisStore', () => {
   const experimentId = ref<number | null>(null)
   // e.g. ['20260929-125825_single_Lum_CTG.zip'], newest first
   const results = ref<string[]>([])
+  // The experiment whose results were asked for last
+  let resultsExperimentId: number | null = null
 
   /**
    * Starts one analysis and shows its messages until it has ended.
@@ -124,12 +126,19 @@ export const useAnalysisStore = defineStore('analysisStore', () => {
     }
   }
 
+  /**
+   * Loads the result zips of one experiment. When another experiment is opened
+   * before the answer arrives, the late answer is ignored, so a page never
+   * lists the results of another experiment.
+   */
   const fetchResults = async (experimentId: number): Promise<void> => {
+    resultsExperimentId = experimentId
     const response = await requestApiData<AnalysisResultsResponse>(
       ANALYSIS_RESULTS_ENDPOINT,
       { method: 'GET', params: { experiment_id: String(experimentId) } },
       ANALYSIS_RESULTS_ERROR_MESSAGE,
     )
+    if (experimentId !== resultsExperimentId) return
     results.value = response.results
   }
 

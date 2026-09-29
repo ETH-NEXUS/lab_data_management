@@ -315,6 +315,26 @@ class AnalysisTaskTest(TestCase):
             self.error_texts(read_output(ROOM, 0))[0],
         )
 
+    def test_a_selectivity_without_any_condition_says_to_fill_them_in(self):
+        PlateInfo.objects.update(condition="")
+        start_command(ROOM)
+        form_data = {
+            "experiment_id": self.experiment.id,
+            "label": "Lum",
+            "analysis_type": "selectivity",
+            "settings": {"condi_yes": "irradiated", "condi_no": "not irradiated"},
+            "room_name": ROOM,
+        }
+        with mock.patch("analysis.report.subprocess.run"):
+            tasks.run_analysis.delay(form_data)
+
+        self.assertEqual(
+            "A selectivity analysis compares two conditions of the plate information, "
+            "but no plate of this measurement has a condition yet. Fill in the column "
+            '"Condition" with "add experiment data" and save it.',
+            self.error_texts(read_output(ROOM, 0))[0],
+        )
+
     def test_an_r_error_names_the_step_and_the_r_error_and_leaves_no_files(self):
         def failing_quarto(command, cwd, **kwargs):
             return mock.Mock(returncode=1, stdout="", stderr=R_ERROR_OUTPUT)
@@ -334,6 +354,41 @@ class AnalysisTaskTest(TestCase):
             self.error_texts(output)[0],
         )
         self.assertEqual([], self.saved_files())
+
+    def test_a_report_that_takes_too_long_says_so(self):
+        def stopped_quarto(command, cwd, **kwargs):
+            # GNU timeout ends with 124 when the time was up
+            return mock.Mock(returncode=124, stdout="", stderr="")
+
+        output = self.run_task(quarto=stopped_quarto)
+
+        self.assertEqual(
+            "The R report was stopped after 60 minutes; a report usually takes a few "
+            "minutes.",
+            self.error_texts(output)[0],
+        )
+
+    def test_without_quarto_the_error_says_how_to_get_it(self):
+        def missing_quarto(command, cwd, **kwargs):
+            # GNU timeout ends with 127 when the command does not exist
+            return mock.Mock(returncode=127, stdout="", stderr="")
+
+        output = self.run_task(quarto=missing_quarto)
+
+        self.assertIn("Quarto is not installed", self.error_texts(output)[0])
+
+    def test_a_second_zip_of_the_same_second_gets_a_number(self):
+        folder = tempfile.mkdtemp()
+        self.addCleanup(shutil.rmtree, folder)
+        first = tasks.unused_zip_path(folder, "20260929-101500_single_Lum")
+        open(first, "w").close()
+
+        second = tasks.unused_zip_path(folder, "20260929-101500_single_Lum")
+
+        self.assertEqual(
+            ["20260929-101500_single_Lum.zip", "20260929-101500_single_Lum_2.zip"],
+            [os.path.basename(first), os.path.basename(second)],
+        )
 
     def test_an_experiment_with_the_same_name_in_another_project_is_not_mixed_in(self):
         other_project = Project.objects.create(name="P2")

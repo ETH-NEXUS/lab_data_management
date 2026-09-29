@@ -37,6 +37,9 @@ FORMULA = re.compile(r"(?:[0-9.\s*/+\-()]|log10|log2|act_cut)+")
 
 # A report of a whole screen takes a few minutes; this only stops one that hangs
 RENDER_TIMEOUT_SECONDS = 60 * 60
+# Exit codes of GNU timeout: the time was up, or the command (quarto) was not found
+TIMED_OUT = 124
+COMMAND_NOT_FOUND = 127
 # The last lines of the R output that are shown when a report fails
 ERROR_LINES = 15
 
@@ -101,7 +104,13 @@ def render_report(analysis_type: str, report_params: dict, folder: str) -> str:
     with open(os.path.join(folder, "params.yml"), "w") as params_file:
         yaml.safe_dump(report_params, params_file)
 
+    # Quarto runs R in processes of its own. The timeout of subprocess.run would
+    # stop Quarto only and leave R running, so GNU timeout is used: it stops the
+    # whole group (TERM first, KILL 30 seconds later)
     command = [
+        "timeout",
+        "--kill-after=30",
+        str(RENDER_TIMEOUT_SECONDS),
         "quarto",
         "render",
         report_file,
@@ -112,25 +121,18 @@ def render_report(analysis_type: str, report_params: dict, folder: str) -> str:
         "-M",
         "embed-resources:true",
     ]
-    try:
-        result = subprocess.run(
-            command,
-            cwd=folder,
-            capture_output=True,
-            text=True,
-            timeout=RENDER_TIMEOUT_SECONDS,
-        )
-    except FileNotFoundError:
-        raise CommandError(
-            "Quarto is not installed in the celery container, so the R report cannot "
-            "run. The Docker image has to be built with ENABLE_R=True."
-        )
-    except subprocess.TimeoutExpired:
+    result = subprocess.run(command, cwd=folder, capture_output=True, text=True)
+
+    if result.returncode == TIMED_OUT:
         raise CommandError(
             f"The R report was stopped after {RENDER_TIMEOUT_SECONDS // 60} minutes; "
             "a report usually takes a few minutes."
         )
-
+    if result.returncode == COMMAND_NOT_FOUND:
+        raise CommandError(
+            "Quarto is not installed in the celery container, so the R report cannot "
+            "run. The Docker image has to be built with ENABLE_R=True."
+        )
     if result.returncode != 0:
         raise CommandError(render_error_text(result.stderr))
     return os.path.join(folder, f"{analysis_type}.html")

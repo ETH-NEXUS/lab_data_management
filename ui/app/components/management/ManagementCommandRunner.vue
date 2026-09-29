@@ -1,11 +1,10 @@
 <script setup lang="ts">
 import { computed } from 'vue'
+import CommandOutputLog from '~/components/common/CommandOutputLog.vue'
 import ManagementDynamicForm from '~/components/management/ManagementDynamicForm.vue'
 import { useAuthStore } from '~/stores/auth'
 import { useManagementStore } from '~/stores/management'
 import type { GeneralFormData, Options } from '~/types/lab'
-import type { CommandMessage } from '~/types/management'
-import { summarizeCommandErrors } from '~/utils/commandErrors'
 
 type Props = {
   options: Options
@@ -56,46 +55,11 @@ const onSubmit = async (formData: GeneralFormData): Promise<void> => {
   await managementStore.runCommand(payload)
 }
 
-/**
- * The summary above the output, once the command has ended.
- *
- * Returned data example:
- * - `{ color: 'error', icon: 'i-lucide-circle-x', title: 'Command failed. The errors are marked red below.' }`
- */
-const commandSummary = computed(() => {
-  const hasWarnings = managementStore.commandMessages.some((message) => message.level === 'warning')
-
-  if (managementStore.commandStatus === 'failed') {
-    return { color: 'error' as const, icon: 'i-lucide-circle-x', title: t('management.command_failed') }
-  }
-  if (managementStore.commandStatus === 'completed' && hasWarnings) {
-    return {
-      color: 'warning' as const,
-      icon: 'i-lucide-triangle-alert',
-      title: t('management.command_completed_with_warnings'),
-    }
-  }
-  if (managementStore.commandStatus === 'completed') {
-    return { color: 'success' as const, icon: 'i-lucide-circle-check', title: t('management.command_completed') }
-  }
-  return null
-})
-
-// The error texts, shown in the summary so they are seen without scrolling the log
-const commandErrors = computed(() => summarizeCommandErrors(managementStore.commandMessages))
-
-const messageClass = (message: CommandMessage): string => {
-  if (message.level === 'error') {
-    return 'bg-red-50 text-red-800'
-  }
-  if (message.level === 'warning') {
-    return 'bg-amber-50 text-amber-800'
-  }
-  if (message.level === 'success') {
-    return 'text-green-700'
-  }
-  return 'text-slate-700'
-}
+const outputTitles = computed(() => ({
+  completed: t('management.command_completed'),
+  completedWithWarnings: t('management.command_completed_with_warnings'),
+  failed: t('management.command_failed'),
+}))
 </script>
 
 <template>
@@ -110,31 +74,11 @@ const messageClass = (message: CommandMessage): string => {
       <p class="text-xs font-semibold tracking-[0.12em] text-slate-500 uppercase">
         {{ t('management.logs') }}
       </p>
-      <UAlert
-        v-if="commandSummary"
-        :color="commandSummary.color"
-        :icon="commandSummary.icon"
-        :title="commandSummary.title"
-        variant="subtle"
-      >
-        <template v-if="managementStore.commandStatus === 'failed' && commandErrors.shown.length > 0" #description>
-          <ul class="list-disc space-y-1 pl-5">
-            <li v-for="(text, index) in commandErrors.shown" :key="index" class="whitespace-pre-wrap" v-text="text" />
-          </ul>
-          <p v-if="commandErrors.notShown > 0" class="mt-1">
-            {{ t('management.command_more_errors', { count: commandErrors.notShown }) }}
-          </p>
-        </template>
-      </UAlert>
-      <div class="max-h-80 overflow-auto rounded-xl border border-slate-200 bg-white p-2">
-        <p
-          v-for="(message, index) in managementStore.commandMessages"
-          :key="index"
-          class="rounded px-2 py-0.5 font-mono text-xs whitespace-pre-wrap"
-          :class="messageClass(message)"
-          v-text="message.text"
-        />
-      </div>
+      <CommandOutputLog
+        :messages="managementStore.commandMessages"
+        :status="managementStore.commandStatus"
+        :titles="outputTitles"
+      />
     </div>
   </div>
 </template>

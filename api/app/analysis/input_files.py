@@ -150,6 +150,12 @@ def check_conditions(conditions: list[str], plate_infos: list[dict]) -> None:
     """
     known = sorted({str(plate_info["condition"]) for plate_info in plate_infos})
     unknown = [condition for condition in conditions if condition not in known]
+    if unknown and known == [""]:
+        raise CommandError(
+            "A selectivity analysis compares two conditions of the plate information, "
+            "but no plate of this measurement has a condition yet. Fill in the "
+            'column "Condition" with "add experiment data" and save it.'
+        )
     if unknown:
         raise CommandError(
             "A selectivity analysis compares two conditions of the plate information, "

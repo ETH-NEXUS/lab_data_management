@@ -1,12 +1,12 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
 import BaseButton from '~/components/common/BaseButton.vue'
+import CommandOutputLog from '~/components/common/CommandOutputLog.vue'
 import WavesModalWrapper from '~/components/common/WavesModalWrapper.vue'
 import { useAnalysisStore } from '~/stores/analysis'
 import { usePlateViewStore } from '~/stores/plateView'
 import type { AnalysisType } from '~/types/analysis'
 import type { ExperimentDetails } from '~/types/lab'
-import type { CommandMessage } from '~/types/management'
 
 const props = defineProps<{
   open: boolean
@@ -70,6 +70,15 @@ watch(
 
 watch(selectedLabel, chooseDefaultControls)
 
+// The page is kept when another experiment is opened: its controls are chosen anew
+watch(
+  () => props.experimentId,
+  () => {
+    positiveControl.value = ''
+    negativeControl.value = ''
+  },
+)
+
 // The messages of the last run belong to its experiment only
 const isThisExperiment = computed(() => analysisStore.experimentId === props.experimentId)
 const isRunningElsewhere = computed(() => analysisStore.isRunning && !isThisExperiment.value)
@@ -104,26 +113,11 @@ const close = () => {
   emit('update:open', false)
 }
 
-// The summary above the messages, once the analysis has ended
-const summary = computed(() => {
-  if (!isThisExperiment.value) {
-    return null
-  }
-  if (analysisStore.status === 'failed') {
-    return { color: 'error' as const, icon: 'i-lucide-circle-x', title: t('experiments.analysis.failed') }
-  }
-  if (analysisStore.status === 'completed') {
-    return { color: 'success' as const, icon: 'i-lucide-circle-check', title: t('experiments.analysis.completed') }
-  }
-  return null
-})
-
-const messageClass = (message: CommandMessage): string => {
-  if (message.level === 'error') return 'bg-red-50 text-red-800'
-  if (message.level === 'warning') return 'bg-amber-50 text-amber-800'
-  if (message.level === 'success') return 'text-green-700'
-  return 'text-slate-700'
-}
+const outputTitles = computed(() => ({
+  completed: t('experiments.analysis.completed'),
+  completedWithWarnings: t('experiments.analysis.completed_with_warnings'),
+  failed: t('experiments.analysis.failed'),
+}))
 
 const fieldClass =
   'w-full rounded-full border border-black/15 bg-white/70 px-4 py-2 text-sm ring-offset-0 outline-none focus:ring-2 focus:ring-blue-300'
@@ -214,24 +208,16 @@ const fieldClass =
           {{ t('experiments.analysis.running_elsewhere', { id: analysisStore.experimentId }) }}
         </p>
 
-        <div
+        <CommandOutputLog
           v-if="isThisExperiment && (analysisStore.messages.length > 0 || analysisStore.isRunning)"
-          class="space-y-2"
+          :messages="analysisStore.messages"
+          :status="analysisStore.status"
+          :titles="outputTitles"
         >
-          <UAlert v-if="summary" :color="summary.color" :icon="summary.icon" :title="summary.title" variant="subtle" />
-          <div class="max-h-80 overflow-auto rounded-xl border border-slate-200 bg-white p-2">
-            <p
-              v-for="(message, index) in analysisStore.messages"
-              :key="index"
-              class="rounded px-2 py-0.5 font-mono text-xs whitespace-pre-wrap"
-              :class="messageClass(message)"
-              v-text="message.text"
-            />
-            <p v-if="analysisStore.isRunning" class="px-2 py-0.5 text-xs text-slate-500">
-              {{ t('experiments.analysis.running') }}
-            </p>
-          </div>
-        </div>
+          <p v-if="analysisStore.isRunning" class="px-2 py-0.5 text-xs text-slate-500">
+            {{ t('experiments.analysis.running') }}
+          </p>
+        </CommandOutputLog>
       </div>
     </template>
 

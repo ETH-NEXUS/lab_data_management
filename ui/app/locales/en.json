@@ -335,6 +335,7 @@
       "running": "The analysis is running…",
       "running_elsewhere": "An analysis of experiment {id} is running. A new one can start when it has ended.",
       "completed": "The analysis is done. The result is in the list \"Statistical analysis results\".",
+      "completed_with_warnings": "The analysis is done, with warnings: they are marked yellow below. The result is in the list \"Statistical analysis results\".",
       "failed": "The analysis failed. The reason is marked red below.",
       "results_title": "Statistical analysis results",
       "download_failed": "Failed to download the analysis result."

@@ -166,6 +166,22 @@ def make_analysis(form_data: dict, room_name: str | None) -> str:
         # Moved only when it is complete, so the page never lists a half written zip
         experiment_folder = os.path.join(ANALYSIS_FOLDER, str(experiment.id))
         os.makedirs(experiment_folder, exist_ok=True)
-        zip_path = os.path.join(experiment_folder, f"{run_name}.zip")
+        zip_path = unused_zip_path(experiment_folder, run_name)
         shutil.move(temporary_zip_path, zip_path)
+    return zip_path
+
+
+def unused_zip_path(folder: str, run_name: str) -> str:
+    """
+    The path of the zip of a run, with a number added when two runs of the same
+    measurement were started in the same second, so none replaces the other.
+
+    "/x/20260929-101500_single_Lum.zip", or "/x/20260929-101500_single_Lum_2.zip"
+    when the first one exists
+    """
+    zip_path = os.path.join(folder, f"{run_name}.zip")
+    number = 2
+    while os.path.exists(zip_path):
+        zip_path = os.path.join(folder, f"{run_name}_{number}.zip")
+        number += 1
     return zip_path
