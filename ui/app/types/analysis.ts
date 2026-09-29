@@ -28,11 +28,17 @@ export type AnalysisSettings = {
   condi_no?: string
 }
 
+/**
+ * `positive_control` and `negative_control` are well types of the experiment,
+ * e.g. 'P1' and 'N1'; the R report gets them as 'P' and 'N'.
+ */
 export type StartAnalysisPayload = {
   experiment_id: number
   label: string
   analysis_type: AnalysisType
   settings: AnalysisSettings
+  positive_control: string
+  negative_control: string
   room_name: string
 }
 

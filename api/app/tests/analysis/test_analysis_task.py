@@ -91,7 +91,7 @@ class AnalysisTaskTest(TestCase):
             condition="irradiated",
         )
 
-    def run_task(self, label="Lum", quarto=fake_quarto):
+    def run_task(self, label="Lum", quarto=fake_quarto, **controls):
         start_command(ROOM)
         form_data = {
             "experiment_id": self.experiment.id,
@@ -99,6 +99,7 @@ class AnalysisTaskTest(TestCase):
             "analysis_type": "single",
             "settings": {"fdr_cut": "0.05"},
             "room_name": ROOM,
+            **controls,
         }
         with mock.patch("analysis.report.subprocess.run", side_effect=quarto):
             tasks.run_analysis.delay(form_data)
@@ -212,24 +213,72 @@ class AnalysisTaskTest(TestCase):
                 "These plates have measurements but no plate information, so the "
                 "report has no library plate, replicate, cell type or condition for "
                 'them: SP_2. Add it with "add experiment data".',
-                "Plate SP_2 has no N and no P control wells, so the report cannot "
-                "normalize it and leaves it out of the results.",
+                'Plate SP_2 has no positive control wells ("P") and no negative '
+                'control wells ("N"), so the report cannot normalize it and leaves '
+                "it out of the results.",
             ],
             warnings,
         )
         self.assertEqual("completed", output["status"])
 
-    def test_without_controls_on_any_plate_r_is_not_started(self):
-        WellType.objects.filter(name="P").update(name="X")
+    def test_numbered_controls_are_written_as_p_and_n(self):
+        WellType.objects.filter(name="P").update(name="P1")
+        WellType.objects.filter(name="N").update(name="N1")
+
+        output = self.run_task(positive_control="P1", negative_control="N1")
+
+        with open(os.path.join(self.run_folder(), "main_info.csv")) as main_file:
+            controls = [row["control"] for row in csv.DictReader(main_file)]
+        self.assertEqual(["N", "P", "C", "C"], controls)
+        self.assertEqual("completed", output["status"])
+
+    def test_a_p_that_was_not_chosen_is_not_a_control_for_r(self):
+        WellType.objects.filter(name="C").update(name="P1")
+
+        self.run_task(positive_control="P1", negative_control="N")
+
+        with open(os.path.join(self.run_folder(), "main_info.csv")) as main_file:
+            controls = [row["control"] for row in csv.DictReader(main_file)]
+        self.assertEqual(["N", "P (not chosen)", "P", "P"], controls)
+
+    def test_a_chosen_control_that_is_not_there_names_the_well_types(self):
+        with mock.patch("analysis.report.subprocess.run") as quarto:
+            output = self.run_task(quarto=quarto, positive_control="P1")
+
+        quarto.assert_not_called()
+        self.assertEqual(
+            'The positive control "P1" is not a well type of this measurement. '
+            'Its well types are: "C", "N", "P". Choose the control wells in the '
+            "analysis window.",
+            self.error_texts(output)[0],
+        )
+
+    def test_without_both_controls_on_any_plate_r_is_not_started(self):
+        # SP_1 keeps its P well only, SP_2 gets the N well
+        Well.objects.filter(pk=self.wells[0].pk).update(type=self.wells[2].type)
+        plate = Plate.objects.create(
+            barcode="SP_2",
+            dimension=self.wells[0].plate.dimension,
+            experiment=self.experiment,
+        )
+        well = Well.objects.create(plate=plate, position=0, type=self.wells[0].type)
+        Measurement.objects.create(
+            well=well, label="Lum", value=1, measured_at=datetime(2025, 5, 16, 10, 0)
+        )
 
         with mock.patch("analysis.report.subprocess.run") as quarto:
             output = self.run_task(quarto=quarto)
 
         quarto.assert_not_called()
-        self.assertEqual("failed", output["status"])
-        self.assertIn(
-            "No plate of this measurement has both negative (N) and positive (P) "
-            "control wells",
+        self.assertEqual(
+            'No plate of this measurement has both the positive ("P") and the '
+            'negative ("N") control wells, so the report cannot normalize any plate. '
+            "Check the controls chosen in the analysis window and the well types of "
+            "the plate layout.\n"
+            'Plate SP_1 has no negative control wells ("N"), so the report cannot '
+            "normalize it and leaves it out of the results.\n"
+            'Plate SP_2 has no positive control wells ("P"), so the report cannot '
+            "normalize it and leaves it out of the results.",
             self.error_texts(output)[0],
         )
 

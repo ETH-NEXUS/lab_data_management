@@ -3,13 +3,17 @@ import { computed, ref, watch } from 'vue'
 import BaseButton from '~/components/common/BaseButton.vue'
 import WavesModalWrapper from '~/components/common/WavesModalWrapper.vue'
 import { useAnalysisStore } from '~/stores/analysis'
+import { usePlateViewStore } from '~/stores/plateView'
 import type { AnalysisType } from '~/types/analysis'
+import type { ExperimentDetails } from '~/types/lab'
 import type { CommandMessage } from '~/types/management'
 
 const props = defineProps<{
   open: boolean
   experimentId: number
   labels: string[]
+  // The well types of each label are its keys, e.g. { Lum: { C: {...}, N1: {...}, P1: {...} } }
+  stats: ExperimentDetails['stats']
 }>()
 
 const emit = defineEmits<{
@@ -18,11 +22,39 @@ const emit = defineEmits<{
 
 const { t } = useI18n()
 const analysisStore = useAnalysisStore()
+const plateViewStore = usePlateViewStore()
 
 const analysisType = ref<AnalysisType>('single')
 const selectedLabel = ref('')
 const conditionYes = ref('')
 const conditionNo = ref('')
+const positiveControl = ref('')
+const negativeControl = ref('')
+
+// The well types of the chosen measurement, e.g. ['C', 'N1', 'P1']
+const wellTypes = computed(() => Object.keys(props.stats[selectedLabel.value] ?? {}).sort())
+
+/**
+ * The control that is chosen first: the one saved under "Show results", else the
+ * type called exactly 'P' (or 'N'), else the first numbered one, e.g. 'P1'.
+ *
+ * Returned data examples: 'P', 'P1', '' (no such well type)
+ */
+const defaultControl = (saved: string | null | undefined, letter: 'P' | 'N'): string => {
+  if (saved && wellTypes.value.includes(saved)) return saved
+  if (wellTypes.value.includes(letter)) return letter
+  return wellTypes.value.find((wellType) => wellType.startsWith(letter)) ?? ''
+}
+
+const chooseDefaultControls = () => {
+  const saved = plateViewStore.getExperimentControls(props.experimentId)
+  if (!wellTypes.value.includes(positiveControl.value)) {
+    positiveControl.value = defaultControl(saved?.pos, 'P')
+  }
+  if (!wellTypes.value.includes(negativeControl.value)) {
+    negativeControl.value = defaultControl(saved?.neg, 'N')
+  }
+}
 
 watch(
   () => props.open,
@@ -31,9 +63,12 @@ watch(
     if (isOpen && !props.labels.includes(selectedLabel.value)) {
       selectedLabel.value = props.labels[0] ?? ''
     }
+    if (isOpen) chooseDefaultControls()
   },
   { immediate: true },
 )
+
+watch(selectedLabel, chooseDefaultControls)
 
 // The messages of the last run belong to its experiment only
 const isThisExperiment = computed(() => analysisStore.experimentId === props.experimentId)
@@ -42,6 +77,8 @@ const isRunningElsewhere = computed(() => analysisStore.isRunning && !isThisExpe
 const canStart = computed(() => {
   if (analysisStore.isRunning) return false
   if (selectedLabel.value === '') return false
+  if (positiveControl.value === '' || negativeControl.value === '') return false
+  if (positiveControl.value === negativeControl.value) return false
   if (analysisType.value === 'selectivity') {
     return conditionYes.value.trim() !== '' && conditionNo.value.trim() !== ''
   }
@@ -58,6 +95,8 @@ const start = async () => {
     label: selectedLabel.value,
     analysis_type: analysisType.value,
     settings,
+    positive_control: positiveControl.value,
+    negative_control: negativeControl.value,
   })
 }
 
@@ -121,6 +160,40 @@ const fieldClass =
             </option>
           </select>
         </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="mb-1 block pl-1 text-sm font-medium text-slate-700">
+              {{ t('experiments.analysis.positive_control') }}
+            </label>
+            <select
+              v-model="positiveControl"
+              :class="[fieldClass, 'cursor-pointer']"
+              :disabled="analysisStore.isRunning"
+            >
+              <option v-for="wellType in wellTypes" :key="`positive-${wellType}`" :value="wellType">
+                {{ wellType }}
+              </option>
+            </select>
+          </div>
+          <div>
+            <label class="mb-1 block pl-1 text-sm font-medium text-slate-700">
+              {{ t('experiments.analysis.negative_control') }}
+            </label>
+            <select
+              v-model="negativeControl"
+              :class="[fieldClass, 'cursor-pointer']"
+              :disabled="analysisStore.isRunning"
+            >
+              <option v-for="wellType in wellTypes" :key="`negative-${wellType}`" :value="wellType">
+                {{ wellType }}
+              </option>
+            </select>
+          </div>
+        </div>
+        <p v-if="positiveControl !== '' && positiveControl === negativeControl" class="pl-1 text-sm text-red-600">
+          {{ t('experiments.analysis.same_controls') }}
+        </p>
 
         <div v-if="analysisType === 'selectivity'" class="grid grid-cols-2 gap-3">
           <div>

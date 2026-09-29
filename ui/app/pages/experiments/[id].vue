@@ -448,6 +448,7 @@ const handleUpdateControls = (data: { pos: string | null; neg: string | null }) 
         v-model:open="isAnalysisModalOpen"
         :experiment-id="experiment.id"
         :labels="experiment.details.measurement_labels"
+        :stats="experiment.details.stats"
       />
     </template>
   </section>

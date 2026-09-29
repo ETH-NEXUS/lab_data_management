@@ -40,6 +40,7 @@ def run_analysis(self, form_data: dict) -> None:
     Accepted data example:
     {"experiment_id": 105, "label": "Lum_CTG", "analysis_type": "single",
      "settings": {"act_cut": "log10(1.5)", "fdr_cut": 0.01},
+     "positive_control": "P1", "negative_control": "N1",
      "room_name": "105_1727600000000"}
     """
     room_name = form_data.get("room_name")
@@ -83,15 +84,24 @@ def make_analysis(form_data: dict, room_name: str | None) -> str:
     output_folder = os.path.join(folder, "output")
     os.makedirs(output_folder)
 
+    # The well types of the controls; the reports know them as "P" and "N"
+    controls = {
+        "positive": form_data.get("positive_control") or "P",
+        "negative": form_data.get("negative_control") or "N",
+    }
     message(
-        f'Step 1 of 3: collecting the data of "{experiment.name}", measurement "{label}"',
+        f'Step 1 of 3: collecting the data of "{experiment.name}", measurement '
+        f'"{label}", positive control "{controls["positive"]}", negative control '
+        f'"{controls["negative"]}"',
         "info",
         room_name,
     )
     conditions = []
     if analysis_type == "selectivity":
         conditions = [chosen_settings["condi_yes"], chosen_settings["condi_no"]]
-    input_paths, warnings = write_input_files(experiment, label, folder, conditions)
+    input_paths, warnings = write_input_files(
+        experiment, label, folder, conditions, controls
+    )
     for warning in warnings:
         message(warning, "warning", room_name)
 
