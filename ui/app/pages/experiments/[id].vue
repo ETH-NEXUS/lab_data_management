@@ -15,6 +15,8 @@ import ExperimentEditModal from '~/components/experiments/ExperimentEditModal.vu
 import ExperimentHeatmap from '~/components/experiments/ExperimentHeatmap.vue'
 import ExperimentMeasurementCalculatorModal from '~/components/experiments/ExperimentMeasurementCalculatorModal.vue'
 import ExperimentGenerateReportModal from '~/components/experiments/ExperimentGenerateReportModal.vue'
+import ExperimentAnalysisModal from '~/components/experiments/ExperimentAnalysisModal.vue'
+import { useAnalysisStore } from '~/stores/analysis'
 import { usePlateViewStore } from '~/stores/plateView'
 import { useReportStore } from '~/stores/reports'
 
@@ -23,6 +25,7 @@ const { t } = useI18n()
 const toast = useToast()
 const queryClient = useQueryClient()
 const reportStore = useReportStore()
+const analysisStore = useAnalysisStore()
 const plateViewStore = usePlateViewStore()
 
 const experimentId = computed(() => Number(route.params.id))
@@ -61,6 +64,7 @@ const isEditModalOpen = ref(false)
 const isAddBarcodeSpecificationModalOpen = ref(false)
 const isMeasurementCalculatorModalOpen = ref(false)
 const isGenerateReportModalOpen = ref(false)
+const isAnalysisModalOpen = ref(false)
 const isResultsExpanded = ref(false)
 const editField = ref<'name' | 'description'>('name')
 const editInitialValue = ref('')
@@ -85,6 +89,36 @@ watch(
   },
   { immediate: true },
 )
+
+watch(
+  () => experiment.value?.id,
+  async (currentExperimentId) => {
+    analysisStore.results = []
+    if (!currentExperimentId) return
+
+    try {
+      await analysisStore.fetchResults(currentExperimentId)
+    } catch (err: unknown) {
+      console.error(err)
+    }
+  },
+  { immediate: true },
+)
+
+const downloadAnalysisResult = async (name: string) => {
+  if (!experiment.value) return
+
+  try {
+    await analysisStore.downloadResult(experiment.value.id, name)
+  } catch (err: unknown) {
+    toast.add({
+      title: t('experiments.analysis.download_failed'),
+      description: getErrorMessage(err),
+      color: 'error',
+      duration: 4500,
+    })
+  }
+}
 
 watch(
   () => experiment.value?.id,
@@ -237,7 +271,10 @@ const handleUpdateControls = (data: { pos: string | null; neg: string | null }) 
         @edit-description="openEditModal('description')"
       />
 
-      <section v-if="canAddExperimentData || canAddMeasurement || canGenerateReport" class="mx-auto w-[80%]">
+      <section
+        v-if="canAddExperimentData || canAddMeasurement || canGenerateReport || canShowResults"
+        class="mx-auto w-[80%]"
+      >
         <div class="flex flex-wrap gap-2">
           <UButton
             v-if="canAddExperimentData"
@@ -262,6 +299,14 @@ const handleUpdateControls = (data: { pos: string | null; neg: string | null }) 
             icon="i-heroicons-document-arrow-down"
             :label="t('experiments.page.generate_report')"
             @click="openGenerateReportModal"
+          />
+          <UButton
+            v-if="canShowResults"
+            color="secondary"
+            variant="outline"
+            icon="i-heroicons-chart-bar"
+            :label="t('experiments.page.statistical_analysis')"
+            @click="isAnalysisModalOpen = true"
           />
         </div>
       </section>
@@ -296,6 +341,30 @@ const handleUpdateControls = (data: { pos: string | null; neg: string | null }) 
             @click="downloadReport(reportPath)"
           >
             {{ getReportLabel(reportPath) }}
+          </button>
+        </div>
+      </UCard>
+
+      <UCard
+        v-if="analysisStore.results.length > 0"
+        class="mx-auto w-[80%]"
+        :ui="{
+          root: 'core-card divide-y divide-slate-200/70',
+        }"
+      >
+        <template #header>
+          <p class="font-semibold">{{ t('experiments.analysis.results_title') }}</p>
+        </template>
+
+        <div class="space-y-2">
+          <button
+            v-for="name in analysisStore.results"
+            :key="`analysis-result-${name}`"
+            type="button"
+            class="block cursor-pointer text-sm text-blue-700 hover:text-blue-800 hover:underline"
+            @click="downloadAnalysisResult(name)"
+          >
+            {{ name }}
           </button>
         </div>
       </UCard>
@@ -357,6 +426,13 @@ const handleUpdateControls = (data: { pos: string | null; neg: string | null }) 
         :selected-pos="selectedPosControl"
         :selected-neg="selectedNegControl"
         @generated="onReportGenerated"
+      />
+
+      <ExperimentAnalysisModal
+        v-if="canShowResults"
+        v-model:open="isAnalysisModalOpen"
+        :experiment-id="experiment.id"
+        :labels="experiment.details.measurement_labels"
       />
     </template>
   </section>

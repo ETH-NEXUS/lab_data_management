@@ -200,7 +200,8 @@
       "not_found": "Experiment not found.",
       "add_experiment_data": "Add Experiment Data",
       "add_measurement": "Add measurement",
-      "generate_report": "Generate report"
+      "generate_report": "Generate report",
+      "statistical_analysis": "Statistical analysis"
     },
     "header": {
       "title": "Experiment: {experimentName}",
@@ -317,6 +318,22 @@
       "generated_success": "Report generation has started.",
       "generate_failed": "Failed to generate report.",
       "download_failed": "Failed to download report."
+    },
+    "analysis": {
+      "modal_title": "Statistical analysis",
+      "modal_description": "Runs the R report of the statistics group for one measurement. It takes a few minutes; you can close this window meanwhile.",
+      "type": "Analysis",
+      "type_single": "Single (hits of one condition)",
+      "type_selectivity": "Selectivity (two conditions compared)",
+      "measurement_label": "Measurement label",
+      "condition_yes": "Condition of interest",
+      "condition_no": "Counter condition",
+      "start_button": "Run analysis",
+      "running": "The analysis is running…",
+      "completed": "The analysis is done. The result is in the list \"Statistical analysis results\".",
+      "failed": "The analysis failed. The reason is marked red below.",
+      "results_title": "Statistical analysis results",
+      "download_failed": "Failed to download the analysis result."
     }
   },
   "plates": {
