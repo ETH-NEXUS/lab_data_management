@@ -38,7 +38,7 @@ const WAITING_MESSAGE =
 // up a run that the worker still starts.
 const START_GIVE_UP_MS = 11 * 60 * 1000
 const GIVE_UP_MESSAGE =
-  'The analysis did not start within 11 minutes: the analysis worker (container celery-analysis) is probably not running. It will not start later; start the analysis again when the worker runs.'
+  'The analysis did not start within 11 minutes: the analysis worker (container celery-analysis) is not running, or it was busy with other analyses for that long (it runs one at a time). It will not start later; start the analysis again.'
 
 // The run this browser started last, so its output comes back after a page reload
 const ROOM_NAME_STORAGE_KEY = 'analysis_room_name'

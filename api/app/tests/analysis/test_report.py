@@ -39,6 +39,12 @@ class CheckSettingsTest(SimpleTestCase):
         with self.assertRaisesMessage(CommandError, "Unknown analysis type"):
             check_settings("doseresponse", {})
 
+    def test_a_selectivity_analysis_needs_two_different_conditions(self):
+        with self.assertRaisesMessage(CommandError, "two different conditions"):
+            check_settings(
+                "selectivity", {"condi_yes": "irradiated", "condi_no": "irradiated"}
+            )
+
     def test_a_selectivity_analysis_needs_both_conditions(self):
         with self.assertRaisesMessage(CommandError, "needs both conditions"):
             check_settings("selectivity", {"condi_yes": "irradiated"})

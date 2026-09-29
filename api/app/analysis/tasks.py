@@ -116,8 +116,9 @@ def check_waiting_time(form_data: dict) -> None:
     if waited_seconds > MAX_WAITING_SECONDS:
         raise CommandError(
             f"The analysis was not started, because it waited {waited_seconds // 60:.0f} "
-            "minutes for the analysis worker (container celery-analysis), which was "
-            "probably not running. Start it again."
+            "minutes for the analysis worker (container celery-analysis): the worker "
+            "was not running, or it was busy with other analyses for that long (it "
+            "runs one at a time). Start it again."
         )
 
 

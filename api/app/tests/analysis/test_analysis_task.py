@@ -188,6 +188,9 @@ class AnalysisTaskTest(TestCase):
         self.assertTrue(zip_name.endswith("_single_Lum.zip"))
         self.assertEqual(["report.html", "params.yml", "DAA_results.tsv"], names)
         self.assertIn("fdr_cut: 0.05", params)
+        self.assertIn("screen: Screen 1", params)
+        # The paths of the temporary folder and of the container mean nothing outside
+        self.assertNotIn("path_", params)
         self.assertEqual("completed", output["status"])
         self.assertEqual("success", output["messages"][-2]["level"])
 
@@ -469,8 +472,9 @@ class AnalysisTaskTest(TestCase):
         self.assertEqual("failed", output["status"])
         self.assertEqual(
             "The analysis was not started, because it waited 11 minutes for the "
-            "analysis worker (container celery-analysis), which was probably not "
-            "running. Start it again.",
+            "analysis worker (container celery-analysis): the worker was not running, "
+            "or it was busy with other analyses for that long (it runs one at a time). "
+            "Start it again.",
             self.error_texts(output)[0],
         )
         self.assertEqual([], self.saved_files())

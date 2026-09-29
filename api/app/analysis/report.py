@@ -95,6 +95,12 @@ def check_settings(analysis_type: str, chosen_settings: dict) -> dict:
         raise CommandError(
             "A selectivity analysis needs both conditions (condi_yes and condi_no)."
         )
+    # The report compares the two conditions; R stops with an unclear error for one
+    if analysis_type == "selectivity" and checked["condi_yes"] == checked["condi_no"]:
+        raise CommandError(
+            "A selectivity analysis compares two different conditions, but both are "
+            f'"{checked["condi_yes"]}". Choose two different conditions.'
+        )
     return checked
 
 
@@ -204,11 +210,21 @@ def pack_results(zip_path: str, report_path: str, output_folder: str) -> None:
     """
     One zip with the report, the parameters and every file the report wrote,
     e.g. report.html, params.yml, DAA_results.tsv, plate_stats.tsv, plate_hmap_raw.png.
+
+    The parameters in the zip are without the paths (path_data, path_output, ...):
+    they point into the temporary folder of the run and into the container, which
+    do not exist for anyone who opens the zip.
     """
+    with open(os.path.join(os.path.dirname(report_path), "params.yml")) as params_file:
+        report_params = yaml.safe_load(params_file)
+    shown_params = {
+        name: value
+        for name, value in report_params.items()
+        if not name.startswith("path_")
+    }
+
     with zipfile.ZipFile(zip_path, "w", zipfile.ZIP_DEFLATED) as archive:
         archive.write(report_path, "report.html")
-        archive.write(
-            os.path.join(os.path.dirname(report_path), "params.yml"), "params.yml"
-        )
+        archive.writestr("params.yml", yaml.safe_dump(shown_params))
         for file_name in sorted(os.listdir(output_folder)):
             archive.write(os.path.join(output_folder, file_name), file_name)
