@@ -7,6 +7,7 @@ import os
 import re
 import shutil
 import tempfile
+import time
 from datetime import datetime
 
 from celery import shared_task
@@ -35,6 +36,11 @@ from importer.helper import message
 # The zip of every finished run: <MEDIA_ROOT>/analysis/<experiment id>/<run name>.zip
 ANALYSIS_FOLDER = os.path.join(settings.MEDIA_ROOT, "analysis")
 
+# A run starts within seconds, or after one or two other analyses (about 2 minutes
+# each). One that waited longer, is not started: the worker was not running. The
+# page stops waiting after the same time (START_GIVE_UP_MS in ui/app/stores/analysis.ts).
+MAX_WAITING_SECONDS = 10 * 60
+
 LOST_PROCESS_MESSAGE = (
     "The analysis was stopped, because the process that ran it was killed "
     "(for example, the R report used too much memory). No result was saved; "
@@ -58,8 +64,9 @@ def run_analysis(self, form_data: dict) -> None:
     room_name = form_data.get("room_name")
     # A restarted worker then ends this run as failed, like an import command
     register_running_command(room_name, self.request.hostname or "unknown worker")
-    message("Running the statistical analysis", "info", room_name)
     try:
+        check_waiting_time(form_data)
+        message("Running the statistical analysis", "info", room_name)
         zip_path = make_analysis(form_data, room_name)
         message(
             f"The analysis is done: {os.path.basename(zip_path)}", "success", room_name
@@ -96,6 +103,22 @@ def fail_the_analysis_of_a_lost_process(
     # The task was started with run_analysis.delay(form_data)
     form_data = args[0] if args else {}
     fail_lost_command(form_data.get("room_name"), LOST_PROCESS_MESSAGE)
+
+
+def check_waiting_time(form_data: dict) -> None:
+    """
+    An analysis that waited too long in the queue (the analysis worker was not
+    running) is not started any more: the page stopped waiting for it after the
+    same time, and nobody expects its result hours later.
+    `queued_at` is set by the start view, e.g. 1727600000.5 (seconds).
+    """
+    waited_seconds = time.time() - float(form_data.get("queued_at") or time.time())
+    if waited_seconds > MAX_WAITING_SECONDS:
+        raise CommandError(
+            f"The analysis was not started, because it waited {waited_seconds // 60:.0f} "
+            "minutes for the analysis worker (container celery-analysis), which was "
+            "probably not running. Start it again."
+        )
 
 
 def make_analysis(form_data: dict, room_name: str | None) -> str:

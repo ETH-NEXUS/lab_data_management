@@ -3,7 +3,7 @@ from rest_framework.test import APIClient
 import pandas as pd
 import numpy as np
 from typing import Callable
-from core.models import Project, Experiment, Plate, Well, PlateInfo
+from core.models import Project, Experiment, Plate, Well, PlateInfo, Measurement
 from core.utils.plates.positions import posToAlphaChar
 
 # from scipy.stats import median_abs_deviation as mad
@@ -171,16 +171,15 @@ def get_experiment_measurements(
         _experiment_plates = Plate.objects.filter(experiment_id=experiment_id)
     else:
         _experiment_plates = Plate.objects.filter(experiment__name=experiment_name)
-    # filter out plates that don't have any measurements in their wells
+    # filter out plates that don't have any measurements in their wells.
+    # Any well counts, not only the first one: a plate that was read only partly
+    # (e.g. A1 without a value) would otherwise be left out completely.
     experiment_plates = []
     for pl in _experiment_plates:
-        wells = pl.wells.all()
-        # check if measurements have a label
-        if (
-            wells
-            and wells.first().measurements.all()
-            and wells.first().measurements.first().label
-        ):
+        has_measurements = (
+            Measurement.objects.filter(well__plate=pl).exclude(label="").exists()
+        )
+        if has_measurements:
             experiment_plates.append(pl)
 
     rows = []
@@ -216,9 +215,11 @@ def get_experiment_measurements(
                     "measurement": measurement.label,
                     "is_invalid": well.is_invalid,
                     "measured_at": measurement.measured_at,
-                    "compound": well.compounds.first().name
-                    if well.compounds and well.compounds.first()
-                    else None,
+                    "compound": (
+                        well.compounds.first().name
+                        if well.compounds and well.compounds.first()
+                        else None
+                    ),
                 }
 
                 if compound_data and type == "chemical":

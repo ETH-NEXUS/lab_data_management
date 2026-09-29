@@ -10,10 +10,12 @@
 export const ANALYSIS_START_ENDPOINT = 'analysis/start/'
 export const ANALYSIS_RESULTS_ENDPOINT = 'analysis/results/'
 export const ANALYSIS_DOWNLOAD_ENDPOINT = 'analysis/download/'
+export const ANALYSIS_CONDITIONS_ENDPOINT = 'analysis/conditions/'
 
 export const ANALYSIS_START_ERROR_MESSAGE = 'Failed to start the analysis.'
 export const ANALYSIS_RESULTS_ERROR_MESSAGE = 'Failed to load the analysis results.'
 export const ANALYSIS_DOWNLOAD_ERROR_MESSAGE = 'Failed to download the analysis result.'
+export const ANALYSIS_CONDITIONS_ERROR_MESSAGE = 'Failed to load the conditions of the measurement.'
 
 export type AnalysisType = 'single' | 'selectivity'
 
@@ -44,4 +46,11 @@ export type StartAnalysisPayload = {
 
 export type AnalysisResultsResponse = {
   results: string[]
+}
+
+/**
+ * Data example: `{ conditions: ['irradiated', 'not irradiated'] }`
+ */
+export type AnalysisConditionsResponse = {
+  conditions: string[]
 }

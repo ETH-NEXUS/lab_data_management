@@ -4,10 +4,9 @@ import BaseButton from '~/components/common/BaseButton.vue'
 import CommandOutputLog from '~/components/common/CommandOutputLog.vue'
 import WavesModalWrapper from '~/components/common/WavesModalWrapper.vue'
 import { useAnalysisStore } from '~/stores/analysis'
-import { useExperimentStore } from '~/stores/experiments'
 import { usePlateViewStore } from '~/stores/plateView'
 import type { AnalysisType } from '~/types/analysis'
-import type { ExperimentDetails, PlateInfo } from '~/types/lab'
+import type { ExperimentDetails } from '~/types/lab'
 
 const props = defineProps<{
   open: boolean
@@ -23,7 +22,6 @@ const emit = defineEmits<{
 
 const { t } = useI18n()
 const analysisStore = useAnalysisStore()
-const experimentStore = useExperimentStore()
 const plateViewStore = usePlateViewStore()
 
 const analysisType = ref<AnalysisType>('single')
@@ -32,36 +30,30 @@ const conditionYes = ref('')
 const conditionNo = ref('')
 const positiveControl = ref('')
 const negativeControl = ref('')
-// The plate information of the experiment, the source of the conditions
-const plateInfos = ref<PlateInfo[]>([])
+// The conditions of the chosen measurement, e.g. ['irradiated', 'not irradiated']
+const conditions = ref<string[]>([])
 
 // The well types of the chosen measurement, e.g. ['C', 'N1', 'P1']
 const wellTypes = computed(() => Object.keys(props.stats[selectedLabel.value] ?? {}).sort())
 
-// The conditions of the chosen measurement, e.g. ['irradiated', 'not irradiated']
-const conditions = computed(() => {
-  const names = plateInfos.value
-    .filter((plateInfo) => plateInfo.measurement_label === selectedLabel.value)
-    .map((plateInfo) => plateInfo.condition)
-    .filter((condition) => condition !== '')
-  return [...new Set(names)].sort()
-})
-
-const loadConditions = async () => {
-  try {
-    plateInfos.value = await experimentStore.fetchPrefilledPlateInfo(props.experimentId)
-  } catch (err: unknown) {
-    // Without them the selects stay empty and the hint below them says why
-    console.error(err)
-    plateInfos.value = []
-  }
-}
-
-// A condition that the chosen measurement does not have is chosen anew
-watch(conditions, (names) => {
-  if (!names.includes(conditionYes.value)) conditionYes.value = ''
-  if (!names.includes(conditionNo.value)) conditionNo.value = ''
-})
+// Only a selectivity analysis needs the conditions, so they are loaded for it only
+watch(
+  () => [props.open, analysisType.value, selectedLabel.value, props.experimentId],
+  async () => {
+    if (!props.open || analysisType.value !== 'selectivity' || selectedLabel.value === '') return
+    try {
+      conditions.value = await analysisStore.fetchConditions(props.experimentId, selectedLabel.value)
+    } catch (err: unknown) {
+      // Without them the selects stay empty and the hint below them says why
+      console.error(err)
+      conditions.value = []
+    }
+    // A condition that the chosen measurement does not have is chosen anew
+    if (!conditions.value.includes(conditionYes.value)) conditionYes.value = ''
+    if (!conditions.value.includes(conditionNo.value)) conditionNo.value = ''
+  },
+  { immediate: true },
+)
 
 /**
  * The control that is chosen first: the one saved under "Show results", else the
@@ -92,10 +84,7 @@ watch(
     if (isOpen && !props.labels.includes(selectedLabel.value)) {
       selectedLabel.value = props.labels[0] ?? ''
     }
-    if (isOpen) {
-      chooseDefaultControls()
-      void loadConditions()
-    }
+    if (isOpen) chooseDefaultControls()
   },
   { immediate: true },
 )

@@ -6,6 +6,7 @@ of the management page.
 
 import os
 import re
+import time
 
 from django.http import FileResponse, JsonResponse
 from rest_framework.decorators import api_view, permission_classes
@@ -13,7 +14,8 @@ from rest_framework.exceptions import NotFound, ValidationError
 from rest_framework.permissions import IsAuthenticated
 
 from analysis.tasks import ANALYSIS_FOLDER, run_analysis
-from importer.command_output import start_command
+from core.models import PlateInfo
+from importer.command_output import read_output, start_command
 from management.views.commands import check_room_name
 
 # A result is the zip of one run, e.g. "20260929-125825_single_Lum_CTG.zip"
@@ -31,10 +33,36 @@ def start_analysis(request):
      "settings": {"condi_yes": "irradiated"}, "room_name": "3_1727600000000"}
     """
     form_data = dict(request.data)
-    check_room_name(form_data.get("room_name"))
-    start_command(form_data["room_name"])
+    room_name = form_data.get("room_name")
+    check_room_name(room_name)
+    # A second start with the same room would clear the output of the running one
+    if read_output(room_name, 0)["status"] is not None:
+        raise ValidationError(f"The analysis {room_name} was started already.")
+    # The worker does not start an analysis that waited too long for it
+    form_data["queued_at"] = time.time()
+    start_command(room_name)
     run_analysis.delay(form_data)
     return JsonResponse({"status": "ok"})
+
+
+@api_view(["GET"])
+@permission_classes([IsAuthenticated])
+def list_conditions(request):
+    """
+    The conditions in the saved plate information of one measurement, for the
+    selectivity analysis.
+    Example: GET /api/analysis/conditions/?experiment_id=86&label=Lum
+    -> {"conditions": ["irradiated", "not irradiated"]}
+    """
+    conditions = (
+        PlateInfo.objects.filter(
+            experiment_id=experiment_id(request), label=request.GET.get("label", "")
+        )
+        .exclude(condition="")
+        .values_list("condition", flat=True)
+        .distinct()
+    )
+    return JsonResponse({"conditions": sorted(conditions)})
 
 
 @api_view(["GET"])

@@ -39,9 +39,12 @@ FORMULA = re.compile(r"(?:[0-9.\s*/+\-()]|log10|log2|act_cut)+")
 # 106 s. The analysis worker runs one report at a time, so a report that hangs is
 # stopped after 15 minutes and does not keep the other analyses waiting for long.
 RENDER_TIMEOUT_SECONDS = 15 * 60
-# Exit codes of GNU timeout: the time was up, or the command (quarto) was not found
+# Exit codes of GNU timeout: the time was up, the command (quarto) was not found,
+# or it had to be killed (128 + 9: by timeout after TERM was not enough, or by the
+# system because it used too much memory)
 TIMED_OUT = 124
 COMMAND_NOT_FOUND = 127
+KILLED = 137
 # The last lines of the R output that are shown when a report fails
 ERROR_LINES = 15
 
@@ -135,6 +138,13 @@ def render_report(analysis_type: str, report_params: dict, folder: str) -> str:
             f"The R report was stopped after {RENDER_TIMEOUT_SECONDS // 60} minutes; "
             "a report usually takes one or two minutes, so it probably hung. Send "
             "this message to the statistics group."
+        )
+    if result.returncode == KILLED:
+        raise CommandError(
+            "The R report was killed: either it was still running after "
+            f"{RENDER_TIMEOUT_SECONDS // 60} minutes and did not stop, or the system "
+            "stopped it because it used too much memory. If it happens again for this "
+            "experiment, the celery-analysis container needs more memory."
         )
     if result.returncode == COMMAND_NOT_FOUND:
         raise CommandError(

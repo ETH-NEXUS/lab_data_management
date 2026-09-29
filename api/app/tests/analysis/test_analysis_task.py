@@ -8,6 +8,7 @@ import csv
 import os
 import shutil
 import tempfile
+import time
 import zipfile
 from datetime import datetime
 from unittest import mock
@@ -426,6 +427,50 @@ class AnalysisTaskTest(TestCase):
         self.experiment.delete()
 
         self.assertFalse(os.path.exists(experiment_folder))
+
+    def test_a_killed_report_says_why_it_may_have_been_killed(self):
+        def killed_quarto(command, cwd, **kwargs):
+            # GNU timeout ends with 128 + 9 when the command was killed
+            return mock.Mock(returncode=137, stdout="", stderr="")
+
+        output = self.run_task(quarto=killed_quarto)
+
+        self.assertIn("The R report was killed", self.error_texts(output)[0])
+        self.assertIn("too much memory", self.error_texts(output)[0])
+
+    def test_a_run_that_waited_too_long_in_the_queue_is_not_started(self):
+        start_command(ROOM)
+        form_data = {
+            "experiment_id": self.experiment.id,
+            "label": "Lum",
+            "analysis_type": "single",
+            "room_name": ROOM,
+            "queued_at": time.time() - 11 * 60,
+        }
+        with mock.patch("analysis.report.subprocess.run") as quarto:
+            tasks.run_analysis.delay(form_data)
+
+        quarto.assert_not_called()
+        output = read_output(ROOM, 0)
+        self.assertEqual("failed", output["status"])
+        self.assertEqual(
+            "The analysis was not started, because it waited 11 minutes for the "
+            "analysis worker (container celery-analysis), which was probably not "
+            "running. Start it again.",
+            self.error_texts(output)[0],
+        )
+        self.assertEqual([], self.saved_files())
+
+    def test_a_plate_whose_first_well_was_not_read_is_exported(self):
+        # The first well (an N control) was not read; another well is the N control
+        Measurement.objects.filter(well=self.wells[0]).delete()
+        Well.objects.filter(pk=self.wells[3].pk).update(type=self.wells[0].type)
+
+        self.run_task()
+
+        plates = {row["plate"] for row in self.read_input("main_info.csv")}
+        self.assertEqual({"SP_1"}, plates)
+        self.assertEqual(3, len(self.read_input("main_info.csv")))
 
     def test_a_report_that_takes_too_long_says_so(self):
         def stopped_quarto(command, cwd, **kwargs):

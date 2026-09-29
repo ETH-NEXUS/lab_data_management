@@ -1,12 +1,15 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
 import {
+  ANALYSIS_CONDITIONS_ENDPOINT,
+  ANALYSIS_CONDITIONS_ERROR_MESSAGE,
   ANALYSIS_DOWNLOAD_ENDPOINT,
   ANALYSIS_DOWNLOAD_ERROR_MESSAGE,
   ANALYSIS_RESULTS_ENDPOINT,
   ANALYSIS_RESULTS_ERROR_MESSAGE,
   ANALYSIS_START_ENDPOINT,
   ANALYSIS_START_ERROR_MESSAGE,
+  type AnalysisConditionsResponse,
   type AnalysisResultsResponse,
   type StartAnalysisPayload,
 } from '~/types/analysis'
@@ -29,6 +32,11 @@ const MAX_FAILED_OUTPUT_REQUESTS = 5
 const START_TIMEOUT_MS = 60000
 const WAITING_MESSAGE =
   'The analysis has not started yet: the analysis worker (container celery-analysis) runs one analysis at a time and another one runs first, or the worker is down.'
+// An analysis that has not started after this time is given up: the worker does
+// not start it any more either (MAX_WAITING_SECONDS in api/app/analysis/tasks.py)
+const START_GIVE_UP_MS = 10 * 60 * 1000
+const GIVE_UP_MESSAGE =
+  'The analysis did not start within 10 minutes: the analysis worker (container celery-analysis) is probably not running. It will not start later; start the analysis again when the worker runs.'
 
 // The run this browser started last, so its output comes back after a page reload
 const ROOM_NAME_STORAGE_KEY = 'analysis_room_name'
@@ -40,6 +48,14 @@ const rememberRoomName = (roomName: string): void => {
     localStorage.setItem(ROOM_NAME_STORAGE_KEY, roomName)
   } catch {
     // Browser storage is switched off: the output is only lost after a reload
+  }
+}
+
+const forgetRoomName = (): void => {
+  try {
+    localStorage.removeItem(ROOM_NAME_STORAGE_KEY)
+  } catch {
+    // Browser storage is switched off: nothing was remembered
   }
 }
 
@@ -137,7 +153,8 @@ export const useAnalysisStore = defineStore('analysisStore', () => {
    */
   const readOutput = async (roomName: string, since = 0): Promise<void> => {
     let failedRequests = 0
-    const startedAt = Date.now()
+    // The room name holds the time of the start, also after a page reload, e.g. '105_1727600000000'
+    const startedAt = Number(roomName.split('_')[1])
 
     while (isRunning.value) {
       await wait(POLL_INTERVAL_MS)
@@ -167,9 +184,18 @@ export const useAnalysisStore = defineStore('analysisStore', () => {
       messages.value.push(...response.messages)
       since = response.next
 
-      const hasNotStarted = since === 0 && Date.now() - startedAt > START_TIMEOUT_MS
+      // No message from the worker yet: the analysis waits in the queue
+      const hasNotStarted = since === 0
+      const waitedMs = Date.now() - startedAt
+      if (hasNotStarted && waitedMs > START_GIVE_UP_MS) {
+        messages.value.push({ level: 'error', text: GIVE_UP_MESSAGE })
+        status.value = 'failed'
+        isRunning.value = false
+        forgetRoomName()
+        return
+      }
       const waitingIsShown = messages.value.some((message) => message.text === WAITING_MESSAGE)
-      if (hasNotStarted && !waitingIsShown) {
+      if (hasNotStarted && waitedMs > START_TIMEOUT_MS && !waitingIsShown) {
         messages.value.push({ level: 'info', text: WAITING_MESSAGE })
       }
       if (response.status === 'completed' || response.status === 'failed') {
@@ -177,6 +203,19 @@ export const useAnalysisStore = defineStore('analysisStore', () => {
         isRunning.value = false
       }
     }
+  }
+
+  /**
+   * The conditions in the saved plate information of one measurement, for a
+   * selectivity analysis, e.g. ['irradiated', 'not irradiated'].
+   */
+  const fetchConditions = async (experimentId: number, label: string): Promise<string[]> => {
+    const response = await requestApiData<AnalysisConditionsResponse>(
+      ANALYSIS_CONDITIONS_ENDPOINT,
+      { method: 'GET', params: { experiment_id: String(experimentId), label } },
+      ANALYSIS_CONDITIONS_ERROR_MESSAGE,
+    )
+    return response.conditions
   }
 
   /**
@@ -226,6 +265,7 @@ export const useAnalysisStore = defineStore('analysisStore', () => {
     results,
     startAnalysis,
     resumeAnalysis,
+    fetchConditions,
     fetchResults,
     downloadResult,
   }
