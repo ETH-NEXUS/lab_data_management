@@ -5,9 +5,13 @@ because a report of a whole screen takes several minutes.
 
 import os
 import re
+import shutil
+import tempfile
 from datetime import datetime
 
 from celery import shared_task
+from celery.exceptions import WorkerLostError
+from celery.signals import task_failure
 from django.conf import settings
 from django.core.management.base import CommandError
 
@@ -22,13 +26,21 @@ from core.models import Experiment
 from helpers.logger import logger
 from importer.command_output import (
     error_text,
+    fail_lost_command,
     finish_command,
     register_running_command,
 )
 from importer.helper import message
 
-# Every run gets its own folder: <MEDIA_ROOT>/analysis/<experiment id>/<run name>/
+# The zip of every finished run: <MEDIA_ROOT>/analysis/<experiment id>/<run name>.zip
 ANALYSIS_FOLDER = os.path.join(settings.MEDIA_ROOT, "analysis")
+
+LOST_PROCESS_MESSAGE = (
+    "The analysis was stopped, because the process that ran it was killed "
+    "(for example, the R report used too much memory). No result was saved; "
+    "you can start it again. If it happens again, the experiment may be too big "
+    "for the memory of the celery container."
+)
 
 
 @shared_task(bind=True)
@@ -67,6 +79,25 @@ def run_analysis(self, form_data: dict) -> None:
         finish_command(room_name)
 
 
+@task_failure.connect
+def fail_the_analysis_of_a_lost_process(
+    sender=None, exception=None, args=None, **kwargs
+) -> None:
+    """
+    The process that ran an analysis was killed, e.g. because R used too much
+    memory. The `finally` of the task then never runs, and the page would wait
+    forever. The main process of the worker still gets this signal and ends the
+    analysis instead (the same as fail_the_command_of_a_lost_process of the importer).
+    """
+    if sender is None or sender.name != run_analysis.name:
+        return
+    if not isinstance(exception, WorkerLostError):
+        return
+    # The task was started with run_analysis.delay(form_data)
+    form_data = args[0] if args else {}
+    fail_lost_command(form_data.get("room_name"), LOST_PROCESS_MESSAGE)
+
+
 def make_analysis(form_data: dict, room_name: str | None) -> str:
     """Writes the input files, renders the report and returns the path of the zip."""
     analysis_type = form_data.get("analysis_type") or ""
@@ -80,47 +111,61 @@ def make_analysis(form_data: dict, room_name: str | None) -> str:
     # e.g. "20260929-101500_single_Lum_CTG"; the label may have spaces or slashes
     safe_label = re.sub(r"[^A-Za-z0-9_-]+", "_", label)
     run_name = f"{datetime.now():%Y%m%d-%H%M%S}_{analysis_type}_{safe_label}"
-    folder = os.path.join(ANALYSIS_FOLDER, str(experiment.id), run_name)
-    output_folder = os.path.join(folder, "output")
-    os.makedirs(output_folder)
 
     # The well types of the controls; the reports know them as "P" and "N"
     controls = {
         "positive": form_data.get("positive_control") or "P",
         "negative": form_data.get("negative_control") or "N",
     }
-    message(
-        f'Step 1 of 3: collecting the data of "{experiment.name}", measurement '
-        f'"{label}", positive control "{controls["positive"]}", negative control '
-        f'"{controls["negative"]}"',
-        "info",
-        room_name,
-    )
     conditions = []
     if analysis_type == "selectivity":
         conditions = [chosen_settings["condi_yes"], chosen_settings["condi_no"]]
-    input_paths, warnings = write_input_files(
-        experiment, label, folder, conditions, controls
-    )
-    for warning in warnings:
-        message(warning, "warning", room_name)
 
-    message(
-        "Step 2 of 3: making the R report (this takes a few minutes)", "info", room_name
-    )
-    report_params = {
-        "project": experiment.project.name,
-        "screen": experiment.name,
-        "hts_type": analysis_type,
-        **chosen_settings,
-        **input_paths,
-        # The reports add file names to these two paths, so they end with "/"
-        "path_output": output_folder + "/",
-        "path_SLmisc": STATISTICS_FOLDER + "/",
-    }
-    report_path = render_report(analysis_type, report_params, folder)
+    # The run works in a temporary folder, which is deleted at the end, also when
+    # the run fails. Only the finished zip is kept in the media folder.
+    with tempfile.TemporaryDirectory() as folder:
+        output_folder = os.path.join(folder, "output")
+        os.makedirs(output_folder)
 
-    message("Step 3 of 3: packing the report and the result files", "info", room_name)
-    zip_path = os.path.join(folder, f"{run_name}.zip")
-    pack_results(zip_path, report_path, output_folder)
+        message(
+            f'Step 1 of 3: collecting the data of "{experiment.name}", measurement '
+            f'"{label}", positive control "{controls["positive"]}", negative control '
+            f'"{controls["negative"]}"',
+            "info",
+            room_name,
+        )
+        input_paths, warnings = write_input_files(
+            experiment, label, folder, conditions, controls
+        )
+        for warning in warnings:
+            message(warning, "warning", room_name)
+
+        message(
+            "Step 2 of 3: making the R report (this takes a few minutes)",
+            "info",
+            room_name,
+        )
+        report_params = {
+            "project": experiment.project.name,
+            "screen": experiment.name,
+            "hts_type": analysis_type,
+            **chosen_settings,
+            **input_paths,
+            # The reports add file names to these two paths, so they end with "/"
+            "path_output": output_folder + "/",
+            "path_SLmisc": STATISTICS_FOLDER + "/",
+        }
+        report_path = render_report(analysis_type, report_params, folder)
+
+        message(
+            "Step 3 of 3: packing the report and the result files", "info", room_name
+        )
+        temporary_zip_path = os.path.join(folder, f"{run_name}.zip")
+        pack_results(temporary_zip_path, report_path, output_folder)
+
+        # Moved only when it is complete, so the page never lists a half written zip
+        experiment_folder = os.path.join(ANALYSIS_FOLDER, str(experiment.id))
+        os.makedirs(experiment_folder, exist_ok=True)
+        zip_path = os.path.join(experiment_folder, f"{run_name}.zip")
+        shutil.move(temporary_zip_path, zip_path)
     return zip_path

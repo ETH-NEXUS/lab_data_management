@@ -70,33 +70,37 @@ def get_new_plate_infos(experiment):
             timestamps = measurement_timestamps.get(label, [])
             if not timestamps:
                 continue
-            for timestamp in timestamps:
-                logger.info(f"Timestamp: {timestamp}")
-                plate_info_obj = {
-                    "measurement_label": label,
-                    "measurement_timestamp": timestamp,
-                    "replicate": "",
-                    "cell_type": "",
-                    "condition": "",
-                }
-                well_to_check_idx = int(
-                    len(plate.wells.all()) // 2 + plate.dimension.cols // 2
-                )  # we take one in the middle of the plate (the middle index plus the half number of columns), so we don't get a well filled from a control well.
+            # One row per plate and label, because the plate information is saved
+            # per plate and label (save_plate_info). A label that was read several
+            # times gets the time of its first reading, e.g. of
+            # ["2025-05-16T10:00:00+02:00", "2025-05-17T10:00:00+02:00"] the first.
+            timestamp = min(timestamps)
+            logger.info(f"Timestamp: {timestamp}")
+            plate_info_obj = {
+                "measurement_label": label,
+                "measurement_timestamp": timestamp,
+                "replicate": "",
+                "cell_type": "",
+                "condition": "",
+            }
+            well_to_check_idx = int(
+                len(plate.wells.all()) // 2 + plate.dimension.cols // 2
+            )  # we take one in the middle of the plate (the middle index plus the half number of columns), so we don't get a well filled from a control well.
 
-                well_with_donors = find_well_with_donors(
-                    well_to_check_idx,
-                    plate.wells.all().order_by("position"),
-                    plate.dimension.cols,
-                )
+            well_with_donors = find_well_with_donors(
+                well_to_check_idx,
+                plate.wells.all().order_by("position"),
+                plate.dimension.cols,
+            )
 
-                lib_plate = None
-                if well_with_donors:
-                    lib_plate = well_with_donors.donors.all().first().well.plate
-                plate_info_obj["plate_barcode"] = plate.barcode
-                plate_info_obj["lib_plate_barcode"] = (
-                    lib_plate.barcode if lib_plate else "NA"
-                )
-                plate_info.append(plate_info_obj)
+            lib_plate = None
+            if well_with_donors:
+                lib_plate = well_with_donors.donors.all().first().well.plate
+            plate_info_obj["plate_barcode"] = plate.barcode
+            plate_info_obj["lib_plate_barcode"] = (
+                lib_plate.barcode if lib_plate else "NA"
+            )
+            plate_info.append(plate_info_obj)
 
     return plate_info
 

@@ -80,6 +80,28 @@ class PlateInfoTest(TestCase):
         saved = PlateInfo.objects.values_list("label", "condition")
         self.assertEqual([("Lum", "WT")], list(saved))
 
+    def test_a_label_read_twice_has_one_row_that_keeps_its_saved_values(self):
+        # A second reading of "Lum" one day later
+        for well in Well.objects.all():
+            Measurement.objects.create(
+                well=well,
+                label="Lum",
+                value=2,
+                measured_at=datetime(2025, 5, 17, 10, 0),
+            )
+        PlateDetail.refresh()
+        self.save([self.row("Lum", "KO")])
+
+        rows = self.prefill()
+        self.save(rows)
+
+        lum_rows = [row for row in rows if row["measurement_label"] == "Lum"]
+        self.assertEqual(1, len(lum_rows))
+        saved = PlateInfo.objects.filter(label="Lum").values_list(
+            "condition", flat=True
+        )
+        self.assertEqual(["KO"], list(saved))
+
     def test_the_form_shows_a_label_that_was_not_saved_yet(self):
         self.save([self.row("Lum", "KO")])
 

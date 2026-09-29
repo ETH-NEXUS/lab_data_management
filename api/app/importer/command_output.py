@@ -111,12 +111,12 @@ def fail_interrupted_commands(worker_name: str) -> None:
         finish_command(room_name)
 
 
-def fail_lost_command(room_name: str | None) -> None:
+def fail_lost_command(room_name: str | None, text: str = LOST_PROCESS_MESSAGE) -> None:
     """
     The process that ran the command was killed in the middle of it, so the
-    command could not end itself: it gets an error and the status "failed".
+    command could not end itself: it gets an error (`text`) and the status "failed".
     """
-    add_message(room_name, "error", LOST_PROCESS_MESSAGE)
+    add_message(room_name, "error", text)
     finish_command(room_name)
 
 

@@ -48,11 +48,10 @@ def list_analysis_results(request):
     experiment_folder = os.path.join(ANALYSIS_FOLDER, experiment_id(request))
     results = []
     if os.path.isdir(experiment_folder):
-        for run_name in sorted(os.listdir(experiment_folder), reverse=True):
-            # A run that failed or is still running has no zip
-            zip_path = os.path.join(experiment_folder, run_name, f"{run_name}.zip")
-            if os.path.exists(zip_path):
-                results.append(f"{run_name}.zip")
+        # The names start with the date and time of the run, so this sorts by time
+        for file_name in sorted(os.listdir(experiment_folder), reverse=True):
+            if RESULT_NAME.fullmatch(file_name):
+                results.append(file_name)
     return JsonResponse({"results": results})
 
 
@@ -66,8 +65,7 @@ def download_analysis_result(request):
     name = request.GET.get("name", "")
     if not RESULT_NAME.fullmatch(name):
         raise ValidationError(f"This is not the name of a result: {name}")
-    run_name = name.removesuffix(".zip")
-    zip_path = os.path.join(ANALYSIS_FOLDER, experiment_id(request), run_name, name)
+    zip_path = os.path.join(ANALYSIS_FOLDER, experiment_id(request), name)
     if not os.path.exists(zip_path):
         raise NotFound(f"The result {name} does not exist.")
     return FileResponse(open(zip_path, "rb"), as_attachment=True, filename=name)

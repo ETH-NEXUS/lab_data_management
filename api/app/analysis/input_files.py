@@ -74,7 +74,9 @@ def write_input_files(
         raise CommandError(text)
     check_conditions(conditions, plate_infos)
 
-    main_info = get_experiment_measurements(experiment.name, label, "main", csv=True)
+    main_info = get_experiment_measurements(
+        experiment.name, label, "main", csv=True, experiment_id=experiment.id
+    )
     if main_info.empty:
         labels = (
             Measurement.objects.filter(well__plate__experiment=experiment)
@@ -89,7 +91,9 @@ def write_input_files(
     check_chosen_controls(main_info, positive, negative)
     main_info = rename_controls(main_info, positive, negative)
     chemical_info = rename_controls(
-        get_experiment_measurements(experiment.name, label, "chemical", csv=True),
+        get_experiment_measurements(
+            experiment.name, label, "chemical", csv=True, experiment_id=experiment.id
+        ),
         positive,
         negative,
     )

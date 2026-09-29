@@ -12,6 +12,7 @@ import zipfile
 from datetime import datetime
 from unittest import mock
 
+from celery.exceptions import WorkerLostError
 from django.core.cache import cache
 from django.test import TestCase
 
@@ -42,20 +43,14 @@ R_ERROR_OUTPUT = (
 )
 
 
-def fake_quarto(command, cwd, **kwargs):
-    """Writes what the report would write, instead of running Quarto."""
-    with open(os.path.join(cwd, "single.html"), "w") as report:
-        report.write("<html>report</html>")
-    with open(os.path.join(cwd, "output", "DAA_results.tsv"), "w") as results:
-        results.write("hits\n")
-    return mock.Mock(returncode=0, stdout="Output created: single.html", stderr="")
-
-
 class AnalysisTaskTest(TestCase):
     def setUp(self):
         cache.clear()
         self.folder = tempfile.mkdtemp()
         self.addCleanup(shutil.rmtree, self.folder)
+        # Copies of the input files: the folder of a run is deleted at its end
+        self.inputs_folder = tempfile.mkdtemp()
+        self.addCleanup(shutil.rmtree, self.inputs_folder)
         patch_folder = mock.patch.object(tasks, "ANALYSIS_FOLDER", self.folder)
         patch_folder.start()
         self.addCleanup(patch_folder.stop)
@@ -91,7 +86,20 @@ class AnalysisTaskTest(TestCase):
             condition="irradiated",
         )
 
-    def run_task(self, label="Lum", quarto=fake_quarto, **controls):
+    def fake_quarto(self, command, cwd, **kwargs):
+        """
+        Writes what the report would write, instead of running Quarto, and keeps
+        a copy of the input files for the test.
+        """
+        for name in ["main_info.csv", "experiment_data.csv"]:
+            shutil.copy(os.path.join(cwd, name), self.inputs_folder)
+        with open(os.path.join(cwd, "single.html"), "w") as report:
+            report.write("<html>report</html>")
+        with open(os.path.join(cwd, "output", "DAA_results.tsv"), "w") as results:
+            results.write("hits\n")
+        return mock.Mock(returncode=0, stdout="Output created: single.html", stderr="")
+
+    def run_task(self, label="Lum", quarto=None, **controls):
         start_command(ROOM)
         form_data = {
             "experiment_id": self.experiment.id,
@@ -101,14 +109,22 @@ class AnalysisTaskTest(TestCase):
             "room_name": ROOM,
             **controls,
         }
+        quarto = quarto or self.fake_quarto
         with mock.patch("analysis.report.subprocess.run", side_effect=quarto):
             tasks.run_analysis.delay(form_data)
         return read_output(ROOM, 0)
 
-    def run_folder(self):
+    def read_input(self, name):
+        """The rows of one input file of the last run, e.g. read_input("main_info.csv")."""
+        with open(os.path.join(self.inputs_folder, name)) as input_file:
+            return list(csv.DictReader(input_file))
+
+    def saved_files(self):
+        """The files the runs of this experiment left in the media folder."""
         experiment_folder = os.path.join(self.folder, str(self.experiment.id))
-        (run_name,) = os.listdir(experiment_folder)
-        return os.path.join(experiment_folder, run_name)
+        if not os.path.isdir(experiment_folder):
+            return []
+        return os.listdir(experiment_folder)
 
     def error_texts(self, output):
         return [
@@ -120,11 +136,8 @@ class AnalysisTaskTest(TestCase):
     def test_the_input_files_have_only_the_chosen_label(self):
         self.run_task()
 
-        folder = self.run_folder()
-        with open(os.path.join(folder, "main_info.csv")) as main_file:
-            main_rows = list(csv.DictReader(main_file))
-        with open(os.path.join(folder, "experiment_data.csv")) as meta_file:
-            meta_rows = list(csv.DictReader(meta_file))
+        main_rows = self.read_input("main_info.csv")
+        meta_rows = self.read_input("experiment_data.csv")
         self.assertEqual(["Lum"] * 4, [row["measurement"] for row in main_rows])
         # The columns SLmisc.R read.LDM() reads
         read_by_the_report = {
@@ -157,14 +170,15 @@ class AnalysisTaskTest(TestCase):
             },
         )
 
-    def test_the_zip_has_the_report_the_parameters_and_the_results(self):
+    def test_only_the_zip_is_kept_with_the_report_the_parameters_and_the_results(self):
         output = self.run_task()
 
-        folder = self.run_folder()
-        zip_name = os.path.basename(folder) + ".zip"
-        with zipfile.ZipFile(os.path.join(folder, zip_name)) as archive:
+        (zip_name,) = self.saved_files()
+        zip_path = os.path.join(self.folder, str(self.experiment.id), zip_name)
+        with zipfile.ZipFile(zip_path) as archive:
             names = archive.namelist()
             params = archive.read("params.yml").decode()
+        self.assertTrue(zip_name.endswith("_single_Lum.zip"))
         self.assertEqual(["report.html", "params.yml", "DAA_results.tsv"], names)
         self.assertIn("fdr_cut: 0.05", params)
         self.assertEqual("completed", output["status"])
@@ -227,8 +241,7 @@ class AnalysisTaskTest(TestCase):
 
         output = self.run_task(positive_control="P1", negative_control="N1")
 
-        with open(os.path.join(self.run_folder(), "main_info.csv")) as main_file:
-            controls = [row["control"] for row in csv.DictReader(main_file)]
+        controls = [row["control"] for row in self.read_input("main_info.csv")]
         self.assertEqual(["N", "P", "C", "C"], controls)
         self.assertEqual("completed", output["status"])
 
@@ -237,8 +250,7 @@ class AnalysisTaskTest(TestCase):
 
         self.run_task(positive_control="P1", negative_control="N")
 
-        with open(os.path.join(self.run_folder(), "main_info.csv")) as main_file:
-            controls = [row["control"] for row in csv.DictReader(main_file)]
+        controls = [row["control"] for row in self.read_input("main_info.csv")]
         self.assertEqual(["N", "P (not chosen)", "P", "P"], controls)
 
     def test_a_chosen_control_that_is_not_there_names_the_well_types(self):
@@ -303,27 +315,69 @@ class AnalysisTaskTest(TestCase):
             self.error_texts(read_output(ROOM, 0))[0],
         )
 
-    def test_an_r_error_names_the_step_the_r_error_and_the_log(self):
+    def test_an_r_error_names_the_step_and_the_r_error_and_leaves_no_files(self):
         def failing_quarto(command, cwd, **kwargs):
             return mock.Mock(returncode=1, stdout="", stderr=R_ERROR_OUTPUT)
 
         output = self.run_task(quarto=failing_quarto)
 
-        log_path = os.path.join(self.run_folder(), "render.log")
         self.assertEqual("failed", output["status"])
         self.assertEqual(
             'The R report stopped with an error in the step "init" '
             "(single.qmd:73-110).\n"
             "The data passed the checks of LDM, so this is a problem inside the R "
-            "script or a case it does not handle. Send the full output to the "
+            "script or a case it does not handle. Send this message to the "
             "statistics group.\n"
             "R error:\n"
             "Error:\n"
-            "! Could not load one or more required packages\n"
-            f"The full output is in {log_path}",
+            "! Could not load one or more required packages",
             self.error_texts(output)[0],
         )
-        self.assertTrue(os.path.exists(log_path))
+        self.assertEqual([], self.saved_files())
+
+    def test_an_experiment_with_the_same_name_in_another_project_is_not_mixed_in(self):
+        other_project = Project.objects.create(name="P2")
+        other_experiment = Experiment.objects.create(
+            name="Screen 1", project=other_project
+        )
+        plate = Plate.objects.create(
+            barcode="OTHER_1",
+            dimension=self.wells[0].plate.dimension,
+            experiment=other_experiment,
+        )
+        well = Well.objects.create(plate=plate, position=0, type=self.wells[0].type)
+        Measurement.objects.create(
+            well=well, label="Lum", value=1, measured_at=datetime(2025, 5, 16, 10, 0)
+        )
+
+        self.run_task()
+
+        plates = {row["plate"] for row in self.read_input("main_info.csv")}
+        self.assertEqual({"SP_1"}, plates)
+
+    def test_a_killed_process_ends_the_analysis_as_failed(self):
+        start_command(ROOM)
+
+        tasks.fail_the_analysis_of_a_lost_process(
+            sender=tasks.run_analysis,
+            exception=WorkerLostError(),
+            args=[{"room_name": ROOM}],
+        )
+
+        output = read_output(ROOM, 0)
+        self.assertEqual("failed", output["status"])
+        self.assertEqual(tasks.LOST_PROCESS_MESSAGE, self.error_texts(output)[0])
+
+    def test_another_error_of_the_task_is_left_to_the_task(self):
+        start_command(ROOM)
+
+        tasks.fail_the_analysis_of_a_lost_process(
+            sender=tasks.run_analysis,
+            exception=KeyError("x"),
+            args=[{"room_name": ROOM}],
+        )
+
+        self.assertEqual("running", read_output(ROOM, 0)["status"])
 
     def test_an_unexpected_error_says_where_to_find_the_details(self):
         with mock.patch.object(tasks, "pack_results", side_effect=KeyError("x")):

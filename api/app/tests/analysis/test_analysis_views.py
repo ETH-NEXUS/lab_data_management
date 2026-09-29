@@ -27,13 +27,12 @@ class AnalysisViewsTest(TestCase):
         patch_folder = mock.patch.object(views, "ANALYSIS_FOLDER", self.folder)
         patch_folder.start()
         self.addCleanup(patch_folder.stop)
-        # One finished run with a zip, and one failed run without
-        os.makedirs(os.path.join(self.folder, "105", RUN_NAME))
-        os.makedirs(os.path.join(self.folder, "105", "20260929-130014_selectivity_Lum"))
-        with open(
-            os.path.join(self.folder, "105", RUN_NAME, f"{RUN_NAME}.zip"), "wb"
-        ) as f:
+        # The zip of one finished run, and a file that is not a result
+        os.makedirs(os.path.join(self.folder, "105"))
+        with open(os.path.join(self.folder, "105", f"{RUN_NAME}.zip"), "wb") as f:
             f.write(b"a zip")
+        with open(os.path.join(self.folder, "105", "notes.txt"), "w") as f:
+            f.write("not a result")
 
     def login(self):
         self.client.force_login(User.objects.create_user("tester"))

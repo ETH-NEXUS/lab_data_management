@@ -89,7 +89,6 @@ def render_report(analysis_type: str, report_params: dict, folder: str) -> str:
     """
     Renders the report into `folder` and returns the path of the html file.
     The html has its figures inside, so it can be opened on its own.
-    The full Quarto output is kept in render.log.
 
     report_params example (all parameters of the .qmd):
     {"project": "P1", "screen": "Screen 1", "hts_type": "single",
@@ -113,7 +112,6 @@ def render_report(analysis_type: str, report_params: dict, folder: str) -> str:
         "-M",
         "embed-resources:true",
     ]
-    log_path = os.path.join(folder, "render.log")
     try:
         result = subprocess.run(
             command,
@@ -130,18 +128,15 @@ def render_report(analysis_type: str, report_params: dict, folder: str) -> str:
     except subprocess.TimeoutExpired:
         raise CommandError(
             f"The R report was stopped after {RENDER_TIMEOUT_SECONDS // 60} minutes; "
-            "a report usually takes a few minutes. The input files of this run are "
-            f"in {folder}."
+            "a report usually takes a few minutes."
         )
 
-    with open(log_path, "w") as log_file:
-        log_file.write(result.stdout + result.stderr)
     if result.returncode != 0:
-        raise CommandError(render_error_text(result.stderr, log_path))
+        raise CommandError(render_error_text(result.stderr))
     return os.path.join(folder, f"{analysis_type}.html")
 
 
-def render_error_text(quarto_output: str, log_path: str) -> str:
+def render_error_text(quarto_output: str) -> str:
     """
     What went wrong in a failed report: the step of the .qmd where R stopped, and
     the R error, without colors and progress lines. Example:
@@ -149,8 +144,7 @@ def render_error_text(quarto_output: str, log_path: str) -> str:
      The data passed the checks of LDM, so this is a problem inside the R script ...
      R error:
      Error:
-     ! Could not load one or more required packages
-     The full output is in /vol/web/media/analysis/105/.../render.log'
+     ! Could not load one or more required packages'
     """
     lines = []
     for line in COLOR_CODE.sub("", quarto_output).splitlines():
@@ -178,11 +172,10 @@ def render_error_text(quarto_output: str, log_path: str) -> str:
         [
             heading,
             "The data passed the checks of LDM, so this is a problem inside the R "
-            "script or a case it does not handle. Send the full output to the "
+            "script or a case it does not handle. Send this message to the "
             "statistics group.",
             "R error:",
             *error_lines,
-            f"The full output is in {log_path}",
         ]
     )
 

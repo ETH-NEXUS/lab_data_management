@@ -23,6 +23,12 @@ import { getErrorMessage } from '~/utils/errors'
 const POLL_INTERVAL_MS = 2000
 // A failed request for the output is repeated this many times before giving up
 const MAX_FAILED_OUTPUT_REQUESTS = 5
+// An analysis without a single message after this time has not started yet.
+// It still runs when the worker takes it, so the page keeps waiting (as for a
+// command of the management page) and only says why nothing happens.
+const START_TIMEOUT_MS = 60000
+const WAITING_MESSAGE =
+  'The analysis has not started yet: it is waiting for the celery worker (other commands or analyses run first), or the worker is down.'
 
 const wait = (milliseconds: number) => new Promise((resolve) => setTimeout(resolve, milliseconds))
 
@@ -76,6 +82,7 @@ export const useAnalysisStore = defineStore('analysisStore', () => {
   const readOutput = async (roomName: string): Promise<void> => {
     let since = 0
     let failedRequests = 0
+    const startedAt = Date.now()
 
     while (isRunning.value) {
       await wait(POLL_INTERVAL_MS)
@@ -104,6 +111,12 @@ export const useAnalysisStore = defineStore('analysisStore', () => {
       failedRequests = 0
       messages.value.push(...response.messages)
       since = response.next
+
+      const hasNotStarted = since === 0 && Date.now() - startedAt > START_TIMEOUT_MS
+      const waitingIsShown = messages.value.some((message) => message.text === WAITING_MESSAGE)
+      if (hasNotStarted && !waitingIsShown) {
+        messages.value.push({ level: 'info', text: WAITING_MESSAGE })
+      }
       if (response.status === 'completed' || response.status === 'failed') {
         status.value = response.status
         isRunning.value = false

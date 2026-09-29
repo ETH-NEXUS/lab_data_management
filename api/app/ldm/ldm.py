@@ -157,13 +157,20 @@ def get_experiment_plate_infos(experiment_name: str):
 
 
 def get_experiment_measurements(
-    experiment_name: str, label=None, type="main", csv=False
+    experiment_name: str, label=None, type="main", csv=False, experiment_id=None
 ):
     """
     Returns a pd DataFrame of measurements for a given experiment.
+
+    The name of an experiment is unique only within its project, so a name alone
+    also finds the plates of an experiment with the same name in another project.
+    With `experiment_id`, only the plates of that one experiment are used.
     """
     # print(f"Getting measurements for experiment {experiment_name}")
-    _experiment_plates = Plate.objects.filter(experiment__name=experiment_name)
+    if experiment_id is not None:
+        _experiment_plates = Plate.objects.filter(experiment_id=experiment_id)
+    else:
+        _experiment_plates = Plate.objects.filter(experiment__name=experiment_name)
     # filter out plates that don't have any measurements in their wells
     experiment_plates = []
     for pl in _experiment_plates:
