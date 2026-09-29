@@ -1,0 +1,116 @@
+"""
+The statistical analysis of an experiment. It runs in the `celery` container,
+because a report of a whole screen takes several minutes.
+"""
+
+import os
+import re
+from datetime import datetime
+
+from celery import shared_task
+from django.conf import settings
+from django.core.management.base import CommandError
+
+from analysis.input_files import write_input_files
+from analysis.report import (
+    STATISTICS_FOLDER,
+    check_settings,
+    pack_results,
+    render_report,
+)
+from core.models import Experiment
+from helpers.logger import logger
+from importer.command_output import (
+    error_text,
+    finish_command,
+    register_running_command,
+)
+from importer.helper import message
+
+# Every run gets its own folder: <MEDIA_ROOT>/analysis/<experiment id>/<run name>/
+ANALYSIS_FOLDER = os.path.join(settings.MEDIA_ROOT, "analysis")
+
+
+@shared_task(bind=True)
+def run_analysis(self, form_data: dict) -> None:
+    """
+    Makes the report of one experiment and one measurement label. The messages
+    and the end status are read through long_polling, as for the import commands.
+
+    Accepted data example:
+    {"experiment_id": 105, "label": "Lum_CTG", "analysis_type": "single",
+     "settings": {"act_cut": "log10(1.5)", "fdr_cut": 0.01},
+     "room_name": "105_1727600000000"}
+    """
+    room_name = form_data.get("room_name")
+    # A restarted worker then ends this run as failed, like an import command
+    register_running_command(room_name, self.request.hostname or "unknown worker")
+    message("Running the statistical analysis", "info", room_name)
+    try:
+        zip_path = make_analysis(form_data, room_name)
+        message(
+            f"The analysis is done: {os.path.basename(zip_path)}", "success", room_name
+        )
+    except CommandError as error:
+        # Written for the user: what is wrong and what to do
+        message(str(error), "error", room_name)
+    except Exception as error:
+        message(
+            f"The analysis stopped because of an unexpected error in LDM: "
+            f"{error_text(error)}. The details are in the log of the celery container.",
+            "error",
+            room_name,
+        )
+        logger.exception(f"Analysis failed: {form_data}")
+    finally:
+        finish_command(room_name)
+
+
+def make_analysis(form_data: dict, room_name: str | None) -> str:
+    """Writes the input files, renders the report and returns the path of the zip."""
+    analysis_type = form_data.get("analysis_type") or ""
+    label = form_data.get("label") or ""
+    chosen_settings = check_settings(analysis_type, form_data.get("settings") or {})
+    try:
+        experiment = Experiment.objects.get(pk=form_data.get("experiment_id"))
+    except Experiment.DoesNotExist:
+        raise CommandError(f"Experiment {form_data.get('experiment_id')} not found.")
+
+    # e.g. "20260929-101500_single_Lum_CTG"; the label may have spaces or slashes
+    safe_label = re.sub(r"[^A-Za-z0-9_-]+", "_", label)
+    run_name = f"{datetime.now():%Y%m%d-%H%M%S}_{analysis_type}_{safe_label}"
+    folder = os.path.join(ANALYSIS_FOLDER, str(experiment.id), run_name)
+    output_folder = os.path.join(folder, "output")
+    os.makedirs(output_folder)
+
+    message(
+        f'Step 1 of 3: collecting the data of "{experiment.name}", measurement "{label}"',
+        "info",
+        room_name,
+    )
+    conditions = []
+    if analysis_type == "selectivity":
+        conditions = [chosen_settings["condi_yes"], chosen_settings["condi_no"]]
+    input_paths, warnings = write_input_files(experiment, label, folder, conditions)
+    for warning in warnings:
+        message(warning, "warning", room_name)
+
+    message(
+        "Step 2 of 3: making the R report (this takes a few minutes)", "info", room_name
+    )
+    report_params = {
+        "project": experiment.project.name,
+        "screen": experiment.name,
+        "hts_type": analysis_type,
+        **chosen_settings,
+        **input_paths,
+        # The reports add file names to these two paths, so they end with "/"
+        "path_output": output_folder + "/",
+        "path_SLmisc": STATISTICS_FOLDER + "/",
+    }
+    report_path = render_report(analysis_type, report_params, folder)
+
+    message("Step 3 of 3: packing the report and the result files", "info", room_name)
+    zip_path = os.path.join(folder, f"{run_name}.zip")
+    pack_results(zip_path, report_path, output_folder)
+    return zip_path

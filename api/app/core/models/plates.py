@@ -1,5 +1,5 @@
 """
-Plates, their dimensions and locations, and mapping one plate onto another.
+Plates, their dimensions, and mapping one plate onto another.
 """
 
 import math
@@ -25,13 +25,6 @@ from .wells import Well, WellCompound, WellType, WellWithdrawal
 
 class MappingError(APIException):
     pass
-
-
-class Location(TimeTrackedModel):
-    name = models.CharField(max_length=50, verbose_name="location")
-
-    def __str__(self):
-        return self.name
 
 
 class PlateDimension(models.Model):

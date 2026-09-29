@@ -15,7 +15,7 @@ from .materialized_views import (
 )
 from .measurements import Measurement, MeasurementAssignment, MeasurementFeature
 from .plate_info import PlateInfo
-from .plates import Location, MappingError, Plate, PlateDimension
+from .plates import MappingError, Plate, PlateDimension
 from .projects import BarcodeSpecification, Experiment, Project
 from .thresholds import Threshold
 from .wells import Sample, Well, WellCompound, WellType, WellWithdrawal
@@ -25,7 +25,6 @@ __all__ = [
     "DictField",
     "Experiment",
     "ExperimentDetail",
-    "Location",
     "MappingError",
     "MaterializedViewModel",
     "Measurement",

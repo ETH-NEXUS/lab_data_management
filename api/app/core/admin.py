@@ -12,7 +12,6 @@ from .models import (
     Sample,
     Well,
     WellCompound,
-    Location,
     Project,
     Experiment,
     BarcodeSpecification,
@@ -189,11 +188,6 @@ class MeasurementFeatureAdmin(admin.ModelAdmin):
 class SampleAdmin(admin.ModelAdmin):
     list_display = ("name",)
     search_fields = ("name",)
-
-
-@admin.register(Location)
-class LocationAdmin(admin.ModelAdmin):
-    list_display = ("name",)
 
 
 @admin.register(Project)

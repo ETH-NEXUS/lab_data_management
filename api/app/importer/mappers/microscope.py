@@ -24,9 +24,6 @@ from importer.mappers.values import convert_sci_to_float, parse_c10_datetime
 # The label of the values of a .txt file that has no header line above its values
 DEFAULT_MEASUREMENT_NAME = "Lum"
 
-# Only this many rows at the top of an .xlsx sheet are read as metadata
-XLSX_METADATA_ROWS = 38
-
 # Words in C10 files that start a block
 RESULTS_BLOCK = "Results"
 LAYOUT_BLOCK = "Layout"
@@ -55,7 +52,7 @@ class C10Data(TypedDict):
     barcode: str  # e.g. "241008MP-1_1"
     date: str  # from the .txt content ("10/14/2024") or the file name ("241014")
     time: str  # e.g. "12:45:28" or "125455"
-    metadata: dict  # the lines above the results, e.g. {"Plate Number": "Plate 1"}
+    metadata: dict  # .txt only: the lines above the results, e.g. {"Date": "10/14/2024"}
     results: list[dict]  # one dict per well, e.g. {"Well": "A1", "Lum": "16727"}
     layout: dict[str, str]  # control wells, e.g. {"A1": "P"}; empty for .txt files
 
@@ -72,7 +69,7 @@ class MicroscopeMapper(BaseMapper):
 
         Returned data example:
         {"barcode": "241008MP-1_1", "date": "10/14/2024", "time": "12:45:28",
-         "metadata": {"Plate Number": "Plate 1", ...},
+         "metadata": {"Plate Number": "Plate 1", ...},  # {} for .xlsx
          "results": [{"Well": "A1", "Lum": "16727"}, ...],
          "layout": {"A1": "P", "B1": "N"}}
         """
@@ -82,7 +79,8 @@ class MicroscopeMapper(BaseMapper):
 
         if extension == "xlsx":
             sheet = load_workbook(file).active
-            metadata = self.parse_xlsx_metadata(sheet)
+            # Nothing reads the metadata of an .xlsx file, so it is not parsed
+            metadata = {}
             results = self.parse_xlsx_results(sheet)
             layout = self.parse_xlsx_layout(sheet)
         elif extension == "txt":
@@ -211,37 +209,6 @@ class MicroscopeMapper(BaseMapper):
                 "but there is no well type with this name."
             )
         well.save()
-
-    @staticmethod
-    def parse_xlsx_metadata(sheet: Worksheet) -> dict:
-        """
-        The metadata at the top of the sheet. A text in the first column starts
-        a label, and the other cells of the row are added to that label. A cell
-        like "Gain: 214" is stored under its own key instead.
-
-        Example: {"Plate Number": ["Plate 1"], "Read": ["Luminescence"], "Gain": "214"}
-        """
-        # Values are text or lists of text, see the example above
-        metadata: dict = {}
-        current_label = None
-        for row in sheet.iter_rows(min_row=1, max_row=XLSX_METADATA_ROWS):
-            for index, cell in enumerate(row):
-                if index == 0 and cell.value:
-                    current_label = str(cell.value).strip().replace(":", "")
-                    metadata[current_label] = []
-                elif index != 0 and cell.value:
-                    text = str(cell.value)
-                    if ": " in text:
-                        # The value is the part between the first and a second ":"
-                        key = text.split(":")[0].strip()
-                        value = text.split(":")[1].strip()
-                        metadata[key] = value
-                    else:
-                        metadata[current_label].append(text)
-                # "Results" ends this row; the next rows are still read
-                if str(cell.value).strip().lower() == RESULTS_BLOCK.lower():
-                    break
-        return metadata
 
     @staticmethod
     def parse_xlsx_results(sheet: Worksheet) -> list[dict]:

@@ -67,6 +67,7 @@ INSTALLED_APPS = [
     "dbbackup",
     "problems",
     "inventory",
+    "analysis",
 ]
 
 

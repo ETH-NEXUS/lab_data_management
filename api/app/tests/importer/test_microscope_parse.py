@@ -171,27 +171,8 @@ class MicroscopeParseTest(SimpleTestCase):
             ],
             data["results"],
         )
-        self.assertEqual(
-            {
-                "Plate Number": ["Plate 1"],
-                "Date": ["10/14/2024"],
-                "Read": ["Luminescence Endpoint"],
-                "Gain": "214",
-                "Layout": ["1", "2", "A", "POS", "SMP", "B", "NEG", "SMP"],
-                "Results": [
-                    "Well ID",
-                    "Well",
-                    "Lum",
-                    "SPL1",
-                    "A1",
-                    "16727",
-                    "SPL2",
-                    "B1",
-                    "1.5E+03",
-                ],
-            },
-            data["metadata"],
-        )
+        # The metadata of an .xlsx file is not read
+        self.assertEqual({}, data["metadata"])
 
     def test_a_file_name_without_date_and_time_is_refused(self):
         path = join(self.folder, "241008MP-1_1.txt")
