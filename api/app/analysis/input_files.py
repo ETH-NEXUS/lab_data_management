@@ -123,6 +123,7 @@ def write_input_files(
     chemical_info.to_csv(paths["path_lib"], index=False)
     experiment_data[EXPERIMENT_DATA_COLUMNS].to_csv(paths["path_meta"], index=False)
     warnings = repeated_warnings + plate_warnings(main_info, experiment_data)
+    warnings += other_condition_warnings(conditions, plate_infos)
     warnings += control_warnings(main_info, positive, negative)
     return paths, warnings
 
@@ -194,6 +195,34 @@ def plate_warnings(main_info: pd.DataFrame, experiment_data: pd.DataFrame) -> li
             f"so they are not in the report: {', '.join(without_measurements)}."
         )
     return warnings
+
+
+def other_condition_warnings(
+    conditions: list[str], plate_infos: list[dict]
+) -> list[str]:
+    """
+    A selectivity report leaves out the plates of any other condition than the
+    two it compares (selectivity.qmd). They are named, so a plate with a typo in
+    its condition is noticed.
+
+    Returned data example:
+    ['These plates have another condition than "irradiated" and "not irradiated", so
+      they are not in the report: SP_7 ("half plate irradiated").']
+    """
+    if not conditions:
+        return []
+    others = sorted(
+        f'{info["plate_barcode"]} ("{info["condition"]}")'
+        for info in plate_infos
+        if str(info["condition"]) not in conditions
+    )
+    if not others:
+        return []
+    condition_yes, condition_no = conditions
+    return [
+        f'These plates have another condition than "{condition_yes}" and '
+        f'"{condition_no}", so they are not in the report: {", ".join(others)}.'
+    ]
 
 
 def check_conditions(conditions: list[str], plate_infos: list[dict]) -> None:

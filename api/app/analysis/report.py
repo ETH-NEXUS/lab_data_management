@@ -158,7 +158,8 @@ def render_report(analysis_type: str, report_params: dict, folder: str) -> str:
             "run. The Docker image has to be built with ENABLE_R=True."
         )
     if result.returncode != 0:
-        raise CommandError(render_error_text(result.stderr))
+        # R writes its errors to stderr; Quarto itself may write an error to stdout
+        raise CommandError(render_error_text(result.stderr + "\n" + result.stdout))
     return os.path.join(folder, f"{analysis_type}.html")
 
 

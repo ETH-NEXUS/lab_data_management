@@ -100,8 +100,9 @@ class AnalysisTaskTest(TestCase):
         """
         for name in ["main_info.csv", "experiment_data.csv"]:
             shutil.copy(os.path.join(cwd, name), self.inputs_folder)
-        with open(os.path.join(cwd, "single.html"), "w") as report:
-            report.write("<html>report</html>")
+        for report_name in ["single.html", "selectivity.html"]:
+            with open(os.path.join(cwd, report_name), "w") as report:
+                report.write("<html>report</html>")
         with open(os.path.join(cwd, "output", "DAA_results.tsv"), "w") as results:
             results.write("hits\n")
         return mock.Mock(returncode=0, stdout="Output created: single.html", stderr="")
@@ -302,6 +303,70 @@ class AnalysisTaskTest(TestCase):
             'Plate SP_2 has no positive control wells ("P"), so the report cannot '
             "normalize it and leaves it out of the results.",
             self.error_texts(output)[0],
+        )
+
+    def add_plate(self, barcode, condition):
+        """One more measured plate with N and P wells and its plate information."""
+        plate = Plate.objects.create(
+            barcode=barcode,
+            dimension=self.wells[0].plate.dimension,
+            experiment=self.experiment,
+        )
+        measured_at = datetime(2025, 5, 16, 10, 0)
+        for position, well in enumerate(self.wells[:2]):
+            new_well = Well.objects.create(
+                plate=plate, position=position, type=well.type
+            )
+            Measurement.objects.create(
+                well=new_well, label="Lum", value=position, measured_at=measured_at
+            )
+        PlateInfo.objects.create(
+            plate=plate,
+            experiment=self.experiment,
+            lib_plate_barcode="LIB_1",
+            label="Lum",
+            replicate="1",
+            measurement_time=measured_at,
+            cell_type="SW620",
+            condition=condition,
+        )
+
+    def test_plates_of_another_condition_are_named_in_a_warning(self):
+        self.add_plate("SP_2", "not irradiated")
+        self.add_plate("SP_3", "half plate irradiated")
+        start_command(ROOM)
+        form_data = {
+            "experiment_id": self.experiment.id,
+            "label": "Lum",
+            "analysis_type": "selectivity",
+            "settings": {"condi_yes": "irradiated", "condi_no": "not irradiated"},
+            "room_name": ROOM,
+        }
+        with mock.patch("analysis.report.subprocess.run", side_effect=self.fake_quarto):
+            tasks.run_analysis.delay(form_data)
+
+        output = read_output(ROOM, 0)
+        warnings = [m["text"] for m in output["messages"] if m["level"] == "warning"]
+        self.assertIn(
+            'These plates have another condition than "irradiated" and "not '
+            'irradiated", so they are not in the report: SP_3 ("half plate '
+            'irradiated").',
+            warnings,
+        )
+        self.assertEqual("completed", output["status"])
+
+    def test_a_quarto_error_on_stdout_is_shown_too(self):
+        def failing_quarto(command, cwd, **kwargs):
+            return mock.Mock(
+                returncode=1,
+                stdout="ERROR: Unknown parameter select_cut_x",
+                stderr="processing file: single.qmd\n1/75\n",
+            )
+
+        output = self.run_task(quarto=failing_quarto)
+
+        self.assertIn(
+            "ERROR: Unknown parameter select_cut_x", self.error_texts(output)[0]
         )
 
     def test_a_selectivity_with_an_unknown_condition_names_the_known_ones(self):

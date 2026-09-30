@@ -640,11 +640,12 @@ if(!file.exists(path_output %&% "plate_hmap_cor.png")) {
 
 Plate heatmaps of raw, normalized, and corrected signal are stored as image files. 
 Based on good practice and visual inspection, we decided to apply `r geom_cor` correction.
-The half irradiated plate is removed from further analysis.
+Plates whose condition is neither `r condi_yes` nor `r condi_no` are removed from further analysis.
 
 ```{r}
 
-id_keep = which(dd$condition != "half plate irradiated")
+# dd$condition only has the levels condi_yes and condi_no, so any other condition is NA
+id_keep = which(!is.na(dd$condition))
 dd = dd[id_keep, ]
 dd$condition = factor(dd$condition)
 ```
