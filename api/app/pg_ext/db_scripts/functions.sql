@@ -32,9 +32,13 @@ def merge_on_duplicate_keys(ordered_pairs):
                         if isinstance(d[k], dict):
                                 d[k].update(v)
                         elif isinstance(d[k], list):
-                                # Keeps the order (e.g. the timestamps of a label), a set would not
+                                # Keeps the order (e.g. the timestamps of a label), a set alone would not.
+                                # The set of the items as text finds a duplicate without searching the list.
+                                seen = {json.dumps(item, sort_keys=True) for item in d[k]}
                                 for item in v:
-                                        if item not in d[k]:
+                                        key = json.dumps(item, sort_keys=True)
+                                        if key not in seen:
+                                                seen.add(key)
                                                 d[k].append(item)
                         else:
                                 d[k] += f", {v}"

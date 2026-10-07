@@ -16,8 +16,8 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   (e: 'update:open', value: boolean): void
-  // The measurement that was corrected, e.g. 'Lum_CTG'
-  (e: 'corrected', label: string): void
+  // The measurement that was corrected and the new one, e.g. 'Lum_CTG', 'Lum_CTG_bc_N1_median'
+  (e: 'corrected', label: string, correctedLabel: string): void
 }>()
 
 const { t } = useI18n()
@@ -76,7 +76,7 @@ const applyCorrection = async () => {
       reference_type: referenceType.value,
       method: method.value,
     })
-    emit('corrected', label.value)
+    emit('corrected', label.value, result.label)
     close()
     toast.add({
       title: t('plates.background_correction.success', { label: result.label }),

@@ -90,6 +90,14 @@ watch(
   },
 )
 
+// Another measurement may have fewer time points, so start again at its first one
+watch(
+  () => plateViewStore.selectedMeasurement,
+  () => {
+    plateViewStore.selectedTimestampIdx = 0
+  },
+)
+
 const timestampOptions = computed(() => {
   if (!plateViewStore.selectedMeasurement) {
     return []

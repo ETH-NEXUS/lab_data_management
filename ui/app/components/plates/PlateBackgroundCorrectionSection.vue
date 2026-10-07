@@ -27,12 +27,17 @@ const isModalOpen = ref(false)
 const corrections = computed(() => findBackgroundCorrections(props.plate, plateViewStore.selectedMeasurement))
 
 const selectedLabel = ref<string | null>(null)
+// A correction to show as soon as the reloaded plate has it, e.g. 'Lum_CTG_bc_N1_mean'
+const labelToShow = ref<string | null>(null)
 
 watch(
   corrections,
   () => {
     const labels = corrections.value.map((correction) => correction.label)
-    if (!selectedLabel.value || !labels.includes(selectedLabel.value)) {
+    if (labelToShow.value && labels.includes(labelToShow.value)) {
+      selectedLabel.value = labelToShow.value
+      labelToShow.value = null
+    } else if (!selectedLabel.value || !labels.includes(selectedLabel.value)) {
       selectedLabel.value = labels[0] ?? null
     }
   },
@@ -50,11 +55,13 @@ const minMax = computed(() =>
 
 /**
  * Reloads only the plate (not the whole page), so the heatmap settings stay,
- * and shows the corrected measurement: the main heatmap gets its original one.
+ * and shows the new correction: the main heatmap gets its original measurement.
  *
- * Accepted input example: `'Lum_CTG'`
+ * Accepted input example: `('Lum_CTG', 'Lum_CTG_bc_N1_median')`
  */
-const onCorrected = async (label: string): Promise<void> => {
+const onCorrected = async (label: string, correctedLabel: string): Promise<void> => {
+  // Also when another correction of this measurement was shown before
+  labelToShow.value = correctedLabel
   try {
     const plate = await plateStore.fetchPlateByBarcode(props.plate.barcode)
     if (!plate) return
