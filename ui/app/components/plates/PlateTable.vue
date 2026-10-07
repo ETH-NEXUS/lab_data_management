@@ -10,10 +10,13 @@ type Props = {
   plateIndex?: number
   min: number
   max: number
+  // Shows this measurement instead of the one selected on the page, e.g. 'Lum_CTG_bc_N1_median'
+  measurementLabel?: string | null
 }
 
 const props = withDefaults(defineProps<Props>(), {
   plateIndex: 0,
+  measurementLabel: null,
 })
 
 const emit = defineEmits<{
@@ -21,6 +24,8 @@ const emit = defineEmits<{
 }>()
 
 const platePage = usePlateViewStore()
+
+const shownMeasurement = computed(() => props.measurementLabel ?? platePage.selectedMeasurement)
 
 const byPosition = (position: number) => {
   return props.plate.wells?.find((well) => well.position === position)
@@ -73,7 +78,7 @@ const typeColor = (well: WellDetails | undefined) => {
 }
 
 const measurement = (well: WellDetails) => {
-  const selectedMeasurement = platePage.selectedMeasurement
+  const selectedMeasurement = shownMeasurement.value
   const selectedTimestampIdx = platePage.selectedTimestampIdx
 
   if (!selectedMeasurement || !well.measurements) {
@@ -126,7 +131,7 @@ const positionFromRowCol = (row: number, col: number) => row * props.plate.dimen
           backgroundColor:
             platePage.squareCompoundType && !platePage.smallerMapView
               ? typeColor(wells[row]?.[col])
-              : platePage.showHeatmap && platePage.selectedMeasurement
+              : platePage.showHeatmap && shownMeasurement
                 ? heatmapColor(wells[row]?.[col])
                 : props.plate.template || (platePage.wellContent === 'type' && !platePage.showHeatmap)
                   ? typeColor(wells[row]?.[col])
@@ -144,7 +149,7 @@ const positionFromRowCol = (row: number, col: number) => row * props.plate.dimen
           :class="platePage.smallerMapView ? 'innerSmaller' : 'inner'"
           :style="{
             backgroundColor:
-              platePage.showHeatmap && platePage.selectedMeasurement
+              platePage.showHeatmap && shownMeasurement
                 ? heatmapColor(wells[row]?.[col])
                 : props.plate.template || (platePage.wellContent === 'type' && !platePage.showHeatmap)
                   ? typeColor(wells[row]?.[col])

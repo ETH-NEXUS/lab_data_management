@@ -410,6 +410,22 @@
         "well_type": "Well Type",
         "index_position": "Index Position"
       }
+    },
+    "background_correction": {
+      "open_button": "Background correction",
+      "title": "Background correction",
+      "description": "The median or mean of the reference wells is subtracted from every other well of this plate, at each time point. The result is saved as a new measurement of the plate; the reference wells stay empty.",
+      "measurement": "Measurement",
+      "reference_type": "Reference wells",
+      "method": "Background",
+      "methods": {
+        "median": "median",
+        "mean": "mean"
+      },
+      "apply_button": "Correct",
+      "success": "Saved as {label}",
+      "heatmap_title": "Background corrected: {label}",
+      "formula": "Value of the well − {method} of the {reference} wells (at the same time point). The {reference} wells are left empty."
     }
   },
   "messages_page": {

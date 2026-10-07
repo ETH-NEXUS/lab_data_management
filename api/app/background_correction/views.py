@@ -14,8 +14,9 @@ from core.models import Plate
 
 
 class CorrectionSettingsSerializer(serializers.Serializer):
-    label = serializers.CharField()
-    reference_type = serializers.CharField()
+    # Labels and well types are looked up exactly: some labels end with a space
+    label = serializers.CharField(trim_whitespace=False)
+    reference_type = serializers.CharField(trim_whitespace=False)
     method = serializers.ChoiceField(choices=list(METHODS))
 
 

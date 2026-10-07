@@ -154,6 +154,16 @@ class BackgroundCorrectionViewTest(TestCase):
         self.assertIn('no "N1" wells', response.json()[0])
         self.assertFalse(Measurement.objects.exclude(label="Lum").exists())
 
+    def test_label_ending_with_a_space_is_corrected(self):
+        self.login()
+        Measurement.objects.filter(label="Lum").update(label="Lum ")
+
+        response = self.correct(
+            {"label": "Lum ", "reference_type": "Nref", "method": "median"}
+        )
+
+        self.assertEqual({"label": "Lum _bc_Nref_median"}, response.json())
+
     def test_unknown_measurement_and_method_are_refused(self):
         self.login()
 

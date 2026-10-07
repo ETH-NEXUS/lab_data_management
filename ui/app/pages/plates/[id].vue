@@ -1,6 +1,7 @@
 <script setup lang="ts">
-import { computed, watch } from 'vue'
+import { computed, ref, watch } from 'vue'
 import DynamicPlate from '~/components/plates/DynamicPlate.vue'
+import PlateBackgroundCorrectionModal from '~/components/plates/PlateBackgroundCorrectionModal.vue'
 import PlateArchiveButton from '~/components/plates/PlateArchiveButton.vue'
 import PlatePaneHeader from '~/components/plates/PlatePaneHeader.vue'
 import ResizableSplitPane from '~/components/common/ResizableSplitPane.vue'
@@ -107,6 +108,34 @@ const measurementAdded = async (well: WellInfo['well']) => {
 const hasSelectedWell = computed(() => {
   return Boolean(plateViewStore.selectedWellInfo)
 })
+
+const isBackgroundCorrectionOpen = ref(false)
+
+const canCorrectBackground = computed(() => {
+  const plate = plateStore.currentPlate
+  if (!plate || shouldUseMinimalDynamicPlateView.value) return false
+  return (plate.details.measurement_labels ?? []).length > 0
+})
+
+/**
+ * Reloads only the plate (not the whole page), so the heatmap settings stay,
+ * and shows the measurement that was corrected next to its corrected heatmap.
+ *
+ * Accepted input example: `'Lum_CTG'`
+ */
+const onBackgroundCorrected = async (label: string): Promise<void> => {
+  try {
+    const plate = await plateStore.fetchPlateByBarcode(plateRouteBarcode.value)
+    if (!plate) return
+
+    plateViewStore.measurementOptions = plate.details.measurement_labels ?? []
+    plateViewStore.selectedMeasurement = label
+    plateViewStore.showHeatmap = true
+  } catch (err) {
+    // The plate store keeps the error and the page shows it
+    console.error(err)
+  }
+}
 </script>
 
 <template>
@@ -129,6 +158,14 @@ const hasSelectedWell = computed(() => {
               />
               <!-- Only library plates can be archived: the lab archives plates it removed from storage. -->
               <PlateArchiveButton v-if="plateStore.currentPlate?.library" />
+              <UButton
+                v-if="canCorrectBackground"
+                color="secondary"
+                variant="outline"
+                icon="i-heroicons-adjustments-horizontal"
+                :label="t('plates.background_correction.open_button')"
+                @click="isBackgroundCorrectionOpen = true"
+              />
             </div>
 
             <p
@@ -188,5 +225,12 @@ const hasSelectedWell = computed(() => {
         </div>
       </template>
     </ResizableSplitPane>
+
+    <PlateBackgroundCorrectionModal
+      v-if="plateStore.currentPlate"
+      v-model:open="isBackgroundCorrectionOpen"
+      :plate="plateStore.currentPlate"
+      @corrected="onBackgroundCorrected"
+    />
   </section>
 </template>
