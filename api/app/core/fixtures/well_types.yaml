@@ -68,6 +68,8 @@
   fields:
     name: N4
     description: Negative Control 4
-
-
-
+- model: core.WellType
+  pk: 15
+  fields:
+    name: NREF
+    description: Negative Control Reference

@@ -139,7 +139,8 @@ const onBackgroundCorrected = async (label: string): Promise<void> => {
 </script>
 
 <template>
-  <section class="mb-50 h-dvh overflow-y-auto pb-100">
+  <!-- Scrolls with the window like the other pages: an own scroll area left empty space below it -->
+  <section class="pb-8">
     <ResizableSplitPane
       v-model="splitPercent"
       :min-left-percent="PLATE_PAGE_MIN_LEFT_PERCENT"

@@ -49,13 +49,18 @@ const minMax = computed(() =>
     <h3 class="mb-1 text-lg font-medium text-slate-800">
       {{ t('plates.background_correction.heatmap_title', { label: selectedCorrection.label }) }}
     </h3>
-    <p class="mb-3 text-sm text-slate-600">
+    <p class="text-sm text-slate-600">{{ t('plates.background_correction.formula_caption') }}</p>
+    <!-- Monospace with spaces, so "-" reads as a minus and not as a dash -->
+    <code class="my-1 block w-fit rounded-md bg-slate-100 px-3 py-2 font-mono text-sm text-slate-800">
       {{
         t('plates.background_correction.formula', {
           method: t(`plates.background_correction.methods.${selectedCorrection.method}`),
           reference: selectedCorrection.referenceType,
         })
       }}
+    </code>
+    <p class="mb-3 text-xs text-slate-500">
+      {{ t('plates.background_correction.formula_note', { reference: selectedCorrection.referenceType }) }}
     </p>
 
     <div v-if="corrections.length > 1" class="mb-3 max-w-sm">

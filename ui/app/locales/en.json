@@ -425,7 +425,9 @@
       "apply_button": "Correct",
       "success": "Saved as {label}",
       "heatmap_title": "Background corrected: {label}",
-      "formula": "Value of the well − {method} of the {reference} wells (at the same time point). The {reference} wells are left empty."
+      "formula_caption": "Calculated with this formula:",
+      "formula": "corrected value = (value of the well) - {method}(values of the {reference} wells)",
+      "formula_note": "Calculated separately for each time point. The {reference} wells are left empty."
     }
   },
   "messages_page": {

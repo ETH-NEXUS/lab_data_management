@@ -155,7 +155,7 @@ const gridTemplateColumns = computed(() => {
 </script>
 
 <template>
-  <section ref="containerRef" class="grid h-dvh w-full" :style="{ gridTemplateColumns }">
+  <section ref="containerRef" class="grid min-h-full w-full" :style="{ gridTemplateColumns }">
     <div class="min-w-0">
       <slot name="left" />
     </div>

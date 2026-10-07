@@ -166,6 +166,72 @@ class ImportCommandTest(ManagementPageTestCase):
         self.assertFalse(Plate.objects.exists())
         self.assertFalse(Compound.objects.exists())
 
+    def test_an_imported_plate_says_what_it_created(self):
+        path = self.write("plate.csv", LIBRARY_PLATE_CSV)
+
+        output = self.run_import(
+            "library_plate",
+            input_file=path,
+            library_name="Library",
+            plate_barcode="LIB_1",
+        )
+
+        texts = [message["text"] for message in output["messages"]]
+        self.assertIn("Created library Library.", texts)
+        self.assertIn("Created plate LIB_1.", texts)
+
+    def test_a_failed_import_does_not_say_it_created_the_plate(self):
+        # The plate and the library are rolled back, so they were not created
+        path = self.write(
+            "plate.csv", LIBRARY_PLATE_CSV.replace("C,null,P", "C,null,XX")
+        )
+
+        output = self.run_import(
+            "library_plate",
+            input_file=path,
+            library_name="Library",
+            plate_barcode="LIB_1",
+        )
+
+        texts = [message["text"] for message in output["messages"]]
+        self.assertEqual("failed", output["status"])
+        self.assertNotIn("Created library Library.", texts)
+        self.assertNotIn("Created plate LIB_1.", texts)
+
+    def test_a_failed_sdf_import_does_not_say_it_created_the_library(self):
+        record = {"NAME": "Aspirin", "PLATE_NUMBER1": "SDF_1", "PLATE_AMOUNT1": "10"}
+        path = self.write_sdf(
+            {**record, "POS_IN_PLATE": "A1"},
+            {**record, "NAME": "Caffeine", "POS_IN_PLATE": "not a well"},
+        )
+
+        output = self.run_import("sdf", input_file=path, library_name="Library")
+
+        texts = [message["text"] for message in output["messages"]]
+        self.assertEqual("failed", output["status"])
+        self.assertNotIn("Created library Library.", texts)
+
+    def test_a_control_plate_with_nref_reference_wells(self):
+        # The lab writes "Nref"; well types are looked up in capitals
+        path = self.write(
+            "plate.csv", LIBRARY_PLATE_CSV.replace("C,null,P", "Nref,null,P")
+        )
+        Project.objects.create(name="Project")
+
+        output = self.run_import(
+            "library_plate",
+            input_file=path,
+            project_name="Project",
+            plate_barcode="CONTROL_1",
+            is_control_plate=True,
+        )
+
+        self.assertEqual("completed", output["status"])
+        self.assertEqual(
+            "NREF",
+            Well.objects.get(plate__barcode="CONTROL_1", position=0).type.name,
+        )
+
     def test_a_library_plate_file_that_does_not_exist(self):
         output = self.run_import(
             "library_plate",

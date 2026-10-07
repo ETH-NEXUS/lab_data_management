@@ -170,12 +170,10 @@ class Command(BaseCommand):
             number_of_rows, number_of_columns = row_col_from_wells(number_of_wells)
         if not library_name:
             library_name = splitext(Path(sdf_file).name)[0]
-        library, created = CompoundLibrary.objects.update_or_create(
+        library, library_created = CompoundLibrary.objects.update_or_create(
             name=library_name, defaults={"file_name": Path(sdf_file).name}
         )
-        if created:
-            message(f"Created library {library}.", "info", room_name)
-        else:
+        if not library_created:
             message(f"Using library {library}.", "info", room_name)
 
         sdf = load_sdf(sdf_file, mapping)
@@ -345,6 +343,10 @@ class Command(BaseCommand):
                     room_name,
                 )
 
+        # Only told at the end: after an error the import is rolled back
+        if library_created:
+            message(f"Created library {library}.", "info", room_name)
+
     def __check_file_format(self, input_file: str):
         with open(input_file, "r", encoding=detect_encoding(input_file)) as file:
             reader = csv.reader(file)
@@ -424,14 +426,13 @@ class Command(BaseCommand):
         compounds = [item for sublist in compounds for item in sublist]
         types = [item for sublist in types for item in sublist]
         plate_created = False
+        library_created = False
         plate = None
         library = None
         if library_name:
             library, library_created = CompoundLibrary.objects.update_or_create(
                 name=library_name
             )
-            if library_created:
-                message(f"Created library {library_name}.", "success", room_name)
             plate, plate_created = Plate.objects.update_or_create(
                 barcode=plate_barcode,
                 dimension=dimension,
@@ -451,13 +452,6 @@ class Command(BaseCommand):
                 raise CommandError(f"Project {project_name} does not exist.")
         else:
             raise CommandError("Please specify a library name or a project name.")
-
-        if plate_created:
-            message(
-                f"Created plate {plate_barcode}.",
-                "success",
-                room_name,
-            )
 
         new_compounds: list[str] = []
         with tqdm(
@@ -484,6 +478,12 @@ class Command(BaseCommand):
                     well.save()
                 pbar.update(1)
 
+        # Only told once every well is read: after an error the import is rolled
+        # back, and the library and the plate are not stored after all
+        if library_created:
+            message(f"Created library {library_name}.", "success", room_name)
+        if plate_created:
+            message(f"Created plate {plate_barcode}.", "success", room_name)
         if new_compounds:
             message(
                 f"Created {len(new_compounds)} new compounds: "
