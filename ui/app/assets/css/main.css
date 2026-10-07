@@ -24,6 +24,32 @@ body {
 }
 
 /*
+  Everything clickable shows the hand cursor. Tailwind v4 and Nuxt UI leave the
+  arrow on buttons, so this is set here once for native controls and for the roles
+  Nuxt UI renders (menu items, select options, tabs). Being in the base layer,
+  utility classes still win, e.g. `disabled:cursor-not-allowed` or `cursor-col-resize`.
+*/
+@layer base {
+  button:not(:disabled),
+  [role='button']:not([aria-disabled='true']),
+  [role='tab']:not([aria-disabled='true']):not([data-disabled]),
+  [role='menuitem']:not([data-disabled]),
+  [role='menuitemcheckbox']:not([data-disabled]),
+  [role='menuitemradio']:not([data-disabled]),
+  [role='option']:not([data-disabled]),
+  select:not(:disabled),
+  summary,
+  input[type='checkbox']:not(:disabled),
+  input[type='radio']:not(:disabled),
+  input[type='file']:not(:disabled),
+  input[type='file']:not(:disabled)::file-selector-button,
+  label:has(input[type='checkbox']:not(:disabled)),
+  label:has(input[type='radio']:not(:disabled)) {
+    cursor: pointer;
+  }
+}
+
+/*
   Core card primitives for the new reference layout style.
 
   Card content shape example:
