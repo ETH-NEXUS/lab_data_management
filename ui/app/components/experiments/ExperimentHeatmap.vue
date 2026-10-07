@@ -124,7 +124,8 @@ const max = computed(() => {
     return 0
   }
 
-  return stats.max[0] ?? 0
+  // The scale of the selected time point, as in the per-plate view
+  return stats.max[plateViewStore.selectedTimestampIdx] ?? 0
 })
 
 const min = computed(() => {
@@ -137,7 +138,8 @@ const min = computed(() => {
     return 0
   }
 
-  return stats.min[0] ?? 0
+  // The scale of the selected time point, as in the per-plate view
+  return stats.min[plateViewStore.selectedTimestampIdx] ?? 0
 })
 
 const getMinPerPlate = (plate: Plate) => {
