@@ -33,10 +33,12 @@ const errorMessage = ref('')
 const labels = computed(() => props.plate.details.measurement_labels ?? [])
 const wellTypes = computed(() => getWellTypesOfMeasurement(props.plate, label.value))
 
-// The lab usually takes the N1 wells as the reference
+// The reference wells the lab uses, in this order; "Nref" is imported as NREF
+const USUAL_REFERENCE_TYPES = ['N1', 'NREF']
+
 const defaultReferenceType = (): string | null => {
-  if (wellTypes.value.includes('N1')) return 'N1'
-  return wellTypes.value[0] ?? null
+  const usual = USUAL_REFERENCE_TYPES.find((type) => wellTypes.value.includes(type))
+  return usual ?? wellTypes.value[0] ?? null
 }
 
 watch(

@@ -26,6 +26,8 @@ const emit = defineEmits<{
 const platePage = usePlateViewStore()
 
 const shownMeasurement = computed(() => props.measurementLabel ?? platePage.selectedMeasurement)
+// A given measurement is always shown as a heatmap; the page one only with "Show heatmap"
+const showsHeatmap = computed(() => Boolean(props.measurementLabel) || platePage.showHeatmap)
 
 const byPosition = (position: number) => {
   return props.plate.wells?.find((well) => well.position === position)
@@ -131,7 +133,7 @@ const positionFromRowCol = (row: number, col: number) => row * props.plate.dimen
           backgroundColor:
             platePage.squareCompoundType && !platePage.smallerMapView
               ? typeColor(wells[row]?.[col])
-              : platePage.showHeatmap && shownMeasurement
+              : showsHeatmap && shownMeasurement
                 ? heatmapColor(wells[row]?.[col])
                 : props.plate.template || (platePage.wellContent === 'type' && !platePage.showHeatmap)
                   ? typeColor(wells[row]?.[col])
@@ -149,7 +151,7 @@ const positionFromRowCol = (row: number, col: number) => row * props.plate.dimen
           :class="platePage.smallerMapView ? 'innerSmaller' : 'inner'"
           :style="{
             backgroundColor:
-              platePage.showHeatmap && shownMeasurement
+              showsHeatmap && shownMeasurement
                 ? heatmapColor(wells[row]?.[col])
                 : props.plate.template || (platePage.wellContent === 'type' && !platePage.showHeatmap)
                   ? typeColor(wells[row]?.[col])

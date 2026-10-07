@@ -190,6 +190,31 @@ class MapperRunTest(TestCase):
             (a1.value, a1.identifier, a1.measured_at),
         )
 
+    def test_m1000_files_named_barcode_date_time(self):
+        experiment = Experiment.objects.create(name="M1000", project=self.project)
+        shutil.copy(
+            M1000_ONE_LABEL_FILE, join(self.folder, "BAF210901_1_090221_131750.asc")
+        )
+        file_pattern = join(
+            self.folder, Config.current.importer.m1000.default.file_blob
+        )
+
+        # The older format refuses the name instead of making it a barcode
+        with mock.patch("importer.mappers.base.message") as message:
+            M1000Mapper().run(file_pattern, experiment_name="M1000")
+        self.assertFalse(Plate.objects.filter(experiment=experiment).exists())
+        self.assertIn("Choose that format", message.call_args_list[1].args[0])
+
+        M1000Mapper().run(
+            file_pattern,
+            experiment_name="M1000",
+            file_name_format="barcode_date_time",
+        )
+
+        plate = Plate.objects.get(experiment=experiment)
+        self.assertEqual(("BAF210901_1", experiment), (plate.barcode, plate.experiment))
+        self.assertEqual(384, Measurement.objects.filter(well__plate=plate).count())
+
     def test_the_labels_of_an_m1000_file_with_two_values_per_well(self):
         # The file has the columns "Acceptor" and "Donor", but its footer lists
         # the label "Donor" first: the labels are read in reverse order.

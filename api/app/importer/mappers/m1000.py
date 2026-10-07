@@ -6,7 +6,6 @@ more values, e.g. "A1<TAB>SM1_1<TAB>15". The footer at the end has the date of
 the measurement, the plate description and the settings of every measured label.
 """
 
-import os
 import re
 from datetime import datetime as dt
 from io import TextIOWrapper
@@ -19,6 +18,7 @@ from tqdm import tqdm
 from core.models import Measurement
 from importer.helper import message
 from importer.mappers.base import BaseMapper
+from importer.mappers.m1000_file_names import read_file_name
 from importer.mappers.values import convert_sci_to_float
 
 # In the footer, the key that names a measured label
@@ -53,9 +53,6 @@ def debug_message(text: str, kwargs: dict) -> None:
 
 
 class M1000Mapper(BaseMapper):
-    # File name with optional date and time, e.g. "20240610-121212_demo_1.asc"
-    RE_FILENAME = r"(?:(?P<date>[0-9]+)-(?P<time>[0-9]+)_)?(?P<barcode>[^\.]+)\.asc"
-
     # A well position, e.g. "A1" or "AB12"
     RE_POS = r"^[A-Z]+[0-9]+$"
     # An identifier with exactly one underscore, e.g. "SM1_1"
@@ -111,7 +108,9 @@ class M1000Mapper(BaseMapper):
          "meta_data": [{"Label": "Label1", "Integration time": "1000 ms"}],
          "entries": [{"position": "A1", "identifier": "SM1_1", "values": [15.0]}]}
         """
-        barcode = self.barcode_from_file_name(file.name)
+        # kwargs["file_name_format"], e.g. "barcode_date_time", see m1000_file_names
+        file_name = read_file_name(file.name, kwargs.get("file_name_format"))
+        barcode = file_name["barcode"]
 
         entries = []
         measurement_date = None
@@ -145,7 +144,7 @@ class M1000Mapper(BaseMapper):
         if measurement_date is None:
             # The name of the file decides, so that reading the same file again
             # updates its measurements instead of storing a second set of them
-            measurement_date = self.date_from_file_name(file.name)
+            measurement_date = file_name["measured_at"]
 
         if measurement_date is None:
             message(
@@ -165,26 +164,6 @@ class M1000Mapper(BaseMapper):
             "meta_data": list(reversed(meta_data)),
             "entries": entries,
         }
-
-    def barcode_from_file_name(self, path: str) -> str:
-        """ "/data/20240610-121212_demo_1.asc" -> "demo_1"."""
-        file_name = os.path.basename(path)
-        match = re.match(self.RE_FILENAME, file_name)
-        if not match:
-            raise CommandError(f"File name {file_name} does not match conventions.")
-        return match.group("barcode")
-
-    def date_from_file_name(self, path: str) -> dt | None:
-        """ "/data/20240610-121212_demo_1.asc" -> datetime(2024, 6, 10, 12, 12, 12)."""
-        match = re.match(self.RE_FILENAME, os.path.basename(path))
-        if not match or not match.group("date"):
-            return None
-        try:
-            return dt.strptime(
-                f"{match.group('date')} {match.group('time')}", "%Y%m%d %H%M%S"
-            )
-        except ValueError:
-            return None
 
     def read_value_line(
         self, parts: list[str], position_column: int, identifier_column: int

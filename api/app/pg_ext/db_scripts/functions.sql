@@ -32,7 +32,10 @@ def merge_on_duplicate_keys(ordered_pairs):
                         if isinstance(d[k], dict):
                                 d[k].update(v)
                         elif isinstance(d[k], list):
-                                d[k] = list(set(d[k] + v))
+                                # Keeps the order (e.g. the timestamps of a label), a set would not
+                                for item in v:
+                                        if item not in d[k]:
+                                                d[k].append(item)
                         else:
                                 d[k] += f", {v}"
                 else:

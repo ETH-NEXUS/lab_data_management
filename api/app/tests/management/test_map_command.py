@@ -5,7 +5,7 @@ Tests for the errors of the map command, as the management page shows them.
 from os.path import join
 from unittest import mock
 
-from core.models import Experiment, Measurement, Project
+from core.models import Experiment, Measurement, Plate, PlateDimension, Project
 from importer.mappers import EchoMapper
 from tests.importer.test_m1000_parse import ASC_FILE_CONTENT
 from tests.management.base import ManagementPageTestCase
@@ -95,6 +95,23 @@ class MapCommandTest(ManagementPageTestCase):
             "well A2 is not a number.",
         )
         self.assertFalse(Measurement.objects.exists())
+
+    def test_the_file_name_format_from_the_form_is_used_for_m1000(self):
+        Plate.objects.create(
+            barcode="demo_1",
+            dimension=PlateDimension.objects.get(name="dim_384_16x24"),
+            experiment=Experiment.objects.get(name="Experiment"),
+        )
+        with open(join(self.folder, "demo_1_061024_121212.asc"), "wb") as file:
+            file.write(ASC_FILE_CONTENT)
+
+        output = self.run_map("m1000", file_name_format="barcode_date_time")
+
+        self.assertEqual("completed", output["status"])
+        self.assertEqual(
+            {"demo_1"},
+            set(Measurement.objects.values_list("well__plate__barcode", flat=True)),
+        )
 
     def test_an_unexpected_error_shows_its_type_and_is_logged_with_traceback(self):
         with mock.patch(

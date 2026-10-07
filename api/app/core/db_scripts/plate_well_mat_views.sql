@@ -253,7 +253,9 @@ CREATE MATERIALIZED VIEW core_experimentdetail AS
                                                 label,
                                                 measured_at,
                                                 experiment_id,
-                                                ROW_NUMBER() OVER (PARTITION BY plate_id ORDER BY measured_at) as measurement_idx,
+                                                -- The n-th read of this label on the plate: counted per label, or another
+                                                -- label of the plate would shift the reads of this one
+                                                ROW_NUMBER() OVER (PARTITION BY plate_id, label ORDER BY measured_at) as measurement_idx,
                                                 ARRAY_AGG(value) as values
                                         FROM core_measurement AS m 
                                         INNER JOIN core_well w ON m.well_id = w.id

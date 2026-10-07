@@ -412,7 +412,9 @@
       }
     },
     "background_correction": {
-      "open_button": "Background correction",
+      "section_title": "Background correction",
+      "open_button": "Calculate background correction",
+      "none_yet": "{label} has no background correction yet.",
       "title": "Background correction",
       "description": "The median or mean of the reference wells is subtracted from every other well of this plate, at each time point. The result is saved as a new measurement of the plate; the reference wells stay empty.",
       "measurement": "Measurement",

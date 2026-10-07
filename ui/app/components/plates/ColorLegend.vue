@@ -6,6 +6,8 @@ import { buildPlateLegend } from '~/utils/plateHeatmap'
 type Props = {
   min: number
   max: number
+  // Shown also without "Show heatmap", e.g. next to the background corrected heatmap
+  alwaysShown?: boolean
 }
 
 const props = defineProps<Props>()
@@ -18,7 +20,10 @@ const legendColors = computed(() => {
 </script>
 
 <template>
-  <div v-if="platePage.showHeatmap && platePage.selectedMeasurement && legendColors" class="legendWrap">
+  <div
+    v-if="(props.alwaysShown || platePage.showHeatmap) && platePage.selectedMeasurement && legendColors"
+    class="legendWrap"
+  >
     <div
       v-for="(color, idx) in legendColors"
       :key="color.value + idx"

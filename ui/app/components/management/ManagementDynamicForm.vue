@@ -2,6 +2,7 @@
 import { computed, ref, watch } from 'vue'
 import BaseButton from '~/components/common/BaseButton.vue'
 import BaseField from '~/components/common/BaseField.vue'
+import ManagementRadioField from '~/components/management/ManagementRadioField.vue'
 import type { GeneralFormData, Options } from '~/types/lab'
 
 type Props = {
@@ -40,6 +41,8 @@ const initializeForm = (): void => {
   for (const [key, option] of optionEntries.value) {
     if (option.type === 'bool') {
       nextState[key] = false
+    } else if (option.type === 'radio') {
+      nextState[key] = option.defaultValue ?? option.choices?.[0] ?? ''
     } else {
       nextState[key] = ''
     }
@@ -199,6 +202,15 @@ const onDropToStringField = (key: string, event: DragEvent): void => {
           @drop="onDropToStringField(key, $event)"
         />
       </div>
+
+      <ManagementRadioField
+        v-else-if="option.type === 'radio'"
+        v-model="formState[key] as string"
+        :name="key"
+        :label="option.label"
+        :choices="option.choices ?? []"
+        :choice-labels="option.choiceLabels"
+      />
 
       <label v-else class="inline-flex cursor-pointer items-center gap-2">
         <input

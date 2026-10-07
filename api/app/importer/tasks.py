@@ -44,6 +44,8 @@ def run_management_command(self, form_data: dict) -> None:
                 "experiment_name": form_data.get("experiment_name"),
                 "room_name": room_name,
                 "measurement_name": form_data.get("measurement_name"),
+                # Only the M1000 reads it; empty means the older format
+                "file_name_format": form_data.get("file_name_format") or None,
             }
             # An unknown machine is refused by the command itself
             management.call_command("map", form_data.get("machine"), **kwargs)

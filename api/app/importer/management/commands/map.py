@@ -8,6 +8,7 @@ from core.models import Experiment
 from importer.config import Config
 from importer.helper import message
 from importer.mappers import BaseMapper, EchoMapper, M1000Mapper, MicroscopeMapper
+from importer.mappers.m1000_file_names import DATE_TIME_BARCODE, FILE_NAME_FORMATS
 
 # Without an experiment name the mappers cannot create a missing plate
 NO_EXPERIMENT_NAME = (
@@ -63,6 +64,15 @@ class Command(BaseCommand):
             "-n",
             help="The label of the measured values, e.g. 'Lum'. Without it, the "
             "label of the file is used.",
+        )
+
+        parser.add_argument(
+            "--file_name_format",
+            choices=FILE_NAME_FORMATS,
+            default=DATE_TIME_BARCODE,
+            help="For m1000 only: how the files are named, "
+            "date_time_barcode (20240610-121212_demo_1.asc) or "
+            "barcode_date_time (RKS_300926_3_093026_165454.asc, date as MMDDYY).",
         )
 
         parser.add_argument(
@@ -169,6 +179,7 @@ class Command(BaseCommand):
                 measurement_name=options.get("measurement_name"),
                 experiment_name=options.get("experiment_name"),
                 room_name=options.get("room_name"),
+                file_name_format=options.get("file_name_format"),
             )
 
         elif options.get("machine") in ["microscope", "C10-imager", "C10-reader"]:

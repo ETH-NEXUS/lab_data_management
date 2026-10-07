@@ -363,11 +363,15 @@ export type FileSystemItem = FileItem | DirectoryItem
 
 export interface Options {
   [key: string]: {
-    type: 'str' | 'bool'
+    type: 'str' | 'bool' | 'radio'
     label: string
     required: boolean
     inputType?: string
     choices?: string[]
+    // Radio only: the text of each choice, e.g. { barcode_date_time: 'demo_1_20240610_121212.asc' }
+    choiceLabels?: Record<string, string>
+    // Radio only: the choice selected when the form opens
+    defaultValue?: string
   }
 }
 

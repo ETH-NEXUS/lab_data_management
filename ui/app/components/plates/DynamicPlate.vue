@@ -2,7 +2,7 @@
 import { computed, watch } from 'vue'
 import ColorLegend from '~/components/plates/ColorLegend.vue'
 import HeatMapSettings from '~/components/plates/HeatMapSettings.vue'
-import PlateBackgroundCorrectedHeatmap from '~/components/plates/PlateBackgroundCorrectedHeatmap.vue'
+import PlateBackgroundCorrectionSection from '~/components/plates/PlateBackgroundCorrectionSection.vue'
 import PlateStats from '~/components/plates/PlateStats.vue'
 import PlateTable from '~/components/plates/PlateTable.vue'
 import { usePlateViewStore } from '~/stores/plateView'
@@ -227,6 +227,10 @@ const onWellSelected = (wellInfo: WellInfo): void => {
       </div>
     </div>
 
-    <PlateBackgroundCorrectedHeatmap v-if="!isMinimalView" :plate="props.plate" @well-selected="onWellSelected" />
+    <PlateBackgroundCorrectionSection
+      v-if="!isMinimalView && measurementOptions.length > 0"
+      :plate="props.plate"
+      @well-selected="onWellSelected"
+    />
   </section>
 </template>

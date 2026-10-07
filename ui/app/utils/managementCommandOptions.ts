@@ -14,7 +14,7 @@ export type ManagementCommandConfig = {
  * Form fields for the "map" command.
  *
  * Accepted data example:
- * - `{ machine: 'echo', path: '/data/mappings', mapping_file: 'headers.yml', experiment_name: 'Run 2026-03', measurement_name: 'Lum' }`
+ * - `{ machine: 'echo', path: '/data/mappings', mapping_file: 'headers.yml', experiment_name: 'Run 2026-03', measurement_name: 'Lum', file_name_format: 'date_time_barcode' }`
  */
 export const mapCommandOptions: Options = {
   machine: {
@@ -42,6 +42,18 @@ export const mapCommandOptions: Options = {
     type: 'str',
     label: 'Measurement name. If empty, the name from the file is used (e.g. "Lum").',
     required: false,
+  },
+  // The values are the choices of `map --file_name_format` on the server
+  file_name_format: {
+    type: 'radio',
+    label: 'For M1000 only: how the files are named',
+    required: false,
+    choices: ['date_time_barcode', 'barcode_date_time'],
+    choiceLabels: {
+      date_time_barcode: 'date-time_barcode, e.g. 20240610-121212_demo_1.asc',
+      barcode_date_time: 'barcode_date_time, e.g. RKS_300926_3_093026_165454.asc (date as MMDDYY)',
+    },
+    defaultValue: 'date_time_barcode',
   },
 }
 
