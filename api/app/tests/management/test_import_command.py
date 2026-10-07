@@ -232,6 +232,27 @@ class ImportCommandTest(ManagementPageTestCase):
             Well.objects.get(plate__barcode="CONTROL_1", position=0).type.name,
         )
 
+    def test_a_control_plate_with_r_reference_wells(self):
+        # As in the lab's layout Layout_RKS_Control_02.csv
+        path = self.write(
+            "plate.csv", LIBRARY_PLATE_CSV.replace("C,null,P", "R,null,P")
+        )
+        Project.objects.create(name="Project")
+
+        output = self.run_import(
+            "library_plate",
+            input_file=path,
+            project_name="Project",
+            plate_barcode="CONTROL_1",
+            is_control_plate=True,
+        )
+
+        self.assertEqual("completed", output["status"])
+        self.assertEqual(
+            "R",
+            Well.objects.get(plate__barcode="CONTROL_1", position=0).type.name,
+        )
+
     def test_a_library_plate_file_that_does_not_exist(self):
         output = self.run_import(
             "library_plate",

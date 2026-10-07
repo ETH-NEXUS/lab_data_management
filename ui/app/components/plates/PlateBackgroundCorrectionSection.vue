@@ -2,11 +2,14 @@
 import { computed, ref, watch } from 'vue'
 import ColorLegend from '~/components/plates/ColorLegend.vue'
 import PlateBackgroundCorrectionModal from '~/components/plates/PlateBackgroundCorrectionModal.vue'
+import PlateDatasetSummary from '~/components/plates/PlateDatasetSummary.vue'
 import PlateTable from '~/components/plates/PlateTable.vue'
 import { usePlateStore } from '~/stores/plates'
 import { usePlateViewStore } from '~/stores/plateView'
+import type { PlateCalculationResult } from '~/types/backgroundCorrection'
 import type { Plate, WellInfo } from '~/types/lab'
 import { findBackgroundCorrections } from '~/utils/backgroundCorrection'
+import { countWellsWithoutLog10, formatSummaryNumber, getLog10SourceLabel } from '~/utils/plateDatasets'
 import { getOverallMinMaxForSelection } from '~/utils/plateStats'
 
 const props = defineProps<{
@@ -48,26 +51,51 @@ const selectedCorrection = computed(() => {
   return corrections.value.find((correction) => correction.label === selectedLabel.value) ?? null
 })
 
+// The measurement chosen for the main heatmap, if it is the log10 of another one, e.g. 'Lum1'
+const log10Source = computed(() => getLog10SourceLabel(props.plate, plateViewStore.selectedMeasurement))
+
+const wellsWithoutLog10 = computed(() => {
+  if (!log10Source.value || !plateViewStore.selectedMeasurement) return 0
+  return countWellsWithoutLog10(props.plate, log10Source.value, plateViewStore.selectedMeasurement)
+})
+
+// The value that was subtracted, e.g. the median of the R wells at the shown time point
+const background = computed(() => {
+  const correction = selectedCorrection.value
+  const label = plateViewStore.selectedMeasurement
+  if (!correction || !label) return null
+  const statsOfReference = props.plate.details.stats[label]?.[correction.referenceType]
+  return statsOfReference?.[correction.method]?.[plateViewStore.selectedTimestampIdx] ?? null
+})
+
 // The corrected measurement has the same time points as the original one
 const minMax = computed(() =>
   getOverallMinMaxForSelection(props.plate, selectedLabel.value, plateViewStore.selectedTimestampIdx),
 )
 
 /**
- * Reloads only the plate (not the whole page), so the heatmap settings stay,
- * and shows the new correction: the main heatmap gets its original measurement.
+ * Reloads only the plate (not the whole page), so the heatmap settings stay, and
+ * shows the result: a log10 in the main heatmap, a correction below it (the main
+ * heatmap then shows the measurement it was calculated from).
  *
- * Accepted input example: `('Lum_CTG', 'Lum_CTG_bc_N1_median')`
+ * Accepted input example: `{ calculation: 'log10', label: 'Lum1', newLabel: 'Lum1_log10' }`
  */
-const onCorrected = async (label: string, correctedLabel: string): Promise<void> => {
-  // Also when another correction of this measurement was shown before
-  labelToShow.value = correctedLabel
+const onCalculated = async (result: PlateCalculationResult): Promise<void> => {
+  if (result.calculation === 'background_correction') {
+    // Also when another correction of this measurement was shown before
+    labelToShow.value = result.newLabel
+  }
   try {
     const plate = await plateStore.fetchPlateByBarcode(props.plate.barcode)
     if (!plate) return
 
     plateViewStore.measurementOptions = plate.details.measurement_labels ?? []
-    plateViewStore.selectedMeasurement = label
+    if (result.calculation === 'log10') {
+      plateViewStore.selectedMeasurement = result.newLabel
+      plateViewStore.showHeatmap = true
+    } else {
+      plateViewStore.selectedMeasurement = result.label
+    }
   } catch (err) {
     // The plate store keeps the error and the page shows it
     console.error(err)
@@ -78,21 +106,40 @@ const onCorrected = async (label: string, correctedLabel: string): Promise<void>
 <template>
   <section class="mt-8 rounded-xl border border-black/10 bg-white/50 p-4">
     <div class="flex flex-wrap items-center justify-between gap-3">
-      <h3 class="text-lg font-medium text-slate-800">{{ t('plates.background_correction.section_title') }}</h3>
+      <h3 class="text-lg font-medium text-slate-800">{{ t('plates.calculations.section_title') }}</h3>
       <UButton
         color="secondary"
         variant="outline"
         icon="i-heroicons-adjustments-horizontal"
-        :label="t('plates.background_correction.open_button')"
+        :label="t('plates.calculations.open_button')"
         @click="isModalOpen = true"
       />
     </div>
 
-    <p v-if="!selectedCorrection" class="mt-2 text-sm text-slate-600">
-      {{ t('plates.background_correction.none_yet', { label: plateViewStore.selectedMeasurement ?? '' }) }}
+    <!-- The main heatmap shows a log10: how it was calculated and what came out -->
+    <div v-if="log10Source && plateViewStore.selectedMeasurement" class="mt-3">
+      <h4 class="mb-1 font-medium text-slate-800">
+        {{ t('plates.calculations.log10_title', { label: plateViewStore.selectedMeasurement }) }}
+      </h4>
+      <p class="text-sm text-slate-600">{{ t('plates.background_correction.formula_caption') }}</p>
+      <code class="my-1 block w-fit rounded-md bg-slate-100 px-3 py-2 font-mono text-sm text-slate-800">
+        {{ t('plates.calculations.log10_formula', { label: log10Source }) }}
+      </code>
+      <p v-if="wellsWithoutLog10 > 0" class="text-xs text-amber-700">
+        {{ t('plates.calculations.log10_skipped', { count: wellsWithoutLog10 }) }}
+      </p>
+      <PlateDatasetSummary
+        :plate="props.plate"
+        :label="plateViewStore.selectedMeasurement"
+        :timestamp-index="plateViewStore.selectedTimestampIdx"
+      />
+    </div>
+
+    <p v-if="!selectedCorrection && !log10Source" class="mt-2 text-sm text-slate-600">
+      {{ t('plates.calculations.none_yet', { label: plateViewStore.selectedMeasurement ?? '' }) }}
     </p>
 
-    <template v-else>
+    <template v-if="selectedCorrection">
       <h4 class="mt-3 mb-1 font-medium text-slate-800">
         {{ t('plates.background_correction.heatmap_title', { label: selectedCorrection.label }) }}
       </h4>
@@ -106,9 +153,24 @@ const onCorrected = async (label: string, correctedLabel: string): Promise<void>
           })
         }}
       </code>
-      <p class="mb-3 text-xs text-slate-500">
+      <p class="text-xs text-slate-500">
         {{ t('plates.background_correction.formula_note', { reference: selectedCorrection.referenceType }) }}
       </p>
+      <p class="text-xs text-slate-600">
+        {{
+          t('plates.calculations.background_value', {
+            method: t(`plates.background_correction.methods.${selectedCorrection.method}`),
+            reference: selectedCorrection.referenceType,
+            value: formatSummaryNumber(background),
+          })
+        }}
+      </p>
+      <PlateDatasetSummary
+        class="mb-3"
+        :plate="props.plate"
+        :label="selectedCorrection.label"
+        :timestamp-index="plateViewStore.selectedTimestampIdx"
+      />
 
       <div v-if="corrections.length > 1" class="mb-3 max-w-sm">
         <select
@@ -137,6 +199,6 @@ const onCorrected = async (label: string, correctedLabel: string): Promise<void>
       </div>
     </template>
 
-    <PlateBackgroundCorrectionModal v-model:open="isModalOpen" :plate="props.plate" @corrected="onCorrected" />
+    <PlateBackgroundCorrectionModal v-model:open="isModalOpen" :plate="props.plate" @calculated="onCalculated" />
   </section>
 </template>

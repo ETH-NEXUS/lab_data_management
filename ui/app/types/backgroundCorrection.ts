@@ -37,3 +37,37 @@ export type BackgroundCorrection = {
   referenceType: string
   method: BackgroundCorrectionMethod
 }
+
+/**
+ * The log10 of a measurement of one plate, saved as `<label>_log10`.
+ * Wells with a value of 0 or below are left empty and counted.
+ *
+ * Data examples:
+ * - request: `{ label: 'Lum1' }`
+ * - response: `{ label: 'Lum1_log10', skipped: 2 }`
+ */
+export const LOG10_ENDPOINT = 'log10/'
+export const LOG10_ERROR_MESSAGE = 'Failed to calculate the log10 of the measurement.'
+export const LOG10_SUFFIX = '_log10'
+
+export type Log10Response = {
+  label: string
+  skipped: number
+}
+
+// The calculations the plate page offers
+export const PLATE_CALCULATIONS = ['background_correction', 'log10'] as const
+
+export type PlateCalculation = (typeof PLATE_CALCULATIONS)[number]
+
+/**
+ * What the calculation window reports after a calculation.
+ *
+ * Data example:
+ * - `{ calculation: 'log10', label: 'Lum1', newLabel: 'Lum1_log10' }`
+ */
+export type PlateCalculationResult = {
+  calculation: PlateCalculation
+  label: string
+  newLabel: string
+}

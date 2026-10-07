@@ -412,9 +412,6 @@
       }
     },
     "background_correction": {
-      "section_title": "Background correction",
-      "open_button": "Calculate background correction",
-      "none_yet": "{label} has no background correction yet.",
       "title": "Background correction",
       "description": "The median or mean of the reference wells is subtracted from every other well of this plate, at each time point. The result is saved as a new measurement of the plate; the reference wells stay empty.",
       "measurement": "Measurement",
@@ -430,6 +427,27 @@
       "formula_caption": "Calculated with this formula:",
       "formula": "corrected value = (value of the well) - {method}(values of the {reference} wells)",
       "formula_note": "Calculated separately for each time point. The {reference} wells are left empty."
+    },
+    "calculations": {
+      "section_title": "Calculations",
+      "open_button": "Add calculation",
+      "title": "Add calculation",
+      "calculation": "Calculation",
+      "names": {
+        "background_correction": "Background correction",
+        "log10": "log10"
+      },
+      "descriptions": {
+        "background_correction": "The median or mean of the reference wells is subtracted from every other well of this plate, at each time point. The result is saved as a new measurement of the plate; the reference wells stay empty.",
+        "log10": "The log10 of every well is saved as a new measurement of the plate, e.g. Lum1_log10. A well with a value of 0 or below is left empty."
+      },
+      "none_yet": "No calculations for {label} yet.",
+      "log10_title": "log10: {label}",
+      "log10_formula": "log10 value = log10(value of the well in {label})",
+      "log10_skipped": "{count} well(s) left empty: a value of 0 or below has no log10.",
+      "background_value": "Subtracted: {method} of the {reference} wells = {value}",
+      "summary": "{wells} wells · median {median} · min {min} · max {max}",
+      "median_by_well_type": "Median by well type:"
     }
   },
   "messages_page": {

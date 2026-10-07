@@ -73,3 +73,8 @@
   fields:
     name: NREF
     description: Negative Control Reference
+- model: core.WellType
+  pk: 16
+  fields:
+    name: R
+    description: Reference

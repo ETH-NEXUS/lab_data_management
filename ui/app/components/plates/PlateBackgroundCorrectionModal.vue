@@ -3,8 +3,15 @@ import { computed, ref, watch } from 'vue'
 import BaseButton from '~/components/common/BaseButton.vue'
 import WavesModalWrapper from '~/components/common/WavesModalWrapper.vue'
 import { usePlateBackgroundCorrection } from '~/composables/usePlateBackgroundCorrection'
+import { usePlateLog10 } from '~/composables/usePlateLog10'
 import { usePlateViewStore } from '~/stores/plateView'
-import { BACKGROUND_CORRECTION_METHODS, type BackgroundCorrectionMethod } from '~/types/backgroundCorrection'
+import {
+  BACKGROUND_CORRECTION_METHODS,
+  PLATE_CALCULATIONS,
+  type BackgroundCorrectionMethod,
+  type PlateCalculation,
+  type PlateCalculationResult,
+} from '~/types/backgroundCorrection'
 import type { Plate } from '~/types/lab'
 import { getWellTypesOfMeasurement } from '~/utils/backgroundCorrection'
 import { getErrorMessage } from '~/utils/errors'
@@ -16,15 +23,16 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   (e: 'update:open', value: boolean): void
-  // The measurement that was corrected and the new one, e.g. 'Lum_CTG', 'Lum_CTG_bc_N1_median'
-  (e: 'corrected', label: string, correctedLabel: string): void
+  (e: 'calculated', result: PlateCalculationResult): void
 }>()
 
 const { t } = useI18n()
 const toast = useToast()
 const plateViewStore = usePlateViewStore()
 const { isCorrecting, correctPlateBackground } = usePlateBackgroundCorrection()
+const { isCalculatingLog10, log10Measurement } = usePlateLog10()
 
+const calculation = ref<PlateCalculation>('background_correction')
 const label = ref<string | null>(null)
 const referenceType = ref<string | null>(null)
 const method = ref<BackgroundCorrectionMethod>('median')
@@ -34,7 +42,7 @@ const labels = computed(() => props.plate.details.measurement_labels ?? [])
 const wellTypes = computed(() => getWellTypesOfMeasurement(props.plate, label.value))
 
 // The reference wells the lab uses, in this order; "Nref" is imported as NREF
-const USUAL_REFERENCE_TYPES = ['N1', 'NREF']
+const USUAL_REFERENCE_TYPES = ['N1', 'NREF', 'R']
 
 const defaultReferenceType = (): string | null => {
   const usual = USUAL_REFERENCE_TYPES.find((type) => wellTypes.value.includes(type))
@@ -46,6 +54,7 @@ watch(
   (isOpen) => {
     if (!isOpen) return
 
+    calculation.value = 'background_correction'
     label.value = plateViewStore.selectedMeasurement ?? labels.value[0] ?? null
     referenceType.value = defaultReferenceType()
     method.value = 'median'
@@ -60,29 +69,47 @@ watch(label, () => {
   }
 })
 
+const isRunning = computed(() => isCorrecting.value || isCalculatingLog10.value)
+
 const canApply = computed(() => {
-  return !isCorrecting.value && label.value !== null && referenceType.value !== null
+  if (isRunning.value || label.value === null) return false
+  // Only the background correction needs reference wells
+  return calculation.value === 'log10' || referenceType.value !== null
 })
 
 const close = () => emit('update:open', false)
 
-const applyCorrection = async () => {
-  if (!label.value || !referenceType.value) return
+const applyCorrection = async (sourceLabel: string, reference: string) => {
+  const result = await correctPlateBackground(props.plate.id, {
+    label: sourceLabel,
+    reference_type: reference,
+    method: method.value,
+  })
+  emit('calculated', { calculation: 'background_correction', label: sourceLabel, newLabel: result.label })
+  toast.add({ title: t('plates.background_correction.success', { label: result.label }), color: 'success' })
+}
+
+const applyLog10 = async (sourceLabel: string) => {
+  const result = await log10Measurement(props.plate.id, sourceLabel)
+  emit('calculated', { calculation: 'log10', label: sourceLabel, newLabel: result.label })
+  toast.add({
+    title: t('plates.background_correction.success', { label: result.label }),
+    description: result.skipped > 0 ? t('plates.calculations.log10_skipped', { count: result.skipped }) : undefined,
+    color: 'success',
+  })
+}
+
+const apply = async () => {
+  if (!label.value) return
 
   errorMessage.value = ''
   try {
-    const result = await correctPlateBackground(props.plate.id, {
-      label: label.value,
-      reference_type: referenceType.value,
-      method: method.value,
-    })
-    emit('corrected', label.value, result.label)
+    if (calculation.value === 'log10') {
+      await applyLog10(label.value)
+    } else if (referenceType.value) {
+      await applyCorrection(label.value, referenceType.value)
+    }
     close()
-    toast.add({
-      title: t('plates.background_correction.success', { label: result.label }),
-      color: 'success',
-      duration: 3000,
-    })
   } catch (err: unknown) {
     errorMessage.value = getErrorMessage(err)
   }
@@ -92,13 +119,27 @@ const applyCorrection = async () => {
 <template>
   <WavesModalWrapper
     :open="props.open"
-    :title="t('plates.background_correction.title')"
-    :description="t('plates.background_correction.description')"
-    :dismissible="!isCorrecting"
+    :title="t('plates.calculations.title')"
+    :description="t(`plates.calculations.descriptions.${calculation}`)"
+    :dismissible="!isRunning"
     @update:open="emit('update:open', $event)"
   >
     <template #body>
       <div class="grid grid-cols-1 gap-4">
+        <div>
+          <label class="mb-1 block pl-1 text-sm font-medium text-slate-700">
+            {{ t('plates.calculations.calculation') }}
+          </label>
+          <select
+            v-model="calculation"
+            class="w-full cursor-pointer rounded-full border border-black/15 bg-white/70 px-4 py-2 text-sm ring-offset-0 outline-none focus:ring-2 focus:ring-lime-500"
+          >
+            <option v-for="option in PLATE_CALCULATIONS" :key="`calculation-${option}`" :value="option">
+              {{ t(`plates.calculations.names.${option}`) }}
+            </option>
+          </select>
+        </div>
+
         <div>
           <label class="mb-1 block pl-1 text-sm font-medium text-slate-700">
             {{ t('plates.background_correction.measurement') }}
@@ -113,7 +154,8 @@ const applyCorrection = async () => {
           </select>
         </div>
 
-        <div>
+        <!-- log10 needs only the measurement -->
+        <div v-if="calculation === 'background_correction'">
           <label class="mb-1 block pl-1 text-sm font-medium text-slate-700">
             {{ t('plates.background_correction.reference_type') }}
           </label>
@@ -127,7 +169,7 @@ const applyCorrection = async () => {
           </select>
         </div>
 
-        <div>
+        <div v-if="calculation === 'background_correction'">
           <label class="mb-1 block pl-1 text-sm font-medium text-slate-700">
             {{ t('plates.background_correction.method') }}
           </label>
@@ -154,15 +196,15 @@ const applyCorrection = async () => {
         variant="secondary"
         size="sm"
         width="auto"
-        :disabled="isCorrecting"
+        :disabled="isRunning"
       />
       <BaseButton
         :label="t('plates.background_correction.apply_button')"
-        :on-click="applyCorrection"
+        :on-click="apply"
         variant="primary"
         size="sm"
         width="auto"
-        :loading="isCorrecting"
+        :loading="isRunning"
         :disabled="!canApply"
       />
     </template>

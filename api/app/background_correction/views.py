@@ -1,5 +1,6 @@
 """
-Starting the background correction of one plate from the plate page.
+Starting the calculations of one plate from the plate page: background
+correction and log10.
 """
 
 from django.shortcuts import get_object_or_404
@@ -10,6 +11,7 @@ from rest_framework.response import Response
 
 from background_correction.calculation import METHODS
 from background_correction.correction import correct_plate
+from background_correction.log_transform import log10_of_plate
 from core.models import Plate
 
 
@@ -42,3 +44,28 @@ def correct_plate_background(request, plate_id: int):
         settings.validated_data["method"],
     )
     return Response({"label": new_label})
+
+
+class Log10SettingsSerializer(serializers.Serializer):
+    # Labels are looked up exactly: some labels end with a space
+    label = serializers.CharField(trim_whitespace=False)
+
+
+@api_view(["POST"])
+@permission_classes([IsAuthenticated])
+def log10_plate_measurement(request, plate_id: int):
+    """
+    Saves the log10 of a measurement of the plate; values of 0 or below are
+    left out and counted.
+
+    Accepted data example:
+    {"label": "Lum1"}
+    Returned data example:
+    {"label": "Lum1_log10", "skipped": 2}
+    """
+    plate = get_object_or_404(Plate, id=plate_id)
+    settings = Log10SettingsSerializer(data=request.data)
+    settings.is_valid(raise_exception=True)
+
+    new_label, skipped = log10_of_plate(plate, settings.validated_data["label"])
+    return Response({"label": new_label, "skipped": skipped})
