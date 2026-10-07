@@ -4,6 +4,7 @@ import BaseButton from '~/components/common/BaseButton.vue'
 import WavesModalWrapper from '~/components/common/WavesModalWrapper.vue'
 import { usePlateBackgroundCorrection } from '~/composables/usePlateBackgroundCorrection'
 import { usePlateLog10 } from '~/composables/usePlateLog10'
+import { usePlatePercentActivity } from '~/composables/usePlatePercentActivity'
 import { usePlateViewStore } from '~/stores/plateView'
 import {
   BACKGROUND_CORRECTION_METHODS,
@@ -31,11 +32,14 @@ const toast = useToast()
 const plateViewStore = usePlateViewStore()
 const { isCorrecting, correctPlateBackground } = usePlateBackgroundCorrection()
 const { isCalculatingLog10, log10Measurement } = usePlateLog10()
+const { isCalculatingActivity, calculateActivity } = usePlatePercentActivity()
 
 const calculation = ref<PlateCalculation>('background_correction')
 const label = ref<string | null>(null)
 const referenceType = ref<string | null>(null)
 const method = ref<BackgroundCorrectionMethod>('median')
+const negativeType = ref<string | null>(null)
+const positiveType = ref<string | null>(null)
 const errorMessage = ref('')
 
 const labels = computed(() => props.plate.details.measurement_labels ?? [])
@@ -49,6 +53,14 @@ const defaultReferenceType = (): string | null => {
   return usual ?? wellTypes.value[0] ?? null
 }
 
+// The controls of %Activity the lab uses, in this order
+const USUAL_NEGATIVE_TYPES = ['N', 'N1']
+const USUAL_POSITIVE_TYPES = ['P', 'P1']
+
+const defaultControl = (usualTypes: string[]): string | null => {
+  return usualTypes.find((type) => wellTypes.value.includes(type)) ?? null
+}
+
 watch(
   () => props.open,
   (isOpen) => {
@@ -57,6 +69,8 @@ watch(
     calculation.value = 'background_correction'
     label.value = plateViewStore.selectedMeasurement ?? labels.value[0] ?? null
     referenceType.value = defaultReferenceType()
+    negativeType.value = defaultControl(USUAL_NEGATIVE_TYPES)
+    positiveType.value = defaultControl(USUAL_POSITIVE_TYPES)
     method.value = 'median'
     errorMessage.value = ''
   },
@@ -67,14 +81,23 @@ watch(label, () => {
   if (!referenceType.value || !wellTypes.value.includes(referenceType.value)) {
     referenceType.value = defaultReferenceType()
   }
+  if (!negativeType.value || !wellTypes.value.includes(negativeType.value)) {
+    negativeType.value = defaultControl(USUAL_NEGATIVE_TYPES)
+  }
+  if (!positiveType.value || !wellTypes.value.includes(positiveType.value)) {
+    positiveType.value = defaultControl(USUAL_POSITIVE_TYPES)
+  }
 })
 
-const isRunning = computed(() => isCorrecting.value || isCalculatingLog10.value)
+const isRunning = computed(() => isCorrecting.value || isCalculatingLog10.value || isCalculatingActivity.value)
 
 const canApply = computed(() => {
   if (isRunning.value || label.value === null) return false
-  // Only the background correction needs reference wells
-  return calculation.value === 'log10' || referenceType.value !== null
+  if (calculation.value === 'background_correction') return referenceType.value !== null
+  if (calculation.value === 'percent_activity') {
+    return negativeType.value !== null && positiveType.value !== null && negativeType.value !== positiveType.value
+  }
+  return true
 })
 
 const close = () => emit('update:open', false)
@@ -99,6 +122,16 @@ const applyLog10 = async (sourceLabel: string) => {
   })
 }
 
+const applyActivity = async (sourceLabel: string, negative: string, positive: string) => {
+  const result = await calculateActivity(props.plate.id, {
+    label: sourceLabel,
+    negative_type: negative,
+    positive_type: positive,
+  })
+  emit('calculated', { calculation: 'percent_activity', label: sourceLabel, newLabel: result.label })
+  toast.add({ title: t('plates.background_correction.success', { label: result.label }), color: 'success' })
+}
+
 const apply = async () => {
   if (!label.value) return
 
@@ -106,7 +139,9 @@ const apply = async () => {
   try {
     if (calculation.value === 'log10') {
       await applyLog10(label.value)
-    } else if (referenceType.value) {
+    } else if (calculation.value === 'percent_activity' && negativeType.value && positiveType.value) {
+      await applyActivity(label.value, negativeType.value, positiveType.value)
+    } else if (calculation.value === 'background_correction' && referenceType.value) {
       await applyCorrection(label.value, referenceType.value)
     }
     close()
@@ -182,6 +217,35 @@ const apply = async () => {
             </option>
           </select>
         </div>
+
+        <template v-if="calculation === 'percent_activity'">
+          <div>
+            <label class="mb-1 block pl-1 text-sm font-medium text-slate-700">
+              {{ t('plates.calculations.negative_control') }}
+            </label>
+            <select
+              v-model="negativeType"
+              class="w-full cursor-pointer rounded-full border border-black/15 bg-white/70 px-4 py-2 text-sm ring-offset-0 outline-none focus:ring-2 focus:ring-lime-500"
+            >
+              <option v-for="option in wellTypes" :key="`negative-${option}`" :value="option">
+                {{ option }}
+              </option>
+            </select>
+          </div>
+          <div>
+            <label class="mb-1 block pl-1 text-sm font-medium text-slate-700">
+              {{ t('plates.calculations.positive_control') }}
+            </label>
+            <select
+              v-model="positiveType"
+              class="w-full cursor-pointer rounded-full border border-black/15 bg-white/70 px-4 py-2 text-sm ring-offset-0 outline-none focus:ring-2 focus:ring-lime-500"
+            >
+              <option v-for="option in wellTypes" :key="`positive-${option}`" :value="option">
+                {{ option }}
+              </option>
+            </select>
+          </div>
+        </template>
 
         <p v-if="errorMessage" class="rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700">
           {{ errorMessage }}

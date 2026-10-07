@@ -1,6 +1,6 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
-import type { PlateWellContentMode, PlatePaletteOption } from '~/types/plates'
+import type { HeatmapScale, PlateWellContentMode, PlatePaletteOption } from '~/types/plates'
 import type { WellInfo } from '~/types/lab'
 import { getDefaultPlatePalette } from '~/utils/plateHeatmap'
 
@@ -16,6 +16,8 @@ export const usePlateViewStore = defineStore('plateViewStore', () => {
   const showHeatmap = ref(false)
   const smallerMapView = ref(false)
   const heatmapPalette = ref<PlatePaletteOption>(getDefaultPlatePalette())
+  // Kept when another plate is opened, so the plates of a run can be compared alike
+  const heatmapScale = ref<HeatmapScale>('full')
   const perPlateView = ref(false)
   const plotView = ref(false)
   const showStructure = ref(true)
@@ -88,6 +90,7 @@ export const usePlateViewStore = defineStore('plateViewStore', () => {
     showHeatmap,
     smallerMapView,
     heatmapPalette,
+    heatmapScale,
     perPlateView,
     plotView,
     showStructure,

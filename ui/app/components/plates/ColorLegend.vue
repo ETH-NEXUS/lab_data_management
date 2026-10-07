@@ -1,11 +1,12 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { usePlateViewStore } from '~/stores/plateView'
+import type { HeatmapRange } from '~/utils/heatmapScale'
 import { buildPlateLegend } from '~/utils/plateHeatmap'
 
 type Props = {
-  min: number
-  max: number
+  // e.g. { min: 33, max: 1934, lowerClipped: false, upperClipped: true }
+  range: HeatmapRange
   // Shown also without "Show heatmap", e.g. next to the background corrected heatmap
   alwaysShown?: boolean
 }
@@ -15,8 +16,21 @@ const platePage = usePlateViewStore()
 
 const legendColors = computed(() => {
   if (!platePage.selectedMeasurement) return undefined
-  return buildPlateLegend(props.min, props.max, platePage.heatmapPalette, 20)
+  return buildPlateLegend(props.range.min, props.range.max, platePage.heatmapPalette, 20)
 })
+
+/**
+ * The text next to a step of the legend; only every fifth step has one. The
+ * legend runs from the top (max) to the bottom (min), and a clipped end also
+ * stands for the wells beyond it: "≥ 1934.0", "≤ 33.0".
+ */
+const stepLabel = (value: number, index: number): string => {
+  if (![0, 5, 10, 15, 20].includes(index)) return ' '
+  const text = value.toFixed(1)
+  if (index === 0 && props.range.upperClipped) return `≥ ${text}`
+  if (index === 20 && props.range.lowerClipped) return `≤ ${text}`
+  return text
+}
 </script>
 
 <template>
@@ -30,7 +44,7 @@ const legendColors = computed(() => {
       class="legendItem"
       :style="{ backgroundColor: color.color }"
     >
-      <span class="legendLabel">{{ [0, 5, 10, 15, 20].includes(idx) ? color.value.toFixed(1) : ' ' }}</span>
+      <span class="legendLabel">{{ stepLabel(color.value, idx) }}</span>
     </div>
   </div>
 </template>

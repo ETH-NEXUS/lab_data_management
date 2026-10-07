@@ -1,12 +1,14 @@
 <script setup lang="ts">
 import { computed, onMounted, ref, watch } from 'vue'
 import ColorLegend from '~/components/plates/ColorLegend.vue'
+import HeatmapScaleSelect from '~/components/plates/HeatmapScaleSelect.vue'
 import HeatMapSettings from '~/components/plates/HeatMapSettings.vue'
 import PlateStats from '~/components/plates/PlateStats.vue'
 import PlateTable from '~/components/plates/PlateTable.vue'
 import { useExperimentStore } from '~/stores/experiments'
 import { usePlateViewStore } from '~/stores/plateView'
 import type { Plate } from '~/types/lab'
+import { getHeatmapRange, type HeatmapRange } from '~/utils/heatmapScale'
 import { platePalettes } from '~/utils/plateHeatmap'
 import { computeSSMD, computeZPrime } from '~/utils/plateStats'
 
@@ -122,58 +124,25 @@ const timestampOptions = computed(() => {
   return options
 })
 
-const max = computed(() => {
-  if (!plateViewStore.selectedMeasurement) {
-    return 0
-  }
-
-  const stats = props.overallStats[plateViewStore.selectedMeasurement]
-  if (!stats || stats.max.length === 0) {
-    return 0
-  }
-
-  // The scale of the selected time point, as in the per-plate view
-  return stats.max[plateViewStore.selectedTimestampIdx] ?? 0
+// The scale of all plates together, at the selected time point
+const experimentRange = computed(() => {
+  const label = plateViewStore.selectedMeasurement
+  const stats = label ? props.overallStats[label] : undefined
+  return getHeatmapRange(stats, plateViewStore.selectedTimestampIdx, plateViewStore.heatmapScale)
 })
 
-const min = computed(() => {
-  if (!plateViewStore.selectedMeasurement) {
-    return 0
-  }
+/**
+ * The scale of one plate ("Per plate view") or of all plates of the experiment.
+ *
+ * Returned data example:
+ * - `{ min: 33, max: 126340, lowerClipped: false, upperClipped: false }`
+ */
+const getRange = (plate: Plate): HeatmapRange => {
+  if (!plateViewStore.perPlateView) return experimentRange.value
 
-  const stats = props.overallStats[plateViewStore.selectedMeasurement]
-  if (!stats || stats.min.length === 0) {
-    return 0
-  }
-
-  // The scale of the selected time point, as in the per-plate view
-  return stats.min[plateViewStore.selectedTimestampIdx] ?? 0
-})
-
-const getMinPerPlate = (plate: Plate) => {
-  if (!plateViewStore.selectedMeasurement) {
-    return 0
-  }
-
-  const measurementStats = plate.details.overall_stats[plateViewStore.selectedMeasurement]
-  if (!measurementStats || measurementStats.min.length <= plateViewStore.selectedTimestampIdx) {
-    return 0
-  }
-
-  return measurementStats.min[plateViewStore.selectedTimestampIdx] ?? 0
-}
-
-const getMaxPerPlate = (plate: Plate) => {
-  if (!plateViewStore.selectedMeasurement) {
-    return 0
-  }
-
-  const measurementStats = plate.details.overall_stats[plateViewStore.selectedMeasurement]
-  if (!measurementStats || measurementStats.max.length <= plateViewStore.selectedTimestampIdx) {
-    return 0
-  }
-
-  return measurementStats.max[plateViewStore.selectedTimestampIdx] ?? 0
+  const label = plateViewStore.selectedMeasurement
+  const stats = label ? plate.details.overall_stats[label] : undefined
+  return getHeatmapRange(stats, plateViewStore.selectedTimestampIdx, plateViewStore.heatmapScale)
 }
 
 const zPrimePerPlate = (plate: Plate) => {
@@ -367,6 +336,8 @@ const canShowStats = (plate: Plate) => {
             </option>
           </select>
         </div>
+
+        <HeatmapScaleSelect class="w-[220px]" />
       </div>
 
       <div class="flex flex-wrap items-start justify-evenly gap-4">
@@ -378,16 +349,8 @@ const canShowStats = (plate: Plate) => {
         >
           <p class="mb-2 text-sm font-semibold text-blue-700">{{ plate.barcode }}</p>
           <div class="flex items-start gap-2">
-            <PlateTable
-              :plate-index="index"
-              :plate="plate"
-              :min="plateViewStore.perPlateView ? getMinPerPlate(plate) : min"
-              :max="plateViewStore.perPlateView ? getMaxPerPlate(plate) : max"
-            />
-            <ColorLegend
-              :min="plateViewStore.perPlateView ? getMinPerPlate(plate) : min"
-              :max="plateViewStore.perPlateView ? getMaxPerPlate(plate) : max"
-            />
+            <PlateTable :plate-index="index" :plate="plate" :min="getRange(plate).min" :max="getRange(plate).max" />
+            <ColorLegend :range="getRange(plate)" />
           </div>
 
           <PlateStats v-if="canShowStats(plate)" :ssmd="ssmdPerPlate(plate)" :z-prime="zPrimePerPlate(plate)" />

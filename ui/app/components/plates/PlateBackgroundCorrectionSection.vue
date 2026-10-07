@@ -2,6 +2,7 @@
 import { computed, ref, watch } from 'vue'
 import ColorLegend from '~/components/plates/ColorLegend.vue'
 import PlateBackgroundCorrectionModal from '~/components/plates/PlateBackgroundCorrectionModal.vue'
+import PlateActivityExplanation from '~/components/plates/PlateActivityExplanation.vue'
 import PlateDatasetSummary from '~/components/plates/PlateDatasetSummary.vue'
 import PlateTable from '~/components/plates/PlateTable.vue'
 import { usePlateStore } from '~/stores/plates'
@@ -9,8 +10,13 @@ import { usePlateViewStore } from '~/stores/plateView'
 import type { PlateCalculationResult } from '~/types/backgroundCorrection'
 import type { Plate, WellInfo } from '~/types/lab'
 import { findBackgroundCorrections } from '~/utils/backgroundCorrection'
-import { countWellsWithoutLog10, formatSummaryNumber, getLog10SourceLabel } from '~/utils/plateDatasets'
-import { getOverallMinMaxForSelection } from '~/utils/plateStats'
+import {
+  countWellsWithoutLog10,
+  formatSummaryNumber,
+  getActivityDataset,
+  getLog10SourceLabel,
+} from '~/utils/plateDatasets'
+import { getHeatmapRange } from '~/utils/heatmapScale'
 
 const props = defineProps<{
   plate: Plate
@@ -54,6 +60,9 @@ const selectedCorrection = computed(() => {
 // The measurement chosen for the main heatmap, if it is the log10 of another one, e.g. 'Lum1'
 const log10Source = computed(() => getLog10SourceLabel(props.plate, plateViewStore.selectedMeasurement))
 
+// The measurement chosen for the main heatmap, if it is a %Activity
+const activityDataset = computed(() => getActivityDataset(props.plate, plateViewStore.selectedMeasurement))
+
 const wellsWithoutLog10 = computed(() => {
   if (!log10Source.value || !plateViewStore.selectedMeasurement) return 0
   return countWellsWithoutLog10(props.plate, log10Source.value, plateViewStore.selectedMeasurement)
@@ -69,9 +78,10 @@ const background = computed(() => {
 })
 
 // The corrected measurement has the same time points as the original one
-const minMax = computed(() =>
-  getOverallMinMaxForSelection(props.plate, selectedLabel.value, plateViewStore.selectedTimestampIdx),
-)
+const heatmapRange = computed(() => {
+  const stats = selectedLabel.value ? props.plate.details.overall_stats[selectedLabel.value] : undefined
+  return getHeatmapRange(stats, plateViewStore.selectedTimestampIdx, plateViewStore.heatmapScale)
+})
 
 /**
  * Reloads only the plate (not the whole page), so the heatmap settings stay, and
@@ -90,7 +100,8 @@ const onCalculated = async (result: PlateCalculationResult): Promise<void> => {
     if (!plate) return
 
     plateViewStore.measurementOptions = plate.details.measurement_labels ?? []
-    if (result.calculation === 'log10') {
+    // A log10 or a %Activity replaces the measurement of the main heatmap
+    if (result.calculation === 'log10' || result.calculation === 'percent_activity') {
       plateViewStore.selectedMeasurement = result.newLabel
       plateViewStore.showHeatmap = true
     } else {
@@ -135,7 +146,25 @@ const onCalculated = async (result: PlateCalculationResult): Promise<void> => {
       />
     </div>
 
-    <p v-if="!selectedCorrection && !log10Source" class="mt-2 text-sm text-slate-600">
+    <!-- The main heatmap shows a %Activity: its formula with the numbers put in -->
+    <div v-if="activityDataset" class="mt-3">
+      <h4 class="mb-1 font-medium text-slate-800">
+        {{ t('plates.calculations.activity_title', { label: activityDataset.label }) }}
+      </h4>
+      <p class="text-sm text-slate-600">{{ t('plates.background_correction.formula_caption') }}</p>
+      <PlateActivityExplanation
+        :plate="props.plate"
+        :dataset="activityDataset"
+        :timestamp-index="plateViewStore.selectedTimestampIdx"
+      />
+      <PlateDatasetSummary
+        :plate="props.plate"
+        :label="activityDataset.label"
+        :timestamp-index="plateViewStore.selectedTimestampIdx"
+      />
+    </div>
+
+    <p v-if="!selectedCorrection && !log10Source && !activityDataset" class="mt-2 text-sm text-slate-600">
       {{ t('plates.calculations.none_yet', { label: plateViewStore.selectedMeasurement ?? '' }) }}
     </p>
 
@@ -188,14 +217,14 @@ const onCalculated = async (result: PlateCalculationResult): Promise<void> => {
         <div class="min-w-0 overflow-auto">
           <PlateTable
             :plate="props.plate"
-            :min="minMax.min"
-            :max="minMax.max"
+            :min="heatmapRange.min"
+            :max="heatmapRange.max"
             :measurement-label="selectedCorrection.label"
             @well-selected="emit('well-selected', $event)"
           />
         </div>
 
-        <ColorLegend :min="minMax.min" :max="minMax.max" always-shown />
+        <ColorLegend :range="heatmapRange" always-shown />
       </div>
     </template>
 

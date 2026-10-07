@@ -2,18 +2,19 @@
 import { computed, watch } from 'vue'
 import ColorLegend from '~/components/plates/ColorLegend.vue'
 import HeatMapSettings from '~/components/plates/HeatMapSettings.vue'
+import HeatmapScaleSelect from '~/components/plates/HeatmapScaleSelect.vue'
 import PlateBackgroundCorrectionSection from '~/components/plates/PlateBackgroundCorrectionSection.vue'
 import PlateStats from '~/components/plates/PlateStats.vue'
 import PlateTable from '~/components/plates/PlateTable.vue'
 import { usePlateViewStore } from '~/stores/plateView'
 import type { Plate, WellInfo } from '~/types/lab'
+import { getHeatmapRange } from '~/utils/heatmapScale'
 import { platePalettes } from '~/utils/plateHeatmap'
 import {
   computeSSMD,
   computeZPrime,
   getControlLabelOptions,
   getDefaultControlSelection,
-  getOverallMinMaxForSelection,
   getTimestampOptions,
 } from '~/utils/plateStats'
 
@@ -90,9 +91,11 @@ const ssmd = computed(() =>
   ),
 )
 
-const minMax = computed(() =>
-  getOverallMinMaxForSelection(props.plate, plateViewStore.selectedMeasurement, plateViewStore.selectedTimestampIdx),
-)
+const heatmapRange = computed(() => {
+  const label = plateViewStore.selectedMeasurement
+  const stats = label ? props.plate.details.overall_stats[label] : undefined
+  return getHeatmapRange(stats, plateViewStore.selectedTimestampIdx, plateViewStore.heatmapScale)
+})
 
 const wellContentOptions = computed(() => [
   { label: t('plates.dynamic.controls.hr_position'), value: 'hr_position' },
@@ -122,10 +125,15 @@ const onWellSelected = (wellInfo: WellInfo): void => {
 
     <div class="flex flex-nowrap gap-4">
       <div class="min-w-0 overflow-auto">
-        <PlateTable :plate="props.plate" :min="minMax.min" :max="minMax.max" @well-selected="onWellSelected" />
+        <PlateTable
+          :plate="props.plate"
+          :min="heatmapRange.min"
+          :max="heatmapRange.max"
+          @well-selected="onWellSelected"
+        />
       </div>
 
-      <ColorLegend v-if="!isMinimalView" :min="minMax.min" :max="minMax.max" />
+      <ColorLegend v-if="!isMinimalView" :range="heatmapRange" />
     </div>
 
     <PlateStats v-if="!isMinimalView && ssmd !== null && zPrime !== null" :ssmd="ssmd" :z-prime="zPrime" />
@@ -223,6 +231,8 @@ const onWellSelected = (wellInfo: WellInfo): void => {
               </option>
             </select>
           </div>
+
+          <HeatmapScaleSelect />
         </div>
       </div>
     </div>

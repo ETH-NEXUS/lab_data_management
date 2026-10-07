@@ -55,8 +55,39 @@ export type Log10Response = {
   skipped: number
 }
 
+/**
+ * %Activity of a measurement of one plate between its controls, saved as
+ * `<label>_activity_<negative>_<positive>`:
+ * 100 · (value − median(positive)) / (median(negative) − median(positive)).
+ *
+ * Data examples:
+ * - request: `{ label: 'Lum1', negative_type: 'N', positive_type: 'P' }`
+ * - response: `{ label: 'Lum1_activity_N_P' }`
+ */
+export const ACTIVITY_ENDPOINT = 'activity/'
+export const ACTIVITY_ERROR_MESSAGE = 'Failed to calculate the %Activity of the measurement.'
+
+export type ActivitySettings = {
+  label: string
+  negative_type: string
+  positive_type: string
+}
+
+/**
+ * A %Activity measurement found on a plate.
+ *
+ * Data example:
+ * - `{ label: 'Lum1_activity_N_P', source: 'Lum1', negativeType: 'N', positiveType: 'P' }`
+ */
+export type ActivityDataset = {
+  label: string
+  source: string
+  negativeType: string
+  positiveType: string
+}
+
 // The calculations the plate page offers
-export const PLATE_CALCULATIONS = ['background_correction', 'log10'] as const
+export const PLATE_CALCULATIONS = ['background_correction', 'log10', 'percent_activity'] as const
 
 export type PlateCalculation = (typeof PLATE_CALCULATIONS)[number]
 

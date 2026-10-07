@@ -36,6 +36,15 @@ export type PlatePaneHeaderProps = {
 export type PlateWellContentMode = 'hr_position' | 'type' | 'position'
 
 /**
+ * How the colours of a heatmap are spread over the values:
+ * - `full`: from the lowest to the highest value; outliers stand out, but stretch the scale
+ * - `robust`: median ± 3 · MAD; outliers get the end colour and do not stretch the scale
+ */
+export const HEATMAP_SCALES = ['full', 'robust'] as const
+
+export type HeatmapScale = (typeof HEATMAP_SCALES)[number]
+
+/**
  * Heatmap palette value (from/to color).
  *
  * Data example:

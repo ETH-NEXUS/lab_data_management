@@ -8,7 +8,9 @@ import type { Plate } from '~/types/lab'
 import {
   countWellsWithoutLog10,
   formatSummaryNumber,
+  getActivityDataset,
   getLog10SourceLabel,
+  getWellTypeMedian,
   summarizeDataset,
 } from '~/utils/plateDatasets'
 
@@ -22,9 +24,9 @@ const plate = {
     { type: 'N', measurements: { Lum1: [1000], Lum1_log10: [3] } },
   ],
   details: {
-    measurement_labels: ['Lum1', 'Lum1_log10'],
+    measurement_labels: ['Lum1', 'Lum1_log10', 'Lum1_activity_N_P'],
     measurement_timestamps: {},
-    stats: { Lum1_log10: { R: stats(2), N: stats(3) } },
+    stats: { Lum1: { N: stats(2958), P: stats(673) }, Lum1_log10: { R: stats(2), N: stats(3) } },
     overall_stats: { Lum1_log10: { min: [2], max: [3], mean: [2.5], median: [2.5], std: [0.5], mad: [0.5] } },
   },
 } as unknown as Plate
@@ -57,5 +59,16 @@ describe('plate datasets', () => {
     expect(formatSummaryNumber(2.86634)).toBe('2.866')
     expect(formatSummaryNumber(734)).toBe('734')
     expect(formatSummaryNumber(null)).toBe('–')
+  })
+
+  it('finds how a %Activity was calculated', () => {
+    expect(getActivityDataset(plate, 'Lum1_activity_N_P')).toEqual({
+      label: 'Lum1_activity_N_P',
+      source: 'Lum1',
+      negativeType: 'N',
+      positiveType: 'P',
+    })
+    expect(getActivityDataset(plate, 'Lum1')).toBeNull()
+    expect(getWellTypeMedian(plate, 'Lum1', 'N', 0)).toBe(2958)
   })
 })

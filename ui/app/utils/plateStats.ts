@@ -6,7 +6,7 @@ const getMeasurementStats = (plate: Plate, measurement: string | null): PlateMea
   return plate.details.stats[measurement] ?? null
 }
 
-const getStatsSeriesValue = (series: number[] | undefined, timestampIndex: number): number | null => {
+export const getStatsSeriesValue = (series: number[] | undefined, timestampIndex: number): number | null => {
   if (!series || timestampIndex < 0 || timestampIndex >= series.length) return null
   const value = series[timestampIndex]
   return typeof value === 'number' ? value : null
@@ -142,30 +142,4 @@ export const computeSSMD = (
   if (denominator === 0) return null
 
   return Math.abs(medianPos - medianNeg) / denominator
-}
-
-/**
- * Reads overall min/max values for selected measurement at one timestamp.
- *
- * Returned data example:
- * - `{ min: 8, max: 1000 }`
- */
-export const getOverallMinMaxForSelection = (
-  plate: Plate,
-  measurement: string | null,
-  timestampIndex: number,
-): { min: number; max: number } => {
-  if (!measurement) {
-    return { min: 0, max: 0 }
-  }
-
-  const overallStats = plate.details.overall_stats[measurement]
-  if (!overallStats) {
-    return { min: 0, max: 0 }
-  }
-
-  return {
-    min: getStatsSeriesValue(overallStats.min, timestampIndex) ?? 0,
-    max: getStatsSeriesValue(overallStats.max, timestampIndex) ?? 0,
-  }
 }

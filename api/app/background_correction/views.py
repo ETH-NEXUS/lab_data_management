@@ -1,6 +1,6 @@
 """
 Starting the calculations of one plate from the plate page: background
-correction and log10.
+correction, log10 and %Activity.
 """
 
 from django.shortcuts import get_object_or_404
@@ -12,6 +12,7 @@ from rest_framework.response import Response
 from background_correction.calculation import METHODS
 from background_correction.correction import correct_plate
 from background_correction.log_transform import log10_of_plate
+from background_correction.percent_activity import activity_of_plate
 from core.models import Plate
 
 
@@ -69,3 +70,41 @@ def log10_plate_measurement(request, plate_id: int):
 
     new_label, skipped = log10_of_plate(plate, settings.validated_data["label"])
     return Response({"label": new_label, "skipped": skipped})
+
+
+class ActivitySettingsSerializer(serializers.Serializer):
+    # Labels and well types are looked up exactly: some labels end with a space
+    label = serializers.CharField(trim_whitespace=False)
+    negative_type = serializers.CharField(trim_whitespace=False)
+    positive_type = serializers.CharField(trim_whitespace=False)
+
+    def validate(self, data):
+        if data["negative_type"] == data["positive_type"]:
+            raise serializers.ValidationError(
+                "The negative and the positive control must be different well types."
+            )
+        return data
+
+
+@api_view(["POST"])
+@permission_classes([IsAuthenticated])
+def percent_activity_of_plate(request, plate_id: int):
+    """
+    Saves the %Activity of a measurement of the plate between its controls.
+
+    Accepted data example:
+    {"label": "Lum1", "negative_type": "N", "positive_type": "P"}
+    Returned data example:
+    {"label": "Lum1_activity_N_P"}
+    """
+    plate = get_object_or_404(Plate, id=plate_id)
+    settings = ActivitySettingsSerializer(data=request.data)
+    settings.is_valid(raise_exception=True)
+
+    new_label = activity_of_plate(
+        plate,
+        settings.validated_data["label"],
+        settings.validated_data["negative_type"],
+        settings.validated_data["positive_type"],
+    )
+    return Response({"label": new_label})

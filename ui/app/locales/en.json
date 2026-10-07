@@ -408,7 +408,12 @@
         "select_color_palette": "Select color palette",
         "hr_position": "HR Position",
         "well_type": "Well Type",
-        "index_position": "Index Position"
+        "index_position": "Index Position",
+        "select_color_scale": "Color scale",
+        "color_scales": {
+          "full": "Full range (min–max)",
+          "robust": "Robust (median ± 3 MAD)"
+        }
       }
     },
     "background_correction": {
@@ -435,11 +440,13 @@
       "calculation": "Calculation",
       "names": {
         "background_correction": "Background correction",
-        "log10": "log10"
+        "log10": "log10",
+        "percent_activity": "%Activity"
       },
       "descriptions": {
         "background_correction": "The median or mean of the reference wells is subtracted from every other well of this plate, at each time point. The result is saved as a new measurement of the plate; the reference wells stay empty.",
-        "log10": "The log10 of every well is saved as a new measurement of the plate, e.g. Lum1_log10. A well with a value of 0 or below is left empty."
+        "log10": "The log10 of every well is saved as a new measurement of the plate, e.g. Lum1_log10. A well with a value of 0 or below is left empty.",
+        "percent_activity": "The activity of every well in percent between the controls of this plate: the negative control is 100 %, the positive control 0 %. Use the raw readout (not a log10). The negative control wells stay empty."
       },
       "none_yet": "No calculations for {label} yet.",
       "log10_title": "log10: {label}",
@@ -447,7 +454,13 @@
       "log10_skipped": "{count} well(s) left empty: a value of 0 or below has no log10.",
       "background_value": "Subtracted: {method} of the {reference} wells = {value}",
       "summary": "{wells} wells · median {median} · min {min} · max {max}",
-      "median_by_well_type": "Median by well type:"
+      "median_by_well_type": "Median by well type:",
+      "negative_control": "Negative control (100 %)",
+      "positive_control": "Positive control (0 %)",
+      "activity_title": "%Activity: {label}",
+      "activity_formula": "%Activity = 100 · (value of the well − median({positive} wells)) / (median({negative} wells) − median({positive} wells))",
+      "activity_formula_numbers": "= 100 · (value of the well − {positiveMedian}) / ({negativeMedian} − {positiveMedian})",
+      "activity_note": "{negative} wells = 100 %, {positive} wells = 0 %. Calculated from {source}, separately for each time point. The {negative} wells are left empty."
     }
   },
   "messages_page": {
