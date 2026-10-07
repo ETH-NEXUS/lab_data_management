@@ -102,12 +102,23 @@ class MapCommandTest(ManagementPageTestCase):
             dimension=PlateDimension.objects.get(name="dim_384_16x24"),
             experiment=Experiment.objects.get(name="Experiment"),
         )
-        with open(join(self.folder, "demo_1_061024_121212.asc"), "wb") as file:
-            file.write(ASC_FILE_CONTENT)
+        # As in the lab's folder: another file next to the file of the plate
+        for name in ["demo_1_061024_121212.asc", "30092026-001.asc"]:
+            with open(join(self.folder, name), "wb") as file:
+                file.write(ASC_FILE_CONTENT)
 
         output = self.run_map("m1000", file_name_format="barcode_date_time")
 
         self.assertEqual("completed", output["status"])
+        self.assertIn(
+            {
+                "level": "warning",
+                "text": f"{join(self.folder, '30092026-001.asc')} was skipped: its name "
+                "does not match the chosen format barcode_date_time, "
+                "e.g. RKS_300926_3_093026_165454.asc.",
+            },
+            output["messages"],
+        )
         self.assertEqual(
             {"demo_1"},
             set(Measurement.objects.values_list("well__plate__barcode", flat=True)),

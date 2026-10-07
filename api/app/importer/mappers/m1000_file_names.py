@@ -16,6 +16,8 @@ from typing import TypedDict
 
 from django.core.management.base import CommandError
 
+from importer.mappers.base import SkipFile
+
 DATE_TIME_BARCODE = "date_time_barcode"
 BARCODE_DATE_TIME = "barcode_date_time"
 FILE_NAME_FORMATS = (DATE_TIME_BARCODE, BARCODE_DATE_TIME)
@@ -60,9 +62,11 @@ def read_file_name(path: str, file_name_format: str | None) -> M1000FileName:
     file_name = os.path.basename(path)
     match = re.match(FILE_NAME_PATTERNS[chosen_format], file_name)
     if not match:
-        raise CommandError(
-            f"The file name {file_name} does not match the chosen format "
-            f"{chosen_format}, e.g. {FILE_NAME_EXAMPLES[chosen_format]}."
+        # Other files can lie in the folder, e.g. "30092026-001.asc" next to the
+        # files of the plates; they are skipped, the others are still mapped
+        raise SkipFile(
+            f"its name does not match the chosen format {chosen_format}, "
+            f"e.g. {FILE_NAME_EXAMPLES[chosen_format]}."
         )
     # The older pattern takes any name, so a newer name would become a wrong
     # barcode, e.g. "RKS_300926_3_093026_165454", and a new plate of that name

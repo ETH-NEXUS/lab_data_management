@@ -40,6 +40,14 @@ NEW_BARCODE_SPECIFICATION_NUMBER_OF_PLATES = 4
 FILES_PARSED_BY_NAME = (".xlsx", ".txt")
 
 
+class SkipFile(Exception):
+    """
+    A file in the folder that is not one of the files to map, e.g. an M1000
+    file named differently from the chosen format. It is skipped with a warning,
+    and the other files are mapped.
+    """
+
+
 def detect_encoding(filename: str) -> str | None:
     """Guesses the text encoding of a file, e.g. "ascii" or "utf-8"."""
     # chardet can print warnings about the file content, they are not needed
@@ -102,6 +110,8 @@ class BaseMapper:
                     data = self.read_file(filename, kwargs)
                     kwargs.update({"filename": filename})
                     self.map(data, **kwargs)
+            except SkipFile as reason:
+                message(f"{filename} was skipped: {reason}", "warning", room_name)
             except Exception as error:
                 self.delete_stored_files()
                 failed_files.append(filename)

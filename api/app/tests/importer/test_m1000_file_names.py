@@ -8,6 +8,7 @@ from datetime import datetime
 from django.core.management.base import CommandError
 from django.test import SimpleTestCase
 
+from importer.mappers.base import SkipFile
 from importer.mappers.m1000_file_names import read_file_name
 
 
@@ -40,13 +41,14 @@ class ReadFileNameTest(SimpleTestCase):
             read_file_name("/data/RKS_300926_3_093026_165454.asc", "barcode_date_time"),
         )
 
-    def test_an_older_name_in_the_newer_format_is_refused(self):
+    def test_another_name_in_the_newer_format_is_skipped(self):
+        # The lab's folder has "30092026-001.asc" next to the files of the plates
         with self.assertRaisesMessage(
-            CommandError,
-            "The file name 20240610-121212_demo_1.asc does not match the chosen "
-            "format barcode_date_time, e.g. RKS_300926_3_093026_165454.asc.",
+            SkipFile,
+            "its name does not match the chosen format barcode_date_time, "
+            "e.g. RKS_300926_3_093026_165454.asc.",
         ):
-            read_file_name("20240610-121212_demo_1.asc", "barcode_date_time")
+            read_file_name("30092026-001.asc", "barcode_date_time")
 
     def test_a_newer_name_in_the_older_format_is_refused(self):
         # Without this check the whole name would become the barcode of a new plate
