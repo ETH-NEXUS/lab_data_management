@@ -68,6 +68,7 @@ INSTALLED_APPS = [
     "problems",
     "inventory",
     "analysis",
+    "background_correction",
 ]
 
 
