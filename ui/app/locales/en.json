@@ -302,7 +302,21 @@
       "no_plates": "No plates found for this experiment.",
       "save_controls": "Save controls",
       "controls_saved": "The controls have been saved. They will be used in the report.",
-      "controls_missing": "Please select both controls."
+      "controls_missing": "Please select both controls.",
+      "heatmap": {
+        "title": "Heatmaps of {label}, one per plate: read {number} of {total} ({time})",
+        "meaning": {
+          "raw": "Raw data: the values as they were imported from the plate reader files (or made with the measurement calculator of the experiment). The colour shows how much signal a well gave; a well without colour has no value.",
+          "log10": "The log10 of {source}, calculated on the plate page: one more means 10 times more signal, one less 10 times less.",
+          "correction": "{source} minus the {method} of the {reference} wells of the same plate (background correction on the plate page): 0 = as much signal as the background, below 0 = less. The {reference} wells stay empty.",
+          "inhibition": "%Inhibition of {source} between the controls of each plate (normalization on the plate page): 0 = like {negative} (not inhibited), 1 = like {positive} (fully inhibited).",
+          "activity": "%Activity of {source} between the controls of each plate (normalization on the plate page), in percent: 100 = like {negative} (the enzyme works fully), 0 = like {positive} (the enzyme is blocked)."
+        },
+        "open_plate": "Click a plate to open its page: there the formula is shown with the numbers of that plate.",
+        "missing_plates": "{count} of {total} plates do not have this measurement (it was not imported or not calculated for them), so their heatmaps stay empty.",
+        "scale_shared": "All plates use one colour scale (the values of all plates together), so the same colour means the same value on every plate and the plates can be compared.",
+        "scale_per_plate": "\"Per plate view\": every plate has its own colour scale from its own values (see the legend next to it), so the same colour can mean different values on different plates; compare the patterns within a plate, not the colours between plates."
+      }
     },
     "reports": {
       "modal_title": "Generate Report",
@@ -397,7 +411,7 @@
       "stats": {
         "z_prime": "z':",
         "ssmd": "ssmd:",
-        "explanation": "z' and SSMD show how clearly the positive ({positive}) and the negative ({negative}) control wells are apart at this time point, that is how good the test on this plate is. Both use the median and the MAD (the typical spread around the median) of each control; the controls are the ones chosen in \"Positive control\" and \"Negative control\" below.",
+        "explanation": "z' and SSMD show how clearly the positive ({positive}) and the negative ({negative}) control wells are apart at this time point, that is how good the test on the plate is. Both use the median and the MAD (the typical spread around the median) of each control; the controls are the ones chosen in \"Positive control\" and \"Negative control\".",
         "z_prime_formula": "z' = 1 - 3 × (MAD {positive} + MAD {negative}) / {'|'}median {positive} - median {negative}{'|'}",
         "ssmd_formula": "SSMD = {'|'}median {positive} - median {negative}{'|'} / (0.5 × (MAD {positive} + MAD {negative}))",
         "reading": "z' above 0.5 = a good test (the controls are clearly apart), 0 to 0.5 = usable, below 0 = the controls overlap. SSMD: how many typical spreads lie between the two medians; the larger, the better."

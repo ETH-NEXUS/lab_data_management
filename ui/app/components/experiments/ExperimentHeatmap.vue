@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, onMounted, ref, watch } from 'vue'
+import ExperimentHeatmapExplanation from '~/components/experiments/ExperimentHeatmapExplanation.vue'
 import ColorLegend from '~/components/plates/ColorLegend.vue'
 import HeatmapScaleSelect from '~/components/plates/HeatmapScaleSelect.vue'
 import HeatMapSettings from '~/components/plates/HeatMapSettings.vue'
@@ -177,16 +178,15 @@ const controlLabelOptions = computed(() => {
     return options
   }
 
-  if (experimentPlates.value.length === 0) {
+  // The first plate that has the measurement: one calculated on a plate page,
+  // or imported for some plates only, is not on every plate
+  const measurement = plateViewStore.selectedMeasurement
+  const plateWithMeasurement = experimentPlates.value.find((plate) => plate.details.stats[measurement])
+  if (!plateWithMeasurement) {
     return options
   }
 
-  const firstPlate = experimentPlates.value[0]
-  if (!firstPlate) {
-    return options
-  }
-
-  const statsForMeasurement = firstPlate.details.stats[plateViewStore.selectedMeasurement]
+  const statsForMeasurement = plateWithMeasurement.details.stats[measurement]
   if (!statsForMeasurement) {
     return options
   }
@@ -344,6 +344,12 @@ const canShowStats = (plate: Plate) => {
 
         <HeatmapScaleSelect class="w-[220px]" />
       </div>
+
+      <ExperimentHeatmapExplanation
+        :plates="experimentPlates"
+        :timestamps="props.timestamps"
+        :range="experimentRange"
+      />
 
       <div class="flex flex-wrap items-start justify-evenly gap-4">
         <article
