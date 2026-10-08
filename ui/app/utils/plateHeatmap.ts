@@ -205,30 +205,6 @@ export const percentageToHsl = (percentageValue: number, fromColor: string, toCo
 }
 
 /**
- * Converts one measurement value into a heatmap color.
- *
- * Accepted data examples:
- * - `value = 220, min = 0, max = 1000, palette = { label: 'GreenRed', value: { from: '#FF0000', to: '#00FF00' } }`
- *
- * Returned data examples:
- * - `'#c73800'`
- * - `'transparent'` for invalid ranges
- */
-export const getHeatmapColor = (
-  value: number | null,
-  min: number,
-  max: number,
-  palette: PlatePaletteOption,
-): string => {
-  if (value === null || Number.isNaN(value) || Number.isNaN(min) || Number.isNaN(max) || min === max) {
-    return 'transparent'
-  }
-
-  const percent = (value - min) / (max - min)
-  return percentageToHsl(percent, palette.value.from, palette.value.to, palette.label)
-}
-
-/**
  * Creates the stepped plate legend used by the old UI.
  *
  * Returned data example:

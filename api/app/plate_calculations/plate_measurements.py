@@ -90,22 +90,25 @@ def replace_measurements(
             raise ValidationError(
                 f'No well of the plate {plate.barcode} gets a value of "{new_label}".'
             )
-        # Only an import links its values to a file
-        imported = Measurement.objects.filter(
-            well__plate=plate, label=new_label, measurement_assignment__isnull=False
-        )
-        if imported.exists():
-            raise ValidationError(
-                f'The plate {plate.barcode} has an imported measurement "{new_label}", '
-                "which a calculation does not replace."
-            )
 
     with transaction.atomic():
         # Two calculations of the same plate at once (e.g. from two browser tabs) would
         # both delete the old rows and then insert the same rows twice, which the
         # database refuses (one value per well, label and time point). The lock makes
         # the second one wait until the first one is saved, and then replace it.
-        Plate.objects.select_for_update().get(id=plate.id)
+        # "no_key" still lets an import add wells or values to the plate meanwhile.
+        Plate.objects.select_for_update(no_key=True).get(id=plate.id)
+        # Checked right before the old values are deleted
+        for new_label in new_measurements:
+            # Only an import links its values to a file
+            imported = Measurement.objects.filter(
+                well__plate=plate, label=new_label, measurement_assignment__isnull=False
+            )
+            if imported.exists():
+                raise ValidationError(
+                    f'The plate {plate.barcode} has an imported measurement "{new_label}", '
+                    "which a calculation does not replace."
+                )
         for new_label, measurements in new_measurements.items():
             Measurement.objects.filter(well__plate=plate, label=new_label).delete()
             Measurement.objects.bulk_create(measurements)

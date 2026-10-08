@@ -20,7 +20,7 @@ def delete_calculated_measurement(plate: Plate, label: str) -> int:
     with transaction.atomic():
         # The same lock as a calculation, so a calculation of this measurement
         # running at the same time is not mixed with its deletion
-        Plate.objects.select_for_update().get(id=plate.id)
+        Plate.objects.select_for_update(no_key=True).get(id=plate.id)
         measurements = Measurement.objects.filter(well__plate=plate, label=label)
         if not measurements.exists():
             raise ValidationError(

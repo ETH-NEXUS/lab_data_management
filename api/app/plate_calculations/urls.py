@@ -5,6 +5,7 @@ from plate_calculations.views import (
     delete_plate_calculation,
     log10_plate_measurement,
     normalize_plate_measurement,
+    plate_measurement_sources,
 )
 
 urlpatterns = [
@@ -27,5 +28,10 @@ urlpatterns = [
         "plates/<int:plate_id>/delete/",
         delete_plate_calculation,
         name="delete_plate_calculation",
+    ),
+    path(
+        "plates/<int:plate_id>/sources/",
+        plate_measurement_sources,
+        name="plate_measurement_sources",
     ),
 ]

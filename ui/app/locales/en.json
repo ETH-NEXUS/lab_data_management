@@ -491,6 +491,10 @@
       "raw": {
         "title": "Raw data: {label}",
         "description": "The values as they were imported from the measurement file (or made with the measurement calculator of the experiment); nothing is calculated from them here. Every square of the heatmap is one well.",
+        "title_imported": "Imported: {label}",
+        "description_imported": "Imported from the file {file}: the values as they are in the file; nothing is calculated from them on this page. A file can also hold values the software of the instrument already calculated (e.g. a name like Lum1_corrected); how, the file does not say. Every square of the heatmap is one well.",
+        "title_calculator": "Made with the measurement calculator: {label}",
+        "description_calculator": "Made with the measurement calculator of the experiment (\"Add Measurement\"), not imported from a file and not calculated on this page. The calculator does not save its formula, so it cannot be shown here. Every square of the heatmap is one well.",
         "reading": "the colour shows how much signal a well gave: the legend next to the heatmap runs from the lowest value (bottom) to the highest (top). A well without colour has no value. Below: the median of every well type (the middle value: half of the wells are above it, half below). The median of the reference wells (R, N1 or NREF) is the background, the signal the test gives on its own; \"Add calculation\" → Background correction subtracts it from the other wells."
       },
       "log10": {

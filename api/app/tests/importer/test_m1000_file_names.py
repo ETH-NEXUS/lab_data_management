@@ -25,6 +25,25 @@ class ReadFileNameTest(SimpleTestCase):
             read_file_name("/data/demo_1.asc", "date_time_barcode"),
         )
 
+    def test_the_older_format_with_the_6_digit_date_of_the_evaluated_files(self):
+        # As the lab names them: 09/30/26 15:46:54, month first. Read with the
+        # 8 digit pattern it was the year 930
+        self.assertEqual(
+            {
+                "barcode": "RKS_300926_1",
+                "measured_at": datetime(2026, 9, 30, 15, 46, 54),
+            },
+            read_file_name("/data/093026-154654_RKS_300926_1.asc", "date_time_barcode"),
+        )
+
+    def test_the_older_format_with_another_number_of_digits_is_refused(self):
+        with self.assertRaisesMessage(
+            CommandError,
+            "The date 93026 in the file name 93026-154654_RKS_1.asc has 5 digits, "
+            "but 8 or 6 are expected",
+        ):
+            read_file_name("93026-154654_RKS_1.asc", "date_time_barcode")
+
     def test_without_a_format_the_older_one_is_used(self):
         self.assertEqual(
             "240716MP-1_2",

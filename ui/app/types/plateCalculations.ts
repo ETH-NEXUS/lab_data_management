@@ -38,6 +38,19 @@ export type PlateCalculationDeleteResponse = {
   deleted: number
 }
 
+// Where the measurements of a plate come from, e.g. `plate_calculations/plates/42/sources/`
+export const PLATE_MEASUREMENT_SOURCES_PATH = 'sources/'
+export const PLATE_MEASUREMENT_SOURCES_ERROR_MESSAGE = 'The sources of the measurements could not be loaded.'
+
+/**
+ * The file each measurement of a plate was imported from, null if it was not
+ * (calculated on the plate page or with the measurement calculator).
+ *
+ * Data example:
+ * - `{ Lum1: '093026-154654_RKS_300926_1.asc', Lum1_log10: null }`
+ */
+export type PlateMeasurementSources = Record<string, string | null>
+
 // The parts of the names of the new measurements
 export const CORRECTION_INFIX = '_bc_'
 export const LOG10_SUFFIX = '_log10'

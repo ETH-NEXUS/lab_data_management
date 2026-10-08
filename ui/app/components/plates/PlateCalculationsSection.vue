@@ -1,11 +1,13 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed, ref, watch } from 'vue'
 import PlateCalculationCard from '~/components/plates/PlateCalculationCard.vue'
 import PlateCalculationModal from '~/components/plates/PlateCalculationModal.vue'
 import PlateRawDataExplanation from '~/components/plates/PlateRawDataExplanation.vue'
+import { usePlateCalculations } from '~/composables/usePlateCalculations'
 import { usePlateStore } from '~/stores/plates'
 import { usePlateViewStore } from '~/stores/plateView'
 import type { Plate, WellInfo } from '~/types/lab'
+import type { PlateMeasurementSources } from '~/types/plateCalculations'
 import { getCalculatedLabels } from '~/utils/plateDatasets'
 
 /**
@@ -26,7 +28,24 @@ const { t } = useI18n()
 const plateStore = usePlateStore()
 const plateViewStore = usePlateViewStore()
 
+const { fetchSources } = usePlateCalculations()
+
 const isModalOpen = ref(false)
+// The file each measurement was imported from, e.g. { Lum1: '093026-154654_RKS_300926_1.asc', Lum1_log10: null }
+const sources = ref<PlateMeasurementSources>({})
+
+const loadSources = async (): Promise<void> => {
+  try {
+    sources.value = await fetchSources(props.plate.id)
+  } catch (err) {
+    // Without them the general text is shown
+    sources.value = {}
+    console.error(err)
+  }
+}
+
+// Also after a calculation or a deletion: the plate is reloaded with its new measurements
+watch(() => props.plate, loadSources, { immediate: true })
 
 const openModal = (): void => {
   isModalOpen.value = true
@@ -90,6 +109,7 @@ const reloadPlate = async (): Promise<void> => {
       :plate="props.plate"
       :label="plateViewStore.selectedMeasurement"
       :timestamp-index="plateViewStore.selectedTimestampIdx"
+      :sources="sources"
     />
 
     <p v-if="calculatedLabels.length === 0" class="mt-4 text-sm text-slate-600">

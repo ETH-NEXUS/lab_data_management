@@ -1,7 +1,7 @@
 """
 Starting the calculations of one plate from the plate page: background
 correction, log10 and the normalization (%Inhibition, %Activity), and deleting
-a calculated measurement.
+a calculated measurement; where the measurements of a plate come from.
 """
 
 from django.shortcuts import get_object_or_404
@@ -16,6 +16,7 @@ from plate_calculations.correction import METHODS, correct_plate
 from plate_calculations.deletion import delete_calculated_measurement
 from plate_calculations.log_transform import log10_of_plate
 from plate_calculations.normalization import normalize_plate
+from plate_calculations.sources import measurement_sources
 
 
 class CorrectionSettingsSerializer(serializers.Serializer):
@@ -146,3 +147,16 @@ def delete_plate_calculation(request, plate_id: int):
     label = settings.validated_data["label"]
     deleted = delete_calculated_measurement(plate, label)
     return Response({"label": label, "deleted": deleted})
+
+
+@api_view(["GET"])
+@permission_classes([IsAuthenticated])
+def plate_measurement_sources(request, plate_id: int):
+    """
+    The file each measurement of the plate was imported from, null if it was not.
+
+    Returned data example:
+    {"Lum1": "093026-154654_RKS_300926_1.asc", "Lum1_log10": null}
+    """
+    plate = get_object_or_404(Plate, id=plate_id)
+    return Response(measurement_sources(plate))

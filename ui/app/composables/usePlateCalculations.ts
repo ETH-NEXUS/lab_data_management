@@ -5,10 +5,13 @@ import {
   PLATE_CALCULATION_ERROR_MESSAGE,
   PLATE_CALCULATION_PATHS,
   PLATE_CALCULATIONS_ENDPOINT,
+  PLATE_MEASUREMENT_SOURCES_ERROR_MESSAGE,
+  PLATE_MEASUREMENT_SOURCES_PATH,
   type PlateCalculation,
   type PlateCalculationDeleteResponse,
   type PlateCalculationResponse,
   type PlateCalculationSettings,
+  type PlateMeasurementSources,
 } from '~/types/plateCalculations'
 import { requestApiData } from '~/utils/apiRequests'
 
@@ -19,6 +22,7 @@ import { requestApiData } from '~/utils/apiRequests'
  * Usage examples:
  * - `await calculate(42, 'log10', { label: 'Lum1' })` -> `{ label: 'Lum1_log10', skipped: 0 }`
  * - `await deleteCalculation(42, 'Lum1_log10')` -> `{ label: 'Lum1_log10', deleted: 64 }`
+ * - `await fetchSources(42)` -> `{ Lum1: '093026-154654_RKS_300926_1.asc', Lum1_log10: null }`
  */
 export const usePlateCalculations = () => {
   const isCalculating = ref(false)
@@ -55,5 +59,13 @@ export const usePlateCalculations = () => {
     }
   }
 
-  return { isCalculating, calculate, isDeleting, deleteCalculation }
+  const fetchSources = async (plateId: number): Promise<PlateMeasurementSources> => {
+    return await requestApiData<PlateMeasurementSources>(
+      `${PLATE_CALCULATIONS_ENDPOINT}${plateId}/${PLATE_MEASUREMENT_SOURCES_PATH}`,
+      { method: 'GET' },
+      PLATE_MEASUREMENT_SOURCES_ERROR_MESSAGE,
+    )
+  }
+
+  return { isCalculating, calculate, isDeleting, deleteCalculation, fetchSources }
 }
