@@ -6,6 +6,7 @@ import HeatmapScaleNote from '~/components/plates/HeatmapScaleNote.vue'
 import HeatmapScaleSelect from '~/components/plates/HeatmapScaleSelect.vue'
 import PlateCalculationsSection from '~/components/plates/PlateCalculationsSection.vue'
 import PlateStats from '~/components/plates/PlateStats.vue'
+import PlateStatsExplanation from '~/components/plates/PlateStatsExplanation.vue'
 import PlateTable from '~/components/plates/PlateTable.vue'
 import { usePlateViewStore } from '~/stores/plateView'
 import type { Plate, WellInfo } from '~/types/lab'
@@ -144,7 +145,14 @@ const onWellSelected = (wellInfo: WellInfo): void => {
       :range="heatmapRange"
     />
 
-    <PlateStats v-if="!isMinimalView && ssmd !== null && zPrime !== null" :ssmd="ssmd" :z-prime="zPrime" />
+    <template v-if="!isMinimalView && ssmd !== null && zPrime !== null">
+      <PlateStats :ssmd="ssmd" :z-prime="zPrime" />
+      <PlateStatsExplanation
+        v-if="plateViewStore.selectedPosControl && plateViewStore.selectedNegControl"
+        :positive="plateViewStore.selectedPosControl"
+        :negative="plateViewStore.selectedNegControl"
+      />
+    </template>
 
     <div v-if="!isMinimalView && measurementOptions.length > 0" class="mt-5 grid grid-cols-1 gap-4 lg:grid-cols-2">
       <div>

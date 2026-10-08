@@ -1,6 +1,6 @@
 """
 Reading and saving the measurements of one plate, shared by the calculations of
-this app (background correction, log10, %Activity).
+this app (background correction, log10, normalization: %Inhibition, %Activity).
 """
 
 from django.db import transaction
@@ -101,6 +101,11 @@ def replace_measurements(
             )
 
     with transaction.atomic():
+        # Two calculations of the same plate at once (e.g. from two browser tabs) would
+        # both delete the old rows and then insert the same rows twice, which the
+        # database refuses (one value per well, label and time point). The lock makes
+        # the second one wait until the first one is saved, and then replace it.
+        Plate.objects.select_for_update().get(id=plate.id)
         for new_label, measurements in new_measurements.items():
             Measurement.objects.filter(well__plate=plate, label=new_label).delete()
             Measurement.objects.bulk_create(measurements)

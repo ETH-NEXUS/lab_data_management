@@ -396,7 +396,11 @@
       },
       "stats": {
         "z_prime": "z':",
-        "ssmd": "ssmd:"
+        "ssmd": "ssmd:",
+        "explanation": "z' and SSMD show how clearly the positive ({positive}) and the negative ({negative}) control wells are apart at this time point, that is how good the test on this plate is. Both use the median and the MAD (the typical spread around the median) of each control; the controls are the ones chosen in \"Positive control\" and \"Negative control\" below.",
+        "z_prime_formula": "z' = 1 - 3 × (MAD {positive} + MAD {negative}) / {'|'}median {positive} - median {negative}{'|'}",
+        "ssmd_formula": "SSMD = {'|'}median {positive} - median {negative}{'|'} / (0.5 × (MAD {positive} + MAD {negative}))",
+        "reading": "z' above 0.5 = a good test (the controls are clearly apart), 0 to 0.5 = usable, below 0 = the controls overlap. SSMD: how many typical spreads lie between the two medians; the larger, the better."
       },
       "controls": {
         "positive_control": "Positive control",
@@ -428,9 +432,10 @@
       "formula_numbers": "= (value of the well) - {value}",
       "step_background": "The {reference} wells are the reference: the signal the test gives without the enzyme working (the background). Their {method} at this time point is {value}.",
       "step_subtract": "This background is subtracted from every other well of {source}.",
-      "step_empty": "The {reference} wells stay empty: after the correction they are not needed.",
-      "reading": "0 = as much signal as the background, above 0 = more signal than the background. Calculated separately for each time point.",
-      "reading_log10": "{source} is a log10, and subtracting log10 values means dividing: 0 = as much signal as the background, 0.3 = 2 times as much, 1 = 10 times as much. Calculated separately for each time point."
+      "step_empty": "The {reference} wells stay empty (no colour in the heatmap): after the correction they are not needed.",
+      "reading": "0 = as much signal as the background, above 0 = more signal than the background, below 0 = less signal than the background (e.g. a well where the enzyme is blocked). Calculated separately for each time point.",
+      "reading_log10": "{source} is in log10 values, and subtracting log10 values means dividing: 0 = as much signal as the background, 0.3 = 2 times as much, 1 = 10 times as much, -0.3 = half of it, -1 = a tenth. Calculated separately for each time point.",
+      "shown_correction": "Background correction shown below"
     },
     "calculations": {
       "section_title": "Calculations",
@@ -445,9 +450,8 @@
       "descriptions": {
         "background_correction": "The median or mean of the reference wells is subtracted from every other well of this plate, at each time point. The result is saved as a new measurement of the plate; the reference wells stay empty.",
         "log10": "The log10 of every well is saved as a new measurement of the plate, e.g. Lum1_log10. A well with a value of 0 or below is left empty.",
-        "normalization": "As in the R report: every well is normalized between the negative and the positive control on the log10 scale. Two new measurements are saved: the %Inhibition (negative control 0, positive control 1) and the %Activity = (1 - %Inhibition) × 100 (negative control 100, positive control 0). Use the raw readout, e.g. Lum1."
+        "normalization": "As in the R report: every well is normalized between the negative and the positive control on the log10 scale. Two new measurements are saved: the %Inhibition (negative control 0, positive control 1) and the %Activity = (1 - %Inhibition) × 100 (negative control 100, positive control 0). Use the raw readout, e.g. Lum1, not background-corrected values: wells below the background have no log10 and are left out, controls too."
       },
-      "none_yet": "{label}: the raw data, the values as they were imported from the plate reader file (or made with the measurement calculator of the experiment), nothing calculated here. Below: the median of every well type at this time point (the middle value: half of the wells are above it, half below). The median of the R wells (the reference) is the background, the signal the test gives on its own; a background correction subtracts it from the other wells. With \"Add calculation\" you can calculate new values from these, e.g. the background-corrected ones.",
       "summary": "{wells} wells · median {median} · min {min} · max {max}",
       "median_by_well_type": "Median by well type:",
       "negative_control": "Negative control (nothing blocks the enzyme)",
@@ -455,9 +459,16 @@
       "measurement": "Measurement",
       "apply_button": "Calculate",
       "success": "Saved as {label}",
+      "success_two": "Saved as {label} and {activityLabel}",
       "formula_caption": "Calculated with this formula:",
       "steps_caption": "Step by step:",
       "reading_caption": "How to read the values:",
+      "read_caption": "Numbers of read {number} of {total} ({time}), the time point chosen in \"Select timestamp\".",
+      "raw": {
+        "title": "Raw data: {label}",
+        "description": "The values as they were imported from the plate reader file (or made with the measurement calculator of the experiment); nothing is calculated from them here. Every square of the heatmap is one well.",
+        "reading": "the colour shows how much signal a well gave: the legend next to the heatmap runs from the lowest value (bottom) to the highest (top). A well without colour has no value. Below: the median of every well type (the middle value: half of the wells are above it, half below). The median of the reference wells (R, N1 or NREF) is the background, the signal the test gives on its own; \"Add calculation\" → Background correction subtracts it from the other wells."
+      },
       "log10": {
         "title": "log10: {label}",
         "formula": "log10 value = log10(value of the well in {source})",
@@ -479,8 +490,9 @@
         "step_positive": "The {positive} wells are the positive control: the enzyme is fully blocked. The median of their log10 values is {positiveMedian}.",
         "step_inhibition": "For every well: how far its log10 lies on the way from the {negative} median to the {positive} median. This is the %Inhibition, saved as {inhibitionLabel}.",
         "step_activity": "%Activity is what is left of the work of the enzyme, in percent: 1 minus the %Inhibition, times 100, saved as {activityLabel}.",
-        "inhibition_reading": "0 = like {negative} (not inhibited), 1 = like {positive} (fully inhibited), 0.5 = halfway. Below 0 or above 1 = beyond the controls. Fractions, as in the R report: 0.5 means 50 %. Calculated separately for each time point; a well with a value of 0 or below stays empty.",
-        "activity_reading": "100 = like {negative} (the enzyme works fully), 0 = like {positive} (the enzyme is blocked), 50 = half of its work. Below 0 or above 100 = beyond the controls. In percent. Calculated separately for each time point; a well with a value of 0 or below stays empty."
+        "inhibition_reading": "0 = like {negative} (not inhibited), 1 = like {positive} (fully inhibited), 0.5 = halfway. Below 0 or above 1 = beyond the controls. Fractions, as in the R report: 0.5 means 50 %. Calculated separately for each time point; a well with a value of 0 or below stays empty. The colours of the heatmap run from the lowest to the highest value of this plate (see the legend), not fixed from 0 to 1.",
+        "activity_reading": "100 = like {negative} (the enzyme works fully), 0 = like {positive} (the enzyme is blocked), 50 = half of its work. Below 0 or above 100 = beyond the controls. In percent. Calculated separately for each time point; a well with a value of 0 or below stays empty. The colours of the heatmap run from the lowest to the highest value of this plate (see the legend), not fixed from 0 to 100.",
+        "skipped_controls": "Among them {negativeCount} {negative} and {positiveCount} {positive} control well(s): the medians of the controls are taken without them, so the two ends of the scale (the values of the controls) can be off. Normalize the raw readout (not background-corrected values) to keep all controls."
       },
       "scale_note": {
         "full": "Colours: from the lowest value ({min}) at one end of the palette to the highest ({max}) at the other; every well gets the colour of where its value lies between them. A few extreme wells can take most of the scale; then choose the robust colour scale.",

@@ -240,6 +240,11 @@ export const buildPlateLegend = (
   palette: PlatePaletteOption,
   numberOfSteps = 20,
 ): LegendColor[] => {
+  // All wells have the same value: one colour, the lowest of the palette (as in PlateTable)
+  if (max === min) {
+    return [{ value: min, color: percentageToHsl(0, palette.value.from, palette.value.to, palette.label) }]
+  }
+
   const legend: LegendColor[] = []
   const step = (max - min) / numberOfSteps
 

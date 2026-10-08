@@ -118,10 +118,14 @@ const apply = async () => {
     const result = await calculate(props.plate.id, calculation.value, settings.value)
     emit('calculated', { calculation: calculation.value, label: label.value, newLabel: result.label })
     close()
+    // The normalization saves two measurements: the %Inhibition and the %Activity
+    const title = result.activity_label
+      ? t('plates.calculations.success_two', { label: result.label, activityLabel: result.activity_label })
+      : t('plates.calculations.success', { label: result.label })
     toast.add({
-      title: t('plates.calculations.success', { label: result.label }),
+      title,
       // Only log10 and the normalization leave wells out
-      description: result.skipped ? t('plates.calculations.log10_skipped', { count: result.skipped }) : undefined,
+      description: result.skipped ? t('plates.calculations.log10.skipped', { count: result.skipped }) : undefined,
       color: 'success',
     })
   } catch (err: unknown) {

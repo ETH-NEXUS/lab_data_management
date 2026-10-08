@@ -3,7 +3,7 @@ import { computed } from 'vue'
 import PlateCalculationExplanation from '~/components/plates/PlateCalculationExplanation.vue'
 import type { Plate } from '~/types/lab'
 import type { NormalizedDataset } from '~/types/plateCalculations'
-import { formatSummaryNumber, getWellTypeLog10Median } from '~/utils/plateDatasets'
+import { countWellsWithoutLog10, formatSummaryNumber, getWellTypeLog10Median } from '~/utils/plateDatasets'
 
 /**
  * How the %Inhibition or %Activity of the normalization was calculated, with the
@@ -16,6 +16,31 @@ const props = defineProps<{
 }>()
 
 const { t } = useI18n()
+
+/**
+ * How many wells were left empty because their value is 0 or below, and how
+ * many of them are controls: the medians of the controls are taken without
+ * them, so the 0 and the 1 of the scale can be off (e.g. after a background
+ * correction many P wells are below 0).
+ */
+const skippedWarning = (): string | undefined => {
+  const { source, label, negativeType, positiveType } = props.dataset
+  const count = countWellsWithoutLog10(props.plate, source, label)
+  if (count === 0) return undefined
+
+  const negativeCount = countWellsWithoutLog10(props.plate, source, label, negativeType)
+  const positiveCount = countWellsWithoutLog10(props.plate, source, label, positiveType)
+  const warning = t('plates.calculations.log10.skipped', { count })
+  if (negativeCount === 0 && positiveCount === 0) return warning
+
+  const controls = t('plates.calculations.normalization.skipped_controls', {
+    negative: negativeType,
+    positive: positiveType,
+    negativeCount,
+    positiveCount,
+  })
+  return `${warning} ${controls}`
+}
 
 const texts = computed(() => {
   const { source, negativeType, positiveType, kind } = props.dataset
@@ -48,6 +73,7 @@ const texts = computed(() => {
     ],
     steps,
     reading: t(`plates.calculations.normalization.${kind}_reading`, params),
+    warning: skippedWarning(),
   }
 })
 </script>

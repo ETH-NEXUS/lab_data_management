@@ -3,7 +3,12 @@ import { computed } from 'vue'
 import PlateCalculationExplanation from '~/components/plates/PlateCalculationExplanation.vue'
 import type { Plate } from '~/types/lab'
 import type { BackgroundCorrection } from '~/types/plateCalculations'
-import { formatSummaryNumber, getLog10SourceLabel, getWellTypeStatistic } from '~/utils/plateDatasets'
+import {
+  formatSummaryNumber,
+  getCorrectionDataset,
+  getLog10SourceLabel,
+  getWellTypeStatistic,
+} from '~/utils/plateDatasets'
 
 /**
  * How a background correction was calculated, with the subtracted value of the
@@ -27,8 +32,15 @@ const texts = computed(() => {
     method: t(`plates.background_correction.methods.${method}`),
     value: formatSummaryNumber(background),
   }
-  // In log10 values, subtracting means dividing
-  const isOfLog10 = getLog10SourceLabel(props.plate, source) !== null
+  // In log10 values, subtracting means dividing. A correction of a correction
+  // (e.g. Lum1_log10_bc_R_median_bc_N_median) is of log10 values if the first one was.
+  let firstSource = source
+  let earlierCorrection = getCorrectionDataset(props.plate, firstSource)
+  while (earlierCorrection) {
+    firstSource = earlierCorrection.source
+    earlierCorrection = getCorrectionDataset(props.plate, firstSource)
+  }
+  const isOfLog10 = getLog10SourceLabel(props.plate, firstSource) !== null
   return {
     title: t('plates.background_correction.heatmap_title', { label: props.correction.label }),
     formulas: [

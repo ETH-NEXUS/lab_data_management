@@ -64,6 +64,7 @@ def normalize_plate(
     new_inhibition_label = inhibition_label(label, negative_type, positive_type)
     new_activity_label = activity_label(label, negative_type, positive_type)
     check_label_length(new_inhibition_label)
+    check_label_length(new_activity_label)
     values = values_by_time_point(plate, label)
     skipped_wells = wells_without_log10(values)
     negative_well_ids = well_ids_of_type(plate, negative_type)

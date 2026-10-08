@@ -2,6 +2,7 @@
 import { computed } from 'vue'
 import { usePlateViewStore } from '~/stores/plateView'
 import type { HeatmapRange } from '~/utils/heatmapScale'
+import { formatSummaryNumber } from '~/utils/plateDatasets'
 import { buildPlateLegend } from '~/utils/plateHeatmap'
 
 type Props = {
@@ -26,11 +27,12 @@ const legendColors = computed(() => {
 /**
  * The text next to a step of the legend; only every fifth step has one. The
  * legend runs from the top (max) to the bottom (min), and a clipped end also
- * stands for the wells beyond it: "≥ 1934.0", "≤ 33.0".
+ * stands for the wells beyond it: "≥ 1934", "≤ 33". Up to 3 decimals, as in the
+ * statistics below the heatmap, so small values like -0.034 stay readable.
  */
 const stepLabel = (value: number, index: number): string => {
   if (index % LABEL_EVERY !== 0) return ' '
-  const text = value.toFixed(1)
+  const text = formatSummaryNumber(value)
   if (index === 0 && props.range.upperClipped) return `≥ ${text}`
   if (index === LEGEND_STEPS && props.range.lowerClipped) return `≤ ${text}`
   return text

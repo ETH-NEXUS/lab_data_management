@@ -104,6 +104,8 @@ const percentage = (well: WellDetails | undefined) => {
   if (well) {
     const value = measurement(well)
     if (value != null) {
+      // All wells have the same value: no range to place them in, so the lowest colour
+      if (props.max === props.min) return 0
       // A value beyond the end of a robust scale gets the colour of that end
       return Math.min(1, Math.max(0, (value - props.min) / (props.max - props.min)))
     }

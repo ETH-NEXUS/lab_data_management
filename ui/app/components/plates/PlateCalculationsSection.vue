@@ -4,9 +4,9 @@ import ColorLegend from '~/components/plates/ColorLegend.vue'
 import HeatmapScaleNote from '~/components/plates/HeatmapScaleNote.vue'
 import PlateCalculationModal from '~/components/plates/PlateCalculationModal.vue'
 import PlateCorrectionExplanation from '~/components/plates/PlateCorrectionExplanation.vue'
-import PlateDatasetSummary from '~/components/plates/PlateDatasetSummary.vue'
 import PlateLog10Explanation from '~/components/plates/PlateLog10Explanation.vue'
 import PlateNormalizationExplanation from '~/components/plates/PlateNormalizationExplanation.vue'
+import PlateRawDataExplanation from '~/components/plates/PlateRawDataExplanation.vue'
 import PlateTable from '~/components/plates/PlateTable.vue'
 import { usePlateStore } from '~/stores/plates'
 import { usePlateViewStore } from '~/stores/plateView'
@@ -88,21 +88,25 @@ const heatmapRange = computed(() =>
 )
 
 /**
- * Shows a measurement in the main heatmap at the time point shown before:
- * DynamicPlate starts another measurement at its first time point, but a
- * calculated one has the same time points as the one it was calculated from.
+ * Shows a measurement in the main heatmap. DynamicPlate starts another
+ * measurement at its first time point. A calculated one has the same time points
+ * as the one it was calculated from, so if that one was shown, its time point
+ * stays (e.g. the 3rd read of Lum1 -> the 3rd read of Lum1_log10).
  */
-const showInMainHeatmap = async (label: string): Promise<void> => {
+const showInMainHeatmap = async (label: string, sourceLabel: string): Promise<void> => {
+  const wasSourceShown = plateViewStore.selectedMeasurement === sourceLabel
   const timestampIndex = plateViewStore.selectedTimestampIdx
   plateViewStore.selectedMeasurement = label
+  if (!wasSourceShown) return
   await nextTick()
   plateViewStore.selectedTimestampIdx = timestampIndex
 }
 
 /**
  * Reloads only the plate (not the whole page), so the heatmap settings stay, and
- * shows the result: a log10 or %Activity in the main heatmap, a correction in
- * its own heatmap below (the main heatmap shows the measurement it is of).
+ * shows the result: a log10 or the %Inhibition of a normalization in the main
+ * heatmap, a correction in its own heatmap below (the main heatmap shows the
+ * measurement it is of).
  *
  * Accepted input example: `{ calculation: 'log10', label: 'Lum1', newLabel: 'Lum1_log10' }`
  */
@@ -125,10 +129,10 @@ const onCalculated = async (result: PlateCalculationResult): Promise<void> => {
       plateViewStore.selectedWellInfo = { well: selectedWell, position: selectedPosition }
     }
     if (isCorrection) {
-      await showInMainHeatmap(result.label)
+      await showInMainHeatmap(result.label, result.label)
     } else {
       plateViewStore.showHeatmap = true
-      await showInMainHeatmap(result.newLabel)
+      await showInMainHeatmap(result.newLabel, result.label)
     }
   } catch (err) {
     labelToShow.value = null
@@ -173,18 +177,12 @@ const onCalculated = async (result: PlateCalculationResult): Promise<void> => {
       :timestamp-index="plateViewStore.selectedTimestampIdx"
     />
 
-    <!-- The raw data: what they are, and their medians by well type (e.g. the R wells) -->
-    <div v-if="!log10Dataset && !normalizedDataset && !correctionDataset" class="mt-2 space-y-1">
-      <p class="text-sm text-slate-600">
-        {{ t('plates.calculations.none_yet', { label: plateViewStore.selectedMeasurement ?? '' }) }}
-      </p>
-      <PlateDatasetSummary
-        v-if="plateViewStore.selectedMeasurement"
-        :plate="props.plate"
-        :label="plateViewStore.selectedMeasurement"
-        :timestamp-index="plateViewStore.selectedTimestampIdx"
-      />
-    </div>
+    <PlateRawDataExplanation
+      v-if="!log10Dataset && !normalizedDataset && !correctionDataset && plateViewStore.selectedMeasurement"
+      :plate="props.plate"
+      :label="plateViewStore.selectedMeasurement"
+      :timestamp-index="plateViewStore.selectedTimestampIdx"
+    />
 
     <template v-if="selectedCorrection">
       <PlateCorrectionExplanation
@@ -195,6 +193,9 @@ const onCalculated = async (result: PlateCalculationResult): Promise<void> => {
       />
 
       <div v-if="corrections.length > 1" class="mb-3 max-w-sm">
+        <label class="mb-1 block pl-1 text-sm font-medium text-slate-700">
+          {{ t('plates.background_correction.shown_correction') }}
+        </label>
         <select
           v-model="selectedLabel"
           class="w-full cursor-pointer rounded-full border border-black/15 bg-white/70 px-4 py-2 text-sm ring-offset-0 outline-none focus:ring-2 focus:ring-lime-500"

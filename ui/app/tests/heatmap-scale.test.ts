@@ -7,6 +7,7 @@ import { describe, expect, it } from 'vitest'
 
 import type { PlateStats } from '~/types/lab'
 import { getHeatmapRange } from '~/utils/heatmapScale'
+import { buildPlateLegend, getDefaultPlatePalette } from '~/utils/plateHeatmap'
 
 // The plate of the lab: values from 33 to 126340, median 734, MAD 400
 const stats: PlateStats = { min: [33], max: [126340], mean: [4822], median: [734], std: [20000], mad: [400] }
@@ -54,5 +55,23 @@ describe('getHeatmapRange', () => {
       lowerClipped: false,
       upperClipped: false,
     })
+  })
+})
+
+describe('buildPlateLegend', () => {
+  it('has 21 steps from max to min', () => {
+    const legend = buildPlateLegend(0, 100, getDefaultPlatePalette())
+
+    expect(legend).toHaveLength(21)
+    expect(legend[0]!.value).toBe(100)
+    expect(legend[20]!.value).toBe(0)
+  })
+
+  it('has one colour when all wells have the same value', () => {
+    const legend = buildPlateLegend(5, 5, getDefaultPlatePalette())
+
+    expect(legend).toHaveLength(1)
+    expect(legend[0]!.value).toBe(5)
+    expect(legend[0]!.color).not.toContain('NaN')
   })
 })

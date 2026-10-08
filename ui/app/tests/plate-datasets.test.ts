@@ -1,6 +1,6 @@
 /**
  * Tests for finding how the measurements of a plate were calculated (background
- * correction, log10, %Activity), and for the compact statistics below the heatmap.
+ * correction, log10, normalization), and for the compact statistics below the heatmap.
  */
 
 import { describe, expect, it } from 'vitest'
@@ -45,6 +45,11 @@ describe('plate datasets', () => {
 
   it('counts the wells left empty by the log10', () => {
     expect(countWellsWithoutLog10(plate, 'Lum1', 'Lum1_log10')).toBe(1)
+  })
+
+  it('counts the wells of one type left empty by the log10', () => {
+    expect(countWellsWithoutLog10(plate, 'Lum1', 'Lum1_log10', 'N')).toBe(1)
+    expect(countWellsWithoutLog10(plate, 'Lum1', 'Lum1_log10', 'R')).toBe(0)
   })
 
   it('summarizes a measurement at one time point', () => {

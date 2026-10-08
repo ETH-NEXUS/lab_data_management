@@ -109,11 +109,20 @@ export const getNormalizedDataset = (plate: Plate, label: string | null): Normal
 
 /**
  * Wells with a value of the source measurement but none of its log10: their
- * value is 0 or below (the server leaves such a well empty in every read).
+ * value is 0 or below (the server leaves such a well empty in every read). With
+ * a well type, only the wells of that type, e.g. how many P controls were left out.
+ *
+ * Example: `countWellsWithoutLog10(plate, 'Lum1', 'Lum1_inhibition_N_P', 'P')` -> `2`
  */
-export const countWellsWithoutLog10 = (plate: Plate, sourceLabel: string, log10Label: string): number => {
+export const countWellsWithoutLog10 = (
+  plate: Plate,
+  sourceLabel: string,
+  log10Label: string,
+  wellType?: string,
+): number => {
   let count = 0
   for (const well of plate.wells ?? []) {
+    if (wellType && well.type !== wellType) continue
     const sourceValues = well.measurements?.[sourceLabel] ?? []
     const logValues = well.measurements?.[log10Label] ?? []
     if (sourceValues.length > 0 && logValues.length === 0) {
