@@ -96,7 +96,7 @@ class NormalizationSettingsSerializer(serializers.Serializer):
 def normalize_plate_measurement(request, plate_id: int):
     """
     Saves the %Inhibition and %Activity of a measurement of the plate between its
-    controls; wells with a value of 0 or below are left empty and counted.
+    controls; wells with a value of -1 or below are left empty and counted.
 
     Accepted data example:
     {"label": "Lum1", "negative_type": "N", "positive_type": "P"}

@@ -12,11 +12,14 @@ type Props = {
   max: number
   // Shows this measurement instead of the one selected on the page, e.g. 'Lum_CTG_bc_N1_median'
   measurementLabel?: string | null
+  // Shows this read instead of the one selected on the page, e.g. 0 for a measurement with one read
+  timestampIndex?: number | null
 }
 
 const props = withDefaults(defineProps<Props>(), {
   plateIndex: 0,
   measurementLabel: null,
+  timestampIndex: null,
 })
 
 const emit = defineEmits<{
@@ -81,7 +84,7 @@ const typeColor = (well: WellDetails | undefined) => {
 
 const measurement = (well: WellDetails) => {
   const selectedMeasurement = shownMeasurement.value
-  const selectedTimestampIdx = platePage.selectedTimestampIdx
+  const selectedTimestampIdx = props.timestampIndex ?? platePage.selectedTimestampIdx
 
   if (!selectedMeasurement || !well.measurements) {
     return null

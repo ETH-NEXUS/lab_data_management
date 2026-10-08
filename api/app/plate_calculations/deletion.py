@@ -14,8 +14,9 @@ def delete_calculated_measurement(plate: Plate, label: str) -> int:
     """
     Deletes every value of one calculated measurement of the plate (all wells and
     reads) and returns how many values were deleted, e.g. 64.
-    Measurements calculated from it stay (e.g. "Lum1_log10_bc_R_median" when
-    "Lum1_log10" is deleted).
+    Refused while measurements calculated from it are on the plate, e.g.
+    "Lum1_log10_bc_R_median" when "Lum1_log10" is deleted: without it the plate
+    page could no longer tell how they were calculated, nor offer to delete them.
     """
     with transaction.atomic():
         # The same lock as a calculation, so a calculation of this measurement
@@ -31,6 +32,20 @@ def delete_calculated_measurement(plate: Plate, label: str) -> int:
             raise ValidationError(
                 f'"{label}" of the plate {plate.barcode} was imported from a file, '
                 "so it cannot be deleted here."
+            )
+        # A calculation names its result after its source plus a suffix
+        # (_log10, _bc_..., _inhibition_..., _activity_...)
+        calculated_from_it = sorted(
+            set(
+                Measurement.objects.filter(
+                    well__plate=plate, label__startswith=f"{label}_"
+                ).values_list("label", flat=True)
+            )
+        )
+        if calculated_from_it:
+            raise ValidationError(
+                f'{", ".join(calculated_from_it)} of the plate {plate.barcode} '
+                f'were calculated from "{label}": delete them first.'
             )
         deleted, _ = measurements.delete()
 

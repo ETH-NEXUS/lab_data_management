@@ -106,7 +106,7 @@ describe('plate datasets', () => {
   })
 
   it('takes the median of the log10(1 + value) of a well type, without wells of -1 or below', () => {
-    // The N wells have the raw values 0 and 1000: the well with 0 has no log10
+    // The N wells have the raw values -1 and 999: the well with -1 has no log10(1 + value)
     expect(getWellTypeLog10Median(plate, 'Lum1', 'N', 0)).toBe(3)
   })
 })

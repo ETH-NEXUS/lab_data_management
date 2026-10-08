@@ -29,8 +29,16 @@ const emit = defineEmits<{
 
 const plateViewStore = usePlateViewStore()
 
-// The read chosen above for the main heatmap; the explanation names it
-const timestampIndex = computed(() => plateViewStore.selectedTimestampIdx)
+/**
+ * The read chosen above for the main heatmap, or the last read of this
+ * measurement if it has fewer (e.g. Lum1 read 3 is chosen, Fluo_log10 has one
+ * read); the explanation names the read it shows.
+ */
+const timestampIndex = computed(() => {
+  const reads = props.plate.details.measurement_timestamps[props.label]?.length ?? 0
+  const lastRead = Math.max(reads - 1, 0)
+  return Math.min(plateViewStore.selectedTimestampIdx, lastRead)
+})
 
 // How the measurement was calculated: one of these is set
 const log10Source = computed(() => getLog10SourceLabel(props.plate, props.label))
@@ -75,6 +83,7 @@ const heatmapRange = computed(() =>
           :min="heatmapRange.min"
           :max="heatmapRange.max"
           :measurement-label="props.label"
+          :timestamp-index="timestampIndex"
           @well-selected="emit('well-selected', $event)"
         />
       </div>

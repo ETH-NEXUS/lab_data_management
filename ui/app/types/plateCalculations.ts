@@ -77,7 +77,7 @@ export type PlateCalculationSettings =
 /**
  * The answer of the server: the name of the new measurement (of the normalization:
  * the %Inhibition, and its %Activity too), and for log10 and the normalization how
- * many wells were left empty because a value is 0 or below.
+ * many wells were left empty because a value is -1 or below (no log10(1 + value)).
  *
  * Data examples:
  * - `{ label: 'Lum1_bc_R_median' }`

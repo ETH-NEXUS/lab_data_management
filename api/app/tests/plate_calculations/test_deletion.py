@@ -95,6 +95,33 @@ class DeletionViewTest(TestCase):
         self.assertIn("imported from a file", response.json()[0])
         self.assertEqual({"Lum1", "Lum1_log10"}, self.labels())
 
+    def test_a_measurement_others_were_calculated_from_is_not_deleted(self):
+        self.login()
+        for well in self.wells:
+            Measurement.objects.create(
+                well=well,
+                label="Lum1_log10_bc_N_median",
+                value=0.0,
+                measured_at=FIRST_READ,
+            )
+
+        response = self.delete({"label": "Lum1_log10"})
+
+        self.assertEqual(400, response.status_code)
+        self.assertIn(
+            'Lum1_log10_bc_N_median of the plate RKS_1 were calculated from "Lum1_log10"',
+            response.json()[0],
+        )
+        self.assertEqual(
+            {"Lum1", "Lum1_log10", "Lum1_log10_bc_N_median"}, self.labels()
+        )
+        # Deleted the other way round, both go
+        self.assertEqual(
+            200, self.delete({"label": "Lum1_log10_bc_N_median"}).status_code
+        )
+        self.assertEqual(200, self.delete({"label": "Lum1_log10"}).status_code)
+        self.assertEqual({"Lum1"}, self.labels())
+
     def test_an_unknown_measurement_is_refused(self):
         self.login()
 
