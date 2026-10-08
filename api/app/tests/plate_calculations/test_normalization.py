@@ -1,6 +1,7 @@
 """
-%Activity = 100 * (value - median(P)) / (median(N) - median(P)), from the raw
-readout and per time point; the negative control wells are left empty.
+The normalization of the R report (Michael's analysis), for every well:
+%Inhibition = (log10(x) - median(log10 N)) / (median(log10 P) - median(log10 N))
+and %Activity = 1 - %Inhibition, as fractions and per time point.
 """
 
 from datetime import datetime
@@ -9,7 +10,6 @@ from django.contrib.auth.models import User
 from django.test import SimpleTestCase, TestCase
 from django.urls import reverse
 
-from plate_calculations.percent_activity import percent_activity
 from core.models import (
     Experiment,
     Measurement,
@@ -19,43 +19,39 @@ from core.models import (
     Well,
     WellType,
 )
+from plate_calculations.normalization import inhibition
 
 FIRST_READ = datetime(2026, 9, 30, 15, 48)
 SECOND_READ = datetime(2026, 9, 30, 17, 0)
 
 
-class PercentActivityTest(SimpleTestCase):
-    def test_n_is_100_and_p_is_0_percent(self):
-        # Medians: N 200, P 10
-        values = {11: 100.0, 12: 300.0, 21: 0.0, 22: 20.0, 31: 105.0}
+class InhibitionTest(SimpleTestCase):
+    def test_n_is_0_and_p_is_1(self):
+        logs = {11: 3.0, 21: 1.0, 31: 2.0}
 
-        activity = percent_activity(values, {11, 12}, 200.0, 10.0)
-
-        self.assertEqual([21, 22, 31], sorted(activity))
-        self.assertAlmostEqual(-100 * 10 / 190, activity[21])
-        self.assertAlmostEqual(100 * 10 / 190, activity[22])
-        # Halfway between P and N
-        self.assertAlmostEqual(50.0, activity[31])
+        self.assertEqual({11: 0.0, 21: 1.0, 31: 0.5}, inhibition(logs, 3.0, 1.0))
 
 
-class PercentActivityViewTest(TestCase):
+class NormalizationViewTest(TestCase):
     def setUp(self):
         project = Project.objects.create(name="P1")
         experiment = Experiment.objects.create(name="Screen 1", project=project)
-        dimension = PlateDimension.objects.create(name="dim_1x5", rows=1, cols=5)
+        dimension = PlateDimension.objects.create(name="dim_1x6", rows=1, cols=6)
         self.plate = Plate.objects.create(
             barcode="RKS_1", dimension=dimension, experiment=experiment
         )
         negative = WellType.objects.create(name="N", description="negative")
         positive = WellType.objects.create(name="P", description="positive")
         compound = WellType.objects.create(name="C", description="compound")
-        # Well type and the values of the first and the second read
+        # Well type and the values of the first and the second read; log10 of
+        # N 1000 = 3, P 10 = 1, so the compound with 100 (log10 2) is halfway
         layout = [
-            (negative, 2900.0, 5800.0),
-            (negative, 3000.0, 6000.0),
-            (positive, 600.0, 1200.0),
-            (positive, 700.0, 1400.0),
-            (compound, 1800.0, 3600.0),
+            (negative, 1000.0, 10000.0),
+            (negative, 1000.0, 10000.0),
+            (positive, 10.0, 100.0),
+            (positive, 10.0, 100.0),
+            (compound, 100.0, 1000.0),
+            (compound, 0.0, 50.0),
         ]
         for position, (well_type, first, second) in enumerate(layout):
             well = Well.objects.create(
@@ -68,48 +64,61 @@ class PercentActivityViewTest(TestCase):
                 well=well, label="Lum1", value=second, measured_at=SECOND_READ
             )
 
-    def activity(self, data):
-        url = reverse("percent_activity_of_plate", args=[self.plate.id])
+    def normalize(self, data):
+        url = reverse("normalize_plate_measurement", args=[self.plate.id])
         return self.client.post(url, data, content_type="application/json")
 
     def login(self):
         self.client.force_login(User.objects.create_user("tester"))
 
+    def saved(self, label):
+        """{(position, measured_at): value} of one measurement."""
+        return {
+            (position, measured_at): value
+            for position, measured_at, value in Measurement.objects.filter(
+                label=label
+            ).values_list("well__position", "measured_at", "value")
+        }
+
     def test_without_login_nothing_is_saved(self):
-        response = self.activity(
+        response = self.normalize(
             {"label": "Lum1", "negative_type": "N", "positive_type": "P"}
         )
 
         self.assertEqual(403, response.status_code)
         self.assertFalse(Measurement.objects.exclude(label="Lum1").exists())
 
-    def test_the_activity_of_every_read_is_saved(self):
+    def test_inhibition_and_activity_of_every_well_and_read(self):
         self.login()
 
-        response = self.activity(
+        response = self.normalize(
             {"label": "Lum1", "negative_type": "N", "positive_type": "P"}
         )
 
-        self.assertEqual({"label": "Lum1_activity_N_P"}, response.json())
-        saved = {
-            (position, measured_at): value
-            for position, measured_at, value in Measurement.objects.filter(
-                label="Lum1_activity_N_P"
-            ).values_list("well__position", "measured_at", "value")
-        }
-        # The N wells are left empty; medians N 2950 / 5900, P 650 / 1300
+        # The well with 0 has no log10: it is left empty in every read
         self.assertEqual(
-            {(2, FIRST_READ), (3, FIRST_READ), (4, FIRST_READ)},
-            {key for key in saved if key[1] == FIRST_READ},
+            {
+                "label": "Lum1_inhibition_N_P",
+                "activity_label": "Lum1_activity_N_P",
+                "skipped": 1,
+            },
+            response.json(),
         )
-        self.assertAlmostEqual(100 * 1150 / 2300, saved[(4, FIRST_READ)])
-        self.assertAlmostEqual(100 * 2300 / 4600, saved[(4, SECOND_READ)])
-        self.assertAlmostEqual(100 * -50 / 2300, saved[(2, FIRST_READ)])
+        inhibition = self.saved("Lum1_inhibition_N_P")
+        activity = self.saved("Lum1_activity_N_P")
+        for read in [FIRST_READ, SECOND_READ]:
+            self.assertEqual(0.0, inhibition[(0, read)])
+            self.assertEqual(1.0, inhibition[(2, read)])
+            self.assertAlmostEqual(0.5, inhibition[(4, read)])
+            self.assertEqual(1.0, activity[(0, read)])
+            self.assertAlmostEqual(0.5, activity[(4, read)])
+        self.assertEqual(10, len(inhibition))
+        self.assertEqual(10, len(activity))
 
     def test_the_same_well_type_for_both_controls_is_refused(self):
         self.login()
 
-        response = self.activity(
+        response = self.normalize(
             {"label": "Lum1", "negative_type": "N", "positive_type": "N"}
         )
 
@@ -119,7 +128,7 @@ class PercentActivityViewTest(TestCase):
     def test_a_missing_control_is_refused(self):
         self.login()
 
-        response = self.activity(
+        response = self.normalize(
             {"label": "Lum1", "negative_type": "N1", "positive_type": "P"}
         )
 
@@ -130,9 +139,10 @@ class PercentActivityViewTest(TestCase):
         self.login()
         Measurement.objects.filter(label="Lum1").update(value=500.0)
 
-        response = self.activity(
+        response = self.normalize(
             {"label": "Lum1", "negative_type": "N", "positive_type": "P"}
         )
 
         self.assertEqual(400, response.status_code)
-        self.assertIn("are the same", response.json()[0])
+        self.assertIn("cannot be normalized", response.json()[0])
+        self.assertFalse(Measurement.objects.exclude(label="Lum1").exists())

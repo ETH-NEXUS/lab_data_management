@@ -71,5 +71,5 @@ def correct_plate(plate: Plate, label: str, reference_type: str, method: str) ->
             )
 
     # A new correction with the same settings replaces the last one
-    replace_measurements(plate, new_label, new_measurements)
+    replace_measurements(plate, {new_label: new_measurements})
     return new_label

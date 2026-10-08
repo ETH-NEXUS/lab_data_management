@@ -1,6 +1,6 @@
 """
 Starting the calculations of one plate from the plate page: background
-correction, log10 and %Activity.
+correction, log10 and the normalization (%Inhibition, %Activity).
 """
 
 from django.shortcuts import get_object_or_404
@@ -13,7 +13,7 @@ from core.models import Plate
 from core.utils.plates.archive_guard import ensure_plate_can_be_changed
 from plate_calculations.correction import METHODS, correct_plate
 from plate_calculations.log_transform import log10_of_plate
-from plate_calculations.percent_activity import activity_of_plate
+from plate_calculations.normalization import normalize_plate
 
 
 class CorrectionSettingsSerializer(serializers.Serializer):
@@ -74,7 +74,7 @@ def log10_plate_measurement(request, plate_id: int):
     return Response({"label": new_label, "skipped": skipped})
 
 
-class ActivitySettingsSerializer(serializers.Serializer):
+class NormalizationSettingsSerializer(serializers.Serializer):
     # Labels and well types are looked up exactly: some labels end with a space
     label = serializers.CharField(trim_whitespace=False)
     negative_type = serializers.CharField(trim_whitespace=False)
@@ -90,24 +90,31 @@ class ActivitySettingsSerializer(serializers.Serializer):
 
 @api_view(["POST"])
 @permission_classes([IsAuthenticated])
-def percent_activity_of_plate(request, plate_id: int):
+def normalize_plate_measurement(request, plate_id: int):
     """
-    Saves the %Activity of a measurement of the plate between its controls.
+    Saves the %Inhibition and %Activity of a measurement of the plate between its
+    controls; wells with a value of 0 or below are left empty and counted.
 
     Accepted data example:
     {"label": "Lum1", "negative_type": "N", "positive_type": "P"}
-    Returned data example:
-    {"label": "Lum1_activity_N_P"}
+    Returned data example (label: the %Inhibition, shown first):
+    {"label": "Lum1_inhibition_N_P", "activity_label": "Lum1_activity_N_P", "skipped": 0}
     """
     plate = get_object_or_404(Plate, id=plate_id)
     ensure_plate_can_be_changed(plate)
-    settings = ActivitySettingsSerializer(data=request.data)
+    settings = NormalizationSettingsSerializer(data=request.data)
     settings.is_valid(raise_exception=True)
 
-    new_label = activity_of_plate(
+    inhibition_label, activity_label, skipped = normalize_plate(
         plate,
         settings.validated_data["label"],
         settings.validated_data["negative_type"],
         settings.validated_data["positive_type"],
     )
-    return Response({"label": new_label})
+    return Response(
+        {
+            "label": inhibition_label,
+            "activity_label": activity_label,
+            "skipped": skipped,
+        }
+    )

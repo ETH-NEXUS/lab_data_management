@@ -74,29 +74,36 @@ def values_of_wells(
 
 
 def replace_measurements(
-    plate: Plate, new_label: str, new_measurements: list[Measurement]
+    plate: Plate, new_measurements: dict[str, list[Measurement]]
 ) -> None:
     """
-    Saves the new measurement of the plate instead of an earlier calculation of the
-    same label, and refreshes the views the plate page reads. Refused: a result
-    without a single value (it would only delete the earlier one), and a label of
-    a measurement imported from a file (its values are not calculated here).
+    Saves the new measurements of the plate instead of earlier calculations of the
+    same labels, all together, and then refreshes the views the plate page reads
+    once. Refused: a result without a single value (it would only delete the
+    earlier one), and the label of a measurement imported from a file (its values
+    are not calculated here).
+
+    new_measurements example: {"Lum1_log10": [Measurement(...), ...]}
     """
-    if not new_measurements:
-        raise ValidationError(
-            f'No well of the plate {plate.barcode} gets a value of "{new_label}".'
+    for new_label, measurements in new_measurements.items():
+        if not measurements:
+            raise ValidationError(
+                f'No well of the plate {plate.barcode} gets a value of "{new_label}".'
+            )
+        # Only an import links its values to a file
+        imported = Measurement.objects.filter(
+            well__plate=plate, label=new_label, measurement_assignment__isnull=False
         )
-    earlier = Measurement.objects.filter(well__plate=plate, label=new_label)
-    # Only an import links its values to a file
-    if earlier.filter(measurement_assignment__isnull=False).exists():
-        raise ValidationError(
-            f'The plate {plate.barcode} has an imported measurement "{new_label}", '
-            "which a calculation does not replace."
-        )
+        if imported.exists():
+            raise ValidationError(
+                f'The plate {plate.barcode} has an imported measurement "{new_label}", '
+                "which a calculation does not replace."
+            )
 
     with transaction.atomic():
-        earlier.delete()
-        Measurement.objects.bulk_create(new_measurements)
+        for new_label, measurements in new_measurements.items():
+            Measurement.objects.filter(well__plate=plate, label=new_label).delete()
+            Measurement.objects.bulk_create(measurements)
 
     PlateDetail.refresh(concurrently=True)
     WellDetail.refresh(concurrently=True)

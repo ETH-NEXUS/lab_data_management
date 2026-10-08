@@ -3,9 +3,10 @@ import {
   ACTIVITY_INFIX,
   BACKGROUND_CORRECTION_METHODS,
   CORRECTION_INFIX,
+  INHIBITION_INFIX,
   LOG10_SUFFIX,
-  type ActivityDataset,
   type BackgroundCorrection,
+  type NormalizedDataset,
 } from '~/types/plateCalculations'
 import { getStatsSeriesValue } from '~/utils/plateStats'
 
@@ -79,21 +80,26 @@ export const getLog10SourceLabel = (plate: Plate, label: string | null): string 
 }
 
 /**
- * How a %Activity measurement was calculated, or null. Every measurement and
- * pair of its well types could be the source, so they are looked up by the
- * name they give.
+ * How a measurement of the normalization (%Inhibition or %Activity) was
+ * calculated, or null. Every measurement and pair of its well types could be the
+ * source, so they are looked up by the names they give.
  *
- * Example: `'Lum1_activity_N_P'` -> `{ label: 'Lum1_activity_N_P', source: 'Lum1', negativeType: 'N', positiveType: 'P' }`
+ * Example: `'Lum1_activity_N_P'` -> `{ kind: 'activity', label: 'Lum1_activity_N_P', source: 'Lum1',
+ *   negativeType: 'N', positiveType: 'P', inhibitionLabel: 'Lum1_inhibition_N_P', activityLabel: 'Lum1_activity_N_P' }`
  */
-export const getActivityDataset = (plate: Plate, label: string | null): ActivityDataset | null => {
-  if (!label || !label.includes(ACTIVITY_INFIX)) return null
+export const getNormalizedDataset = (plate: Plate, label: string | null): NormalizedDataset | null => {
+  if (!label || !(label.includes(INHIBITION_INFIX) || label.includes(ACTIVITY_INFIX))) return null
 
   for (const source of plate.details.measurement_labels ?? []) {
     const wellTypes = getWellTypesOfMeasurement(plate, source)
     for (const negativeType of wellTypes) {
       for (const positiveType of wellTypes) {
-        if (label === `${source}${ACTIVITY_INFIX}${negativeType}_${positiveType}`) {
-          return { label, source, negativeType, positiveType }
+        const controls = `${negativeType}_${positiveType}`
+        const inhibitionLabel = `${source}${INHIBITION_INFIX}${controls}`
+        const activityLabel = `${source}${ACTIVITY_INFIX}${controls}`
+        if (label === inhibitionLabel || label === activityLabel) {
+          const kind = label === inhibitionLabel ? 'inhibition' : 'activity'
+          return { kind, label, source, negativeType, positiveType, inhibitionLabel, activityLabel }
         }
       }
     }
@@ -187,4 +193,34 @@ export const getWellTypeStatistic = (
 export const formatSummaryNumber = (value: number | null): string => {
   if (value === null) return '–'
   return String(Number(value.toFixed(3)))
+}
+
+const median = (values: number[]): number => {
+  const sorted = [...values].sort((first, second) => first - second)
+  const middle = Math.floor(sorted.length / 2)
+  return sorted.length % 2 === 1 ? sorted[middle]! : (sorted[middle - 1]! + sorted[middle]!) / 2
+}
+
+/**
+ * The median of the log10 values of one well type at one time point, as the
+ * server uses it for the normalization, e.g. 3.471 for the N wells of Lum1.
+ * Like the server, it leaves out a well with a value of 0 or below in any read,
+ * and a well without every read cannot be matched to the shown one.
+ */
+export const getWellTypeLog10Median = (
+  plate: Plate,
+  label: string,
+  wellType: string,
+  timestampIndex: number,
+): number | null => {
+  const plateReads = plate.details.measurement_timestamps[label]?.length
+  const logs: number[] = []
+  for (const well of plate.wells ?? []) {
+    const series = well.measurements?.[label]
+    if (well.type !== wellType || !series || series.length !== plateReads) continue
+    if (series.some((value) => value <= 0)) continue
+    const value = series[timestampIndex]
+    if (typeof value === 'number') logs.push(Math.log10(value))
+  }
+  return logs.length > 0 ? median(logs) : null
 }

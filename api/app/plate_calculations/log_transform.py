@@ -69,5 +69,5 @@ def log10_of_plate(plate: Plate, label: str) -> tuple[str, int]:
         )
 
     # A new log10 of the same measurement replaces the last one
-    replace_measurements(plate, new_label, new_measurements)
+    replace_measurements(plate, {new_label: new_measurements})
     return new_label, len(skipped_wells)

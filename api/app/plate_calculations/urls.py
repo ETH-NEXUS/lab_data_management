@@ -3,7 +3,7 @@ from django.urls import path
 from plate_calculations.views import (
     correct_plate_background,
     log10_plate_measurement,
-    percent_activity_of_plate,
+    normalize_plate_measurement,
 )
 
 urlpatterns = [
@@ -18,8 +18,8 @@ urlpatterns = [
         name="log10_plate_measurement",
     ),
     path(
-        "plates/<int:plate_id>/activity/",
-        percent_activity_of_plate,
-        name="percent_activity_of_plate",
+        "plates/<int:plate_id>/normalization/",
+        normalize_plate_measurement,
+        name="normalize_plate_measurement",
     ),
 ]

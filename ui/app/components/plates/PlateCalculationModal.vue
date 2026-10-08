@@ -18,7 +18,7 @@ import { getWellTypesOfMeasurement } from '~/utils/plateDatasets'
 
 /**
  * The window to start a calculation with one measurement of the plate:
- * background correction, log10 or %Activity.
+ * background correction, log10 or the normalization (%Inhibition, %Activity).
  */
 const props = defineProps<{
   open: boolean
@@ -98,7 +98,7 @@ watch(label, chooseWellTypes)
 const settings = computed((): PlateCalculationSettings | null => {
   if (!label.value) return null
   if (calculation.value === 'log10') return { label: label.value }
-  if (calculation.value === 'percent_activity') {
+  if (calculation.value === 'normalization') {
     if (!negativeType.value || !positiveType.value || negativeType.value === positiveType.value) return null
     return { label: label.value, negative_type: negativeType.value, positive_type: positiveType.value }
   }
@@ -120,7 +120,7 @@ const apply = async () => {
     close()
     toast.add({
       title: t('plates.calculations.success', { label: result.label }),
-      // Only log10 leaves wells out
+      // Only log10 and the normalization leave wells out
       description: result.skipped ? t('plates.calculations.log10_skipped', { count: result.skipped }) : undefined,
       color: 'success',
     })
@@ -186,7 +186,7 @@ const apply = async () => {
           </div>
         </template>
 
-        <template v-if="calculation === 'percent_activity'">
+        <template v-if="calculation === 'normalization'">
           <div>
             <label class="mb-1 block pl-1 text-sm font-medium text-slate-700">
               {{ t('plates.calculations.negative_control') }}

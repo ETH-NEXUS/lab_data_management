@@ -217,7 +217,7 @@ class BackgroundCorrectionViewTest(TestCase):
                 content_type="application/json",
             ),
             self.client.post(
-                reverse("percent_activity_of_plate", args=[self.plate.id]),
+                reverse("normalize_plate_measurement", args=[self.plate.id]),
                 {"label": "Lum", "negative_type": "Nref", "positive_type": "P"},
                 content_type="application/json",
             ),

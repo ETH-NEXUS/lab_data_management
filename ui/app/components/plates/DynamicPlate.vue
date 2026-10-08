@@ -2,6 +2,7 @@
 import { computed, watch } from 'vue'
 import ColorLegend from '~/components/plates/ColorLegend.vue'
 import HeatMapSettings from '~/components/plates/HeatMapSettings.vue'
+import HeatmapScaleNote from '~/components/plates/HeatmapScaleNote.vue'
 import HeatmapScaleSelect from '~/components/plates/HeatmapScaleSelect.vue'
 import PlateCalculationsSection from '~/components/plates/PlateCalculationsSection.vue'
 import PlateStats from '~/components/plates/PlateStats.vue'
@@ -138,6 +139,10 @@ const onWellSelected = (wellInfo: WellInfo): void => {
 
       <ColorLegend v-if="!isMinimalView" :range="heatmapRange" />
     </div>
+    <HeatmapScaleNote
+      v-if="!isMinimalView && plateViewStore.showHeatmap && plateViewStore.selectedMeasurement"
+      :range="heatmapRange"
+    />
 
     <PlateStats v-if="!isMinimalView && ssmd !== null && zPrime !== null" :ssmd="ssmd" :z-prime="zPrime" />
 

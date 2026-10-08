@@ -4,14 +4,15 @@
  * plate, named after how it was calculated:
  * - background correction: `<label>_bc_<reference type>_<method>`, e.g. `Lum1_bc_R_median`
  * - log10: `<label>_log10`, e.g. `Lum1_log10`
- * - %Activity: `<label>_activity_<negative>_<positive>`, e.g. `Lum1_activity_N_P`
+ * - normalization: `<label>_inhibition_<negative>_<positive>` and `<label>_activity_<negative>_<positive>`,
+ *   e.g. `Lum1_inhibition_N_P` and `Lum1_activity_N_P`
  */
 
 export const PLATE_CALCULATIONS_ENDPOINT = 'plate_calculations/plates/'
 export const PLATE_CALCULATION_ERROR_MESSAGE = 'The calculation of the plate failed.'
 
 // The calculations the plate page offers
-export const PLATE_CALCULATIONS = ['background_correction', 'log10', 'percent_activity'] as const
+export const PLATE_CALCULATIONS = ['background_correction', 'log10', 'normalization'] as const
 
 export type PlateCalculation = (typeof PLATE_CALCULATIONS)[number]
 
@@ -19,12 +20,13 @@ export type PlateCalculation = (typeof PLATE_CALCULATIONS)[number]
 export const PLATE_CALCULATION_PATHS: Record<PlateCalculation, string> = {
   background_correction: 'background_correction/',
   log10: 'log10/',
-  percent_activity: 'activity/',
+  normalization: 'normalization/',
 }
 
 // The parts of the names of the new measurements
 export const CORRECTION_INFIX = '_bc_'
 export const LOG10_SUFFIX = '_log10'
+export const INHIBITION_INFIX = '_inhibition_'
 export const ACTIVITY_INFIX = '_activity_'
 
 export const BACKGROUND_CORRECTION_METHODS = ['median', 'mean'] as const
@@ -37,7 +39,7 @@ export type BackgroundCorrectionMethod = (typeof BACKGROUND_CORRECTION_METHODS)[
  * Data examples:
  * - background correction: `{ label: 'Lum1', reference_type: 'R', method: 'median' }`
  * - log10: `{ label: 'Lum1' }`
- * - %Activity: `{ label: 'Lum1', negative_type: 'N', positive_type: 'P' }`
+ * - normalization: `{ label: 'Lum1', negative_type: 'N', positive_type: 'P' }`
  */
 export type PlateCalculationSettings =
   | { label: string; reference_type: string; method: BackgroundCorrectionMethod }
@@ -45,15 +47,18 @@ export type PlateCalculationSettings =
   | { label: string; negative_type: string; positive_type: string }
 
 /**
- * The answer of the server: the name of the new measurement, and for log10 how
+ * The answer of the server: the name of the new measurement (of the normalization:
+ * the %Inhibition, and its %Activity too), and for log10 and the normalization how
  * many wells were left empty because a value is 0 or below.
  *
  * Data examples:
  * - `{ label: 'Lum1_bc_R_median' }`
  * - `{ label: 'Lum1_log10', skipped: 2 }`
+ * - `{ label: 'Lum1_inhibition_N_P', activity_label: 'Lum1_activity_N_P', skipped: 0 }`
  */
 export type PlateCalculationResponse = {
   label: string
+  activity_label?: string
   skipped?: number
 }
 
@@ -83,14 +88,19 @@ export type BackgroundCorrection = {
 }
 
 /**
- * A %Activity found on a plate.
+ * A measurement of the normalization found on a plate: its %Inhibition or its
+ * %Activity, with the other one of the pair.
  *
  * Data example:
- * - `{ label: 'Lum1_activity_N_P', source: 'Lum1', negativeType: 'N', positiveType: 'P' }`
+ * - `{ kind: 'inhibition', label: 'Lum1_inhibition_N_P', source: 'Lum1', negativeType: 'N',
+ *     positiveType: 'P', inhibitionLabel: 'Lum1_inhibition_N_P', activityLabel: 'Lum1_activity_N_P' }`
  */
-export type ActivityDataset = {
+export type NormalizedDataset = {
+  kind: 'inhibition' | 'activity'
   label: string
   source: string
   negativeType: string
   positiveType: string
+  inhibitionLabel: string
+  activityLabel: string
 }

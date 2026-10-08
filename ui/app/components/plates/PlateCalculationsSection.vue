@@ -1,10 +1,11 @@
 <script setup lang="ts">
 import { computed, nextTick, ref, watch } from 'vue'
 import ColorLegend from '~/components/plates/ColorLegend.vue'
-import PlateActivityExplanation from '~/components/plates/PlateActivityExplanation.vue'
+import HeatmapScaleNote from '~/components/plates/HeatmapScaleNote.vue'
 import PlateCalculationModal from '~/components/plates/PlateCalculationModal.vue'
 import PlateCorrectionExplanation from '~/components/plates/PlateCorrectionExplanation.vue'
 import PlateLog10Explanation from '~/components/plates/PlateLog10Explanation.vue'
+import PlateNormalizationExplanation from '~/components/plates/PlateNormalizationExplanation.vue'
 import PlateTable from '~/components/plates/PlateTable.vue'
 import { usePlateStore } from '~/stores/plates'
 import { usePlateViewStore } from '~/stores/plateView'
@@ -13,15 +14,15 @@ import type { PlateCalculationResult } from '~/types/plateCalculations'
 import { getHeatmapRange } from '~/utils/heatmapScale'
 import {
   findBackgroundCorrections,
-  getActivityDataset,
   getCorrectionDataset,
   getLog10SourceLabel,
+  getNormalizedDataset,
 } from '~/utils/plateDatasets'
 
 /**
  * The "Calculations" of the plate page: the button to start one, and below the
- * main heatmap how its measurement was calculated (log10, %Activity) or a
- * heatmap of its background corrections.
+ * main heatmap how its measurement was calculated (log10, background correction,
+ * %Inhibition, %Activity) and a heatmap of its background corrections.
  */
 const props = defineProps<{
   plate: Plate
@@ -44,8 +45,8 @@ const log10Dataset = computed(() => {
   return label && source ? { label, source } : null
 })
 
-// The measurement of the main heatmap, if it is a %Activity
-const activityDataset = computed(() => getActivityDataset(props.plate, plateViewStore.selectedMeasurement))
+// The measurement of the main heatmap, if it is the %Inhibition or %Activity of a normalization
+const normalizedDataset = computed(() => getNormalizedDataset(props.plate, plateViewStore.selectedMeasurement))
 
 // The measurement of the main heatmap, if it is a background correction itself
 const correctionDataset = computed(() => getCorrectionDataset(props.plate, plateViewStore.selectedMeasurement))
@@ -157,10 +158,10 @@ const onCalculated = async (result: PlateCalculationResult): Promise<void> => {
       :timestamp-index="plateViewStore.selectedTimestampIdx"
     />
 
-    <PlateActivityExplanation
-      v-if="activityDataset"
+    <PlateNormalizationExplanation
+      v-if="normalizedDataset"
       :plate="props.plate"
-      :dataset="activityDataset"
+      :dataset="normalizedDataset"
       :timestamp-index="plateViewStore.selectedTimestampIdx"
     />
 
@@ -171,10 +172,7 @@ const onCalculated = async (result: PlateCalculationResult): Promise<void> => {
       :timestamp-index="plateViewStore.selectedTimestampIdx"
     />
 
-    <p
-      v-if="!log10Dataset && !activityDataset && !correctionDataset && !selectedCorrection"
-      class="mt-2 text-sm text-slate-600"
-    >
+    <p v-if="!log10Dataset && !normalizedDataset && !correctionDataset" class="mt-2 text-sm text-slate-600">
       {{ t('plates.calculations.none_yet', { label: plateViewStore.selectedMeasurement ?? '' }) }}
     </p>
 
@@ -211,6 +209,7 @@ const onCalculated = async (result: PlateCalculationResult): Promise<void> => {
 
         <ColorLegend :range="heatmapRange" always-shown />
       </div>
+      <HeatmapScaleNote :range="heatmapRange" />
     </template>
 
     <PlateCalculationModal v-model:open="isModalOpen" :plate="props.plate" @calculated="onCalculated" />

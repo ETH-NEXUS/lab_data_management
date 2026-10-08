@@ -10,9 +10,10 @@ import {
   countWellsWithoutLog10,
   findBackgroundCorrections,
   formatSummaryNumber,
-  getActivityDataset,
   getCorrectionDataset,
   getLog10SourceLabel,
+  getNormalizedDataset,
+  getWellTypeLog10Median,
   getWellTypeStatistic,
   summarizeDataset,
 } from '~/utils/plateDatasets'
@@ -80,15 +81,23 @@ describe('plate datasets', () => {
     expect(getWellTypeStatistic(twoReads, 'Lum1', 'R', 'median', 0)).toBeNull()
   })
 
-  it('finds how a %Activity was calculated', () => {
-    expect(getActivityDataset(plate, 'Lum1_activity_N_P')).toEqual({
+  it('finds how a %Inhibition or %Activity was calculated', () => {
+    expect(getNormalizedDataset(plate, 'Lum1_activity_N_P')).toEqual({
+      kind: 'activity',
       label: 'Lum1_activity_N_P',
       source: 'Lum1',
       negativeType: 'N',
       positiveType: 'P',
+      inhibitionLabel: 'Lum1_inhibition_N_P',
+      activityLabel: 'Lum1_activity_N_P',
     })
-    expect(getActivityDataset(plate, 'Lum1')).toBeNull()
-    expect(getWellTypeStatistic(plate, 'Lum1', 'N', 'median', 0)).toBe(2958)
+    expect(getNormalizedDataset(plate, 'Lum1_inhibition_N_P')?.kind).toBe('inhibition')
+    expect(getNormalizedDataset(plate, 'Lum1')).toBeNull()
+  })
+
+  it('takes the median of the log10 values of a well type, without wells of 0 or below', () => {
+    // The N wells have the raw values 0 and 1000: the well with 0 has no log10
+    expect(getWellTypeLog10Median(plate, 'Lum1', 'N', 0)).toBe(3)
   })
 })
 
