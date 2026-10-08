@@ -1,29 +1,18 @@
 <script setup lang="ts">
-import { computed, nextTick, ref, watch } from 'vue'
-import ColorLegend from '~/components/plates/ColorLegend.vue'
-import HeatmapScaleNote from '~/components/plates/HeatmapScaleNote.vue'
+import { computed, ref } from 'vue'
+import PlateCalculationCard from '~/components/plates/PlateCalculationCard.vue'
 import PlateCalculationModal from '~/components/plates/PlateCalculationModal.vue'
-import PlateCorrectionExplanation from '~/components/plates/PlateCorrectionExplanation.vue'
-import PlateLog10Explanation from '~/components/plates/PlateLog10Explanation.vue'
-import PlateNormalizationExplanation from '~/components/plates/PlateNormalizationExplanation.vue'
 import PlateRawDataExplanation from '~/components/plates/PlateRawDataExplanation.vue'
-import PlateTable from '~/components/plates/PlateTable.vue'
 import { usePlateStore } from '~/stores/plates'
 import { usePlateViewStore } from '~/stores/plateView'
 import type { Plate, WellInfo } from '~/types/lab'
-import type { PlateCalculationResult } from '~/types/plateCalculations'
-import { getHeatmapRange } from '~/utils/heatmapScale'
-import {
-  findBackgroundCorrections,
-  getCorrectionDataset,
-  getLog10SourceLabel,
-  getNormalizedDataset,
-} from '~/utils/plateDatasets'
+import { getCalculatedLabels } from '~/utils/plateDatasets'
 
 /**
- * The "Calculations" of the plate page: the button to start one, and below the
- * main heatmap how its measurement was calculated (log10, background correction,
- * %Inhibition, %Activity) and a heatmap of its background corrections.
+ * The "Calculations" of the plate page: the button to start one, what the main
+ * heatmap above shows, and every measurement calculated on this page (log10,
+ * background corrections, %Inhibition, %Activity) with its own heatmap, its
+ * explanation and a button to delete it.
  */
 const props = defineProps<{
   plate: Plate
@@ -39,103 +28,41 @@ const plateViewStore = usePlateViewStore()
 
 const isModalOpen = ref(false)
 
-// The measurement of the main heatmap, if it is a log10, e.g. { label: 'Lum1_log10', source: 'Lum1' }
-const log10Dataset = computed(() => {
-  const label = plateViewStore.selectedMeasurement
-  const source = getLog10SourceLabel(props.plate, label)
-  return label && source ? { label, source } : null
-})
-
-// The measurement of the main heatmap, if it is the %Inhibition or %Activity of a normalization
-const normalizedDataset = computed(() => getNormalizedDataset(props.plate, plateViewStore.selectedMeasurement))
-
-// The measurement of the main heatmap, if it is a background correction itself
-const correctionDataset = computed(() => getCorrectionDataset(props.plate, plateViewStore.selectedMeasurement))
-
-// The background corrections of the measurement of the main heatmap
-const corrections = computed(() => findBackgroundCorrections(props.plate, plateViewStore.selectedMeasurement))
-
-const selectedLabel = ref<string | null>(null)
-// A correction to show as soon as the reloaded plate has it, e.g. 'Lum1_bc_R_mean'
-const labelToShow = ref<string | null>(null)
-
-watch(
-  corrections,
-  () => {
-    const labels = corrections.value.map((correction) => correction.label)
-    if (labelToShow.value && labels.includes(labelToShow.value)) {
-      selectedLabel.value = labelToShow.value
-      labelToShow.value = null
-    } else if (!selectedLabel.value || !labels.includes(selectedLabel.value)) {
-      selectedLabel.value = labels[0] ?? null
-    }
-  },
-  { immediate: true },
-)
-
-const selectedCorrection = computed(() => {
-  return corrections.value.find((correction) => correction.label === selectedLabel.value) ?? null
-})
-
-// The corrected measurement has the same time points as the original one
-const heatmapRange = computed(() =>
-  getHeatmapRange(
-    props.plate.details.overall_stats,
-    selectedLabel.value,
-    plateViewStore.selectedTimestampIdx,
-    plateViewStore.heatmapScale,
-  ),
-)
-
-/**
- * Shows a measurement in the main heatmap. DynamicPlate starts another
- * measurement at its first time point. A calculated one has the same time points
- * as the one it was calculated from, so if that one was shown, its time point
- * stays (e.g. the 3rd read of Lum1 -> the 3rd read of Lum1_log10).
- */
-const showInMainHeatmap = async (label: string, sourceLabel: string): Promise<void> => {
-  const wasSourceShown = plateViewStore.selectedMeasurement === sourceLabel
-  const timestampIndex = plateViewStore.selectedTimestampIdx
-  plateViewStore.selectedMeasurement = label
-  if (!wasSourceShown) return
-  await nextTick()
-  plateViewStore.selectedTimestampIdx = timestampIndex
+const openModal = (): void => {
+  isModalOpen.value = true
 }
 
+// e.g. ['Lum1_log10', 'Lum1_bc_R_median']
+const calculatedLabels = computed(() => getCalculatedLabels(props.plate))
+
+// The main heatmap shows a calculated measurement: it is explained with its own heatmap below
+const isMainHeatmapCalculated = computed(() => {
+  const label = plateViewStore.selectedMeasurement
+  return label !== null && calculatedLabels.value.includes(label)
+})
+
 /**
- * Reloads only the plate (not the whole page), so the heatmap settings stay, and
- * shows the result: a log10 or the %Inhibition of a normalization in the main
- * heatmap, a correction in its own heatmap below (the main heatmap shows the
- * measurement it is of).
- *
- * Accepted input example: `{ calculation: 'log10', label: 'Lum1', newLabel: 'Lum1_log10' }`
+ * Reloads only the plate (not the whole page) after a calculation or a deletion,
+ * so the heatmap settings stay. If the main heatmap showed a deleted measurement,
+ * it shows the first one of the plate instead.
  */
-const onCalculated = async (result: PlateCalculationResult): Promise<void> => {
-  const isCorrection = result.calculation === 'background_correction'
-  // Also when another correction of this measurement was shown before
-  labelToShow.value = isCorrection ? result.newLabel : null
+const reloadPlate = async (): Promise<void> => {
   try {
     const plate = await plateStore.fetchPlateByBarcode(props.plate.barcode)
-    if (!plate) {
-      labelToShow.value = null
-      return
-    }
+    if (!plate) return
 
-    plateViewStore.measurementOptions = plate.details.measurement_labels ?? []
-    // The well details on the right show the new measurement too
+    const labels = plate.details.measurement_labels ?? []
+    plateViewStore.measurementOptions = labels
+    if (plateViewStore.selectedMeasurement && !labels.includes(plateViewStore.selectedMeasurement)) {
+      plateViewStore.selectedMeasurement = labels[0] ?? null
+    }
+    // The well details on the right show the changed measurements too
     const selectedPosition = plateViewStore.selectedWellInfo?.position
     if (selectedPosition !== undefined) {
       const selectedWell = plate.wells.find((well) => well.position === selectedPosition)
       plateViewStore.selectedWellInfo = { well: selectedWell, position: selectedPosition }
     }
-    if (isCorrection) {
-      await showInMainHeatmap(result.label, result.label)
-    } else {
-      plateViewStore.showHeatmap = true
-      await showInMainHeatmap(result.newLabel, result.label)
-    }
   } catch (err) {
-    labelToShow.value = null
     // The plate store keeps the error and the page shows it
     console.error(err)
   }
@@ -151,78 +78,32 @@ const onCalculated = async (result: PlateCalculationResult): Promise<void> => {
         variant="outline"
         icon="i-heroicons-adjustments-horizontal"
         :label="t('plates.calculations.open_button')"
-        @click="isModalOpen = true"
+        @click="openModal"
       />
     </div>
 
-    <PlateLog10Explanation
-      v-if="log10Dataset"
-      :plate="props.plate"
-      :label="log10Dataset.label"
-      :source-label="log10Dataset.source"
-      :timestamp-index="plateViewStore.selectedTimestampIdx"
-    />
-
-    <PlateNormalizationExplanation
-      v-if="normalizedDataset"
-      :plate="props.plate"
-      :dataset="normalizedDataset"
-      :timestamp-index="plateViewStore.selectedTimestampIdx"
-    />
-
-    <PlateCorrectionExplanation
-      v-if="correctionDataset"
-      :plate="props.plate"
-      :correction="correctionDataset"
-      :timestamp-index="plateViewStore.selectedTimestampIdx"
-    />
-
+    <p v-if="isMainHeatmapCalculated" class="mt-2 text-sm text-slate-700">
+      {{ t('plates.calculations.main_is_calculated', { label: plateViewStore.selectedMeasurement }) }}
+    </p>
     <PlateRawDataExplanation
-      v-if="!log10Dataset && !normalizedDataset && !correctionDataset && plateViewStore.selectedMeasurement"
+      v-else-if="plateViewStore.selectedMeasurement"
       :plate="props.plate"
       :label="plateViewStore.selectedMeasurement"
       :timestamp-index="plateViewStore.selectedTimestampIdx"
     />
 
-    <template v-if="selectedCorrection">
-      <PlateCorrectionExplanation
-        class="mb-3"
-        :plate="props.plate"
-        :correction="selectedCorrection"
-        :timestamp-index="plateViewStore.selectedTimestampIdx"
-      />
+    <p v-if="calculatedLabels.length === 0" class="mt-4 text-sm text-slate-600">
+      {{ t('plates.calculations.none_calculated') }}
+    </p>
+    <PlateCalculationCard
+      v-for="label in calculatedLabels"
+      :key="`calculation-${label}`"
+      :plate="props.plate"
+      :label="label"
+      @well-selected="emit('well-selected', $event)"
+      @deleted="reloadPlate"
+    />
 
-      <div v-if="corrections.length > 1" class="mb-3 max-w-sm">
-        <label class="mb-1 block pl-1 text-sm font-medium text-slate-700">
-          {{ t('plates.background_correction.shown_correction') }}
-        </label>
-        <select
-          v-model="selectedLabel"
-          class="w-full cursor-pointer rounded-full border border-black/15 bg-white/70 px-4 py-2 text-sm ring-offset-0 outline-none focus:ring-2 focus:ring-lime-500"
-        >
-          <option v-for="correction in corrections" :key="`correction-${correction.label}`" :value="correction.label">
-            {{ correction.label }}
-          </option>
-        </select>
-      </div>
-
-      <!-- Always a heatmap, also without "Show heatmap" for the main one -->
-      <div class="flex flex-nowrap gap-4">
-        <div class="min-w-0 overflow-auto">
-          <PlateTable
-            :plate="props.plate"
-            :min="heatmapRange.min"
-            :max="heatmapRange.max"
-            :measurement-label="selectedCorrection.label"
-            @well-selected="emit('well-selected', $event)"
-          />
-        </div>
-
-        <ColorLegend :range="heatmapRange" always-shown />
-      </div>
-      <HeatmapScaleNote :range="heatmapRange" />
-    </template>
-
-    <PlateCalculationModal v-model:open="isModalOpen" :plate="props.plate" @calculated="onCalculated" />
+    <PlateCalculationModal v-model:open="isModalOpen" :plate="props.plate" @calculated="reloadPlate" />
   </section>
 </template>

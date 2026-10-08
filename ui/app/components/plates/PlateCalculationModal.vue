@@ -38,11 +38,6 @@ const { isCalculating, calculate } = usePlateCalculations()
 const SELECT_CLASS =
   'w-full cursor-pointer rounded-full border border-black/15 bg-white/70 px-4 py-2 text-sm ring-offset-0 outline-none focus:ring-2 focus:ring-lime-500'
 
-// The well types the lab uses for each role, in this order; "Nref" is imported as NREF
-const USUAL_REFERENCE_TYPES = ['N1', 'NREF', 'R']
-const USUAL_NEGATIVE_TYPES = ['N', 'N1']
-const USUAL_POSITIVE_TYPES = ['P', 'P1']
-
 const calculation = ref<PlateCalculation>('background_correction')
 const label = ref<string | null>(null)
 const referenceType = ref<string | null>(null)
@@ -54,20 +49,17 @@ const errorMessage = ref('')
 const labels = computed(() => props.plate.details.measurement_labels ?? [])
 const wellTypes = computed(() => getWellTypesOfMeasurement(props.plate, label.value))
 
-const usualWellType = (usualTypes: string[]): string | null => {
-  return usualTypes.find((type) => wellTypes.value.includes(type)) ?? null
-}
-
-// A chosen well type that the measurement does not have is chosen again
-const keepOrChooseWellType = (chosen: string | null, usualTypes: string[], fallback: string | null) => {
-  if (chosen && wellTypes.value.includes(chosen)) return chosen
-  return usualWellType(usualTypes) ?? fallback
-}
-
-const chooseWellTypes = (): void => {
-  referenceType.value = keepOrChooseWellType(referenceType.value, USUAL_REFERENCE_TYPES, wellTypes.value[0] ?? null)
-  negativeType.value = keepOrChooseWellType(negativeType.value, USUAL_NEGATIVE_TYPES, null)
-  positiveType.value = keepOrChooseWellType(positiveType.value, USUAL_POSITIVE_TYPES, null)
+/**
+ * The user chooses the reference and the control wells; nothing is chosen for
+ * them, because the roles of the well types differ between experiments (e.g. N1
+ * is the background in one and the negative control in another). A chosen type
+ * that the newly chosen measurement does not have is cleared.
+ */
+const keepOnlyKnownWellTypes = (): void => {
+  const keepIfKnown = (chosen: string | null) => (chosen && wellTypes.value.includes(chosen) ? chosen : null)
+  referenceType.value = keepIfKnown(referenceType.value)
+  negativeType.value = keepIfKnown(negativeType.value)
+  positiveType.value = keepIfKnown(positiveType.value)
 }
 
 watch(
@@ -80,14 +72,13 @@ watch(
     referenceType.value = null
     negativeType.value = null
     positiveType.value = null
-    chooseWellTypes()
     method.value = 'median'
     errorMessage.value = ''
   },
   { immediate: true },
 )
 
-watch(label, chooseWellTypes)
+watch(label, keepOnlyKnownWellTypes)
 
 /**
  * What is sent to the server, or null while something is missing.
@@ -172,6 +163,7 @@ const apply = async () => {
               {{ t('plates.background_correction.reference_type') }}
             </label>
             <select v-model="referenceType" :class="SELECT_CLASS">
+              <option :value="null" disabled>{{ t('plates.calculations.choose_well_type') }}</option>
               <option v-for="option in wellTypes" :key="`reference-${option}`" :value="option">
                 {{ option }}
               </option>
@@ -196,6 +188,7 @@ const apply = async () => {
               {{ t('plates.calculations.negative_control') }}
             </label>
             <select v-model="negativeType" :class="SELECT_CLASS">
+              <option :value="null" disabled>{{ t('plates.calculations.choose_well_type') }}</option>
               <option v-for="option in wellTypes" :key="`negative-${option}`" :value="option">
                 {{ option }}
               </option>
@@ -207,6 +200,7 @@ const apply = async () => {
               {{ t('plates.calculations.positive_control') }}
             </label>
             <select v-model="positiveType" :class="SELECT_CLASS">
+              <option :value="null" disabled>{{ t('plates.calculations.choose_well_type') }}</option>
               <option v-for="option in wellTypes" :key="`positive-${option}`" :value="option">
                 {{ option }}
               </option>

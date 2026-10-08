@@ -1,6 +1,7 @@
 """
 Starting the calculations of one plate from the plate page: background
-correction, log10 and the normalization (%Inhibition, %Activity).
+correction, log10 and the normalization (%Inhibition, %Activity), and deleting
+a calculated measurement.
 """
 
 from django.shortcuts import get_object_or_404
@@ -12,6 +13,7 @@ from rest_framework.response import Response
 from core.models import Plate
 from core.utils.plates.archive_guard import ensure_plate_can_be_changed
 from plate_calculations.correction import METHODS, correct_plate
+from plate_calculations.deletion import delete_calculated_measurement
 from plate_calculations.log_transform import log10_of_plate
 from plate_calculations.normalization import normalize_plate
 
@@ -118,3 +120,29 @@ def normalize_plate_measurement(request, plate_id: int):
             "skipped": skipped,
         }
     )
+
+
+class DeletionSettingsSerializer(serializers.Serializer):
+    # Labels are looked up exactly: some labels end with a space
+    label = serializers.CharField(trim_whitespace=False)
+
+
+@api_view(["POST"])
+@permission_classes([IsAuthenticated])
+def delete_plate_calculation(request, plate_id: int):
+    """
+    Deletes a calculated measurement of the plate; an imported one is refused.
+
+    Accepted data example:
+    {"label": "Lum1_log10"}
+    Returned data example:
+    {"label": "Lum1_log10", "deleted": 64}
+    """
+    plate = get_object_or_404(Plate, id=plate_id)
+    ensure_plate_can_be_changed(plate)
+    settings = DeletionSettingsSerializer(data=request.data)
+    settings.is_valid(raise_exception=True)
+
+    label = settings.validated_data["label"]
+    deleted = delete_calculated_measurement(plate, label)
+    return Response({"label": label, "deleted": deleted})

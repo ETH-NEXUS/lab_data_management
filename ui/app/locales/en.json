@@ -306,11 +306,11 @@
       "heatmap": {
         "title": "Heatmaps of {label}, one per plate: read {number} of {total} ({time})",
         "meaning": {
-          "raw": "Raw data: the values as they were imported from the plate reader files (or made with the measurement calculator of the experiment). The colour shows how much signal a well gave; a well without colour has no value.",
-          "log10": "The log10 of {source}, calculated on the plate page: one more means 10 times more signal, one less 10 times less.",
+          "raw": "Raw data: the values as they were imported from the measurement files (or made with the measurement calculator of the experiment). The colour shows how much signal a well gave; a well without colour has no value.",
+          "log10": "log10(1 + value) of {source}, calculated on the plate page: one more means about 10 times more signal, one less about 10 times less.",
           "correction": "{source} minus the {method} of the {reference} wells of the same plate (background correction on the plate page): 0 = as much signal as the background, below 0 = less. The {reference} wells stay empty.",
-          "inhibition": "%Inhibition of {source} between the controls of each plate (normalization on the plate page): 0 = like {negative} (not inhibited), 1 = like {positive} (fully inhibited).",
-          "activity": "%Activity of {source} between the controls of each plate (normalization on the plate page), in percent: 100 = like {negative} (the enzyme works fully), 0 = like {positive} (the enzyme is blocked)."
+          "inhibition": "%Inhibition of {source} between the controls of each plate (normalization on the plate page): 0 = like {negative} (no effect), 1 = like {positive} (full effect).",
+          "activity": "%Activity of {source} between the controls of each plate (normalization on the plate page), in percent: 100 = like {negative} (the signal without the effect), 0 = like {positive} (full effect)."
         },
         "open_plate": "Click a plate to open its page: there the formula is shown with the numbers of that plate.",
         "missing_plates": "{count} of {total} plates do not have this measurement (it was not imported or not calculated for them), so their heatmaps stay empty.",
@@ -444,16 +444,25 @@
       "heatmap_title": "Background corrected: {label}",
       "formula": "corrected value = (value of the well in {source}) - {method}(values of the {reference} wells)",
       "formula_numbers": "= (value of the well) - {value}",
-      "step_background": "The {reference} wells are the reference: the signal the test gives without the enzyme working (the background). Their {method} at this time point is {value}.",
+      "step_background": "The {reference} wells are the reference: the signal the assay gives on its own, without what is measured (the background). Their {method} at this time point is {value}.",
       "step_subtract": "This background is subtracted from every other well of {source}.",
       "step_empty": "The {reference} wells stay empty (no colour in the heatmap): after the correction they are not needed.",
-      "reading": "0 = as much signal as the background, above 0 = more signal than the background, below 0 = less signal than the background (e.g. a well where the enzyme is blocked). Calculated separately for each time point.",
-      "reading_log10": "{source} is in log10 values, and subtracting log10 values means dividing: 0 = as much signal as the background, 0.3 = 2 times as much, 1 = 10 times as much, -0.3 = half of it, -1 = a tenth. Calculated separately for each time point.",
-      "shown_correction": "Background correction shown below"
+      "reading": "0 = as much signal as the background, above 0 = more signal than the background, below 0 = less signal than the background. Calculated separately for each time point.",
+      "reading_log10": "{source} is in log10 values, and subtracting log10 values means dividing: 0 = as much signal as the background, 0.3 = 2 times as much, 1 = 10 times as much, -0.3 = half of it, -1 = a tenth. Calculated separately for each time point."
     },
     "calculations": {
       "section_title": "Calculations",
       "open_button": "Add calculation",
+      "main_is_calculated": "The heatmap above shows {label}, calculated on this page: how it was calculated is explained with its own heatmap below.",
+      "none_calculated": "Nothing is calculated on this plate yet. With \"Add calculation\" you can calculate new values, e.g. a background correction; each one gets its own heatmap here.",
+      "delete": {
+        "button": "Delete",
+        "title": "Delete {label}?",
+        "description": "All values of {label} on the plate {barcode} are deleted. This cannot be undone; you can calculate it again with \"Add calculation\".",
+        "confirm": "Delete",
+        "deleted": "Deleted {label}",
+        "failed": "{label} could not be deleted"
+      },
       "title": "Add calculation",
       "calculation": "Calculation",
       "names": {
@@ -463,13 +472,14 @@
       },
       "descriptions": {
         "background_correction": "The median or mean of the reference wells is subtracted from every other well of this plate, at each time point. The result is saved as a new measurement of the plate; the reference wells stay empty.",
-        "log10": "The log10 of every well is saved as a new measurement of the plate, e.g. Lum1_log10. A well with a value of 0 or below is left empty.",
-        "normalization": "As in the R report: every well is normalized between the negative and the positive control on the log10 scale. Two new measurements are saved: the %Inhibition (negative control 0, positive control 1) and the %Activity = (1 - %Inhibition) × 100 (negative control 100, positive control 0). Use the raw readout, e.g. Lum1, not background-corrected values: wells below the background have no log10 and are left out, controls too."
+        "log10": "log10(1 + value) of every well is saved as a new measurement of the plate, e.g. Lum1_log10; 1 is added, as in the R report, so that a well with 0 still gets a value (log10(1) = 0). A well with a value of -1 or below is left empty.",
+        "normalization": "As in the R report: every well is normalized between the negative and the positive control on the log10(1 + value) scale. Two new measurements are saved: the %Inhibition (negative control 0, positive control 1) and the %Activity = (1 - %Inhibition) × 100 (negative control 100, positive control 0). Use the raw readout, e.g. Lum1, not background-corrected values: their values below 0 compress the scale, and wells of -1 or below have no log10 and are left out, controls too."
       },
       "summary": "{wells} wells · median {median} · min {min} · max {max}",
       "median_by_well_type": "Median by well type:",
-      "negative_control": "Negative control (nothing blocks the enzyme)",
-      "positive_control": "Positive control (the enzyme is fully blocked)",
+      "choose_well_type": "Choose a well type",
+      "negative_control": "Negative control (no effect, e.g. only the solvent DMSO)",
+      "positive_control": "Positive control (full effect, e.g. a known reference compound)",
       "measurement": "Measurement",
       "apply_button": "Calculate",
       "success": "Saved as {label}",
@@ -480,33 +490,34 @@
       "read_caption": "Numbers of read {number} of {total} ({time}), the time point chosen in \"Select timestamp\".",
       "raw": {
         "title": "Raw data: {label}",
-        "description": "The values as they were imported from the plate reader file (or made with the measurement calculator of the experiment); nothing is calculated from them here. Every square of the heatmap is one well.",
+        "description": "The values as they were imported from the measurement file (or made with the measurement calculator of the experiment); nothing is calculated from them here. Every square of the heatmap is one well.",
         "reading": "the colour shows how much signal a well gave: the legend next to the heatmap runs from the lowest value (bottom) to the highest (top). A well without colour has no value. Below: the median of every well type (the middle value: half of the wells are above it, half below). The median of the reference wells (R, N1 or NREF) is the background, the signal the test gives on its own; \"Add calculation\" → Background correction subtracts it from the other wells."
       },
       "log10": {
         "title": "log10: {label}",
-        "formula": "log10 value = log10(value of the well in {source})",
-        "step_log": "Every well of {source} gets the log10 of its value: how many times 10 is multiplied to reach it (10 → 1, 100 → 2, 1000 → 3).",
+        "formula": "log10 value = log10(1 + value of the well in {source})",
+        "step_log": "Every well of {source} gets the log10 of 1 + its value: how many times 10 is multiplied to reach it (1 + 9 → 1, 1 + 99 → 2, 1 + 999 → 3). 1 is added, as in the R report, so that a well with 0 still gets a value (log10(1) = 0).",
         "step_squeeze": "This squeezes big differences: here the values from {rawMin} to {rawMax} become {logMin} to {logMax}, so the heatmap also shows the differences between ordinary wells.",
-        "step_empty": "A value of 0 or below has no log10: such a well stays empty.",
-        "reading": "one more means 10 times more signal, one less means 10 times less (3 → 1000, 2 → 100).",
-        "skipped": "{count} well(s) left empty: a value of 0 or below has no log10."
+        "step_empty": "A value of -1 or below has no log10(1 + value): such a well stays empty.",
+        "reading": "one more means about 10 times more signal, one less about 10 times less (3 → 999, 2 → 99).",
+        "skipped": "{count} well(s) left empty: a value of -1 or below has no log10(1 + value)."
       },
       "normalization": {
         "inhibition_title": "%Inhibition: {label}",
         "activity_title": "%Activity: {label}",
-        "inhibition_formula": "%Inhibition = (log10(value of the well) - median(log10 of the {negative} wells)) / (median(log10 of the {positive} wells) - median(log10 of the {negative} wells))",
-        "inhibition_formula_numbers": "= (log10(value of the well) - {negativeMedian}) / ({positiveMedian} - {negativeMedian})",
+        "inhibition_formula": "%Inhibition = (log10(1 + value of the well) - median(log10(1 + value) of the {negative} wells)) / (median(log10(1 + value) of the {positive} wells) - median(log10(1 + value) of the {negative} wells))",
+        "inhibition_formula_numbers": "= (log10(1 + value of the well) - {negativeMedian}) / ({positiveMedian} - {negativeMedian})",
         "activity_formula": "%Activity = (1 - %Inhibition) × 100",
-        "activity_formula_numbers": "= (1 - (log10(value of the well) - {negativeMedian}) / ({positiveMedian} - {negativeMedian})) × 100",
-        "step_log": "Every well of {source} gets the log10 of its value (10 → 1, 100 → 2, 1000 → 3).",
-        "step_negative": "The {negative} wells are the negative control: nothing blocks the enzyme, it works fully. The median of their log10 values is {negativeMedian}.",
-        "step_positive": "The {positive} wells are the positive control: the enzyme is fully blocked. The median of their log10 values is {positiveMedian}.",
-        "step_inhibition": "For every well: how far its log10 lies on the way from the {negative} median to the {positive} median. This is the %Inhibition, saved as {inhibitionLabel}.",
-        "step_activity": "%Activity is what is left of the work of the enzyme, in percent: 1 minus the %Inhibition, times 100, saved as {activityLabel}.",
-        "inhibition_reading": "0 = like {negative} (not inhibited), 1 = like {positive} (fully inhibited), 0.5 = halfway. Below 0 or above 1 = beyond the controls. Fractions, as in the R report: 0.5 means 50 %. Calculated separately for each time point; a well with a value of 0 or below stays empty. The colours of the heatmap run from the lowest to the highest value of this plate (see the legend), not fixed from 0 to 1.",
-        "activity_reading": "100 = like {negative} (the enzyme works fully), 0 = like {positive} (the enzyme is blocked), 50 = half of its work. Below 0 or above 100 = beyond the controls. In percent. Calculated separately for each time point; a well with a value of 0 or below stays empty. The colours of the heatmap run from the lowest to the highest value of this plate (see the legend), not fixed from 0 to 100.",
-        "skipped_controls": "Among them {negativeCount} {negative} and {positiveCount} {positive} control well(s): the medians of the controls are taken without them, so the two ends of the scale (the values of the controls) can be off. Normalize the raw readout (not background-corrected values) to keep all controls."
+        "activity_formula_numbers": "= (1 - (log10(1 + value of the well) - {negativeMedian}) / ({positiveMedian} - {negativeMedian})) × 100",
+        "step_log": "Every well of {source} gets the log10 of 1 + its value (1 + 9 → 1, 1 + 99 → 2, 1 + 999 → 3); 1 is added, as in the R report, so that a well with 0 still gets a value (log10(1) = 0).",
+        "step_negative": "The {negative} wells are the negative control, the reference for \"no effect\" (e.g. only the solvent, DMSO): the signal without the effect. The median of their log10(1 + value) is {negativeMedian}.",
+        "step_positive": "The {positive} wells are the positive control, the reference for \"full effect\" (e.g. a known reference compound). The median of their log10(1 + value) is {positiveMedian}.",
+        "step_inhibition": "For every well: how far its log10 lies on the way from the {negative} median to the {positive} median, i.e. which share of the full effect it shows. This is the %Inhibition, saved as {inhibitionLabel}.",
+        "step_activity": "%Activity is what is left of the signal without the effect, in percent: 1 minus the %Inhibition, times 100, saved as {activityLabel}.",
+        "inhibition_reading": "0 = like {negative} (no effect), 1 = like {positive} (full effect), 0.5 = half of the full effect. Below 0 or above 1 = beyond the controls. Fractions, as in the R report: 0.5 means 50 %. Calculated separately for each time point; a well with a value of -1 or below stays empty. The colours of the heatmap run from the lowest to the highest value of this plate (see the legend), not fixed from 0 to 1.",
+        "activity_reading": "100 = like {negative} (the signal without the effect), 0 = like {positive} (full effect), 50 = half of the full effect. Below 0 or above 100 = beyond the controls. In percent. Calculated separately for each time point; a well with a value of -1 or below stays empty. The colours of the heatmap run from the lowest to the highest value of this plate (see the legend), not fixed from 0 to 100.",
+        "skipped_controls": "Among them {negativeCount} {negative} and {positiveCount} {positive} control well(s): the medians of the controls are taken without them, so the two ends of the scale (the values of the controls) can be off. Normalize the raw readout (not background-corrected values) to keep all controls.",
+        "controls_overlap": "The {negative} and {positive} controls are not clearly apart (z' = {zPrime} on these values): the spread of their wells is larger than the distance between their medians, so these values are not reliable. Check that the right well types are chosen as the controls."
       },
       "scale_note": {
         "full": "Colours: from the lowest value ({min}) at one end of the palette to the highest ({max}) at the other; every well gets the colour of where its value lies between them. A few extreme wells can take most of the scale; then choose the robust colour scale.",

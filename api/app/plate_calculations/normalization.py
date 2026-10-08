@@ -2,24 +2,23 @@
 Normalization of one measurement of a plate between its controls, as in the R
 report of the lab (Michael's analysis), saved as two new measurements:
 
-    %Inhibition = (log10(x) - median(log10 N)) / (median(log10 P) - median(log10 N))
+    %Inhibition = (log10(1 + x) - median(log10(1 + N))) / (median(log10(1 + P)) - median(log10(1 + N)))
     %Activity   = (1 - %Inhibition) * 100
 
-The negative control (N, nothing inhibits the enzyme) has an inhibition of 0 and
-an activity of 100, the positive control (P, fully inhibited) an inhibition of 1
-and an activity of 0. The %Inhibition is a fraction like in the report, the
+The negative control (N, no effect) has an inhibition of 0 and an activity of
+100, the positive control (P, full effect) an inhibition of 1 and an activity of 0. The %Inhibition is a fraction like in the report, the
 %Activity is in percent, as the lab asked for. Every time point is
-normalized by the controls of that time point. A well with a value of 0 or below
-has no log10 and is left empty in every read, as in the log10 calculation.
+normalized by the controls of that time point. The log10 is the one of the
+log10 calculation, log10(1 + x) as in the report; a well with a value of -1 or
+below has none and is left empty in every read.
 """
 
-import math
 import statistics
 
 from rest_framework.exceptions import ValidationError
 
 from core.models import Measurement, Plate
-from plate_calculations.log_transform import wells_without_log10
+from plate_calculations.log_transform import log10_of_value, wells_without_log10
 from plate_calculations.plate_measurements import (
     check_label_length,
     replace_measurements,
@@ -74,7 +73,7 @@ def normalize_plate(
     activity_measurements = []
     for measured_at, well_values in values.items():
         logs = {
-            well_id: math.log10(value)
+            well_id: log10_of_value(value)
             for well_id, value in well_values.items()
             if well_id not in skipped_wells
         }

@@ -18,10 +18,10 @@ const { t } = useI18n()
 
 const texts = computed(() => {
   const logs = summarizeDataset(props.plate, props.label, props.timestampIndex)
-  // The values that got a log10 (not the ones of 0 or below, which have none):
-  // 10 to the power of the smallest and largest log10 gives them back
-  const rawMin = logs.min === null ? null : 10 ** logs.min
-  const rawMax = logs.max === null ? null : 10 ** logs.max
+  // The values that got a log10 (not the ones of -1 or below, which have none):
+  // log10(1 + x) back to x is 10 to the power of it, minus 1
+  const rawMin = logs.min === null ? null : 10 ** logs.min - 1
+  const rawMax = logs.max === null ? null : 10 ** logs.max - 1
   const params = {
     source: props.sourceLabel,
     rawMin: formatSummaryNumber(rawMin),

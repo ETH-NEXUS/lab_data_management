@@ -110,6 +110,11 @@ def replace_measurements(
             Measurement.objects.filter(well__plate=plate, label=new_label).delete()
             Measurement.objects.bulk_create(measurements)
 
+    refresh_plate_views()
+
+
+def refresh_plate_views() -> None:
+    """Refreshes the views the plate and experiment pages read, after a change."""
     PlateDetail.refresh(concurrently=True)
     WellDetail.refresh(concurrently=True)
     ExperimentDetail.refresh(concurrently=True)

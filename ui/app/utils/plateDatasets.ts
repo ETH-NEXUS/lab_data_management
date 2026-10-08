@@ -108,8 +108,28 @@ export const getNormalizedDataset = (plate: Plate, label: string | null): Normal
 }
 
 /**
+ * The measurements of the plate calculated on the plate page (log10, background
+ * corrections, %Inhibition, %Activity), recognized by their names, in the order
+ * of the plate.
+ *
+ * Example: `['Lum1', 'Lum1_log10', 'Lum1_bc_R_median']` -> `['Lum1_log10', 'Lum1_bc_R_median']`
+ */
+export const getCalculatedLabels = (plate: Plate): string[] => {
+  const calculated: string[] = []
+  for (const label of plate.details.measurement_labels ?? []) {
+    const isCalculated =
+      getLog10SourceLabel(plate, label) !== null ||
+      getNormalizedDataset(plate, label) !== null ||
+      getCorrectionDataset(plate, label) !== null
+    if (isCalculated) calculated.push(label)
+  }
+  return calculated
+}
+
+/**
  * Wells with a value of the source measurement but none of its log10: their
- * value is 0 or below (the server leaves such a well empty in every read). With
+ * value is -1 or below, so it has no log10(1 + value) (the server leaves such a
+ * well empty in every read). With
  * a well type, only the wells of that type, e.g. how many P controls were left out.
  *
  * Example: `countWellsWithoutLog10(plate, 'Lum1', 'Lum1_inhibition_N_P', 'P')` -> `2`
@@ -211,9 +231,9 @@ const median = (values: number[]): number => {
 }
 
 /**
- * The median of the log10 values of one well type at one time point, as the
+ * The median of the log10(1 + value) of one well type at one time point, as the
  * server uses it for the normalization, e.g. 3.471 for the N wells of Lum1.
- * Like the server, it leaves out a well with a value of 0 or below in any read,
+ * Like the server, it leaves out a well with a value of -1 or below in any read,
  * and a well without every read cannot be matched to the shown one.
  */
 export const getWellTypeLog10Median = (
@@ -227,9 +247,9 @@ export const getWellTypeLog10Median = (
   for (const well of plate.wells ?? []) {
     const series = well.measurements?.[label]
     if (well.type !== wellType || !series || series.length !== plateReads) continue
-    if (series.some((value) => value <= 0)) continue
+    if (series.some((value) => value <= -1)) continue
     const value = series[timestampIndex]
-    if (typeof value === 'number') logs.push(Math.log10(value))
+    if (typeof value === 'number') logs.push(Math.log10(1 + value))
   }
   return logs.length > 0 ? median(logs) : null
 }

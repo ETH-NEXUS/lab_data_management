@@ -2,7 +2,10 @@
 The log10 of one measurement of a plate, saved as a new measurement of the same
 plate, e.g. "Lum1" -> "Lum1_log10". Readouts spread over several orders of
 magnitude, and on the log scale the heatmap shows the differences between them.
-A value of 0 or below has no log10: its well is left empty.
+
+As in the R report of the lab, 1 is added before the log10: log10(1 + x), so a
+well with 0 still gets a value (log10(1) = 0). A value of -1 or below has no
+log10: its well is left empty.
 """
 
 import math
@@ -22,18 +25,28 @@ def log10_label(label: str) -> str:
     return f"{label}_log10"
 
 
+def log10_of_value(value: float) -> float:
+    """log10(1 + x), as in the R report: 999 -> 3.0, 0 -> 0.0, -0.9 -> -1.0"""
+    return math.log10(1 + value)
+
+
+def has_log10(value: float) -> bool:
+    """log10(1 + x) exists only above 0, so x must be above -1."""
+    return value > -1
+
+
 def wells_without_log10(values: dict) -> set[int]:
     """
-    The wells with a value of 0 or below in any read. They are left empty in
+    The wells with a value of -1 or below in any read. They are left empty in
     every read: the plate page lists the values of a well by the order of the
     reads, so a gap in one read would move the later values to the wrong read.
 
-    {t1: {11: 1000.0, 12: 0.0}, t2: {11: 10.0, 12: 5.0}} -> {12}
+    {t1: {11: 1000.0, 12: -1.0}, t2: {11: 10.0, 12: 5.0}} -> {12}
     """
     wells = set()
     for well_values in values.values():
         for well_id, value in well_values.items():
-            if value <= 0:
+            if not has_log10(value):
                 wells.add(well_id)
     return wells
 
@@ -41,7 +54,7 @@ def wells_without_log10(values: dict) -> set[int]:
 def log10_of_plate(plate: Plate, label: str) -> tuple[str, int]:
     """
     Saves the log10 measurement and returns its label and how many wells were
-    left empty because a value is 0 or below, e.g. ("Lum1_log10", 2).
+    left empty because a value is -1 or below, e.g. ("Lum1_log10", 2).
     """
     new_label = log10_label(label)
     check_label_length(new_label)
@@ -57,15 +70,15 @@ def log10_of_plate(plate: Plate, label: str) -> tuple[str, int]:
                 Measurement(
                     well_id=well_id,
                     label=new_label,
-                    value=math.log10(value),
+                    value=log10_of_value(value),
                     measured_at=measured_at,
                 )
             )
 
     if not new_measurements:
         raise ValidationError(
-            f'Every well of "{label}" on the plate {plate.barcode} has a value of 0 '
-            "or below, so there is no log10 to show."
+            f'Every well of "{label}" on the plate {plate.barcode} has a value of -1 '
+            "or below, so there is no log10(1 + value) to show."
         )
 
     # A new log10 of the same measurement replaces the last one

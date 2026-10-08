@@ -10,7 +10,7 @@ import type { Plate } from '~/types/lab'
  * statistics. Raw data have no formula and no steps.
  *
  * Accepted props example:
- * - `{ title: 'log10: Lum1_log10', formulas: ['log10 value = log10(value of the well in Lum1)'],
+ * - `{ title: 'log10: Lum1_log10', formulas: ['log10 value = log10(1 + value of the well in Lum1)'],
  *     steps: ['Every well ...'], reading: '+1 means 10 times more signal ...', label: 'Lum1_log10' }`
  */
 const props = withDefaults(

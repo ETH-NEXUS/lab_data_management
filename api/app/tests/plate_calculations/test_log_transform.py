@@ -1,8 +1,9 @@
 """
-The log10 of a measurement of one plate is saved as a new measurement; values
-of 0 or below are left out and counted. Only for logged in users.
+The log10(1 + x) of a measurement of one plate is saved as a new measurement;
+values of -1 or below are left out and counted. Only for logged in users.
 """
 
+import math
 from datetime import datetime
 
 from django.contrib.auth.models import User
@@ -27,13 +28,14 @@ SECOND_READ = datetime(2026, 9, 30, 17, 0)
 
 
 class WellsWithoutLog10Test(SimpleTestCase):
-    def test_a_value_of_0_or_below_in_any_read_leaves_the_well_out(self):
+    def test_a_value_of_minus_1_or_below_in_any_read_leaves_the_well_out(self):
+        # 0 and -0.5 have a log10(1 + x), -1 and -3 do not
         values = {
-            FIRST_READ: {11: 1000.0, 12: 0.0, 13: 5.0},
-            SECOND_READ: {11: 10.0, 12: 5.0, 13: -1.0},
+            FIRST_READ: {11: 1000.0, 12: 0.0, 13: 5.0, 14: -3.0},
+            SECOND_READ: {11: -0.5, 12: 5.0, 13: -1.0, 14: 5.0},
         }
 
-        self.assertEqual({12, 13}, wells_without_log10(values))
+        self.assertEqual({13, 14}, wells_without_log10(values))
 
 
 class Log10ViewTest(TestCase):
@@ -77,15 +79,21 @@ class Log10ViewTest(TestCase):
 
         response = self.log10({"label": "Lum1"})
 
-        # Well 1 has 0 in the first read, well 2 has -3 in the second one:
-        # both are left empty in every read
-        self.assertEqual({"label": "Lum1_log10", "skipped": 2}, response.json())
+        # Well 1 has 0 in the first read: log10(1 + 0) = 0. Well 2 has -3 in the
+        # second one: no log10, so it is left empty in every read
+        self.assertEqual({"label": "Lum1_log10", "skipped": 1}, response.json())
         saved = sorted(
             Measurement.objects.filter(label="Lum1_log10").values_list(
                 "well__position", "measured_at", "value"
             )
         )
-        self.assertEqual([(0, FIRST_READ, 2.0), (0, SECOND_READ, 3.0)], saved)
+        expected = [
+            (0, FIRST_READ, math.log10(101)),
+            (0, SECOND_READ, math.log10(1001)),
+            (1, FIRST_READ, 0.0),
+            (1, SECOND_READ, math.log10(11)),
+        ]
+        self.assertEqual(expected, saved)
         self.assertIn(
             "Lum1_log10", PlateDetail.objects.get(id=self.plate.id).measurement_labels
         )
@@ -96,7 +104,7 @@ class Log10ViewTest(TestCase):
 
         self.log10({"label": "Lum1"})
 
-        self.assertEqual(2, Measurement.objects.filter(label="Lum1_log10").count())
+        self.assertEqual(4, Measurement.objects.filter(label="Lum1_log10").count())
 
     def test_an_imported_measurement_of_the_same_name_is_not_replaced(self):
         self.login()
@@ -124,14 +132,14 @@ class Log10ViewTest(TestCase):
             ),
         )
 
-    def test_a_measurement_without_values_above_0_is_refused(self):
+    def test_a_measurement_without_values_above_minus_1_is_refused(self):
         self.login()
-        Measurement.objects.filter(label="Lum1").update(value=0.0)
+        Measurement.objects.filter(label="Lum1").update(value=-1.0)
 
         response = self.log10({"label": "Lum1"})
 
         self.assertEqual(400, response.status_code)
-        self.assertIn("has a value of 0 or below", response.json()[0])
+        self.assertIn("has a value of -1 or below", response.json()[0])
 
     def test_an_unknown_measurement_is_refused(self):
         self.login()

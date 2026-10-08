@@ -10,6 +10,7 @@ import {
   countWellsWithoutLog10,
   findBackgroundCorrections,
   formatSummaryNumber,
+  getCalculatedLabels,
   getCorrectionDataset,
   getLog10SourceLabel,
   getNormalizedDataset,
@@ -20,12 +21,12 @@ import {
 
 const stats = (median: number) => ({ min: [0], max: [0], mean: [0], median: [median], std: [0], mad: [0] })
 
-// Three wells; the second one has a raw value of 0, so no log10
+// Three wells; the second one has a raw value of -1, so no log10(1 + value)
 const plate = {
   wells: [
     { type: 'R', measurements: { Lum1: [100], Lum1_log10: [2] } },
-    { type: 'N', measurements: { Lum1: [0] } },
-    { type: 'N', measurements: { Lum1: [1000], Lum1_log10: [3] } },
+    { type: 'N', measurements: { Lum1: [-1] } },
+    { type: 'N', measurements: { Lum1: [999], Lum1_log10: [3] } },
   ],
   details: {
     measurement_labels: ['Lum1', 'Lum1_log10', 'Lum1_activity_N_P'],
@@ -41,6 +42,10 @@ describe('plate datasets', () => {
     expect(getLog10SourceLabel(plate, 'Lum1_log10')).toBe('Lum1')
     expect(getLog10SourceLabel(plate, 'Lum1')).toBeNull()
     expect(getLog10SourceLabel(plate, 'Fluo_log10')).toBeNull()
+  })
+
+  it('lists the measurements calculated on the plate page', () => {
+    expect(getCalculatedLabels(plate)).toEqual(['Lum1_log10', 'Lum1_activity_N_P'])
   })
 
   it('counts the wells left empty by the log10', () => {
@@ -100,7 +105,7 @@ describe('plate datasets', () => {
     expect(getNormalizedDataset(plate, 'Lum1')).toBeNull()
   })
 
-  it('takes the median of the log10 values of a well type, without wells of 0 or below', () => {
+  it('takes the median of the log10(1 + value) of a well type, without wells of -1 or below', () => {
     // The N wells have the raw values 0 and 1000: the well with 0 has no log10
     expect(getWellTypeLog10Median(plate, 'Lum1', 'N', 0)).toBe(3)
   })

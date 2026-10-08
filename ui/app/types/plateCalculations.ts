@@ -23,6 +23,21 @@ export const PLATE_CALCULATION_PATHS: Record<PlateCalculation, string> = {
   normalization: 'normalization/',
 }
 
+// Deleting a calculated measurement, e.g. `plate_calculations/plates/42/delete/`
+export const PLATE_CALCULATION_DELETE_PATH = 'delete/'
+export const PLATE_CALCULATION_DELETE_ERROR_MESSAGE = 'The calculated measurement could not be deleted.'
+
+/**
+ * The answer of the server after deleting: the name and how many values were deleted.
+ *
+ * Data example:
+ * - `{ label: 'Lum1_log10', deleted: 64 }`
+ */
+export type PlateCalculationDeleteResponse = {
+  label: string
+  deleted: number
+}
+
 // The parts of the names of the new measurements
 export const CORRECTION_INFIX = '_bc_'
 export const LOG10_SUFFIX = '_log10'

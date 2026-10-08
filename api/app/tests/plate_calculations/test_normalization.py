@@ -1,6 +1,6 @@
 """
 The normalization of the R report (Michael's analysis), for every well:
-%Inhibition = (log10(x) - median(log10 N)) / (median(log10 P) - median(log10 N))
+%Inhibition = (log10(1 + x) - median(log10(1 + N))) / (median(log10(1 + P)) - median(log10(1 + N)))
 and %Activity = (1 - %Inhibition) * 100, per time point (%Inhibition as a
 fraction, %Activity in percent).
 """
@@ -44,15 +44,15 @@ class NormalizationViewTest(TestCase):
         negative = WellType.objects.create(name="N", description="negative")
         positive = WellType.objects.create(name="P", description="positive")
         compound = WellType.objects.create(name="C", description="compound")
-        # Well type and the values of the first and the second read; log10 of
-        # N 1000 = 3, P 10 = 1, so the compound with 100 (log10 2) is halfway
+        # Well type and the values of the first and the second read; log10(1 + x)
+        # of N 999 = 3, P 9 = 1, so the compound with 99 (log10(1 + 99) = 2) is halfway
         layout = [
-            (negative, 1000.0, 10000.0),
-            (negative, 1000.0, 10000.0),
-            (positive, 10.0, 100.0),
-            (positive, 10.0, 100.0),
-            (compound, 100.0, 1000.0),
-            (compound, 0.0, 50.0),
+            (negative, 999.0, 9999.0),
+            (negative, 999.0, 9999.0),
+            (positive, 9.0, 99.0),
+            (positive, 9.0, 99.0),
+            (compound, 99.0, 999.0),
+            (compound, -1.0, 50.0),
         ]
         for position, (well_type, first, second) in enumerate(layout):
             well = Well.objects.create(
@@ -96,7 +96,7 @@ class NormalizationViewTest(TestCase):
             {"label": "Lum1", "negative_type": "N", "positive_type": "P"}
         )
 
-        # The well with 0 has no log10: it is left empty in every read
+        # The well with -1 has no log10(1 + x): it is left empty in every read
         self.assertEqual(
             {
                 "label": "Lum1_inhibition_N_P",
