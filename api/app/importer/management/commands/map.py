@@ -8,7 +8,7 @@ from core.models import Experiment
 from importer.config import Config
 from importer.helper import message
 from importer.mappers import BaseMapper, EchoMapper, M1000Mapper, MicroscopeMapper
-from importer.mappers.m1000_file_names import DATE_TIME_BARCODE, FILE_NAME_FORMATS
+from importer.mappers.m1000_file_names import FILE_NAME_FORMATS
 
 # Without an experiment name the mappers cannot create a missing plate
 NO_EXPERIMENT_NAME = (
@@ -69,9 +69,8 @@ class Command(BaseCommand):
         parser.add_argument(
             "--file_name_format",
             choices=FILE_NAME_FORMATS,
-            default=DATE_TIME_BARCODE,
             help="For m1000 only: how the files are named, "
-            "date_time_barcode (20240610-121212_demo_1.asc) or "
+            "date_time_barcode (20240610-121212_demo_1.asc, the default) or "
             "barcode_date_time (RKS_300926_3_093026_165454.asc, date as MMDDYY).",
         )
 

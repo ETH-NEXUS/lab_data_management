@@ -125,11 +125,14 @@ const timestampOptions = computed(() => {
 })
 
 // The scale of all plates together, at the selected time point
-const experimentRange = computed(() => {
-  const label = plateViewStore.selectedMeasurement
-  const stats = label ? props.overallStats[label] : undefined
-  return getHeatmapRange(stats, plateViewStore.selectedTimestampIdx, plateViewStore.heatmapScale)
-})
+const experimentRange = computed(() =>
+  getHeatmapRange(
+    props.overallStats,
+    plateViewStore.selectedMeasurement,
+    plateViewStore.selectedTimestampIdx,
+    plateViewStore.heatmapScale,
+  ),
+)
 
 /**
  * The scale of one plate ("Per plate view") or of all plates of the experiment.
@@ -139,10 +142,12 @@ const experimentRange = computed(() => {
  */
 const getRange = (plate: Plate): HeatmapRange => {
   if (!plateViewStore.perPlateView) return experimentRange.value
-
-  const label = plateViewStore.selectedMeasurement
-  const stats = label ? plate.details.overall_stats[label] : undefined
-  return getHeatmapRange(stats, plateViewStore.selectedTimestampIdx, plateViewStore.heatmapScale)
+  return getHeatmapRange(
+    plate.details.overall_stats,
+    plateViewStore.selectedMeasurement,
+    plateViewStore.selectedTimestampIdx,
+    plateViewStore.heatmapScale,
+  )
 }
 
 const zPrimePerPlate = (plate: Plate) => {

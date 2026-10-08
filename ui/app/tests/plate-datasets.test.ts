@@ -1,5 +1,6 @@
 /**
- * Tests for the compact statistics and the log10 report below the heatmap of a plate.
+ * Tests for finding how the measurements of a plate were calculated (background
+ * correction, log10, %Activity), and for the compact statistics below the heatmap.
  */
 
 import { describe, expect, it } from 'vitest'
@@ -7,10 +8,12 @@ import { describe, expect, it } from 'vitest'
 import type { Plate } from '~/types/lab'
 import {
   countWellsWithoutLog10,
+  findBackgroundCorrections,
   formatSummaryNumber,
   getActivityDataset,
+  getCorrectionDataset,
   getLog10SourceLabel,
-  getWellTypeMedian,
+  getWellTypeStatistic,
   summarizeDataset,
 } from '~/utils/plateDatasets'
 
@@ -69,6 +72,54 @@ describe('plate datasets', () => {
       positiveType: 'P',
     })
     expect(getActivityDataset(plate, 'Lum1')).toBeNull()
-    expect(getWellTypeMedian(plate, 'Lum1', 'N', 0)).toBe(2958)
+    expect(getWellTypeStatistic(plate, 'Lum1', 'N', 'median', 0)).toBe(2958)
+  })
+})
+
+// Only the plate details are read
+const plateWithLabels = (labels: string[], wellTypes: string[]): Plate => {
+  const statsPerType = Object.fromEntries(wellTypes.map((type) => [type, stats(0)]))
+  return {
+    details: {
+      measurement_labels: labels,
+      measurement_timestamps: {},
+      stats: { Lum: statsPerType },
+      overall_stats: {},
+    },
+  } as unknown as Plate
+}
+
+describe('findBackgroundCorrections', () => {
+  it('finds every reference and method of the measurement', () => {
+    const plate = plateWithLabels(['Lum', 'Lum_bc_N1_median', 'Lum_bc_Nref_mean'], ['C', 'N1', 'Nref', 'P'])
+
+    expect(findBackgroundCorrections(plate, 'Lum')).toEqual([
+      { label: 'Lum_bc_N1_median', source: 'Lum', referenceType: 'N1', method: 'median' },
+      { label: 'Lum_bc_Nref_mean', source: 'Lum', referenceType: 'Nref', method: 'mean' },
+    ])
+  })
+
+  it('does not take the corrections of another measurement', () => {
+    const plate = plateWithLabels(['Lum', 'Lum2_bc_N1_median', 'Fluo_bc_N1_median'], ['C', 'N1'])
+
+    expect(findBackgroundCorrections(plate, 'Lum')).toEqual([])
+  })
+
+  it('finds nothing without a selected measurement', () => {
+    const plate = plateWithLabels(['Lum', 'Lum_bc_N1_median'], ['C', 'N1'])
+
+    expect(findBackgroundCorrections(plate, null)).toEqual([])
+  })
+
+  it('finds how a correction shown in the main heatmap was calculated', () => {
+    const plate = plateWithLabels(['Lum', 'Lum_bc_N1_median'], ['C', 'N1'])
+
+    expect(getCorrectionDataset(plate, 'Lum_bc_N1_median')).toEqual({
+      label: 'Lum_bc_N1_median',
+      source: 'Lum',
+      referenceType: 'N1',
+      method: 'median',
+    })
+    expect(getCorrectionDataset(plate, 'Lum')).toBeNull()
   })
 })

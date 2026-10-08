@@ -1,6 +1,6 @@
 """
 Reading and saving the measurements of one plate, shared by the calculations of
-this app (background correction, log10).
+this app (background correction, log10, %Activity).
 """
 
 from django.db import transaction
@@ -45,13 +45,47 @@ def values_by_time_point(plate: Plate, label: str) -> dict:
     return values
 
 
+def well_ids_of_type(plate: Plate, well_type: str) -> set[int]:
+    """The ids of the wells of one type on the plate, e.g. of the "R" wells."""
+    return set(plate.wells.filter(type__name=well_type).values_list("id", flat=True))
+
+
+def values_of_wells(
+    plate: Plate,
+    label: str,
+    well_type: str,
+    well_ids: set[int],
+    well_values: dict[int, float],
+    measured_at,
+) -> list[float]:
+    """
+    The values of one time point in the wells of one type. A calculation that
+    needs them (e.g. their median) is refused if there are none.
+
+    well_values = {11: 10.0, 12: 4.0, 13: 7.0}, well_ids = {11, 13} -> [10.0, 7.0]
+    """
+    values = [well_values[well_id] for well_id in well_ids if well_id in well_values]
+    if not values:
+        raise ValidationError(
+            f'The plate {plate.barcode} has no "{well_type}" wells with a '
+            f'value of "{label}" measured at {measured_at}.'
+        )
+    return values
+
+
 def replace_measurements(
     plate: Plate, new_label: str, new_measurements: list[Measurement]
 ) -> None:
     """
     Saves the new measurement of the plate instead of an earlier one of the same
-    label, and refreshes the views the plate page reads.
+    label, and refreshes the views the plate page reads. A result without a
+    single value is refused: it would only delete the earlier one.
     """
+    if not new_measurements:
+        raise ValidationError(
+            f'No well of the plate {plate.barcode} gets a value of "{new_label}".'
+        )
+
     with transaction.atomic():
         Measurement.objects.filter(well__plate=plate, label=new_label).delete()
         Measurement.objects.bulk_create(new_measurements)

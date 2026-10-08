@@ -159,7 +159,13 @@ const positionFromRowCol = (row: number, col: number) => row * props.plate.dimen
                   : 'transparent',
           }"
         >
-          <WellTooltip v-if="wells[row]?.[col]" :well="wells[row]?.[col]" :col="Number(col)" :row="Number(row)">
+          <WellTooltip
+            v-if="wells[row]?.[col]"
+            :well="wells[row]?.[col]"
+            :col="Number(col)"
+            :row="Number(row)"
+            :measurement-label="shownMeasurement"
+          >
             <a :class="{ 'bg-warning': wells[row]?.[col]?.status }">
               {{ platePage.smallerMapView ? '&nbsp;&nbsp;&nbsp;' : wells[row]?.[col]?.[platePage.wellContent] }}
             </a>
@@ -170,6 +176,7 @@ const positionFromRowCol = (row: number, col: number) => row * props.plate.dimen
           :well="wells[row]?.[col]"
           :col="Number(col)"
           :row="Number(row)"
+          :measurement-label="shownMeasurement"
         >
           <a :class="{ 'bg-warning': wells[row]?.[col]?.status }">
             {{ platePage.smallerMapView ? '&nbsp;&nbsp;&nbsp;' : wells[row]?.[col]?.[platePage.wellContent] }}

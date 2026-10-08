@@ -13,7 +13,7 @@ const stats: PlateStats = { min: [33], max: [126340], mean: [4822], median: [734
 
 describe('getHeatmapRange', () => {
   it('spans all values for the full range', () => {
-    expect(getHeatmapRange(stats, 0, 'full')).toEqual({
+    expect(getHeatmapRange({ Lum1: stats }, 'Lum1', 0, 'full')).toEqual({
       min: 33,
       max: 126340,
       lowerClipped: false,
@@ -23,12 +23,17 @@ describe('getHeatmapRange', () => {
 
   it('spans median ± 3 MAD for the robust range, within the values of the plate', () => {
     // 734 - 1200 is below the lowest value, so the lower end stays at 33
-    expect(getHeatmapRange(stats, 0, 'robust')).toEqual({ min: 33, max: 1934, lowerClipped: false, upperClipped: true })
+    expect(getHeatmapRange({ Lum1: stats }, 'Lum1', 0, 'robust')).toEqual({
+      min: 33,
+      max: 1934,
+      lowerClipped: false,
+      upperClipped: true,
+    })
   })
 
   it('uses the full range when the wells do not spread', () => {
     const alike = { ...stats, mad: [0] }
-    expect(getHeatmapRange(alike, 0, 'robust')).toEqual({
+    expect(getHeatmapRange({ Lum1: alike }, 'Lum1', 0, 'robust')).toEqual({
       min: 33,
       max: 126340,
       lowerClipped: false,
@@ -36,8 +41,14 @@ describe('getHeatmapRange', () => {
     })
   })
 
-  it('has no range without statistics', () => {
-    expect(getHeatmapRange(undefined, 0, 'robust')).toEqual({
+  it('has no range without statistics or without a measurement', () => {
+    expect(getHeatmapRange({ Lum1: stats }, null, 0, 'full')).toEqual({
+      min: 0,
+      max: 0,
+      lowerClipped: false,
+      upperClipped: false,
+    })
+    expect(getHeatmapRange(undefined, 'Lum1', 0, 'robust')).toEqual({
       min: 0,
       max: 0,
       lowerClipped: false,

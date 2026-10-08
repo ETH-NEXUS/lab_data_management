@@ -124,6 +124,22 @@ class MapCommandTest(ManagementPageTestCase):
             set(Measurement.objects.values_list("well__plate__barcode", flat=True)),
         )
 
+    def test_a_folder_where_every_file_is_skipped_is_an_error(self):
+        # Older names, but the newer format was chosen
+        with open(join(self.folder, "20240610-121212_demo_1.asc"), "wb") as file:
+            file.write(ASC_FILE_CONTENT)
+
+        output = self.run_map("m1000", file_name_format="barcode_date_time")
+
+        self.assertIn(
+            {
+                "level": "error",
+                "text": "Nothing was mapped: every file was skipped (1).",
+            },
+            output["messages"],
+        )
+        self.assertFalse(Measurement.objects.exists())
+
     def test_an_unexpected_error_shows_its_type_and_is_logged_with_traceback(self):
         with mock.patch(
             "importer.management.commands.map.EchoMapper.run",

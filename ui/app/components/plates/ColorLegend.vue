@@ -12,11 +12,15 @@ type Props = {
 }
 
 const props = defineProps<Props>()
+
+// The legend has 21 colours (0..20), every fifth of them with its value
+const LEGEND_STEPS = 20
+const LABEL_EVERY = 5
 const platePage = usePlateViewStore()
 
 const legendColors = computed(() => {
   if (!platePage.selectedMeasurement) return undefined
-  return buildPlateLegend(props.range.min, props.range.max, platePage.heatmapPalette, 20)
+  return buildPlateLegend(props.range.min, props.range.max, platePage.heatmapPalette, LEGEND_STEPS)
 })
 
 /**
@@ -25,10 +29,10 @@ const legendColors = computed(() => {
  * stands for the wells beyond it: "≥ 1934.0", "≤ 33.0".
  */
 const stepLabel = (value: number, index: number): string => {
-  if (![0, 5, 10, 15, 20].includes(index)) return ' '
+  if (index % LABEL_EVERY !== 0) return ' '
   const text = value.toFixed(1)
   if (index === 0 && props.range.upperClipped) return `≥ ${text}`
-  if (index === 20 && props.range.lowerClipped) return `≤ ${text}`
+  if (index === LEGEND_STEPS && props.range.lowerClipped) return `≤ ${text}`
   return text
 }
 </script>

@@ -22,15 +22,18 @@ export type HeatmapRange = {
 
 /**
  * The range of the colour scale of one measurement at one time point, from the
- * statistics the server keeps (of a plate, or of all plates of an experiment).
+ * statistics the server keeps of a plate or of all plates of an experiment
+ * (`overall_stats`, by measurement).
  *
  * Example: min 33, max 126340, median 734, MAD 400, `robust` -> `{ min: 33, max: 1934, lowerClipped: false, upperClipped: true }`
  */
 export const getHeatmapRange = (
-  stats: PlateStats | undefined,
+  statsByLabel: Record<string, PlateStats> | undefined,
+  label: string | null,
   timestampIndex: number,
   scale: HeatmapScale,
 ): HeatmapRange => {
+  const stats = label ? statsByLabel?.[label] : undefined
   const min = getStatsSeriesValue(stats?.min, timestampIndex) ?? 0
   const max = getStatsSeriesValue(stats?.max, timestampIndex) ?? 0
   const fullRange = { min, max, lowerClipped: false, upperClipped: false }

@@ -417,19 +417,13 @@
       }
     },
     "background_correction": {
-      "title": "Background correction",
-      "description": "The median or mean of the reference wells is subtracted from every other well of this plate, at each time point. The result is saved as a new measurement of the plate; the reference wells stay empty.",
-      "measurement": "Measurement",
       "reference_type": "Reference wells",
       "method": "Background",
       "methods": {
         "median": "median",
         "mean": "mean"
       },
-      "apply_button": "Correct",
-      "success": "Saved as {label}",
       "heatmap_title": "Background corrected: {label}",
-      "formula_caption": "Calculated with this formula:",
       "formula": "corrected value = (value of the well) - {method}(values of the {reference} wells)",
       "formula_note": "Calculated separately for each time point. The {reference} wells are left empty."
     },
@@ -460,7 +454,11 @@
       "activity_title": "%Activity: {label}",
       "activity_formula": "%Activity = 100 · (value of the well − median({positive} wells)) / (median({negative} wells) − median({positive} wells))",
       "activity_formula_numbers": "= 100 · (value of the well − {positiveMedian}) / ({negativeMedian} − {positiveMedian})",
-      "activity_note": "{negative} wells = 100 %, {positive} wells = 0 %. Calculated from {source}, separately for each time point. The {negative} wells are left empty."
+      "activity_note": "{negative} wells = 100 %, {positive} wells = 0 %. Calculated from {source}, separately for each time point. The {negative} wells are left empty.",
+      "measurement": "Measurement",
+      "apply_button": "Calculate",
+      "success": "Saved as {label}",
+      "formula_caption": "Calculated with this formula:"
     }
   },
   "messages_page": {

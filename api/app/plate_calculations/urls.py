@@ -1,6 +1,6 @@
 from django.urls import path
 
-from background_correction.views import (
+from plate_calculations.views import (
     correct_plate_background,
     log10_plate_measurement,
     percent_activity_of_plate,
@@ -8,7 +8,7 @@ from background_correction.views import (
 
 urlpatterns = [
     path(
-        "plates/<int:plate_id>/",
+        "plates/<int:plate_id>/background_correction/",
         correct_plate_background,
         name="correct_plate_background",
     ),

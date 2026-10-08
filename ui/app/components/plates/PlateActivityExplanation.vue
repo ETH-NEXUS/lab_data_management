@@ -1,8 +1,9 @@
 <script setup lang="ts">
 import { computed } from 'vue'
-import type { ActivityDataset } from '~/types/backgroundCorrection'
+import PlateDatasetSummary from '~/components/plates/PlateDatasetSummary.vue'
 import type { Plate } from '~/types/lab'
-import { formatSummaryNumber, getWellTypeMedian } from '~/utils/plateDatasets'
+import type { ActivityDataset } from '~/types/plateCalculations'
+import { formatSummaryNumber, getWellTypeStatistic } from '~/utils/plateDatasets'
 
 /**
  * How the %Activity shown in the heatmap was calculated, with the numbers of
@@ -16,26 +17,30 @@ const props = defineProps<{
 
 const { t } = useI18n()
 
-const negativeMedian = computed(() =>
-  getWellTypeMedian(props.plate, props.dataset.source, props.dataset.negativeType, props.timestampIndex),
-)
-const positiveMedian = computed(() =>
-  getWellTypeMedian(props.plate, props.dataset.source, props.dataset.positiveType, props.timestampIndex),
-)
+const medianOf = (wellType: string) =>
+  getWellTypeStatistic(props.plate, props.dataset.source, wellType, 'median', props.timestampIndex)
 
-const names = computed(() => ({
+// The parameters of the texts, e.g. { negative: 'N', negativeMedian: '2958', ... }
+const formulaParams = computed(() => ({
   negative: props.dataset.negativeType,
   positive: props.dataset.positiveType,
   source: props.dataset.source,
-  negativeMedian: formatSummaryNumber(negativeMedian.value),
-  positiveMedian: formatSummaryNumber(positiveMedian.value),
+  negativeMedian: formatSummaryNumber(medianOf(props.dataset.negativeType)),
+  positiveMedian: formatSummaryNumber(medianOf(props.dataset.positiveType)),
 }))
 </script>
 
 <template>
-  <div class="my-1 space-y-0.5 text-sm text-slate-700 italic">
-    <p>{{ t('plates.calculations.activity_formula', names) }}</p>
-    <p>{{ t('plates.calculations.activity_formula_numbers', names) }}</p>
-    <p class="text-xs text-slate-500">{{ t('plates.calculations.activity_note', names) }}</p>
+  <div class="mt-3">
+    <h4 class="mb-1 font-medium text-slate-800">
+      {{ t('plates.calculations.activity_title', { label: props.dataset.label }) }}
+    </h4>
+    <p class="text-sm text-slate-600">{{ t('plates.calculations.formula_caption') }}</p>
+    <div class="my-1 space-y-0.5 text-sm text-slate-700 italic">
+      <p>{{ t('plates.calculations.activity_formula', formulaParams) }}</p>
+      <p>{{ t('plates.calculations.activity_formula_numbers', formulaParams) }}</p>
+      <p class="text-xs text-slate-500">{{ t('plates.calculations.activity_note', formulaParams) }}</p>
+    </div>
+    <PlateDatasetSummary :plate="props.plate" :label="props.dataset.label" :timestamp-index="props.timestampIndex" />
   </div>
 </template>

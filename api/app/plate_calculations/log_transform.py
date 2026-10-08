@@ -9,12 +9,12 @@ import math
 
 from rest_framework.exceptions import ValidationError
 
-from background_correction.plate_measurements import (
+from core.models import Measurement, Plate
+from plate_calculations.plate_measurements import (
     check_label_length,
     replace_measurements,
     values_by_time_point,
 )
-from core.models import Measurement, Plate
 
 
 def log10_label(label: str) -> str:

@@ -13,12 +13,14 @@ import statistics
 
 from rest_framework.exceptions import ValidationError
 
-from background_correction.plate_measurements import (
+from core.models import Measurement, Plate
+from plate_calculations.plate_measurements import (
     check_label_length,
     replace_measurements,
     values_by_time_point,
+    values_of_wells,
+    well_ids_of_type,
 )
-from core.models import Measurement, Plate
 
 
 def activity_label(label: str, negative_type: str, positive_type: str) -> str:
@@ -27,25 +29,23 @@ def activity_label(label: str, negative_type: str, positive_type: str) -> str:
 
 
 def percent_activity(
-    values: dict[int, float], negative_well_ids: set[int], positive_well_ids: set[int]
+    values: dict[int, float],
+    negative_well_ids: set[int],
+    negative_median: float,
+    positive_median: float,
 ) -> dict[int, float]:
     """
     The activity of every well but the negative controls, by well id.
 
-    values = {11: 100.0, 12: 300.0, 21: 0.0, 22: 20.0, 31: 55.0},
-    negative = {11, 12} (median 200), positive = {21, 22} (median 10)
-    -> {21: -5.26..., 22: 5.26..., 31: 23.68...}
+    values = {11: 300.0, 21: 0.0, 31: 105.0}, negative = {11},
+    negative_median = 200, positive_median = 10 -> {21: -5.26..., 31: 50.0}
     """
-    negative = statistics.median(
-        value for well_id, value in values.items() if well_id in negative_well_ids
-    )
-    positive = statistics.median(
-        value for well_id, value in values.items() if well_id in positive_well_ids
-    )
     activity = {}
     for well_id, value in values.items():
         if well_id not in negative_well_ids:
-            activity[well_id] = 100 * (value - positive) / (negative - positive)
+            activity[well_id] = (
+                100 * (value - positive_median) / (negative_median - positive_median)
+            )
     return activity
 
 
@@ -56,35 +56,29 @@ def activity_of_plate(
     new_label = activity_label(label, negative_type, positive_type)
     check_label_length(new_label)
     values = values_by_time_point(plate, label)
-
-    well_ids = {}
-    for well_type in [negative_type, positive_type]:
-        well_ids[well_type] = set(
-            plate.wells.filter(type__name=well_type).values_list("id", flat=True)
-        )
+    negative_well_ids = well_ids_of_type(plate, negative_type)
+    positive_well_ids = well_ids_of_type(plate, positive_type)
 
     new_measurements = []
     for measured_at, well_values in values.items():
-        for well_type in [negative_type, positive_type]:
-            if not well_ids[well_type].intersection(well_values.keys()):
-                raise ValidationError(
-                    f'The plate {plate.barcode} has no "{well_type}" wells with a '
-                    f'value of "{label}" measured at {measured_at}.'
-                )
-        negative_values = [
-            well_values[i] for i in well_ids[negative_type] if i in well_values
-        ]
-        positive_values = [
-            well_values[i] for i in well_ids[positive_type] if i in well_values
-        ]
+        negative_median = statistics.median(
+            values_of_wells(
+                plate, label, negative_type, negative_well_ids, well_values, measured_at
+            )
+        )
+        positive_median = statistics.median(
+            values_of_wells(
+                plate, label, positive_type, positive_well_ids, well_values, measured_at
+            )
+        )
         # Without a difference between the controls there is no scale
-        if statistics.median(negative_values) == statistics.median(positive_values):
+        if negative_median == positive_median:
             raise ValidationError(
                 f'The medians of the "{negative_type}" and "{positive_type}" wells are '
                 f"the same at {measured_at}, so there is no %Activity to calculate."
             )
         activity = percent_activity(
-            well_values, well_ids[negative_type], well_ids[positive_type]
+            well_values, negative_well_ids, negative_median, positive_median
         )
         for well_id, value in activity.items():
             new_measurements.append(

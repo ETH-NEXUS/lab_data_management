@@ -8,12 +8,16 @@ const props = defineProps<{
   well: Well | WellDetails | undefined
   row: number
   col: number
+  // The measurement of the heatmap, if not the one selected on the page, e.g. 'Lum1_bc_R_median'
+  measurementLabel?: string | null
 }>()
 
 const plateViewStore = usePlateViewStore()
 
+const shownMeasurement = computed(() => props.measurementLabel ?? plateViewStore.selectedMeasurement)
+
 const measurement = (well: WellDetails) => {
-  const selectedMeasurement = plateViewStore.selectedMeasurement
+  const selectedMeasurement = shownMeasurement.value
   const selectedTimestampIdx = plateViewStore.selectedTimestampIdx
 
   if (!selectedMeasurement || !well.measurements) {
@@ -66,9 +70,9 @@ const tooltipText = computed(() => {
     lines.push(...compoundLabels.value)
   }
 
-  if (plateViewStore.selectedMeasurement) {
+  if (shownMeasurement.value) {
     lines.push(t('label.measurements'))
-    lines.push(`${plateViewStore.selectedMeasurement}: ${measurementValue.value ?? 'N/A'}`)
+    lines.push(`${shownMeasurement.value}: ${measurementValue.value ?? 'N/A'}`)
   }
 
   return lines.join('\n')

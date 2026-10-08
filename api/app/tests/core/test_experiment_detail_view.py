@@ -21,6 +21,7 @@ from core.models import (
 )
 
 FIRST_READ = datetime(2026, 10, 7, 10, 0)
+MIDDLE_READ = datetime(2026, 10, 7, 11, 0)
 SECOND_READ = datetime(2026, 10, 7, 12, 0)
 
 
@@ -91,3 +92,25 @@ class ExperimentOverallStatsTest(TestCase):
             hours = [datetime.fromisoformat(text).hour for text in timestamps]
             self.assertEqual(sorted(hours), hours)
             self.assertEqual(2, len(hours))
+
+    def test_a_read_of_only_one_well_type_keeps_the_time_points_in_order(self):
+        # Well 0 (C) is read at 10:00 and 12:00, well 1 (N1) also at 11:00
+        self.plate_with_values(
+            "SP_1",
+            {("Lum", FIRST_READ): [100, 200], ("Lum", SECOND_READ): [300, 400]},
+        )
+        well = Well.objects.get(position=1)
+        well.type = WellType.objects.create(name="N1", description="reference")
+        well.save()
+        Measurement.objects.create(
+            well=well, label="Lum", value=250, measured_at=MIDDLE_READ
+        )
+
+        PlateDetail.refresh()
+
+        details = PlateDetail.objects.get(id=Plate.objects.get(barcode="SP_1").id)
+        hours = [
+            datetime.fromisoformat(text).hour
+            for text in details.measurement_timestamps["Lum"]
+        ]
+        self.assertEqual([10, 11, 12], hours)

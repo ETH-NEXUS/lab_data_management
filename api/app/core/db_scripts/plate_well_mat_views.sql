@@ -60,7 +60,9 @@ CREATE MATERIALIZED VIEW core_platedetail AS
                 experiment_id,
                 MAX(s1.rows) * MAX(s1.cols) AS num_wells,
                 ARRAY_AGG(DISTINCT s2.label ORDER BY s2.label) as measurement_labels,
-                json_merge(COALESCE(JSON_OBJECT_AGG(s2.label, s2.timestamp) FILTER (WHERE s2.label IS NOT NULL), '{}')) AS measurement_timestamps,
+                -- From the overall stats (one sorted list per label), not from the stats per well
+                -- type: well types with different reads would put the time points out of order
+                json_merge(COALESCE(JSON_OBJECT_AGG(s3.label, s3.timestamp) FILTER (WHERE s3.label IS NOT NULL), '{}')) AS measurement_timestamps,
                 json_merge(COALESCE(JSON_OBJECT_AGG(s2.label, JSON_BUILD_OBJECT(well_type, JSON_BUILD_OBJECT('min', s2.min, 'max', s2.max, 'mean', s2.mean, 'median', s2.median, 'std', s2.std, 'mad', s2.mad))) FILTER (WHERE s2.label IS NOT NULL), '{}')) AS stats,
                 json_merge(COALESCE(JSON_OBJECT_AGG(s3.label, JSON_BUILD_OBJECT('min', s3.min, 'max', s3.max, 'mean', s3.mean, 'median', s3.median, 'std', s3.std, 'mad', s3.mad)) FILTER (WHERE s3.label IS NOT NULL), '{}')) AS overall_stats
         FROM (

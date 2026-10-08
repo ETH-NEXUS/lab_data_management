@@ -9,11 +9,10 @@ from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
-from background_correction.calculation import METHODS
-from background_correction.correction import correct_plate
-from background_correction.log_transform import log10_of_plate
-from background_correction.percent_activity import activity_of_plate
 from core.models import Plate
+from plate_calculations.correction import METHODS, correct_plate
+from plate_calculations.log_transform import log10_of_plate
+from plate_calculations.percent_activity import activity_of_plate
 
 
 class CorrectionSettingsSerializer(serializers.Serializer):
@@ -56,8 +55,8 @@ class Log10SettingsSerializer(serializers.Serializer):
 @permission_classes([IsAuthenticated])
 def log10_plate_measurement(request, plate_id: int):
     """
-    Saves the log10 of a measurement of the plate; values of 0 or below are
-    left out and counted.
+    Saves the log10 of a measurement of the plate; wells with a value of 0 or
+    below are left empty and counted.
 
     Accepted data example:
     {"label": "Lum1"}

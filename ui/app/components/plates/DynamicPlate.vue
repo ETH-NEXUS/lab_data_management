@@ -3,7 +3,7 @@ import { computed, watch } from 'vue'
 import ColorLegend from '~/components/plates/ColorLegend.vue'
 import HeatMapSettings from '~/components/plates/HeatMapSettings.vue'
 import HeatmapScaleSelect from '~/components/plates/HeatmapScaleSelect.vue'
-import PlateBackgroundCorrectionSection from '~/components/plates/PlateBackgroundCorrectionSection.vue'
+import PlateCalculationsSection from '~/components/plates/PlateCalculationsSection.vue'
 import PlateStats from '~/components/plates/PlateStats.vue'
 import PlateTable from '~/components/plates/PlateTable.vue'
 import { usePlateViewStore } from '~/stores/plateView'
@@ -91,11 +91,14 @@ const ssmd = computed(() =>
   ),
 )
 
-const heatmapRange = computed(() => {
-  const label = plateViewStore.selectedMeasurement
-  const stats = label ? props.plate.details.overall_stats[label] : undefined
-  return getHeatmapRange(stats, plateViewStore.selectedTimestampIdx, plateViewStore.heatmapScale)
-})
+const heatmapRange = computed(() =>
+  getHeatmapRange(
+    props.plate.details.overall_stats,
+    plateViewStore.selectedMeasurement,
+    plateViewStore.selectedTimestampIdx,
+    plateViewStore.heatmapScale,
+  ),
+)
 
 const wellContentOptions = computed(() => [
   { label: t('plates.dynamic.controls.hr_position'), value: 'hr_position' },
@@ -237,7 +240,7 @@ const onWellSelected = (wellInfo: WellInfo): void => {
       </div>
     </div>
 
-    <PlateBackgroundCorrectionSection
+    <PlateCalculationsSection
       v-if="!isMinimalView && measurementOptions.length > 0"
       :plate="props.plate"
       @well-selected="onWellSelected"

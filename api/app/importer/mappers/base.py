@@ -102,6 +102,7 @@ class BaseMapper:
             message(f"No files found that match {glob_pattern}.", "warning", room_name)
 
         failed_files = []
+        skipped_files = []
         for filename in filenames:
             message(f"Processing file {filename}...", "info", room_name)
             self.stored_files = []
@@ -111,6 +112,7 @@ class BaseMapper:
                     kwargs.update({"filename": filename})
                     self.map(data, **kwargs)
             except SkipFile as reason:
+                skipped_files.append(filename)
                 message(f"{filename} was skipped: {reason}", "warning", room_name)
             except Exception as error:
                 self.delete_stored_files()
@@ -123,6 +125,14 @@ class BaseMapper:
                 )
                 if not isinstance(error, CommandError):
                     logger.exception(f"Mapping {filename} failed")
+
+        # E.g. the wrong file name format was chosen: then nothing at all was mapped
+        if filenames and len(skipped_files) == len(filenames):
+            message(
+                f"Nothing was mapped: every file was skipped ({len(filenames)}).",
+                "error",
+                room_name,
+            )
 
         # With a single file, its own error already says everything
         if len(filenames) > 1 and failed_files:

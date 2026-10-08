@@ -59,7 +59,7 @@ urlpatterns = [
     re_path(r"^docs/(?P<uri>.*)$", DocsView.as_view(), name="docs"),
     path("api/harvest/", include("harvest.urls")),
     path("api/analysis/", include("analysis.urls")),
-    path("api/background_correction/", include("background_correction.urls")),
+    path("api/plate_calculations/", include("plate_calculations.urls")),
     re_path(
         "(?P<path>notebook/.*)$",
         JupyterProxyView.as_view(),

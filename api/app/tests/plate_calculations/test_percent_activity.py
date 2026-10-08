@@ -9,7 +9,7 @@ from django.contrib.auth.models import User
 from django.test import SimpleTestCase, TestCase
 from django.urls import reverse
 
-from background_correction.percent_activity import percent_activity
+from plate_calculations.percent_activity import percent_activity
 from core.models import (
     Experiment,
     Measurement,
@@ -29,7 +29,7 @@ class PercentActivityTest(SimpleTestCase):
         # Medians: N 200, P 10
         values = {11: 100.0, 12: 300.0, 21: 0.0, 22: 20.0, 31: 105.0}
 
-        activity = percent_activity(values, {11, 12}, {21, 22})
+        activity = percent_activity(values, {11, 12}, 200.0, 10.0)
 
         self.assertEqual([21, 22, 31], sorted(activity))
         self.assertAlmostEqual(-100 * 10 / 190, activity[21])

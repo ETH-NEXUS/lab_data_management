@@ -164,6 +164,24 @@ class BackgroundCorrectionViewTest(TestCase):
 
         self.assertEqual({"label": "Lum _bc_Nref_median"}, response.json())
 
+    def test_a_result_without_values_is_refused_and_keeps_the_last_one(self):
+        self.login()
+        self.correct({"label": "Lum", "reference_type": "Nref", "method": "median"})
+        # Only the reference wells still have a value, so nothing is left to correct
+        Measurement.objects.filter(label="Lum").exclude(
+            well__type__name="Nref"
+        ).delete()
+
+        response = self.correct(
+            {"label": "Lum", "reference_type": "Nref", "method": "median"}
+        )
+
+        self.assertEqual(400, response.status_code)
+        self.assertIn("gets a value", response.json()[0])
+        self.assertEqual(
+            6, Measurement.objects.filter(label="Lum_bc_Nref_median").count()
+        )
+
     def test_unknown_measurement_and_method_are_refused(self):
         self.login()
 

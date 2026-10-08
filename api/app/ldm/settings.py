@@ -68,7 +68,7 @@ INSTALLED_APPS = [
     "problems",
     "inventory",
     "analysis",
-    "background_correction",
+    "plate_calculations",
 ]
 
 
