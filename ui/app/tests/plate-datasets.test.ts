@@ -28,7 +28,8 @@ const plate = {
   ],
   details: {
     measurement_labels: ['Lum1', 'Lum1_log10', 'Lum1_activity_N_P'],
-    measurement_timestamps: {},
+    // One read of each measurement
+    measurement_timestamps: { Lum1: ['2026-09-30T15:48:08'], Lum1_log10: ['2026-09-30T15:48:08'] },
     stats: { Lum1: { N: stats(2958), P: stats(673) }, Lum1_log10: { R: stats(2), N: stats(3) } },
     overall_stats: { Lum1_log10: { min: [2], max: [3], mean: [2.5], median: [2.5], std: [0.5], mad: [0.5] } },
   },
@@ -62,6 +63,21 @@ describe('plate datasets', () => {
     expect(formatSummaryNumber(2.86634)).toBe('2.866')
     expect(formatSummaryNumber(734)).toBe('734')
     expect(formatSummaryNumber(null)).toBe('–')
+  })
+
+  it('does not take a statistic of a well type that misses a read of the plate', () => {
+    // Two reads of the plate, but the R wells only have a value in one of them
+    const twoReads = {
+      ...plate,
+      details: {
+        ...plate.details,
+        measurement_timestamps: { Lum1: ['2026-09-30T15:48:08', '2026-09-30T17:00:00'] },
+        stats: { Lum1: { N: { ...stats(2958), median: [2958, 3100] }, R: stats(734) } },
+      },
+    } as unknown as Plate
+
+    expect(getWellTypeStatistic(twoReads, 'Lum1', 'N', 'median', 1)).toBe(3100)
+    expect(getWellTypeStatistic(twoReads, 'Lum1', 'R', 'median', 0)).toBeNull()
   })
 
   it('finds how a %Activity was calculated', () => {

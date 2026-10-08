@@ -10,6 +10,7 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
 from core.models import Plate
+from core.utils.plates.archive_guard import ensure_plate_can_be_changed
 from plate_calculations.correction import METHODS, correct_plate
 from plate_calculations.log_transform import log10_of_plate
 from plate_calculations.percent_activity import activity_of_plate
@@ -34,6 +35,7 @@ def correct_plate_background(request, plate_id: int):
     {"label": "Lum_CTG_bc_N1_median"}
     """
     plate = get_object_or_404(Plate, id=plate_id)
+    ensure_plate_can_be_changed(plate)
     settings = CorrectionSettingsSerializer(data=request.data)
     settings.is_valid(raise_exception=True)
 
@@ -64,6 +66,7 @@ def log10_plate_measurement(request, plate_id: int):
     {"label": "Lum1_log10", "skipped": 2}
     """
     plate = get_object_or_404(Plate, id=plate_id)
+    ensure_plate_can_be_changed(plate)
     settings = Log10SettingsSerializer(data=request.data)
     settings.is_valid(raise_exception=True)
 
@@ -97,6 +100,7 @@ def percent_activity_of_plate(request, plate_id: int):
     {"label": "Lum1_activity_N_P"}
     """
     plate = get_object_or_404(Plate, id=plate_id)
+    ensure_plate_can_be_changed(plate)
     settings = ActivitySettingsSerializer(data=request.data)
     settings.is_valid(raise_exception=True)
 

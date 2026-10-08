@@ -13,6 +13,7 @@ from plate_calculations.log_transform import wells_without_log10
 from core.models import (
     Experiment,
     Measurement,
+    MeasurementAssignment,
     Plate,
     PlateDetail,
     PlateDimension,
@@ -96,6 +97,32 @@ class Log10ViewTest(TestCase):
         self.log10({"label": "Lum1"})
 
         self.assertEqual(2, Measurement.objects.filter(label="Lum1_log10").count())
+
+    def test_an_imported_measurement_of_the_same_name_is_not_replaced(self):
+        self.login()
+        assignment = MeasurementAssignment.objects.create(
+            plate=self.plate, filename="RKS_1_log10.asc"
+        )
+        Measurement.objects.create(
+            well=self.wells[0],
+            label="Lum1_log10",
+            value=7.0,
+            measured_at=FIRST_READ,
+            measurement_assignment=assignment,
+        )
+
+        response = self.log10({"label": "Lum1"})
+
+        self.assertEqual(400, response.status_code)
+        self.assertIn('imported measurement "Lum1_log10"', response.json()[0])
+        self.assertEqual(
+            [7.0],
+            list(
+                Measurement.objects.filter(label="Lum1_log10").values_list(
+                    "value", flat=True
+                )
+            ),
+        )
 
     def test_a_measurement_without_values_above_0_is_refused(self):
         self.login()

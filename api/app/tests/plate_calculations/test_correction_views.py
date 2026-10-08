@@ -10,6 +10,8 @@ from django.contrib.auth.models import User
 from django.test import TestCase
 from django.urls import reverse
 
+from compoundlib.models import CompoundLibrary
+
 from core.models import (
     Experiment,
     Measurement,
@@ -196,6 +198,34 @@ class BackgroundCorrectionViewTest(TestCase):
         self.assertIn('no measurement "Fluo"', unknown_label.json()[0])
         self.assertEqual(400, unknown_method.status_code)
         self.assertIn("method", unknown_method.json())
+
+    def test_an_archived_library_plate_is_not_changed(self):
+        self.login()
+        # A plate belongs to a library or to an experiment, not to both
+        self.plate.experiment = None
+        self.plate.library = CompoundLibrary.objects.create(name="Library")
+        self.plate.archived = True
+        self.plate.save()
+
+        responses = [
+            self.correct(
+                {"label": "Lum", "reference_type": "Nref", "method": "median"}
+            ),
+            self.client.post(
+                reverse("log10_plate_measurement", args=[self.plate.id]),
+                {"label": "Lum"},
+                content_type="application/json",
+            ),
+            self.client.post(
+                reverse("percent_activity_of_plate", args=[self.plate.id]),
+                {"label": "Lum", "negative_type": "Nref", "positive_type": "P"},
+                content_type="application/json",
+            ),
+        ]
+
+        self.assertEqual([400, 400, 400], [r.status_code for r in responses])
+        self.assertIn("is archived", responses[0].json()["detail"])
+        self.assertFalse(Measurement.objects.exclude(label="Lum").exists())
 
     def test_unknown_plate_is_not_found(self):
         self.login()

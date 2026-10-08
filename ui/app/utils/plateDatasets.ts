@@ -164,7 +164,7 @@ export const summarizeDataset = (plate: Plate, label: string, timestampIndex: nu
 
 /**
  * The median or mean of one well type of a measurement at one time point,
- * e.g. the median of the R wells of Lum1.
+ * e.g. the median of the R wells of Lum1, or null if it is not known.
  */
 export const getWellTypeStatistic = (
   plate: Plate,
@@ -173,7 +173,12 @@ export const getWellTypeStatistic = (
   statistic: 'median' | 'mean',
   timestampIndex: number,
 ): number | null => {
-  return getStatsSeriesValue(plate.details.stats[label]?.[wellType]?.[statistic], timestampIndex)
+  const series = plate.details.stats[label]?.[wellType]?.[statistic]
+  const plateReads = plate.details.measurement_timestamps[label]?.length
+  // A well type without a value in some read has fewer entries than the plate has
+  // reads, so the index of a read of the plate would point to another read in it
+  if (!series || plateReads === undefined || series.length !== plateReads) return null
+  return getStatsSeriesValue(series, timestampIndex)
 }
 
 /**

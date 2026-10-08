@@ -114,3 +114,16 @@ class ExperimentOverallStatsTest(TestCase):
             for text in details.measurement_timestamps["Lum"]
         ]
         self.assertEqual([10, 11, 12], hours)
+
+    def test_plates_with_the_same_values_all_count(self):
+        # Two plates with the same values and a third one with other values:
+        # every value of every plate is in the stats of the experiment
+        self.plate_with_values("SP_1", {("Lum", FIRST_READ): [100, 200]})
+        self.plate_with_values("SP_2", {("Lum", FIRST_READ): [100, 200]})
+        self.plate_with_values("SP_3", {("Lum", FIRST_READ): [1000, 1000]})
+
+        ExperimentDetail.refresh()
+
+        stats = ExperimentDetail.objects.get(id=self.experiment.id).overall_stats
+        # The mean of 100, 200, 100, 200, 1000, 1000 (and not of 100, 200, 1000, 1000)
+        self.assertEqual([2600 / 6], stats["Lum"]["mean"])

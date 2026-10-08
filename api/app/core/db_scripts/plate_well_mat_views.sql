@@ -212,7 +212,8 @@ CREATE MATERIALIZED VIEW core_experimentdetail AS
                                         GROUP BY experiment_id, plate_id, label, wt.name, measured_at
                                         ORDER BY label, measurement_idx
                                 ) s7
-                                GROUP BY experiment_id, label, well_type, measurement_idx, values
+                                -- Per plate too: plates with the same values would count only once
+                                GROUP BY experiment_id, plate_id, label, well_type, measurement_idx, values
                         ) s8
                         GROUP BY experiment_id, label, well_type, measurement_idx
                 ) s9
@@ -255,6 +256,7 @@ CREATE MATERIALIZED VIEW core_experimentdetail AS
                                                 label,
                                                 measured_at,
                                                 experiment_id,
+                                                plate_id,
                                                 -- The n-th read of this label on the plate: counted per label, or another
                                                 -- label of the plate would shift the reads of this one
                                                 ROW_NUMBER() OVER (PARTITION BY plate_id, label ORDER BY measured_at) as measurement_idx,
@@ -266,7 +268,8 @@ CREATE MATERIALIZED VIEW core_experimentdetail AS
                                         GROUP BY experiment_id, plate_id, label, measured_at
                                         ORDER BY label, measurement_idx
                                 ) s4
-                                GROUP BY experiment_id, label, measurement_idx, values
+                                -- Per plate too: plates with the same values would count only once
+                                GROUP BY experiment_id, plate_id, label, measurement_idx, values
                         ) s5
                         GROUP BY experiment_id, label, measurement_idx
                 ) s3

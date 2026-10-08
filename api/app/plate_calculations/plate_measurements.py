@@ -77,17 +77,25 @@ def replace_measurements(
     plate: Plate, new_label: str, new_measurements: list[Measurement]
 ) -> None:
     """
-    Saves the new measurement of the plate instead of an earlier one of the same
-    label, and refreshes the views the plate page reads. A result without a
-    single value is refused: it would only delete the earlier one.
+    Saves the new measurement of the plate instead of an earlier calculation of the
+    same label, and refreshes the views the plate page reads. Refused: a result
+    without a single value (it would only delete the earlier one), and a label of
+    a measurement imported from a file (its values are not calculated here).
     """
     if not new_measurements:
         raise ValidationError(
             f'No well of the plate {plate.barcode} gets a value of "{new_label}".'
         )
+    earlier = Measurement.objects.filter(well__plate=plate, label=new_label)
+    # Only an import links its values to a file
+    if earlier.filter(measurement_assignment__isnull=False).exists():
+        raise ValidationError(
+            f'The plate {plate.barcode} has an imported measurement "{new_label}", '
+            "which a calculation does not replace."
+        )
 
     with transaction.atomic():
-        Measurement.objects.filter(well__plate=plate, label=new_label).delete()
+        earlier.delete()
         Measurement.objects.bulk_create(new_measurements)
 
     PlateDetail.refresh(concurrently=True)
