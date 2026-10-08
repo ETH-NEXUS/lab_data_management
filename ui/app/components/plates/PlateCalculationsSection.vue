@@ -4,6 +4,7 @@ import ColorLegend from '~/components/plates/ColorLegend.vue'
 import HeatmapScaleNote from '~/components/plates/HeatmapScaleNote.vue'
 import PlateCalculationModal from '~/components/plates/PlateCalculationModal.vue'
 import PlateCorrectionExplanation from '~/components/plates/PlateCorrectionExplanation.vue'
+import PlateDatasetSummary from '~/components/plates/PlateDatasetSummary.vue'
 import PlateLog10Explanation from '~/components/plates/PlateLog10Explanation.vue'
 import PlateNormalizationExplanation from '~/components/plates/PlateNormalizationExplanation.vue'
 import PlateTable from '~/components/plates/PlateTable.vue'
@@ -172,9 +173,18 @@ const onCalculated = async (result: PlateCalculationResult): Promise<void> => {
       :timestamp-index="plateViewStore.selectedTimestampIdx"
     />
 
-    <p v-if="!log10Dataset && !normalizedDataset && !correctionDataset" class="mt-2 text-sm text-slate-600">
-      {{ t('plates.calculations.none_yet', { label: plateViewStore.selectedMeasurement ?? '' }) }}
-    </p>
+    <!-- The raw data: what they are, and their medians by well type (e.g. the R wells) -->
+    <div v-if="!log10Dataset && !normalizedDataset && !correctionDataset" class="mt-2 space-y-1">
+      <p class="text-sm text-slate-600">
+        {{ t('plates.calculations.none_yet', { label: plateViewStore.selectedMeasurement ?? '' }) }}
+      </p>
+      <PlateDatasetSummary
+        v-if="plateViewStore.selectedMeasurement"
+        :plate="props.plate"
+        :label="plateViewStore.selectedMeasurement"
+        :timestamp-index="plateViewStore.selectedTimestampIdx"
+      />
+    </div>
 
     <template v-if="selectedCorrection">
       <PlateCorrectionExplanation

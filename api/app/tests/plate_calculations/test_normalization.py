@@ -1,7 +1,8 @@
 """
 The normalization of the R report (Michael's analysis), for every well:
 %Inhibition = (log10(x) - median(log10 N)) / (median(log10 P) - median(log10 N))
-and %Activity = 1 - %Inhibition, as fractions and per time point.
+and %Activity = (1 - %Inhibition) * 100, per time point (%Inhibition as a
+fraction, %Activity in percent).
 """
 
 from datetime import datetime
@@ -110,8 +111,9 @@ class NormalizationViewTest(TestCase):
             self.assertEqual(0.0, inhibition[(0, read)])
             self.assertEqual(1.0, inhibition[(2, read)])
             self.assertAlmostEqual(0.5, inhibition[(4, read)])
-            self.assertEqual(1.0, activity[(0, read)])
-            self.assertAlmostEqual(0.5, activity[(4, read)])
+            self.assertEqual(100.0, activity[(0, read)])
+            self.assertEqual(0.0, activity[(2, read)])
+            self.assertAlmostEqual(50.0, activity[(4, read)])
         self.assertEqual(10, len(inhibition))
         self.assertEqual(10, len(activity))
 

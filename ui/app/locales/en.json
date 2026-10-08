@@ -445,9 +445,9 @@
       "descriptions": {
         "background_correction": "The median or mean of the reference wells is subtracted from every other well of this plate, at each time point. The result is saved as a new measurement of the plate; the reference wells stay empty.",
         "log10": "The log10 of every well is saved as a new measurement of the plate, e.g. Lum1_log10. A well with a value of 0 or below is left empty.",
-        "normalization": "As in the R report: every well is normalized between the negative and the positive control on the log10 scale. Two new measurements are saved: the %Inhibition (negative control 0, positive control 1) and the %Activity = 1 - %Inhibition. Use the raw readout, e.g. Lum1."
+        "normalization": "As in the R report: every well is normalized between the negative and the positive control on the log10 scale. Two new measurements are saved: the %Inhibition (negative control 0, positive control 1) and the %Activity = (1 - %Inhibition) × 100 (negative control 100, positive control 0). Use the raw readout, e.g. Lum1."
       },
-      "none_yet": "{label}: the values as they are, imported from a file (or made with the measurement calculator of the experiment), not calculated here. With \"Add calculation\" you can calculate new values from them, e.g. their log10.",
+      "none_yet": "{label}: the raw data, the values as they were imported from the plate reader file (or made with the measurement calculator of the experiment), nothing calculated here. Below: the median of every well type at this time point (the middle value: half of the wells are above it, half below). The median of the R wells (the reference) is the background, the signal the test gives on its own; a background correction subtracts it from the other wells. With \"Add calculation\" you can calculate new values from these, e.g. the background-corrected ones.",
       "summary": "{wells} wells · median {median} · min {min} · max {max}",
       "median_by_well_type": "Median by well type:",
       "negative_control": "Negative control (nothing blocks the enzyme)",
@@ -472,15 +472,15 @@
         "activity_title": "%Activity: {label}",
         "inhibition_formula": "%Inhibition = (log10(value of the well) - median(log10 of the {negative} wells)) / (median(log10 of the {positive} wells) - median(log10 of the {negative} wells))",
         "inhibition_formula_numbers": "= (log10(value of the well) - {negativeMedian}) / ({positiveMedian} - {negativeMedian})",
-        "activity_formula": "%Activity = 1 - %Inhibition",
-        "activity_formula_numbers": "= 1 - (log10(value of the well) - {negativeMedian}) / ({positiveMedian} - {negativeMedian})",
+        "activity_formula": "%Activity = (1 - %Inhibition) × 100",
+        "activity_formula_numbers": "= (1 - (log10(value of the well) - {negativeMedian}) / ({positiveMedian} - {negativeMedian})) × 100",
         "step_log": "Every well of {source} gets the log10 of its value (10 → 1, 100 → 2, 1000 → 3).",
         "step_negative": "The {negative} wells are the negative control: nothing blocks the enzyme, it works fully. The median of their log10 values is {negativeMedian}.",
         "step_positive": "The {positive} wells are the positive control: the enzyme is fully blocked. The median of their log10 values is {positiveMedian}.",
         "step_inhibition": "For every well: how far its log10 lies on the way from the {negative} median to the {positive} median. This is the %Inhibition, saved as {inhibitionLabel}.",
-        "step_activity": "%Activity is what is left of the work of the enzyme: 1 minus the %Inhibition, saved as {activityLabel}.",
+        "step_activity": "%Activity is what is left of the work of the enzyme, in percent: 1 minus the %Inhibition, times 100, saved as {activityLabel}.",
         "inhibition_reading": "0 = like {negative} (not inhibited), 1 = like {positive} (fully inhibited), 0.5 = halfway. Below 0 or above 1 = beyond the controls. Fractions, as in the R report: 0.5 means 50 %. Calculated separately for each time point; a well with a value of 0 or below stays empty.",
-        "activity_reading": "1 = like {negative} (the enzyme works fully), 0 = like {positive} (the enzyme is blocked), 0.5 = half of its work. Fractions, as in the R report: 0.5 means 50 %. Calculated separately for each time point; a well with a value of 0 or below stays empty."
+        "activity_reading": "100 = like {negative} (the enzyme works fully), 0 = like {positive} (the enzyme is blocked), 50 = half of its work. Below 0 or above 100 = beyond the controls. In percent. Calculated separately for each time point; a well with a value of 0 or below stays empty."
       },
       "scale_note": {
         "full": "Colours: from the lowest value ({min}) at one end of the palette to the highest ({max}) at the other; every well gets the colour of where its value lies between them. A few extreme wells can take most of the scale; then choose the robust colour scale.",

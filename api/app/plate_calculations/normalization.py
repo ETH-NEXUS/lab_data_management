@@ -3,11 +3,12 @@ Normalization of one measurement of a plate between its controls, as in the R
 report of the lab (Michael's analysis), saved as two new measurements:
 
     %Inhibition = (log10(x) - median(log10 N)) / (median(log10 P) - median(log10 N))
-    %Activity   = 1 - %Inhibition
+    %Activity   = (1 - %Inhibition) * 100
 
 The negative control (N, nothing inhibits the enzyme) has an inhibition of 0 and
-an activity of 1, the positive control (P, fully inhibited) the other way round.
-They are fractions, not percent, like in the report. Every time point is
+an activity of 100, the positive control (P, fully inhibited) an inhibition of 1
+and an activity of 0. The %Inhibition is a fraction like in the report, the
+%Activity is in percent, as the lab asked for. Every time point is
 normalized by the controls of that time point. A well with a value of 0 or below
 has no log10 and is left empty in every read, as in the log10 calculation.
 """
@@ -107,7 +108,7 @@ def normalize_plate(
                 Measurement(
                     well_id=well_id,
                     label=new_activity_label,
-                    value=1 - value,
+                    value=(1 - value) * 100,
                     measured_at=measured_at,
                 )
             )
