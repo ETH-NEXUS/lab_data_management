@@ -70,18 +70,6 @@ const texts = computed(() => {
     positive: positiveType,
     negativeMedian: log10Median(negativeType),
     positiveMedian: log10Median(positiveType),
-    inhibitionLabel: props.dataset.inhibitionLabel,
-    activityLabel: props.dataset.activityLabel,
-  }
-  // The same steps lead to both; %Activity adds the last one
-  const steps = [
-    t('plates.calculations.normalization.step_log', params),
-    t('plates.calculations.normalization.step_negative', params),
-    t('plates.calculations.normalization.step_positive', params),
-    t('plates.calculations.normalization.step_inhibition', params),
-  ]
-  if (kind === 'activity') {
-    steps.push(t('plates.calculations.normalization.step_activity', params))
   }
   return {
     title: t(`plates.calculations.normalization.${kind}_title`, { label: props.dataset.label }),
@@ -89,7 +77,6 @@ const texts = computed(() => {
       t(`plates.calculations.normalization.${kind}_formula`, params),
       t(`plates.calculations.normalization.${kind}_formula_numbers`, params),
     ],
-    steps,
     reading: t(`plates.calculations.normalization.${kind}_reading`, params),
     // Both warnings, if there are any, e.g. "20 well(s) left empty ... The N1 and P controls are not clearly apart ..."
     warning: [skippedWarning(), overlapWarning()].filter(Boolean).join(' ') || undefined,

@@ -444,11 +444,8 @@
       "heatmap_title": "Background corrected: {label}",
       "formula": "corrected value = (value of the well in {source}) - {method}(values of the {reference} wells)",
       "formula_numbers": "= (value of the well) - {value}",
-      "step_background": "The {reference} wells are the reference: the signal the assay gives on its own, without what is measured (the background). Their {method} at this time point is {value}.",
-      "step_subtract": "This background is subtracted from every other well of {source}.",
-      "step_empty": "The {reference} wells stay empty (no colour in the heatmap): after the correction they are not needed.",
-      "reading": "0 = as much signal as the background, above 0 = more signal than the background, below 0 = less signal than the background. Calculated separately for each time point.",
-      "reading_log10": "{source} is in log10 values, and subtracting log10 values means dividing: 0 = as much signal as the background, 0.3 = 2 times as much, 1 = 10 times as much, -0.3 = half of it, -1 = a tenth. Calculated separately for each time point."
+      "reading": "0 = as much signal as the background (the {method} of the {reference} wells), above 0 = more signal, below 0 = less. The {reference} wells stay empty. Calculated separately for each time point.",
+      "reading_log10": "{source} is in log10 values, and subtracting log10 values means dividing: 0 = as much signal as the background (the {method} of the {reference} wells), 0.3 = 2 times as much, 1 = 10 times as much, -0.3 = half of it, -1 = a tenth. The {reference} wells stay empty. Calculated separately for each time point."
     },
     "calculations": {
       "section_title": "Calculations",
@@ -472,8 +469,8 @@
       },
       "descriptions": {
         "background_correction": "The median or mean of the reference wells is subtracted from every other well of this plate, at each time point. The result is saved as a new measurement of the plate; the reference wells stay empty.",
-        "log10": "log10(1 + value) of every well is saved as a new measurement of the plate, e.g. Lum1_log10; 1 is added, as in the R report, so that a well with 0 still gets a value (log10(1) = 0). A well with a value of -1 or below is left empty.",
-        "normalization": "As in the R report: every well is normalized between the negative and the positive control on the log10(1 + value) scale. Two new measurements are saved: the %Inhibition (negative control 0, positive control 1) and the %Activity = (1 - %Inhibition) × 100 (negative control 100, positive control 0). Use the raw readout, e.g. Lum1, not background-corrected values: their values below 0 compress the scale, and wells of -1 or below have no log10 and are left out, controls too."
+        "log10": "log10(1 + value) of every well is saved as a new measurement of the plate, e.g. Lum1_log10; with the 1, a well with 0 still gets a value (log10(1) = 0). A well with a value of -1 or below is left empty.",
+        "normalization": "Every well is normalized between the negative and the positive control on the log10(1 + value) scale. Two new measurements are saved: the %Inhibition (negative control 0, positive control 1) and the %Activity = (1 - %Inhibition) × 100 (negative control 100, positive control 0). Use the raw readout, e.g. Lum1, not background-corrected values: their values below 0 compress the scale, and wells of -1 or below have no log10 and are left out, controls too."
       },
       "summary": "{wells} wells · median {median} · min {min} · max {max}",
       "median_by_well_type": "Median by well type:",
@@ -485,7 +482,6 @@
       "success": "Saved as {label}",
       "success_two": "Saved as {label} and {activityLabel}",
       "formula_caption": "Calculated with this formula:",
-      "steps_caption": "Step by step:",
       "reading_caption": "How to read the values:",
       "read_caption": "Numbers of read {number} of {total} ({time}), the time point chosen in \"Select timestamp\".",
       "raw": {
@@ -500,9 +496,6 @@
       "log10": {
         "title": "log10: {label}",
         "formula": "log10 value = log10(1 + value of the well in {source})",
-        "step_log": "Every well of {source} gets the log10 of 1 + its value: how many times 10 is multiplied to reach it (1 + 9 → 1, 1 + 99 → 2, 1 + 999 → 3). 1 is added, as in the R report, so that a well with 0 still gets a value (log10(1) = 0).",
-        "step_squeeze": "This squeezes big differences: here the values from {rawMin} to {rawMax} become {logMin} to {logMax}, so the heatmap also shows the differences between ordinary wells.",
-        "step_empty": "A value of -1 or below has no log10(1 + value): such a well stays empty.",
         "reading": "one more means about 10 times more signal, one less about 10 times less (3 → 999, 2 → 99).",
         "skipped": "{count} well(s) left empty: a value of -1 or below has no log10(1 + value)."
       },
@@ -513,12 +506,7 @@
         "inhibition_formula_numbers": "= (log10(1 + value of the well) - {negativeMedian}) / ({positiveMedian} - {negativeMedian})",
         "activity_formula": "%Activity = (1 - %Inhibition) × 100",
         "activity_formula_numbers": "= (1 - (log10(1 + value of the well) - {negativeMedian}) / ({positiveMedian} - {negativeMedian})) × 100",
-        "step_log": "Every well of {source} gets the log10 of 1 + its value (1 + 9 → 1, 1 + 99 → 2, 1 + 999 → 3); 1 is added, as in the R report, so that a well with 0 still gets a value (log10(1) = 0).",
-        "step_negative": "The {negative} wells are the negative control, the reference for \"no effect\" (e.g. only the solvent, DMSO): the signal without the effect. The median of their log10(1 + value) is {negativeMedian}.",
-        "step_positive": "The {positive} wells are the positive control, the reference for \"full effect\" (e.g. a known reference compound). The median of their log10(1 + value) is {positiveMedian}.",
-        "step_inhibition": "For every well: how far its log10 lies on the way from the {negative} median to the {positive} median, i.e. which share of the full effect it shows. This is the %Inhibition, saved as {inhibitionLabel}.",
-        "step_activity": "%Activity is what is left of the signal without the effect, in percent: 1 minus the %Inhibition, times 100, saved as {activityLabel}.",
-        "inhibition_reading": "0 = like {negative} (no effect), 1 = like {positive} (full effect), 0.5 = half of the full effect. Below 0 or above 1 = beyond the controls. Fractions, as in the R report: 0.5 means 50 %. Calculated separately for each time point; a well with a value of -1 or below stays empty. The colours of the heatmap run from the lowest to the highest value of this plate (see the legend), not fixed from 0 to 1.",
+        "inhibition_reading": "0 = like {negative} (no effect), 1 = like {positive} (full effect), 0.5 = half of the full effect. Below 0 or above 1 = beyond the controls. Fractions: 0.5 means 50 %. Calculated separately for each time point; a well with a value of -1 or below stays empty. The colours of the heatmap run from the lowest to the highest value of this plate (see the legend), not fixed from 0 to 1.",
         "activity_reading": "100 = like {negative} (the signal without the effect), 0 = like {positive} (full effect), 50 = half of the full effect. Below 0 or above 100 = beyond the controls. In percent. Calculated separately for each time point; a well with a value of -1 or below stays empty. The colours of the heatmap run from the lowest to the highest value of this plate (see the legend), not fixed from 0 to 100.",
         "skipped_controls": "Among them {negativeCount} {negative} and {positiveCount} {positive} control well(s): the medians of the controls are taken without them, so the two ends of the scale (the values of the controls) can be off. Normalize the raw readout (not background-corrected values) to keep all controls.",
         "controls_overlap": "The {negative} and {positive} controls are not clearly apart (z' = {zPrime} on these values): the spread of their wells is larger than the distance between their medians, so these values are not reliable. Check that the right well types are chosen as the controls."

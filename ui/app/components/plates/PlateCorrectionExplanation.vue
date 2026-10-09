@@ -47,11 +47,6 @@ const texts = computed(() => {
       t('plates.background_correction.formula', params),
       t('plates.background_correction.formula_numbers', params),
     ],
-    steps: [
-      t('plates.background_correction.step_background', params),
-      t('plates.background_correction.step_subtract', params),
-      t('plates.background_correction.step_empty', params),
-    ],
     reading: t(
       isOfLog10 ? 'plates.background_correction.reading_log10' : 'plates.background_correction.reading',
       params,

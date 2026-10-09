@@ -6,12 +6,12 @@ import type { Plate } from '~/types/lab'
 /**
  * What a heatmap shows, in plain words, below it: the title, which read the
  * numbers are of, what the values are, the formula (and the formula with the
- * numbers of the shown time point), the steps, how to read the values, and their
- * statistics. Raw data have no formula and no steps.
+ * numbers of the shown time point), how to read the values, and their
+ * statistics. Raw data have no formula.
  *
  * Accepted props example:
  * - `{ title: 'log10: Lum1_log10', formulas: ['log10 value = log10(1 + value of the well in Lum1)'],
- *     steps: ['Every well ...'], reading: '+1 means 10 times more signal ...', label: 'Lum1_log10' }`
+ *     reading: 'one more means about 10 times more signal ...', label: 'Lum1_log10' }`
  */
 const props = withDefaults(
   defineProps<{
@@ -22,12 +22,11 @@ const props = withDefaults(
     // What the values are, e.g. for raw data
     description?: string
     formulas?: string[]
-    steps?: string[]
     reading: string
     // e.g. how many wells were left empty
     warning?: string
   }>(),
-  { description: undefined, formulas: () => [], steps: () => [], warning: undefined },
+  { description: undefined, formulas: () => [], warning: undefined },
 )
 
 const { t } = useI18n()
@@ -56,12 +55,6 @@ const readCaption = computed(() => {
       <div class="w-fit rounded-md bg-slate-100 px-3 py-2 font-mono text-sm text-slate-800 italic">
         <p v-for="formula in props.formulas" :key="formula">{{ formula }}</p>
       </div>
-    </template>
-    <template v-if="props.steps.length > 0">
-      <p class="text-sm text-slate-600">{{ t('plates.calculations.steps_caption') }}</p>
-      <ol class="list-decimal space-y-0.5 pl-6 text-sm text-slate-700">
-        <li v-for="step in props.steps" :key="step">{{ step }}</li>
-      </ol>
     </template>
     <p class="text-sm text-slate-700">
       <span class="font-medium">{{ t('plates.calculations.reading_caption') }}</span> {{ props.reading }}
