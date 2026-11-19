@@ -25,10 +25,10 @@ typecheck:
 	@docker-compose -f docker-compose.yml -f docker-compose.dev.yml exec -T api sh -c 'cd /app && mypy'
 
 mainton:
-	@docker-compose -f docker-compose.yml -f docker-compose.prod.yml exec ws sh -c 'touch /web_root/.maintenance'
+	@docker-compose -f docker-compose.yml -f docker-compose.prod.yml exec -u 0 ws sh -c 'touch /web_root/ldm.nexus.ethz.ch/.maintenance'
 
 maintoff:
-	@docker-compose -f docker-compose.yml -f docker-compose.prod.yml exec ws sh -c 'rm -f /web_root/.maintenance'
+	@docker-compose -f docker-compose.yml -f docker-compose.prod.yml exec -u 0 ws sh -c 'rm -f /web_root/ldm.nexus.ethz.ch/.maintenance'
 
 # The code is mounted into the containers, so a new commit often builds the same
 # image and `up` keeps the old containers: gunicorn and celery would go on running
