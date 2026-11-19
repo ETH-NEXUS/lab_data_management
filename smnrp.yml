@@ -1,0 +1,45 @@
+# smnrpx configuration of the ws proxy (converted from the smnrp 2.5.1 SMNRP_* settings in .env).
+# Own ETH certificate; the ldm vhosts proxy in front sends the host name as TLS server name.
+# TLS 1.2 stays allowed as before; / serves the Nuxt build from the web_root volume, with index.html for client side routes.
+domains:
+  ldm.nexus.ethz.ch:
+    cert: own
+    allow_tls1.2: true
+    client_body_buffer_size: 32k
+    large_client_header_buffers: 8 64k
+    upstreams:
+      targets:
+        - api:5000
+      notebook:
+        - api:5000
+    locations:
+      - proxy:
+          uri: /api/
+          proto: http
+          upstream: targets
+          path: /api/
+      - alias:
+          uri: /static/
+          path: /vol/web/static/
+      - alias:
+          uri: /media/
+          path: /vol/web/media/
+      - proxy:
+          uri: /admin/
+          proto: http
+          upstream: targets
+          path: /admin/
+      - proxy:
+          uri: /notebook/
+          proto: http
+          upstream: notebook
+          path: /notebook/
+      - proxy:
+          uri: /docs/
+          proto: http
+          upstream: targets
+          path: /docs/
+      - alias:
+          uri: /
+          path: /web_root/ldm.nexus.ethz.ch/
+          try_files: true

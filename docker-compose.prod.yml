@@ -1,20 +1,27 @@
 services:
   ws:
-    image: ethnexus/smnrp:2.5.1
+    image: ethnexus/smnrpx:2.9.4@sha256:8551d5378715ac99579abf2ab69e75717d8ef7baaeb19ce95884b4a0a4673004
     volumes:
-      - "web_root:/web_root:z"
+      # smnrpx serves /web_root/<domain>, so the ui build goes there
+      - "web_root:/web_root/ldm.nexus.ethz.ch:z"
       - ./api/static:/vol/web/static:z
       - ./api/media:/vol/web/media:z
         #- /etc/pki/tls/certs/DCcerts2025/ldm.nexus.ethz.ch.chain.crt.pem:/etc/letsencrypt/live/ldm.nexus.ethz.ch/fullchain.pem:ro
       - /etc/pki/tls/certs/ldm.nexus.ethz.ch.pem:/etc/letsencrypt/live/ldm.nexus.ethz.ch/fullchain.pem:ro
         #- /etc/pki/tls/private/key2025/ldm.nexus.ethz.ch.privkey.pem:/etc/letsencrypt/live/ldm.nexus.ethz.ch/privkey.pem:ro
       - /etc/pki/tls/private/ldm.nexus.ethz.ch.key:/etc/letsencrypt/live/ldm.nexus.ethz.ch/privkey.pem:ro
+      - ./smnrp.yml:/run/configs/smnrp.yml:ro,z
 
     ports:
       - "8081:80"
       - "4431:443"
     env_file: .env
     restart: unless-stopped
+    healthcheck:
+      test: service nginx status || exit 1
+      interval: 30s
+      timeout: 5s
+      retries: 3
     depends_on:
       - api
       - db
